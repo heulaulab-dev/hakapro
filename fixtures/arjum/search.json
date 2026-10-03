@@ -1,0 +1,98 @@
+[
+  {
+    "stock_code": "BANK",
+    "stock_name": "Bank Net Indonesia Syariah Tbk.",
+    "last_date": "2026-09-18",
+    "_nn": "bank net indonesia syariah",
+    "_nc": "banknetindonesiasyariah",
+    "_init": "bnis"
+  },
+  {
+    "stock_code": "AGRO",
+    "stock_name": "Bank Raya Indonesia Tbk.",
+    "last_date": "2026-09-18",
+    "_nn": "bank raya indonesia",
+    "_nc": "bankrayaindonesia",
+    "_init": "bri"
+  },
+  {
+    "stock_code": "AGRS",
+    "stock_name": "Bank IBK Indonesia Tbk.",
+    "last_date": "2026-09-18",
+    "_nn": "bank ibk indonesia",
+    "_nc": "bankibkindonesia",
+    "_init": "bii"
+  },
+  {
+    "stock_code": "AMAR",
+    "stock_name": "Bank Amar Indonesia Tbk.",
+    "last_date": "2026-09-18",
+    "_nn": "bank amar indonesia",
+    "_nc": "bankamarindonesia",
+    "_init": "bai"
+  },
+  {
+    "stock_code": "ARTO",
+    "stock_name": "Bank Jago Tbk.",
+    "last_date": "2026-09-18",
+    "_nn": "bank jago",
+    "_nc": "bankjago",
+    "_init": "bj"
+  },
+  {
+    "stock_code": "BABP",
+    "stock_name": "Bank MNC Internasional Tbk.",
+    "last_date": "2026-09-18",
+    "_nn": "bank mnc internasional",
+    "_nc": "bankmncinternasional",
+    "_init": "bmi"
+  },
+  {
+    "stock_code": "BACA",
+    "stock_name": "Bank Capital Indonesia Tbk.",
+    "last_date": "2026-09-18",
+    "_nn": "bank capital indonesia",
+    "_nc": "bankcapitalindonesia",
+    "_init": "bci"
+  },
+  {
+    "stock_code": "BBCA",
+    "stock_name": "Bank Central Asia Tbk.",
+    "last_date": "2026-09-18",
+    "_nn": "bank central asia",
+    "_nc": "bankcentralasia",
+    "_init": "bca"
+  },
+  {
+    "stock_code": "BBHI",
+    "stock_name": "Bank Harda Internasional Tbk.",
+    "last_date": "2026-09-18",
+    "_nn": "bank harda internasional",
+    "_nc": "bankhardainternasional",
+    "_init": "bhi"
+  },
+  {
+    "stock_code": "BBKP",
+    "stock_name": "Bank KB Indonesia Tbk.",
+    "last_date": "2026-09-18",
+    "_nn": "bank kb indonesia",
+    "_nc": "bankkbindonesia",
+    "_init": "bki"
+  },
+  {
+    "stock_code": "BBMD",
+    "stock_name": "Bank Mestika Dharma Tbk.",
+    "last_date": "2026-09-18",
+    "_nn": "bank mestika dharma",
+    "_nc": "bankmestikadharma",
+    "_init": "bmd"
+  },
+  {
+    "stock_code": "BBNI",
+    "stock_name": "Bank Negara Indonesia (Persero) Tbk.",
+    "last_date": "2026-09-18",
+    "_nn": "bank negara indonesia",
+    "_nc": "banknegaraindonesia",
+    "_init": "bni"
+  }
+]

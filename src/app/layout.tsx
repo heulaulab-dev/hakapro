@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { GeistMono } from "geist/font/mono";
 import { GeistSans } from "geist/font/sans";
+import { FixtureBanner } from "@/components/feedback/fixture-banner";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -14,7 +15,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="id"
       className={`${GeistSans.variable} ${GeistMono.variable} dark h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <FixtureBanner />
+        {children}
+      </body>
     </html>
   );
 }

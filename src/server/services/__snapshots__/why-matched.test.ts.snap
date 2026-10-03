@@ -1,0 +1,63 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`why matched — recorded screener V5.2 > snapshot of the structured screen 1`] = `
+{
+  "issues": [],
+  "screen": {
+    "date": "2026-09-18",
+    "marketCondition": {
+      "averageChangePercent": 0.1,
+      "label": "FLAT MARKET",
+    },
+    "screenerVersion": "V5.2",
+    "strategies": [
+      {
+        "description": "Akumulasi senyap versi base-only, belum ada edge historis khusus",
+        "id": "akumulasi-senyap",
+        "matches": [
+          {
+            "criteria": [
+              {
+                "flag": "🌍",
+                "key": "foreignBuying",
+                "kind": "recognized",
+              },
+              {
+                "flag": "🥷",
+                "key": "quietAccumulation",
+                "kind": "recognized",
+              },
+            ],
+            "name": "Soechi Lines Tbk.",
+            "providerNote": "mode senyap",
+            "symbol": "SOCI",
+          },
+          {
+            "criteria": [
+              {
+                "flag": "🌍",
+                "key": "foreignBuying",
+                "kind": "recognized",
+              },
+              {
+                "flag": "🥷",
+                "key": "quietAccumulation",
+                "kind": "recognized",
+              },
+            ],
+            "name": "Hartadinata Abadi Tbk.",
+            "providerNote": "mode senyap",
+            "symbol": "HRTA",
+          },
+        ],
+        "name": "AKUMULASI SENYAP",
+      },
+    ],
+    "universe": {
+      "covered": 963,
+      "liquid": 280,
+      "skipped": 683,
+    },
+  },
+}
+`;

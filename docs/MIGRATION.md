@@ -1,6 +1,6 @@
 # HAKAPRO — Migration inventory (HeulaTrade → HAKAPRO)
 
-Status: **Checkpoint 1 approved (2026-10-03) with corrections, see §9. Step 2 scaffold done (Checkpoint 2).**
+Status: **Checkpoints 1–2 approved. Step 3 (data layer) done — Checkpoint 3.**
 Date: 2026-10-03
 
 | Input | Value |
@@ -174,12 +174,31 @@ Old `.env.local` contains **only the two Supabase variables**.
 
 ## 7. Port status tracker
 
-| Item | Status |
-| --- | --- |
-| Inventory | ✅ this document |
-| Everything else | ⏳ pending Checkpoint 1 approval |
+| Old | New | Status |
+| --- | --- | --- |
+| `lib/market/arjum/{client,queries,errors,inputs}.ts` | `src/server/providers/arjum/*`, `src/server/market/errors.ts`, `src/server/schemas/inputs.ts` | ✅ ported |
+| `lib/market/arjum/schemas.ts` | `src/server/schemas/arjum.ts` (Zod 4) | ✅ ported, all 12 fixtures parse |
+| `lib/market/arjum/normalizers.ts` + mapping in `server.ts` | `src/server/services/arjum-normalize.ts` (unit-explicit fields) | ✅ ported |
+| `lib/market/contracts.ts`, `server.ts`, `providers/direct.ts` | `src/server/schemas/idx-bei.ts`, `src/server/market/idx-bei-source.ts` | ✅ ported, untested against a live service (no URL) |
+| News/announcements bug (items dropped) | `IdxBeiSource.news/announcements` return items | ✅ fixed, `TODO(verify)` live shape |
+| `lib/market/indicators.ts`, `lib/portfolio.ts`, `lib/alerts/evaluate.ts` | `src/server/services/{indicators,portfolio,alerts}.ts` | ✅ ported with tests |
+| Broker ranking (`provider-panels.tsx:63`), foreign net (`market-panels.tsx:56`) | `rankBrokers`, `foreignNet` | ✅ extracted |
+| Screener emoji flags (why matched) | `src/server/services/why-matched.ts` | ✅ new, mapping table + snapshot tests |
+| Provider number strings | `src/server/services/parse-number.ts` | ✅ new |
+| `lib/api/http.ts`, `arjum/route.ts` | `src/server/http.ts` (`marketRoute`) | ✅ ported |
+| `lib/supabase/*`, `proxy.ts`, `app/auth/callback` | `src/lib/supabase/*`, `src/proxy.ts`, `src/app/auth/callback` | ✅ ported (locale merge in Step 4) |
+| `app/api/jobs/evaluate-alerts` | — | ⏸ deferred (needs service-role key; no Phase 1 screen uses it) |
+| `app/api/analysis/[code]` | — | ⛔ not exposed (MIGRATION §9.5) |
+| `app/api/ready` | — | ⏸ deferred to deployment work |
+| Query keys / client fetchers | `src/lib/query/*` | ⏸ built with the first screens (Step 6–7) |
 
----
+### Endpoint map (old → new)
+
+| Old BFF path | New path | Source method |
+| --- | --- | --- |
+| `/api/screener/latest` | `/api/strategies` | `strategies()` (structured why-matched) |
+| `/api/signals` | `/api/foreign-flow` | `foreignFlow()` (`accumulate/distribute` → descriptive `net_buy/net_sell`) |
+| all other §2 paths | unchanged | 1:1 |
 
 ## 8. Visual direction
 

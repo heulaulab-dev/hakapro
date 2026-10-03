@@ -1,0 +1,28 @@
+{
+  "date": "📊 **SCREENER V5.2** — Jumat, 18 September 2026",
+  "source": "screener_v5.py",
+  "rows": [
+    {
+      "stock_code": "SOCI",
+      "stock_name": "Soechi Lines Tbk.",
+      "bucket": "🥷 AKUMULASI SENYAP",
+      "summary": "🌍 🥷",
+      "wr_event": null,
+      "potential": null,
+      "drawdown": null,
+      "note": "mode senyap"
+    },
+    {
+      "stock_code": "HRTA",
+      "stock_name": "Hartadinata Abadi Tbk.",
+      "bucket": "🥷 AKUMULASI SENYAP",
+      "summary": "🌍 🥷",
+      "wr_event": null,
+      "potential": null,
+      "drawdown": null,
+      "note": "mode senyap"
+    }
+  ],
+  "raw": "📊 **SCREENER V5.2** — Jumat, 18 September 2026\n🟡 **FLAT MARKET** — Rata-rata +0.1% | FLAT 5d:0.1%\n_963 terdata | 280 likuid | 683 skip | 0.4s_\n\n_✅=akumulasi | ❌=distribusi | 🏦=broker pekat | 🏛️=institusi | 🌍=asing beli | 🔬=teknikal kuat | 🥷=senyap | 🧬=edge historis | 🧨=jebakan historis | 🚀⚠️=pompa | ⏰=telat | 🔥=klimaks_\n\n**🥷 AKUMULASI SENYAP** — Akumulasi senyap versi base-only, belum ada edge historis khusus\n──────────────────────────────\n1. **SOCI** (Soechi Lines Tbk.) 🌍 🥷 `mode senyap`\n2. **HRTA** (Hartadinata Abadi Tbk.) 🌍 🥷 `mode senyap`\n\n_Screener berdasarkan POLA historis dan filter khusus._\n**🏆 Disclaimer, Bukan Ajakan Jual Atau Beli ! Semua keputusan ada di tangan Masing masing**\n\n_⏱️ 0.4s | 280 stocks_\n",
+  "cached_for_seconds": 86091
+}

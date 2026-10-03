@@ -1,0 +1,176 @@
+{
+  "stock_code": "BBCA",
+  "count": 10,
+  "total": 85,
+  "page": 1,
+  "page_size": 10,
+  "total_pages": 9,
+  "items": [
+    {
+      "name": "TONNY KUSNADI",
+      "date": "2026-03-25",
+      "action_type": "buy",
+      "nationality": "local",
+      "previous_value": "7,502,058",
+      "previous_percentage": "0.0061",
+      "current_value": "7,819,950",
+      "current_percentage": "0.0063",
+      "changes_value": "+317,892",
+      "changes_percentage": "+0.0002",
+      "price_formatted": "6,982",
+      "broker_code": "",
+      "badges": [
+        "KOMISARIS"
+      ]
+    },
+    {
+      "name": "FRENGKY CHANDRA KUSUMA",
+      "date": "2026-03-25",
+      "action_type": "buy",
+      "nationality": "local",
+      "previous_value": "2,429,926",
+      "previous_percentage": "0.0020",
+      "current_value": "2,835,916",
+      "current_percentage": "0.0023",
+      "changes_value": "+405,990",
+      "changes_percentage": "+0.0003",
+      "price_formatted": "6,982",
+      "broker_code": "",
+      "badges": [
+        "DIREKTUR"
+      ]
+    },
+    {
+      "name": "HARYANTO TIARA BUDIMAN",
+      "date": "2026-03-25",
+      "action_type": "buy",
+      "nationality": "local",
+      "previous_value": "1,057,378",
+      "previous_percentage": "0.0009",
+      "current_value": "1,436,806",
+      "current_percentage": "0.0012",
+      "changes_value": "+379,428",
+      "changes_percentage": "+0.0003",
+      "price_formatted": "6,982",
+      "broker_code": "",
+      "badges": [
+        "DIREKTUR"
+      ]
+    },
+    {
+      "name": "VERA EVE LIM",
+      "date": "2026-03-25",
+      "action_type": "buy",
+      "nationality": "local",
+      "previous_value": "2,731,601",
+      "previous_percentage": "0.0022",
+      "current_value": "3,281,460",
+      "current_percentage": "0.0027",
+      "changes_value": "+549,859",
+      "changes_percentage": "+0.0005",
+      "price_formatted": "6,982",
+      "broker_code": "",
+      "badges": [
+        "DIREKTUR"
+      ]
+    },
+    {
+      "name": "LIANAWATY SUWONO",
+      "date": "2026-03-25",
+      "action_type": "buy",
+      "nationality": "local",
+      "previous_value": "3,440,417",
+      "previous_percentage": "0.0028",
+      "current_value": "3,906,242",
+      "current_percentage": "0.0032",
+      "changes_value": "+465,825",
+      "changes_percentage": "+0.0004",
+      "price_formatted": "6,982",
+      "broker_code": "",
+      "badges": [
+        "DIREKTUR"
+      ]
+    },
+    {
+      "name": "TAN HO HIEN/SUBUR/SUBUR TAN",
+      "date": "2026-03-25",
+      "action_type": "buy",
+      "nationality": "local",
+      "previous_value": "11,169,044",
+      "previous_percentage": "0.0091",
+      "current_value": "11,788,002",
+      "current_percentage": "0.0096",
+      "changes_value": "+618,958",
+      "changes_percentage": "+0.0005",
+      "price_formatted": "6,982",
+      "broker_code": "",
+      "badges": []
+    },
+    {
+      "name": "JAHJA SETIAATMADJA",
+      "date": "2026-03-25",
+      "action_type": "buy",
+      "nationality": "local",
+      "previous_value": "35,000,644",
+      "previous_percentage": "0.03",
+      "current_value": "35,802,700",
+      "current_percentage": "0.03",
+      "changes_value": "+802,056",
+      "changes_percentage": "+0.0006",
+      "price_formatted": "6,982",
+      "broker_code": "",
+      "badges": [
+        "KOMISARIS"
+      ]
+    },
+    {
+      "name": "JOHN KOSASIH",
+      "date": "2026-03-25",
+      "action_type": "buy",
+      "nationality": "local",
+      "previous_value": "1,094,492",
+      "previous_percentage": "0.0009",
+      "current_value": "1,720,729",
+      "current_percentage": "0.0014",
+      "changes_value": "+626,237",
+      "changes_percentage": "+0.0005",
+      "price_formatted": "6,982",
+      "broker_code": "",
+      "badges": [
+        "DIREKTUR"
+      ]
+    },
+    {
+      "name": "HENDRA TANUMIHARDJA",
+      "date": "2026-03-25",
+      "action_type": "buy",
+      "nationality": "local",
+      "previous_value": "193,206",
+      "previous_percentage": "0.0002",
+      "current_value": "341,139",
+      "current_percentage": "0.0003",
+      "changes_value": "+147,933",
+      "changes_percentage": "+0.0001",
+      "price_formatted": "6,982",
+      "broker_code": "",
+      "badges": [
+        "DIREKTUR"
+      ]
+    },
+    {
+      "name": "A. WIDODO MULYONO",
+      "date": "2026-03-25",
+      "action_type": "buy",
+      "nationality": "local",
+      "previous_value": "440,838",
+      "previous_percentage": "0.0004",
+      "current_value": "681,407",
+      "current_percentage": "0.0006",
+      "changes_value": "+240,569",
+      "changes_percentage": "+0.0002",
+      "price_formatted": "6,982",
+      "broker_code": "",
+      "badges": []
+    }
+  ]
+}

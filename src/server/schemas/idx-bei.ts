@@ -1,0 +1,93 @@
+// Ported from heulatrade lib/market/contracts.ts + lib/market/providers/direct.ts (Zod 3 → Zod 4).
+// Lane A: the existing Python market-api over idx-bei datasets (services/market-api/app.py).
+import { z } from "zod";
+import { symbolSchema } from "./inputs";
+
+const num = z.number().nullable();
+
+/** Envelope emitted by app.py `response()`: freshness is EOD | STALE | UNAVAILABLE. */
+export const idxBeiMetaSchema = z.object({
+  source: z.string(),
+  fetchedAt: z.string(),
+  dataAsOf: z.string().nullable(),
+  freshness: z.string(),
+});
+export const idxBeiEnvelope = <T extends z.ZodType>(data: T) => z.object({ data, meta: idxBeiMetaSchema });
+
+export const securitySchema = z.object({
+  symbol: z.string(),
+  companyName: z.string(),
+  sector: z.string().nullable().optional(),
+  subsector: z.string().nullable().optional(),
+  board: z.string().nullable().optional(),
+});
+
+export const quoteSchema = z.object({
+  symbol: symbolSchema,
+  timestamp: z.string(),
+  open: num, high: num, low: num, close: num,
+  previousClose: num, change: num,
+  /** Fraction, not percent (0.0111 = 1.11%). */
+  changePercent: num,
+  volume: num, value: num, frequency: num,
+  foreignBuy: num, foreignSell: num,
+});
+
+export const candleSchema = z.object({
+  time: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  open: num, high: num, low: num, close: z.number(),
+  volume: num, foreignBuy: num, foreignSell: num,
+});
+
+export const stockSchema = z.object({ quote: quoteSchema, candles: z.array(candleSchema) });
+
+export const marketOverviewSchema = z.object({
+  indices: z.array(z.object({ code: z.string().nullable(), name: z.string().nullable(), close: num, previousClose: num, changePercent: num })),
+  breadth: z.object({ advancers: z.number(), decliners: z.number(), unchanged: z.number(), value: z.number(), volume: z.number(), frequency: z.number() }),
+  movers: z.array(z.object({ symbol: z.string().nullable(), name: z.string().nullable(), close: num, changePercent: num, volume: num, value: num, frequency: num })),
+});
+
+export const foreignSignalSchema = z.object({
+  symbol: symbolSchema, close: num, sessions: z.number().int().nonnegative(),
+  netForeignMillionShares: num, percentFloat: num, averageValueBillionIdr: num,
+  signal: z.enum(["accumulate", "distribute"]),
+});
+export const signalsSchema = z.object({ tradingDate: z.string(), foreignFlow: z.array(foreignSignalSchema) });
+
+export const fundamentalsSchema = z.array(z.object({ periodDate: z.string().nullable(), periodType: z.string(), metrics: z.record(z.string(), num) }));
+export const profileSchema = z.object({
+  symbol: symbolSchema, companyName: z.string().nullable(), website: z.string().nullable(), description: z.string().nullable(),
+  directors: z.array(z.record(z.string(), z.unknown())), commissioners: z.array(z.record(z.string(), z.unknown())),
+  shareholders: z.array(z.record(z.string(), z.unknown())), subsidiaries: z.array(z.record(z.string(), z.unknown())),
+});
+export const actionsSchema = z.array(z.object({ date: z.string().nullable(), type: z.string().nullable(), description: z.string().nullable(), documentUrl: z.string().nullable() }));
+
+// app.py /v1/news and /v1/announcements item shapes (the old BFF dropped these items — fixed here).
+export const newsItemSchema = z.object({ date: z.string().nullable(), title: z.string().nullable(), summary: z.string().nullable(), url: z.string().nullable() });
+export const announcementItemSchema = z.object({ date: z.string().nullable(), symbol: z.string().nullable(), title: z.string().nullable(), documentUrl: z.string().nullable() });
+
+export const SCREEN_FIELDS = ["price", "volume", "value", "frequency", "foreignNetShares", "marketCap", "per", "pbv", "roe", "roa", "eps", "der", "dividendYield", "change1D"] as const;
+export const screenFieldSchema = z.enum(SCREEN_FIELDS);
+export const screenConditionSchema = z.object({
+  field: screenFieldSchema,
+  operator: z.enum(["GT", "GTE", "LT", "LTE", "EQ"]),
+  value: z.number(),
+  connective: z.enum(["AND", "OR"]).default("AND"),
+});
+export const screenRequestSchema = z.object({ conditions: z.array(screenConditionSchema).max(20), limit: z.number().int().min(1).max(1000).default(500) });
+export const screenRowSchema = z.object({ symbol: symbolSchema, name: z.string().nullable() }).catchall(z.number().nullable());
+export const screenResultSchema = z.object({ rows: z.array(screenRowSchema), total: z.number().int().nonnegative(), supportedFields: z.array(screenFieldSchema) });
+
+export type Security = z.infer<typeof securitySchema>;
+export type Quote = z.infer<typeof quoteSchema>;
+export type Candle = z.infer<typeof candleSchema>;
+export type Stock = z.infer<typeof stockSchema>;
+export type MarketOverview = z.infer<typeof marketOverviewSchema>;
+export type Signals = z.infer<typeof signalsSchema>;
+export type Fundamentals = z.infer<typeof fundamentalsSchema>;
+export type Profile = z.infer<typeof profileSchema>;
+export type CorporateActions = z.infer<typeof actionsSchema>;
+export type NewsItem = z.infer<typeof newsItemSchema>;
+export type AnnouncementItem = z.infer<typeof announcementItemSchema>;
+export type ScreenRequest = z.infer<typeof screenRequestSchema>;
+export type ScreenResult = z.infer<typeof screenResultSchema>;
