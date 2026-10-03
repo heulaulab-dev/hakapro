@@ -1,6 +1,6 @@
 "use client";
 
-import { LogIn, LogOut, ShieldAlert, UserRound } from "lucide-react";
+import { Bell, LogIn, LogOut, ShieldAlert, UserRound } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -10,6 +10,7 @@ import type { ViewerSummary } from "./types";
 
 export function AccountMenu({ viewer }: { viewer: ViewerSummary }) {
   const t = useTranslations("account");
+  const tNav = useTranslations("nav");
   const locale = useLocale();
   return (
     <DropdownMenu>
@@ -23,6 +24,11 @@ export function AccountMenu({ viewer }: { viewer: ViewerSummary }) {
           {viewer.kind === "user" ? t("signedInAs", { email: viewer.email ?? "—" }) : viewer.kind === "bypass" ? t("bypass") : viewer.kind === "unconfigured" ? t("unconfigured") : t("menu")}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        {viewer.kind === "user" && (
+          <DropdownMenuItem asChild>
+            <Link href="/alerts"><Bell />{tNav("alerts")}</Link>
+          </DropdownMenuItem>
+        )}
         {viewer.kind === "user" ? (
           <DropdownMenuItem onSelect={() => void signOut(locale)}>
             <LogOut />

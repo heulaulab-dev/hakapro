@@ -1,6 +1,6 @@
-import { ArrowUpDown, Bookmark, Compass, House, Landmark, ListChecks, Newspaper, SlidersHorizontal, type LucideIcon } from "lucide-react";
+import { ArrowUpDown, Bell, Bookmark, Compass, House, Landmark, ListChecks, Newspaper, SlidersHorizontal, type LucideIcon } from "lucide-react";
 
-export type NavKey = "home" | "discover" | "screener" | "strategies" | "movers" | "ownership" | "watchlist" | "news";
+export type NavKey = "home" | "discover" | "screener" | "strategies" | "movers" | "ownership" | "watchlist" | "news" | "alerts";
 export type NavItem = { key: NavKey; href: string; icon: LucideIcon; children?: NavItem[] };
 
 /** The four primary destinations. Stock pages are reached via search, Cmd+K or lists, never the nav. */
@@ -21,8 +21,11 @@ export const NAV: NavItem[] = [
   { key: "news", href: "/news", icon: Newspaper },
 ];
 
+/** Secondary destinations: not in the 4-item sidebar, reachable from Cmd+K, the account menu and mobile More. */
+export const SECONDARY: NavItem[] = [{ key: "alerts", href: "/alerts", icon: Bell }];
+
 /** Every page reachable from Cmd+K. */
-export const ALL_PAGES: NavItem[] = NAV.flatMap((item) => (item.children ? item.children : [item]));
+export const ALL_PAGES: NavItem[] = [...NAV.flatMap((item) => (item.children ? item.children : [item])), ...SECONDARY];
 
 export const STOCK_TABS = ["overview", "chart", "flow", "financials", "ownership", "insiders", "history"] as const;
 export type StockTab = (typeof STOCK_TABS)[number];

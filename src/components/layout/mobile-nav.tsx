@@ -8,7 +8,7 @@ import { Link, usePathname } from "@/i18n/navigation";
 import type { Density, Theme } from "@/lib/preferences";
 import { useUiStore } from "@/lib/stores/ui";
 import { cn } from "@/lib/utils";
-import { isActive, NAV } from "./nav-config";
+import { isActive, NAV, SECONDARY } from "./nav-config";
 import { DensityToggle, LocaleSwitch, ThemeToggle } from "./preference-controls";
 
 const tab = "flex flex-1 flex-col items-center justify-center gap-0.5 text-[11px] text-muted-foreground";
@@ -60,6 +60,12 @@ export function MobileNav({ theme, density }: { theme: Theme; density: Density }
                 <news.icon className="size-4 text-muted-foreground" />
                 {t("nav.news")}
               </Link>
+              {SECONDARY.map((item) => (
+                <Link key={item.key} href={item.href} onClick={() => setMoreOpen(false)} className="flex h-11 items-center gap-3 rounded-md px-2 text-sm hover:bg-accent">
+                  <item.icon className="size-4 text-muted-foreground" />
+                  {t(`nav.${item.key}`)}
+                </Link>
+              ))}
             </section>
             <section className="flex items-center gap-1 border-t border-border pt-3">
               <span className="mr-auto text-sm text-muted-foreground">{t("header.display")}</span>

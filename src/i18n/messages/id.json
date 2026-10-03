@@ -101,7 +101,8 @@
     "watchlist": "Daftar Pantau",
     "news": "Berita & Kalender",
     "more": "Lainnya",
-    "search": "Cari"
+    "search": "Cari",
+    "alerts": "Peringatan"
   },
   "stockTabs": {
     "label": "Bagian saham",
@@ -552,5 +553,39 @@
     "notFoundDescription": "Alamat ini tidak ada atau kode saham tidak valid.",
     "skipToContent": "Lewati ke konten",
     "reference": "Kode referensi: {digest}"
+  },
+  "alerts": {
+    "title": "Peringatan",
+    "intro": "Dapatkan pemberitahuan saat data penutupan memenuhi kondisi yang Anda tetapkan. Dievaluasi setelah sesi ditutup.",
+    "signIn": "Masuk untuk membuat peringatan.",
+    "create": "Buat peringatan",
+    "symbol": "Kode saham",
+    "metric": "Ukuran",
+    "operator": "Kondisi",
+    "threshold": "Nilai",
+    "metrics": {
+      "PRICE": "Harga penutupan (Rp)",
+      "DAILY_CHANGE": "Perubahan harian (%)",
+      "FOREIGN_NET": "Asing bersih (lembar)",
+      "VOLUME": "Volume (lembar)",
+      "VOLUME_RATIO_20D": "Rasio volume vs rata-rata 20 hari (x)"
+    },
+    "operators": {
+      "GT": ">",
+      "GTE": "≥",
+      "LT": "<",
+      "LTE": "≤"
+    },
+    "enabled": "Aktif",
+    "disabled": "Nonaktif",
+    "delete": "Hapus",
+    "empty": "Belum ada peringatan.",
+    "lastTriggered": "Terakhir terpicu {date}",
+    "events": "Peringatan terpicu",
+    "eventsEmpty": "Belum ada peringatan yang terpicu.",
+    "observed": "Teramati {value} pada {date}",
+    "invalid": "Periksa kode saham dan nilai.",
+    "failed": "Perubahan tidak tersimpan.",
+    "setAlert": "Peringatan"
   }
 }

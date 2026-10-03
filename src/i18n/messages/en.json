@@ -101,7 +101,8 @@
     "watchlist": "Watchlist",
     "news": "News & Calendar",
     "more": "More",
-    "search": "Search"
+    "search": "Search",
+    "alerts": "Alerts"
   },
   "stockTabs": {
     "label": "Stock sections",
@@ -552,5 +553,39 @@
     "notFoundDescription": "This address doesn't exist or the ticker is invalid.",
     "skipToContent": "Skip to content",
     "reference": "Reference: {digest}"
+  },
+  "alerts": {
+    "title": "Alerts",
+    "intro": "Get notified when end-of-day data meets conditions you set. Evaluated after the session closes.",
+    "signIn": "Sign in to create alerts.",
+    "create": "Create alert",
+    "symbol": "Ticker",
+    "metric": "Measure",
+    "operator": "Condition",
+    "threshold": "Value",
+    "metrics": {
+      "PRICE": "Closing price (Rp)",
+      "DAILY_CHANGE": "Daily change (%)",
+      "FOREIGN_NET": "Net foreign (shares)",
+      "VOLUME": "Volume (shares)",
+      "VOLUME_RATIO_20D": "Volume vs 20-day average (x)"
+    },
+    "operators": {
+      "GT": ">",
+      "GTE": "≥",
+      "LT": "<",
+      "LTE": "≤"
+    },
+    "enabled": "On",
+    "disabled": "Off",
+    "delete": "Delete",
+    "empty": "No alerts yet.",
+    "lastTriggered": "Last triggered {date}",
+    "events": "Triggered alerts",
+    "eventsEmpty": "No alerts have triggered yet.",
+    "observed": "Observed {value} on {date}",
+    "invalid": "Check the ticker and value.",
+    "failed": "The change wasn't saved.",
+    "setAlert": "Alert"
   }
 }

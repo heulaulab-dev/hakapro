@@ -123,7 +123,7 @@ test.describe("mobile", () => {
     await page.keyboard.press("Escape");
     await page.getByTestId("mobile-more").click();
     const sheet = page.getByRole("dialog");
-    for (const label of ["Screener", "Strategies", "Movers", "Ownership Changes", "News & Calendar"]) {
+    for (const label of ["Screener", "Strategies", "Movers", "Ownership Changes", "News & Calendar", "Alerts"]) {
       await expect(sheet.getByRole("link", { name: label })).toBeVisible();
     }
     await expect(sheet.getByTestId("theme-toggle")).toBeVisible();

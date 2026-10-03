@@ -1,6 +1,6 @@
 "use client";
 
-import { Bookmark, BookmarkCheck } from "lucide-react";
+import { Bell, Bookmark, BookmarkCheck } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { ViewerSummary } from "@/components/layout/types";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,16 @@ export function WatchButton({ symbol, viewer }: { symbol: string; viewer: Viewer
       onClick={() => (item ? remove.mutate(item.id) : add.mutate(symbol))}>
       {item ? <BookmarkCheck /> : <Bookmark />}
       {item ? t("watching") : t("watch")}
+    </Button>
+  );
+}
+
+/** Shortcut to create an alert for this stock (prefills the ticker). */
+export function AlertLink({ symbol }: { symbol: string }) {
+  const t = useTranslations("alerts");
+  return (
+    <Button variant="ghost" size="sm" asChild>
+      <Link href={`/alerts?symbol=${symbol}`} data-testid="alert-link"><Bell />{t("setAlert")}</Link>
     </Button>
   );
 }

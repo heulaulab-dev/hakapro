@@ -160,3 +160,16 @@ test.describe("slice 6: Chart, Insiders, History, Ownership tabs", () => {
     await expect(page.getByTestId("stock-ownership-view").getByTestId("data-state-code").first()).toHaveText("UNSUPPORTED");
   });
 });
+
+test.describe("alerts", () => {
+  test("alerts page requires a user; reachable from Cmd+K", async ({ page }) => {
+    await page.goto("/en/alerts?symbol=BBCA");
+    await expect(page.getByRole("heading", { level: 1, name: "Alerts" })).toBeVisible();
+    await expect(page.getByText("Sign in to create alerts.")).toBeVisible();
+    await page.goto("/en");
+    await page.getByTestId("header-search").click();
+    await page.getByTestId("palette-input").fill("alerts");
+    await page.getByTestId("palette-page-alerts").click();
+    await expect(page).toHaveURL(/\/en\/alerts$/);
+  });
+});

@@ -15,7 +15,8 @@
 | S4 | Screener + saved screens | ✅ | 26f0a97 |
 | S5 | Movers, News & Calendar, Ownership Changes | ✅ | 558789a |
 | S6 | Chart, Insiders, History, Ownership tabs | ✅ | 54e2fae |
-| S7 | Production readiness | ✅ | see git log |
+| S7 | Production readiness | ✅ | 1de1e69 |
+| S8 | Alerts page (create/toggle/delete, triggered events) | ✅ | see git log |
 
 ## Checkpoint 2 notes
 - Scaffold: create-next-app 16.3.8 (TS, App Router, Tailwind v4, ESLint, `src/`, `@/*`, Turbopack), shadcn 4.21.1 `radix-nova` preset, Radix base.
@@ -168,4 +169,9 @@
 - Configure Supabase redirect URLs and Google; manual two-user RLS check; run `supabase/tests/rls.sql`.
 - Verify the IDX calendar, reporting deadlines, criteria wording, provider record keys (profile) and ratio units.
 - Data display rights.
-- Optional: CSP nonces, a shared rate limiter, an alerts management UI (the job exists; users can't create alerts in-app yet).
+- Optional: CSP nonces, a shared rate limiter.
+
+## S8: alerts management
+- `/[locale]/alerts`: create alerts (ticker, measure, condition, threshold in the measure's own unit), turn them on/off, delete them, and list recent triggered events (`alert_events` joined to `alerts`, RLS-scoped).
+- Values are formatted per metric (IDR / % / shares / ×). The DB trigger's English notification text is deliberately not displayed.
+- Reached from Cmd+K, the account menu, mobile More, and a bell on stock headers (`?symbol=` prefill). Not in the 4-item sidebar, per the init prompt.

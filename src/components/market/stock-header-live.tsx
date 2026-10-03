@@ -6,7 +6,7 @@ import { useCompanyName, useHistory } from "@/lib/api/hooks";
 import { freshnessMeta } from "@/lib/freshness";
 import type { ViewerSummary } from "@/components/layout/types";
 import { StockHeader } from "./stock-header";
-import { WatchButton } from "./watch-button";
+import { AlertLink, WatchButton } from "./watch-button";
 
 /** Shared history query: same key as the overview's chart and metrics, so it is fetched once. */
 export const OVERVIEW_HISTORY = { frame: "daily", limit: 250 } as const;
@@ -15,7 +15,12 @@ export function StockHeaderLive({ symbol, viewer }: { symbol: string; viewer: Vi
   const history = useHistory(symbol, OVERVIEW_HISTORY);
   const name = useCompanyName(symbol);
   // When price data is unavailable the page body explains why; the header just names the stock.
-  const watch = <WatchButton symbol={symbol} viewer={viewer} />;
+  const watch = (
+    <div className="flex items-center gap-2">
+      <WatchButton symbol={symbol} viewer={viewer} />
+      {viewer.kind === "user" && <AlertLink symbol={symbol} />}
+    </div>
+  );
   if (history.isError) {
     return (
       <div className="flex items-center justify-between gap-3">
