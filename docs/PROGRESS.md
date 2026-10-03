@@ -8,7 +8,8 @@
 | 4 | Foundations: i18n, format module, tokens, FreshnessBadge | ✅ done ("continue" 2026-10-03) | 9470e2c |
 | 5 | App shell | ✅ done ("continue" 2026-10-03) | 3f35931 |
 | 6 | Primitives | ✅ approved 2026-10-03 | eabc709 |
-| 7 | Vertical slice: Home → Strategies → Why matched → Stock Overview | ✅ awaiting approval | see git log |
+| 7 | Vertical slice: Home → Strategies → Why matched → Stock Overview | ✅ done ("continue" 2026-10-03) | e46e0ae |
+| S1 | Next slice 1: auth pages + watchlist with quotes | ✅ awaiting review | see git log |
 
 ## Checkpoint 2 notes
 - Scaffold: create-next-app 16.3.8 (TS, App Router, Tailwind v4, ESLint, `src/`, `@/*`, Turbopack), shadcn 4.21.1 `radix-nova` preset, Radix base.
@@ -130,3 +131,13 @@
 5. **Movers and News & Calendar:** once the idx-bei lane (or a licensed source) is connected.
 6. **Insiders and Ownership tabs;** History tab (DataTable over history).
 7. **Production readiness:** `/api/ready`, alert job schedule, RLS test run, a distributed rate limiter.
+
+## Slice 1: auth pages and watchlist with quotes
+- **Auth** (`src/app/[locale]/(auth)/*`, `components/auth/auth-form.tsx`): login (email/password + Google OAuth), signup (email confirmation), forgot password, reset password. Ported from heulatrade `app/(auth)` and made locale-aware.
+  - Supabase error codes map to localized messages; provider text is never shown.
+  - Forgot-password always shows the same message, so accounts can't be enumerated.
+  - Forms are disabled with an explanation in bypass/unconfigured modes.
+- **Redirects:** `safeNextPath` accepts only same-origin, locale-prefixed paths (no `//`, backslashes, foreign locales, or loops back to the auth pages). The proxy adds `?next=` when redirecting anonymous users; `/auth/callback` follows it safely and sends failures to `/{locale}/login?error=auth`.
+- **Quotes:** `GET /api/quotes?symbols=A,B` (at most 30, deduplicated, validated). Each symbol succeeds or fails on its own; the envelope is as fresh as the stalest quote (`leastFresh`).
+- **Watchlist** (`lib/watchlist.ts`): browser Supabase client, scoped by the existing RLS policies (`watchlists_own`, `watchlist_items_own`). The default list is created on first add. The page has add/remove with validation and a QuoteList with per-row freshness or reason code. The Watch button sits in the stock header; Home's watchlist block shows quotes.
+- **Not verified here (needs a configured Supabase project):** real sign-in/up/reset, Google provider setup, redirect URLs (allow `/auth/callback`), and RLS isolation between two users.

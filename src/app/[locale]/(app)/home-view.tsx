@@ -1,6 +1,5 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import { BarChart3, Bookmark, ChevronRight, LogIn } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import type { ReactNode } from "react";
@@ -15,11 +14,11 @@ import { ChangeValue } from "@/components/market/change-value";
 import { InsightCard } from "@/components/market/insight-card";
 import { screenContextObservations } from "@/components/market/screen-context";
 import { Link } from "@/i18n/navigation";
-import { useMarketOverview, useNews, useStrategies } from "@/lib/api/hooks";
+import { useMarketOverview, useNews, useQuotes, useStrategies } from "@/lib/api/hooks";
+import { useWatchlist } from "@/lib/watchlist";
+import { QuoteList } from "@/components/data/quote-list";
 import { freshnessMeta } from "@/lib/freshness";
 import { formatDate, formatValue, type Locale } from "@/lib/format";
-import { queryKeys } from "@/lib/query/keys";
-import { createClient } from "@/lib/supabase/client";
 
 function Panel({ children, testId, className }: { children: ReactNode; testId: string; className?: string }) {
   return <section data-testid={testId} className={`flex min-w-0 flex-col gap-3 rounded-lg border border-border bg-card p-4 ${className ?? ""}`}>{children}</section>;
@@ -141,22 +140,11 @@ export function HomeView({ viewer }: { viewer: ViewerSummary }) {
 
 function WatchlistActivity({ viewer }: { viewer: ViewerSummary }) {
   const t = useTranslations("home");
-  const items = useQuery({
-    queryKey: queryKeys.watchlist(viewer.kind === "user" ? viewer.id : "none"),
-    enabled: viewer.kind === "user",
-    queryFn: async () => {
-      const { data, error } = await createClient().from("watchlist_items").select("id, symbol, position").order("position").limit(10);
-      if (error) throw error;
-      return data;
-    },
-  });
+  const watchlist = useWatchlist(viewer.kind === "user" ? viewer.id : null);
+  const items = (watchlist.data?.items ?? []).slice(0, 8);
+  const quotes = useQuotes(items.map((item) => item.symbol));
   if (viewer.kind !== "user") return <EmptyState compact icon={<LogIn />} title={t("watchlistSignIn")} />;
-  if (items.isPending) return null;
-  if (items.isError || !items.data.length) return <EmptyState compact icon={<Bookmark />} title={t("watchlistEmpty")} />;
-  // TODO(next slice): per-symbol quotes for watchlist rows (needs a batched quote endpoint).
-  return (
-    <div className="flex flex-col">
-      {items.data.map((item) => <StockRow key={item.id} symbol={item.symbol} />)}
-    </div>
-  );
+  if (watchlist.isPending) return null;
+  if (watchlist.isError || !items.length) return <EmptyState compact icon={<Bookmark />} title={t("watchlistEmpty")} />;
+  return <QuoteList symbols={items.map((item) => ({ key: item.id, symbol: item.symbol }))} quotes={quotes.data?.data} />;
 }

@@ -1,8 +1,8 @@
-import { getTranslations, setRequestLocale } from "next-intl/server";
-import { PagePlaceholder } from "@/components/layout/page-placeholder";
+import { setRequestLocale } from "next-intl/server";
+import { getViewer } from "@/server/viewer";
+import { WatchlistView } from "./watchlist-view";
 
-export default async function Page({ params }: PageProps<"/[locale]/watchlist">) {
+export default async function WatchlistPage({ params }: PageProps<"/[locale]/watchlist">) {
   setRequestLocale((await params).locale);
-  const t = await getTranslations("nav");
-  return <PagePlaceholder title={t("watchlist")} />;
+  return <WatchlistView viewer={await getViewer()} />;
 }

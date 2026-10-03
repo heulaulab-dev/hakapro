@@ -38,7 +38,11 @@ export async function updateSession(request: NextRequest, response: NextResponse
   if (pathname.startsWith("/api/") || pathname.startsWith("/auth/")) return response;
   const { locale, path } = stripLocale(pathname);
   const isPublic = path === "/" || PUBLIC_PATHS.some((prefix) => path === prefix || path.startsWith(`${prefix}/`));
-  if (!isAuthenticated && !isPublic) return NextResponse.redirect(new URL(`/${locale}/login`, request.url));
+  if (!isAuthenticated && !isPublic) {
+    const login = new URL(`/${locale}/login`, request.url);
+    login.searchParams.set("next", `${pathname}${request.nextUrl.search}`);
+    return NextResponse.redirect(login);
+  }
   if (isAuthenticated && (path === "/login" || path === "/signup")) return NextResponse.redirect(new URL(`/${locale}`, request.url));
   return response;
 }

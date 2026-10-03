@@ -100,3 +100,13 @@ export const overviewApi = {
   market: (signal?: AbortSignal) => fetchEnvelope("/api/market", marketOverviewSchema, { signal }),
   news: (signal?: AbortSignal) => fetchEnvelope("/api/news?per_page=8", z.array(newsItemSchema), { signal }),
 };
+
+// --- Quotes (/api/quotes) ------------------------------------------------------------------
+export const quoteSchema = z.discriminatedUnion("status", [
+  z.object({ symbol: z.string(), status: z.literal("ok"), date: z.string(), close: n, change: n, changePercent: n, ...freshnessFields }),
+  z.object({ symbol: z.string(), status: z.literal("error"), error: z.string() }),
+]);
+export type QuoteItem = z.infer<typeof quoteSchema>;
+export const quotesApi = {
+  get: (symbols: string[], signal?: AbortSignal) => fetchEnvelope(`/api/quotes?symbols=${symbols.map(encodeURIComponent).join(",")}`, z.array(quoteSchema), { signal }),
+};

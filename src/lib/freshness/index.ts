@@ -29,3 +29,11 @@ export type FreshnessMeta = Pick<WithFreshness<unknown>, "freshness" | "asOf" | 
 export function freshnessMeta(envelope: WithFreshness<unknown>): FreshnessMeta {
   return { freshness: envelope.freshness, asOf: envelope.asOf, period: envelope.period, source: envelope.source };
 }
+
+/** Order from freshest to least fresh. */
+const RANK: Record<Freshness, number> = { LIVE: 0, DELAYED: 1, EOD: 2, HISTORICAL: 3, STALE: 4, UNAVAILABLE: 5 };
+
+/** A combined view is only as fresh as its stalest part; with no parts it is UNAVAILABLE. */
+export function leastFresh(states: Freshness[]): Freshness {
+  return states.reduce<Freshness | null>((worst, state) => (worst === null || RANK[state] > RANK[worst] ? state : worst), null) ?? "UNAVAILABLE";
+}

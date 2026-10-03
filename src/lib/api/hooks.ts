@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query/keys";
-import { marketApi, overviewApi } from "./market";
+import { marketApi, overviewApi, quotesApi } from "./market";
 
 export const useHistory = (symbol: string, query: { frame?: string; limit?: number } = {}) =>
   useQuery({ queryKey: queryKeys.history(symbol, query.frame, query.limit), queryFn: ({ signal }) => marketApi.history(symbol, query, signal) });
@@ -17,3 +17,5 @@ export const useNews = () => useQuery({ queryKey: queryKeys.news(), queryFn: ({ 
 /** Company name for a ticker from search results (exact symbol match only). */
 export const useCompanyName = (symbol: string) =>
   useQuery({ queryKey: queryKeys.search(symbol), queryFn: ({ signal }) => marketApi.search(symbol, signal), select: (envelope) => envelope.data.find((row) => row.symbol === symbol.toUpperCase())?.companyName ?? null });
+export const useQuotes = (symbols: string[]) =>
+  useQuery({ queryKey: queryKeys.quotes(symbols), queryFn: ({ signal }) => quotesApi.get(symbols, signal), enabled: symbols.length > 0 });

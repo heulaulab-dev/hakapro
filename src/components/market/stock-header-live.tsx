@@ -4,21 +4,31 @@ import { DataState } from "@/components/feedback/data-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCompanyName, useHistory } from "@/lib/api/hooks";
 import { freshnessMeta } from "@/lib/freshness";
+import type { ViewerSummary } from "@/components/layout/types";
 import { StockHeader } from "./stock-header";
+import { WatchButton } from "./watch-button";
 
 /** Shared history query: same key as the overview's chart and metrics, so it is fetched once. */
 export const OVERVIEW_HISTORY = { frame: "daily", limit: 250 } as const;
 
-export function StockHeaderLive({ symbol }: { symbol: string }) {
+export function StockHeaderLive({ symbol, viewer }: { symbol: string; viewer: ViewerSummary }) {
   const history = useHistory(symbol, OVERVIEW_HISTORY);
   const name = useCompanyName(symbol);
   // When price data is unavailable the page body explains why; the header just names the stock.
-  if (history.isError) return <span data-testid="stock-header-symbol" className="ticker text-xl font-semibold">{symbol}</span>;
+  const watch = <WatchButton symbol={symbol} viewer={viewer} />;
+  if (history.isError) {
+    return (
+      <div className="flex items-center justify-between gap-3">
+        <span data-testid="stock-header-symbol" className="ticker text-xl font-semibold">{symbol}</span>
+        {watch}
+      </div>
+    );
+  }
   return (
     <DataState query={history} compact skeleton={<Skeleton className="h-16 w-72" />} isEmpty={(envelope) => envelope.data.rows.length === 0}>
       {(envelope) => {
         const latest = envelope.data.rows.at(-1)!;
-        return <StockHeader symbol={symbol} name={name.data} price={latest.close} change={latest.change} changePercent={latest.changePercent} meta={freshnessMeta(envelope)} />;
+        return <StockHeader symbol={symbol} name={name.data} price={latest.close} change={latest.change} changePercent={latest.changePercent} meta={freshnessMeta(envelope)} actions={watch} />;
       }}
     </DataState>
   );
