@@ -116,23 +116,23 @@ export function AuthForm({ kind, mode, next, callbackError }: { kind: AuthFormKi
         {(kind === "signup" || kind === "reset") && (
           <PasswordField id="confirm" label={t("confirmPassword")} value={confirm} onChange={setConfirm} autoComplete="new-password" disabled={disabled} />
         )}
-        <Button type="submit" disabled={disabled} data-testid="auth-submit">{submitLabel}</Button>
+        <Button type="submit" variant="primary" size="lg" disabled={disabled} data-testid="auth-submit">{submitLabel}</Button>
       </form>
       {kind === "login" && (
         <>
           <div className="flex items-center gap-3 text-xs text-muted-foreground"><span className="h-px flex-1 bg-border" />{t("or")}<span className="h-px flex-1 bg-border" /></div>
-          <Button variant="outline" onClick={google} disabled={disabled}>{t("google")}</Button>
+          <Button variant="outline" size="lg" onClick={google} disabled={disabled}>{t("google")}</Button>
         </>
       )}
       <div className="flex flex-col gap-1 text-xs text-muted-foreground">
         {kind === "login" && (
           <>
-            <Link href="/forgot-password" className="text-primary hover:underline">{t("forgotLink")}</Link>
-            <span>{t("noAccount")} <Link href="/signup" className="text-primary hover:underline">{t("signUp")}</Link></span>
+            <Link href="/forgot-password" className="text-link hover:underline">{t("forgotLink")}</Link>
+            <span>{t("noAccount")} <Link href="/signup" className="text-link hover:underline">{t("signUp")}</Link></span>
           </>
         )}
-        {kind === "signup" && <span>{t("haveAccount")} <Link href="/login" className="text-primary hover:underline">{t("signIn")}</Link></span>}
-        {(kind === "forgot" || kind === "reset") && <Link href="/login" className="text-primary hover:underline">{t("backToSignIn")}</Link>}
+        {kind === "signup" && <span>{t("haveAccount")} <Link href="/login" className="text-link hover:underline">{t("signIn")}</Link></span>}
+        {(kind === "forgot" || kind === "reset") && <Link href="/login" className="text-link hover:underline">{t("backToSignIn")}</Link>}
       </div>
     </div>
   );

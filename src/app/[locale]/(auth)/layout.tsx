@@ -9,7 +9,7 @@ export default function AuthLayout({ children }: LayoutProps<"/[locale]">) {
           <Link href="/" className="ticker text-sm font-semibold tracking-wider">HAKAPRO</Link>
           <LocaleSwitch />
         </div>
-        <section className="rounded-lg border border-border bg-card p-6">{children}</section>
+        <section className="rounded-xl border border-border p-6">{children}</section>
       </div>
     </main>
   );

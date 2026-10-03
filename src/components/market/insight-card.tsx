@@ -21,17 +21,17 @@ export function InsightCard({ title, description, observations, meta, footer, cl
   className?: string;
 }) {
   return (
-    <section className={cn("flex flex-col gap-3 rounded-lg border border-border bg-card p-4", className)}>
+    <section className={cn("flex flex-col gap-3 rounded-xl border border-border p-4", className)}>
       <SectionHeader as="h3" title={title} description={description} meta={meta} />
       <ul className="flex flex-col gap-2">
         {observations.map((observation) => (
-          <li key={observation.id} className="flex items-start gap-2 text-sm">
+          <li key={observation.id} className="p-style flex items-start gap-2">
             <span aria-hidden className={cn("mt-1.5 size-1.5 shrink-0 rounded-full", DOT[observation.tone ?? "neutral"])} />
             <span>{observation.text}</span>
           </li>
         ))}
       </ul>
-      {footer && <div className="border-t border-border pt-3 text-xs text-muted-foreground">{footer}</div>}
+      {footer && <div className="caption-style border-t border-border px-4 py-3 text-subtle">{footer}</div>}
     </section>
   );
 }

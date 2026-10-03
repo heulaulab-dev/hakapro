@@ -59,11 +59,11 @@ test.describe("desktop", () => {
 
   test("locale switch keeps the current page", async ({ page }) => {
     await page.goto("/id/stock/BBCA/chart");
-    await expect(page.getByTestId("stock-tab-chart")).toHaveText("Grafik");
+    await expect(page.getByTestId("stock-tab-chart")).toHaveAccessibleName("Grafik");
     await page.getByTestId("locale-switch").click();
     await page.getByTestId("locale-en").click();
     await expect(page).toHaveURL(/\/en\/stock\/BBCA\/chart$/);
-    await expect(page.getByTestId("stock-tab-chart")).toHaveText("Chart");
+    await expect(page.getByTestId("stock-tab-chart")).toHaveAccessibleName("Chart");
   });
 
   test("theme and density switches apply immediately and persist", async ({ page }) => {

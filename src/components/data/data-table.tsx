@@ -69,17 +69,17 @@ export function DataTable<T>({ columns, data, meta, caption, getRowId, initialSo
   const colSpan = table.getVisibleLeafColumns().length;
 
   return (
-    <div data-testid={testId} className="flex flex-col overflow-hidden rounded-lg border border-border bg-card">
+    <div data-testid={testId} className="flex flex-col overflow-hidden rounded-xl border border-border">
       <div className="flex flex-wrap items-center gap-2 border-b border-border px-cell-x py-2">
         {toolbar}
         <div className="ml-auto flex items-center gap-2">
-          <span className="num text-xs text-muted-foreground" data-testid="row-count">{t("rows", { count: rows.length })}</span>
+          <span className="caption-style num text-subtle" data-testid="row-count">{t("rows", { count: rows.length })}</span>
           <FreshnessBadge {...meta} />
         </div>
       </div>
       <div ref={scrollRef} className="overflow-auto" style={{ maxHeight }}>
         <table aria-label={caption} aria-rowcount={rows.length + 1} className="w-full border-separate border-spacing-0 text-data">
-          <thead className="sticky top-0 z-10 bg-card">
+          <thead className="sticky top-0 z-10 bg-background">
             {table.getHeaderGroups().map((group) => (
               <tr key={group.id}>
                 {group.headers.map((header) => {
@@ -90,14 +90,14 @@ export function DataTable<T>({ columns, data, meta, caption, getRowId, initialSo
                       key={header.id}
                       scope="col"
                       aria-sort={sorted === "asc" ? "ascending" : sorted === "desc" ? "descending" : undefined}
-                      className={cn("border-b border-border px-cell-x py-cell-y text-xs font-medium whitespace-nowrap text-muted-foreground", numeric ? "text-right" : "text-left", header.column.columnDef.meta?.className)}
+                      className={cn("caption-style h-[38px] border-b border-border px-3 font-normal whitespace-nowrap text-subtle", numeric ? "text-right" : "text-left", header.column.columnDef.meta?.className)}
                     >
                       {header.isPlaceholder ? null : header.column.getCanSort() ? (
                         <button
                           type="button"
                           onClick={header.column.getToggleSortingHandler()}
                           title={sorted === "asc" ? t("sortDescending") : t("sortAscending")}
-                          className={cn("inline-flex items-center gap-1 hover:text-foreground", numeric && "flex-row-reverse")}
+                          className={cn("inline-flex items-center gap-1 outline-none hover:text-soft focus-visible:text-foreground", numeric && "flex-row-reverse")}
                         >
                           {flexRender(header.column.columnDef.header, header.getContext())}
                           {sorted === "asc" ? <ArrowUp className="size-3" /> : sorted === "desc" ? <ArrowDown className="size-3" /> : <ArrowUpDown className="size-3 opacity-40" />}
@@ -121,11 +121,11 @@ export function DataTable<T>({ columns, data, meta, caption, getRowId, initialSo
             {items.map((item) => {
               const row = rows[item.index];
               return (
-                <tr key={row.id} ref={virtualizer.measureElement} data-index={item.index} aria-rowindex={item.index + 2} className="h-row hover:bg-accent/50">
+                <tr key={row.id} ref={virtualizer.measureElement} data-index={item.index} aria-rowindex={item.index + 2} className="h-row transition-colors hover:bg-white/4">
                   {row.getVisibleCells().map((cell) => (
                     <td
                       key={cell.id}
-                      className={cn("border-b border-border px-cell-x py-cell-y align-middle", cell.column.columnDef.meta?.numeric && "ticker text-right whitespace-nowrap", cell.column.columnDef.meta?.className)}
+                      className={cn("border-b border-border px-3 py-cell-y align-middle", cell.column.columnDef.meta?.numeric && "ticker text-right whitespace-nowrap", cell.column.columnDef.meta?.className)}
                     >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </td>

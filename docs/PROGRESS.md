@@ -175,3 +175,18 @@
 - `/[locale]/alerts`: create alerts (ticker, measure, condition, threshold in the measure's own unit), turn them on/off, delete them, and list recent triggered events (`alert_events` joined to `alerts`, RLS-scoped).
 - Values are formatted per metric (IDR / % / shares / ×). The DB trigger's English notification text is deliberately not displayed.
 - Reached from Cmd+K, the account menu, mobile More, and a bell on stock headers (`?symbol=` prefill). Not in the 4-item sidebar, per the init prompt.
+
+## Design system → heulaulab-dashboard (2026-10-03, user request)
+The user kept the layout and asked for heulaulab-dashboard's design system:
+- `globals.css` holds the dashboard's tokens verbatim: reference CRM dark palette, `--line-strong`/`--subtle`/`--soft`/…, 10 tag tones, power easings, `shadow-overlay`, the 16/14/12 type utilities (`h1-style`, `eyebrow-style`, `caption-style`, …). The HAKAPRO semantic aliases (positive/negative/info/link…) map onto them.
+- UI components copied from the dashboard: button (raised pills), input, tabs (underline trigger + TabLabel), dropdown-menu, sheet (plus a HAKAPRO `bottom` side), dialog, tooltip, command (plus a `CommandDialog` matching their command search), select, popover, switch, checkbox, separator, scroll-area, label. Kit: icons, tag, segmented, meter, sparkline. `cn` now uses clsx + tailwind-merge, as there.
+- HAKAPRO components restyled to match:
+  - Panel (their Section: rounded-xl, 48px eyebrow header) on Home, Movers, Screener and the Ownership tab; ChartCard and InsightCard use the same header bar.
+  - Stat tiles (`line-strong` border, 22px semibold value); StatusBadge uses the Tag palette; FreshnessBadge uses the StatusPill shape.
+  - ToggleGroup uses the Segmented style; DataTable uses 38px caption headers and 42px rows.
+  - Sidebar items, logo block and eyebrow sections; raised-pill search; thin 1.6 icon strokes.
+  - Prices and tickers use Geist Sans tabular figures (the reference has no monospace).
+- **Exceptions, documented in `globals.css`:**
+  - Chart mark colors keep the validated up/down and categorical steps, because the reference's green/red and pastel tag colors fail the colorblind/lightness checks for marks.
+  - The `.light` theme is a HAKAPRO companion; the reference is dark-only.
+  - Heulau Lab brand assets (logo, pink accent, Syne) are not used.

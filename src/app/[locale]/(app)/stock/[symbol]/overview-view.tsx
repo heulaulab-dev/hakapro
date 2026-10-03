@@ -108,7 +108,7 @@ export function OverviewView({ symbol }: { symbol: string }) {
         <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3" data-testid="deep-dive">
           {STOCK_TABS.filter((tab) => tab !== "overview").map((tab) => (
             <li key={tab}>
-              <Link href={stockHref(symbol, tab)} className="group flex items-center justify-between gap-3 rounded-lg border border-border bg-card px-4 py-3 transition-colors hover:bg-accent/40">
+              <Link href={stockHref(symbol, tab)} className="group flex items-center justify-between gap-3 rounded-xl border border-border px-4 py-3 transition-colors hover:bg-accent/40">
                 <span className="flex flex-col">
                   <span className="text-sm font-medium">{t(`stockTabs.${tab}`)}</span>
                   <span className="text-xs text-muted-foreground">{t(`overview.hints.${tab}`)}</span>

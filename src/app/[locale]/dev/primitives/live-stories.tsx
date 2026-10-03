@@ -49,7 +49,7 @@ export function LiveStories() {
         ]}
       />
       <div className="grid gap-4 md:grid-cols-2">
-        <div className="flex flex-col gap-2 rounded-lg border border-border bg-card p-4">
+        <div className="flex flex-col gap-2 rounded-xl border border-border p-4">
           <h3 className="text-sm font-semibold">{t("dev.statusTones")}</h3>
           <div className="flex flex-wrap gap-2">
             <StatusBadge tone="positive">{t("chart.netBuy")}</StatusBadge>
@@ -197,7 +197,7 @@ function MarketCapStory() {
         const needle = q.trim().toLowerCase();
         const rows = envelope.data.rows.filter((row) => !needle || row.symbol.toLowerCase().includes(needle) || row.name.toLowerCase().includes(needle));
         return (
-          <div className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4" data-testid="marketcap-story">
+          <div className="flex flex-col gap-3 rounded-xl border border-border p-4" data-testid="marketcap-story">
             <SectionHeader as="h3" title={t("dev.marketCapList")} meta={freshnessMeta(envelope)} />
             <FilterBar active={Boolean(q)} onReset={() => void setQ(null)}>
               <FilterSearch />
@@ -272,7 +272,7 @@ function NotRecordedStory() {
   const t = useTranslations("dev");
   const query = useHistory("SOCI");
   return (
-    <div className="flex flex-col gap-2 rounded-lg border border-border bg-card p-4" data-testid="not-recorded-story">
+    <div className="flex flex-col gap-2 rounded-xl border border-border p-4" data-testid="not-recorded-story">
       <h3 className="text-sm font-semibold">{t("notRecordedDemo")}</h3>
       <DataState query={query} compact>{() => null}</DataState>
     </div>

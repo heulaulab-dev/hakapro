@@ -11,7 +11,7 @@ import { routing } from "@/i18n/routing";
 import { DENSITY_COOKIE, parseDensity, parseTheme, THEME_COOKIE } from "@/lib/preferences";
 import "../globals.css";
 
-const CLIENT_NAMESPACES = ["freshness", "locale", "theme", "density", "nav", "stockTabs", "header", "palette", "account", "dataState", "table", "chart", "metrics", "criteria", "strategy", "insiders", "broker", "filters", "drawer", "dev", "disclaimer", "home", "strategies", "overview", "auth", "watchlist", "flow", "financials", "screener", "movers", "news", "ownershipChanges", "stockChart", "stockInsiders", "stockHistory", "stockOwnership", "errors", "alerts"] as const;
+const CLIENT_NAMESPACES = ["app", "freshness", "locale", "theme", "density", "nav", "stockTabs", "header", "palette", "account", "dataState", "table", "chart", "metrics", "criteria", "strategy", "insiders", "broker", "filters", "drawer", "dev", "disclaimer", "home", "strategies", "overview", "auth", "watchlist", "flow", "financials", "screener", "movers", "news", "ownershipChanges", "stockChart", "stockInsiders", "stockHistory", "stockOwnership", "errors", "alerts"] as const;
 
 export async function generateMetadata({ params }: LayoutProps<"/[locale]">): Promise<Metadata> {
   const { locale } = await params;

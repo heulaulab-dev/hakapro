@@ -11,6 +11,7 @@ import { DataState } from "@/components/feedback/data-state";
 import { EmptyState } from "@/components/feedback/empty-state";
 import { ResearchDisclaimer } from "@/components/feedback/research-disclaimer";
 import { stockHref } from "@/components/layout/nav-config";
+import { Panel } from "@/components/layout/panel";
 import { SectionHeader } from "@/components/layout/section-header";
 import type { ViewerSummary } from "@/components/layout/types";
 import { Button } from "@/components/ui/button";
@@ -70,7 +71,7 @@ export function ScreenerView({ viewer }: { viewer: ViewerSummary }) {
 
   const fields = resultFields(applied ?? []);
   const columns = useMemo<ColumnDef<ScreenResult["rows"][number], unknown>[]>(() => [
-    { id: "symbol", accessorKey: "symbol", header: tCols("symbol"), meta: { className: "w-20" }, cell: ({ row }) => <Link href={stockHref(row.original.symbol)} className="ticker font-medium text-primary hover:underline">{row.original.symbol}</Link> },
+    { id: "symbol", accessorKey: "symbol", header: tCols("symbol"), meta: { className: "w-20" }, cell: ({ row }) => <Link href={stockHref(row.original.symbol)} className="ticker font-medium text-link hover:underline">{row.original.symbol}</Link> },
     { id: "name", accessorKey: "name", header: tCols("company"), cell: ({ row }) => <span className="block max-w-56 truncate text-muted-foreground">{row.original.name}</span> },
     ...fields.map((field): ColumnDef<ScreenResult["rows"][number], unknown> => ({
       id: field, accessorFn: (row) => row[field] ?? null, header: t(`fields.${field}`), meta: { numeric: true },
@@ -83,7 +84,7 @@ export function ScreenerView({ viewer }: { viewer: ViewerSummary }) {
     <div className="flex flex-col gap-section p-4 md:p-6" data-testid="screener-view">
       <SectionHeader as="h1" title={t("title")} description={t("intro")} />
       <div className="grid gap-4 xl:grid-cols-[1fr_18rem]">
-        <form onSubmit={run} className="flex flex-col gap-2 rounded-lg border border-border bg-card p-4" data-testid="screen-builder">
+        <form onSubmit={run} className="flex flex-col gap-2 rounded-xl border border-border p-4" data-testid="screen-builder">
           {draft.map((condition, index) => (
             <div key={index} className="flex flex-wrap items-center gap-2" data-testid={`condition-${index}`}>
               {index === 0 ? <span className="w-14 text-xs text-muted-foreground" /> : (
@@ -105,13 +106,12 @@ export function ScreenerView({ viewer }: { viewer: ViewerSummary }) {
           {error && <p role="alert" className="text-xs text-negative">{error}</p>}
           <div className="flex flex-wrap items-center gap-2 pt-1">
             <Button type="button" variant="outline" size="sm" disabled={draft.length >= 20} onClick={() => setDraft((current) => [...current, { field: "price", operator: "GT", value: 0, connective: "AND" }])}><Plus />{t("addCondition")}</Button>
-            <Button type="submit" size="sm" data-testid="screen-run"><Play />{t("run")}</Button>
+            <Button type="submit" size="sm" variant="primary" data-testid="screen-run"><Play />{t("run")}</Button>
           </div>
           <p className="text-[11px] text-muted-foreground">{t("ratioNote")}</p>
         </form>
 
-        <section className="flex flex-col gap-2 rounded-lg border border-border bg-card p-4" data-testid="saved-screens">
-          <h2 className="text-sm font-semibold">{t("saved")}</h2>
+        <Panel testId="saved-screens" title={t("saved")}>
           {viewer.kind !== "user" ? <EmptyState compact title={t("savedSignIn")} /> : (
             <>
               <form className="flex gap-2" onSubmit={(event) => { event.preventDefault(); if (name.trim() && conditionsValid(draft)) save.mutate({ name: name.trim().slice(0, 80), conditions: draft }, { onSuccess: () => setName(""), onError: () => setError(t("saveFailed")) }); }}>
@@ -122,14 +122,14 @@ export function ScreenerView({ viewer }: { viewer: ViewerSummary }) {
               <ul className="flex flex-col">
                 {saved.data?.map((screen) => (
                   <li key={screen.id} className="flex items-center gap-1">
-                    <button type="button" className="min-w-0 flex-1 truncate rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent" onClick={() => { setDraft(screen.conditions); void setApplied(screen.conditions); }}>{screen.name}</button>
+                    <button type="button" className="lead-style min-w-0 flex-1 truncate rounded-lg px-2 py-2 text-left transition-colors hover:bg-white/4" onClick={() => { setDraft(screen.conditions); void setApplied(screen.conditions); }}>{screen.name}</button>
                     <Button variant="ghost" size="icon" aria-label={`${t("delete")} ${screen.name}`} onClick={() => remove.mutate(screen.id)}><Trash2 /></Button>
                   </li>
                 ))}
               </ul>
             </>
           )}
-        </section>
+        </Panel>
       </div>
 
       {applied && conditionsValid(applied) && (

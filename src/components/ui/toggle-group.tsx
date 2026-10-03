@@ -1,88 +1,38 @@
 "use client"
 
 import * as React from "react"
-import { type VariantProps } from "class-variance-authority"
-import { cn } from "cn"
 import { ToggleGroup as ToggleGroupPrimitive } from "radix-ui"
+import { cn } from "@/lib/utils"
 
-import { toggleVariants } from "@/components/ui/toggle"
+/**
+ * Radix ToggleGroup wearing heulaulab-dashboard's Segmented style (raised pill track, active item
+ * on --muted). `variant`/`size` are accepted for API compatibility; the look is fixed by the system.
+ */
+type Compat = { variant?: string; size?: string }
 
-const ToggleGroupContext = React.createContext<
-  VariantProps<typeof toggleVariants> & {
-    spacing?: number
-    orientation?: "horizontal" | "vertical"
-  }
->({
-  size: "default",
-  variant: "default",
-  spacing: 2,
-  orientation: "horizontal",
-})
+const raised =
+  "shadow-[0px_0px_0px_1px_rgba(0,0,0,0.4),inset_0px_1px_0px_0px_rgba(255,255,255,0.1),inset_0px_0px_0px_1px_rgba(255,255,255,0.06)]"
 
-function ToggleGroup({
-  className,
-  variant,
-  size,
-  spacing = 2,
-  orientation = "horizontal",
-  children,
-  ...props
-}: React.ComponentProps<typeof ToggleGroupPrimitive.Root> &
-  VariantProps<typeof toggleVariants> & {
-    spacing?: number
-    orientation?: "horizontal" | "vertical"
-  }) {
+function ToggleGroup({ className, variant: _variant, size: _size, ...props }: React.ComponentProps<typeof ToggleGroupPrimitive.Root> & Compat) {
   return (
     <ToggleGroupPrimitive.Root
       data-slot="toggle-group"
-      data-variant={variant}
-      data-size={size}
-      data-spacing={spacing}
-      data-orientation={orientation}
-      style={{ "--gap": spacing } as React.CSSProperties}
-      className={cn(
-        "group/toggle-group flex w-fit flex-row items-center gap-[--spacing(var(--gap))] rounded-lg data-[size=sm]:rounded-[min(var(--radius-md),10px)] data-vertical:flex-col data-vertical:items-stretch",
-        className
-      )}
+      className={cn("inline-flex w-fit items-center gap-0.5 rounded-full bg-secondary p-0.5", raised, className)}
       {...props}
-    >
-      <ToggleGroupContext.Provider
-        value={{ variant, size, spacing, orientation }}
-      >
-        {children}
-      </ToggleGroupContext.Provider>
-    </ToggleGroupPrimitive.Root>
+    />
   )
 }
 
-function ToggleGroupItem({
-  className,
-  children,
-  variant = "default",
-  size = "default",
-  ...props
-}: React.ComponentProps<typeof ToggleGroupPrimitive.Item> &
-  VariantProps<typeof toggleVariants>) {
-  const context = React.useContext(ToggleGroupContext)
-
+function ToggleGroupItem({ className, variant: _variant, size: _size, ...props }: React.ComponentProps<typeof ToggleGroupPrimitive.Item> & Compat) {
   return (
     <ToggleGroupPrimitive.Item
       data-slot="toggle-group-item"
-      data-variant={context.variant || variant}
-      data-size={context.size || size}
-      data-spacing={context.spacing}
       className={cn(
-        "shrink-0 group-data-[spacing=0]/toggle-group:rounded-none group-data-[spacing=0]/toggle-group:px-2 focus:z-10 focus-visible:z-10 group-data-[spacing=0]/toggle-group:has-data-[icon=inline-end]:pr-1.5 group-data-[spacing=0]/toggle-group:has-data-[icon=inline-start]:pl-1.5 group-data-horizontal/toggle-group:data-[spacing=0]:first:rounded-l-lg group-data-vertical/toggle-group:data-[spacing=0]:first:rounded-t-lg group-data-horizontal/toggle-group:data-[spacing=0]:last:rounded-r-lg group-data-vertical/toggle-group:data-[spacing=0]:last:rounded-b-lg group-data-horizontal/toggle-group:data-[spacing=0]:data-[variant=outline]:border-l-0 group-data-vertical/toggle-group:data-[spacing=0]:data-[variant=outline]:border-t-0 group-data-horizontal/toggle-group:data-[spacing=0]:data-[variant=outline]:first:border-l group-data-vertical/toggle-group:data-[spacing=0]:data-[variant=outline]:first:border-t",
-        toggleVariants({
-          variant: context.variant || variant,
-          size: context.size || size,
-        }),
-        className
+        "cursor-pointer rounded-full px-2.5 py-[6px] text-[12px] leading-none text-subtle outline-none transition-[background-color,color] duration-150 ease-power3-out hover:text-soft focus-visible:ring-2 focus-visible:ring-ring/60 data-[state=on]:bg-muted data-[state=on]:text-foreground data-[state=on]:shadow-[inset_0px_1px_0px_0px_rgba(255,255,255,0.08)]",
+        className,
       )}
       {...props}
-    >
-      {children}
-    </ToggleGroupPrimitive.Item>
+    />
   )
 }
 

@@ -2,13 +2,13 @@
 
 import { BarChart3, Bookmark, ChevronRight, LogIn } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import type { ReactNode } from "react";
 import { CriteriaList } from "@/components/data/screener-table";
 import { StockRow } from "@/components/data/stock-row";
 import { DataState } from "@/components/feedback/data-state";
 import { EmptyState } from "@/components/feedback/empty-state";
 import { ResearchDisclaimer } from "@/components/feedback/research-disclaimer";
 import type { ViewerSummary } from "@/components/layout/types";
+import { Panel } from "@/components/layout/panel";
 import { SectionHeader } from "@/components/layout/section-header";
 import { ChangeValue } from "@/components/market/change-value";
 import { InsightCard } from "@/components/market/insight-card";
@@ -19,10 +19,6 @@ import { useWatchlist } from "@/lib/watchlist";
 import { QuoteList } from "@/components/data/quote-list";
 import { freshnessMeta } from "@/lib/freshness";
 import { formatDate, formatValue, type Locale } from "@/lib/format";
-
-function Panel({ children, testId, className }: { children: ReactNode; testId: string; className?: string }) {
-  return <section data-testid={testId} className={`flex min-w-0 flex-col gap-3 rounded-lg border border-border bg-card p-4 ${className ?? ""}`}>{children}</section>;
-}
 
 /** Home answers "what matters now" — each block shows its own freshness or why it can't. */
 export function HomeView({ viewer }: { viewer: ViewerSummary }) {
@@ -37,13 +33,10 @@ export function HomeView({ viewer }: { viewer: ViewerSummary }) {
       <SectionHeader as="h1" title={t("home.title")} description={t("home.subtitle")} />
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Panel testId="home-condition">
-          <DataState query={strategies} compact>
-            {(envelope) => <InsightCard className="border-0 p-0" title={t("home.marketCondition")} description={envelope.data.screenerVersion ?? undefined} observations={screenContextObservations(envelope.data, t, locale)} meta={freshnessMeta(envelope)} />}
-          </DataState>
-        </Panel>
-        <Panel testId="home-indices">
-          <SectionHeader as="h3" title={t("home.indices")} meta={market.data ? freshnessMeta(market.data) : undefined} />
+        <DataState query={strategies} compact>
+          {(envelope) => <div data-testid="home-condition"><InsightCard className="h-full" title={t("home.marketCondition")} description={envelope.data.screenerVersion ?? undefined} observations={screenContextObservations(envelope.data, t, locale)} meta={freshnessMeta(envelope)} /></div>}
+        </DataState>
+        <Panel testId="home-indices" title={t("home.indices")} meta={market.data ? freshnessMeta(market.data) : undefined}>
           <DataState query={market} compact>
             {(envelope) => (
               <div className="flex flex-col gap-2">
@@ -63,22 +56,16 @@ export function HomeView({ viewer }: { viewer: ViewerSummary }) {
         </Panel>
       </div>
 
-      <Panel testId="home-strategies">
-        <SectionHeader
-          as="h2"
-          title={t("home.strategies")}
-          description={t("home.strategiesHint")}
-          meta={strategies.data ? freshnessMeta(strategies.data) : undefined}
-          actions={<Link href="/discover/strategies" className="flex items-center gap-1 text-xs text-primary hover:underline" data-testid="home-strategies-all">{t("home.viewAll")}<ChevronRight className="size-3.5" /></Link>}
-        />
+      <Panel testId="home-strategies" title={t("home.strategies")} description={t("home.strategiesHint")} meta={strategies.data ? freshnessMeta(strategies.data) : undefined}
+        actions={<Link href="/discover/strategies" className="caption-style flex items-center gap-1 text-subtle transition-colors hover:text-foreground" data-testid="home-strategies-all">{t("home.viewAll")}<ChevronRight className="size-3" /></Link>}>
         <DataState query={strategies} compact isEmpty={(envelope) => envelope.data.strategies.length === 0}>
           {(envelope) => (
             <div className="flex flex-col gap-4">
               {envelope.data.strategies.slice(0, 3).map((strategy) => (
                 <div key={strategy.id} className="flex flex-col gap-1">
-                  <Link href={`/discover/strategies/${strategy.id}`} className="flex items-center justify-between gap-2 text-sm font-medium hover:underline" data-testid={`home-strategy-${strategy.id}`}>
+                  <Link href={`/discover/strategies/${strategy.id}`} className="lead-style flex items-center justify-between gap-2 font-medium hover:underline" data-testid={`home-strategy-${strategy.id}`}>
                     {strategy.name}
-                    <span className="text-xs font-normal text-muted-foreground">{t("strategy.matches", { count: strategy.matches.length })}</span>
+                    <span className="caption-style font-normal text-subtle">{t("strategy.matches", { count: strategy.matches.length })}</span>
                   </Link>
                   {strategy.matches.slice(0, 5).map((match) => (
                     <StockRow key={match.symbol} symbol={match.symbol} name={match.name} trailing={<span className="hidden sm:block"><CriteriaList criteria={match.criteria} /></span>} />
@@ -92,8 +79,7 @@ export function HomeView({ viewer }: { viewer: ViewerSummary }) {
       </Panel>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <Panel testId="home-movers">
-          <SectionHeader as="h3" title={t("home.movers")} meta={market.data ? freshnessMeta(market.data) : undefined} />
+        <Panel testId="home-movers" title={t("home.movers")} meta={market.data ? freshnessMeta(market.data) : undefined}>
           <DataState query={market} compact isEmpty={(envelope) => envelope.data.movers.length === 0}>
             {(envelope) => (
               <div className="flex flex-col">
@@ -104,19 +90,16 @@ export function HomeView({ viewer }: { viewer: ViewerSummary }) {
             )}
           </DataState>
         </Panel>
-        <Panel testId="home-sectors">
-          <SectionHeader as="h3" title={t("home.sectors")} />
+        <Panel testId="home-sectors" title={t("home.sectors")}>
           {/* No Phase 1 source provides per-sector performance; say so rather than invent it. */}
           <EmptyState compact icon={<BarChart3 />} title={t("home.sectorsUnavailable")} />
         </Panel>
-        <Panel testId="home-watchlist">
-          <SectionHeader as="h3" title={t("home.watchlist")} />
+        <Panel testId="home-watchlist" title={t("home.watchlist")}>
           <WatchlistActivity viewer={viewer} />
         </Panel>
       </div>
 
-      <Panel testId="home-news">
-        <SectionHeader as="h2" title={t("home.news")} meta={news.data ? freshnessMeta(news.data) : undefined} />
+      <Panel testId="home-news" title={t("home.news")} meta={news.data ? freshnessMeta(news.data) : undefined}>
         <DataState query={news} compact isEmpty={(envelope) => envelope.data.length === 0}>
           {(envelope) => (
             <ul className="flex flex-col divide-y divide-border">

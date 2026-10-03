@@ -68,6 +68,19 @@
   --color-series-5: var(--series-5);
   --color-series-6: var(--series-6);
   --color-surface-raised: var(--surface-raised);
+  --color-link: var(--link);
+  --color-line-strong: var(--line-strong);
+  --color-subtle: var(--subtle);
+  --color-faint: var(--faint);
+  --color-soft: var(--soft);
+  --color-chip: var(--chip);
+  --color-icon: var(--icon);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-trend: var(--trend);
+  --color-trend-muted: var(--trend-muted);
+  --color-track: var(--track);
+  --color-status: var(--status);
 
   /* Density-driven spacing and type */
   --spacing-row: var(--density-row-height);
@@ -76,148 +89,213 @@
   --spacing-section: var(--density-section-gap);
   --text-data: var(--density-data-font);
 
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: 1rem;
+  --radius-3xl: 1.5rem;
+
+  --shadow-overlay: 0px 16px 40px 0px #00000080, 0px 0px 0px 1px #0e0e0e;
+
+  --ease-power1-in: cubic-bezier(0.11, 0, 0.5, 0);
+  --ease-power1-out: cubic-bezier(0.5, 1, 0.89, 1);
+  --ease-power1-in-out: cubic-bezier(0.45, 0, 0.55, 1);
+  --ease-power2-in: cubic-bezier(0.32, 0, 0.67, 0);
+  --ease-power2-out: cubic-bezier(0.33, 1, 0.68, 1);
+  --ease-power2-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-power3-in: cubic-bezier(0.5, 0, 0.75, 0);
+  --ease-power3-out: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-power3-in-out: cubic-bezier(0.76, 0, 0.24, 1);
+  --ease-power4-in: cubic-bezier(0.64, 0, 0.78, 0);
+  --ease-power4-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-power4-in-out: cubic-bezier(0.83, 0, 0.17, 1);
+  --ease-smooth-in-out: cubic-bezier(0.7, 0, 0, 1);
 }
 
-/* Light theme */
+/*
+ * Design system: heulaulab-dashboard (tokens copied verbatim from its reference CRM).
+ * Dark is the primary theme (:root and .dark). `.light` is a HAKAPRO companion theme derived from
+ * the same structure; the reference itself is dark-only.
+ * HAKAPRO semantic aliases (positive/negative/info/…) point at reference tokens. Chart mark colors
+ * (--chart-up/down, --series-*) are the one exception: the reference's green/red and pastel tag
+ * colors fail colorblind/lightness checks as chart marks, so validated steps are used for marks only.
+ */
 :root,
-.light {
-  color-scheme: light;
-  --background: oklch(0.985 0.002 250);
-  --foreground: oklch(0.2 0.012 255);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.2 0.012 255);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.2 0.012 255);
-  --surface-raised: oklch(0.965 0.004 250);
-  --primary: oklch(0.5 0.13 245);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.955 0.005 250);
-  --secondary-foreground: oklch(0.25 0.012 255);
-  --muted: oklch(0.955 0.005 250);
-  --muted-foreground: oklch(0.48 0.014 255);
-  --accent: oklch(0.945 0.008 245);
-  --accent-foreground: oklch(0.25 0.012 255);
-  --destructive: oklch(0.55 0.2 25);
-  --border: oklch(0.9 0.006 250);
-  --input: oklch(0.88 0.006 250);
-  --ring: oklch(0.55 0.12 245);
-
-  --positive: oklch(0.52 0.13 152);
-  --positive-muted: oklch(0.52 0.13 152 / 12%);
-  --negative: oklch(0.55 0.19 25);
-  --negative-muted: oklch(0.55 0.19 25 / 12%);
-  --warning: oklch(0.58 0.13 70);
-  --warning-muted: oklch(0.75 0.14 75 / 18%);
-  --info: oklch(0.52 0.12 235);
-  --info-muted: oklch(0.52 0.12 235 / 12%);
-  --neutral: oklch(0.55 0.01 255);
-
-  /*
-   * Chart marks for polarity (up/down, net buy/sell). Validated with the dataviz palette checker:
-   * lightness band, chroma, deutan CVD ΔE ≥ 8, contrast ≥ 3:1 vs surface. Text keeps
-   * --positive/--negative (WCAG AA). Polarity is never color-only: signs, ▲/▼, baseline side.
-   */
-  --chart-up: oklch(0.62 0.14 158);
-  --chart-down: oklch(0.5 0.19 25);
-  --chart-grid: oklch(0.92 0.005 250);
-  /*
-   * Categorical series, fixed order (never cycled; >6 folds into "Other"). Green/red slots of the
-   * reference palette are skipped because they mean up/down here. Validated with the dataviz
-   * checker: light passes with a contrast WARN on slots 3/5/6 (legend + table view required);
-   * dark passes all checks.
-   */
-  --series-1: #2a78d6;
-  --series-2: #eb6834;
-  --series-3: #1baf7a;
-  --series-4: #4a3aa7;
-  --series-5: #eda100;
-  --series-6: #e87ba4;
-  --chart-1: oklch(0.52 0.12 235);
-  --chart-2: oklch(0.6 0.1 185);
-  --chart-3: oklch(0.55 0.08 285);
-  --chart-4: oklch(0.62 0.11 70);
-  --chart-5: oklch(0.55 0.02 255);
-
-  --radius: 0.5rem;
-  --sidebar: oklch(0.975 0.003 250);
-  --sidebar-foreground: oklch(0.2 0.012 255);
-  --sidebar-primary: oklch(0.5 0.13 245);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.945 0.008 245);
-  --sidebar-accent-foreground: oklch(0.25 0.012 255);
-  --sidebar-border: oklch(0.9 0.006 250);
-  --sidebar-ring: oklch(0.55 0.12 245);
-}
-
-/* Dark theme (default) */
 .dark {
   color-scheme: dark;
-  --background: oklch(0.17 0.008 255);
-  --foreground: oklch(0.93 0.005 250);
-  --card: oklch(0.205 0.009 255);
-  --card-foreground: oklch(0.93 0.005 250);
-  --popover: oklch(0.225 0.01 255);
-  --popover-foreground: oklch(0.93 0.005 250);
-  --surface-raised: oklch(0.235 0.01 255);
-  --primary: oklch(0.72 0.12 230);
-  --primary-foreground: oklch(0.17 0.008 255);
-  --secondary: oklch(0.25 0.01 255);
-  --secondary-foreground: oklch(0.93 0.005 250);
-  --muted: oklch(0.25 0.01 255);
-  --muted-foreground: oklch(0.68 0.012 255);
-  --accent: oklch(0.27 0.012 250);
-  --accent-foreground: oklch(0.93 0.005 250);
-  --destructive: oklch(0.68 0.18 25);
-  --border: oklch(1 0 0 / 8%);
-  --input: oklch(1 0 0 / 12%);
-  --ring: oklch(0.72 0.12 230 / 60%);
+  --radius: 0.5rem;
+  --background: #161616;
+  --foreground: #f9fbff;
+  --card: #1b1d20;
+  --card-foreground: #f9fbff;
+  --popover: #161616;
+  --popover-foreground: #f9fbff;
+  --primary: #4124fb;
+  --primary-foreground: #f9fbff;
+  --secondary: #1e1e1e;
+  --secondary-foreground: #f9fbff;
+  --muted: #2a2a2a;
+  --muted-foreground: #7f7f7f;
+  --accent: #2a2a2a;
+  --accent-foreground: #f9fbff;
+  --destructive: #f97373;
+  --border: #232323;
+  --input: #393939;
+  --ring: #676767;
+  --sidebar: #171717;
+  --sidebar-foreground: #7f7f7f;
+  --sidebar-primary: #2a2a2a;
+  --sidebar-primary-foreground: #f9fbff;
+  --sidebar-accent: #181818;
+  --sidebar-accent-foreground: #f9fbff;
+  --sidebar-border: #232323;
+  --sidebar-ring: #676767;
+  --line-strong: #393939;
+  --subtle: #676767;
+  --faint: #454545;
+  --soft: #a4a4a4;
+  --chip: #cfcfcf;
+  --icon: #d0d4dd;
+  --success: #22c55e;
+  --warning: #fbbf24;
+  --danger: #f97373;
+  --trend: #00b562;
+  --trend-muted: #395e4d;
+  --track: #3a3a3a;
+  --status: #16c89e;
+  --sidebar-width: 254px;
 
-  --positive: oklch(0.74 0.15 155);
-  --positive-muted: oklch(0.74 0.15 155 / 14%);
-  --negative: oklch(0.7 0.17 25);
-  --negative-muted: oklch(0.7 0.17 25 / 14%);
-  --warning: oklch(0.8 0.13 80);
-  --warning-muted: oklch(0.8 0.13 80 / 14%);
-  --info: oklch(0.75 0.11 225);
-  --info-muted: oklch(0.75 0.11 225 / 14%);
-  --neutral: oklch(0.66 0.012 255);
+  --tag-blue-bg: #1d2b3e;
+  --tag-blue-border: #23354c;
+  --tag-blue-text: #bfdbfe;
+  --tag-purple-bg: #231f3a;
+  --tag-purple-border: #4b437b;
+  --tag-purple-text: #b7aee9;
+  --tag-green-bg: #1f3a2d;
+  --tag-green-border: #275137;
+  --tag-green-text: #b1ebc5;
+  --tag-moss-bg: #23451d;
+  --tag-moss-border: #2e5029;
+  --tag-moss-text: #b1ebc5;
+  --tag-red-bg: #3e1d1e;
+  --tag-red-border: #4c2324;
+  --tag-red-text: #febfc6;
+  --tag-orange-bg: #3e291d;
+  --tag-orange-border: #764d35;
+  --tag-orange-text: #eeb390;
+  --tag-amber-bg: #31221b;
+  --tag-amber-border: #6c4830;
+  --tag-amber-text: #fed7aa;
+  --tag-teal-bg: #102a27;
+  --tag-teal-border: #3b6149;
+  --tag-teal-text: #22c55e;
+  --tag-yellow-bg: #33301a;
+  --tag-yellow-border: #5a5228;
+  --tag-yellow-text: #fde68a;
+  --tag-neutral-bg: #2a2a2a;
+  --tag-neutral-border: #363636;
+  --tag-neutral-text: #cfcfcf;
 
+  /* HAKAPRO semantic aliases → reference tokens */
+  --positive: var(--success);
+  --positive-muted: var(--tag-green-bg);
+  --negative: var(--danger);
+  --negative-muted: var(--tag-red-bg);
+  --warning-muted: var(--tag-amber-bg);
+  --info: var(--tag-blue-text);
+  --info-muted: var(--tag-blue-bg);
+  --neutral: var(--soft);
+  --surface-raised: var(--secondary);
+  --link: var(--tag-blue-text);
+
+  /* Chart marks (validated exception, see header) */
   --chart-up: oklch(0.665 0.15 160);
   --chart-down: oklch(0.54 0.19 25);
-  --chart-grid: oklch(1 0 0 / 7%);
+  --chart-grid: #232323;
   --series-1: #3987e5;
   --series-2: #d95926;
   --series-3: #199e70;
   --series-4: #9085e9;
   --series-5: #c98500;
   --series-6: #d55181;
-  --chart-1: oklch(0.75 0.11 225);
-  --chart-2: oklch(0.72 0.09 185);
-  --chart-3: oklch(0.7 0.09 285);
-  --chart-4: oklch(0.78 0.11 75);
-  --chart-5: oklch(0.62 0.015 255);
+  --chart-1: #3987e5;
+  --chart-2: #d95926;
+  --chart-3: #199e70;
+  --chart-4: #9085e9;
+  --chart-5: #c98500;
+}
 
-  --sidebar: oklch(0.19 0.009 255);
-  --sidebar-foreground: oklch(0.93 0.005 250);
-  --sidebar-primary: oklch(0.72 0.12 230);
-  --sidebar-primary-foreground: oklch(0.17 0.008 255);
-  --sidebar-accent: oklch(0.25 0.01 255);
-  --sidebar-accent-foreground: oklch(0.93 0.005 250);
-  --sidebar-border: oklch(1 0 0 / 7%);
-  --sidebar-ring: oklch(0.72 0.12 230 / 60%);
+/* Companion light theme (same roles, light surfaces). */
+.light {
+  color-scheme: light;
+  --background: #f6f6f7;
+  --foreground: #161616;
+  --card: #ffffff;
+  --card-foreground: #161616;
+  --popover: #ffffff;
+  --popover-foreground: #161616;
+  --primary: #4124fb;
+  --primary-foreground: #f9fbff;
+  --secondary: #ffffff;
+  --secondary-foreground: #161616;
+  --muted: #ececee;
+  --muted-foreground: #6b6b6b;
+  --accent: #ececee;
+  --accent-foreground: #161616;
+  --destructive: #c62828;
+  --border: #e4e4e7;
+  --input: #d4d4d8;
+  --ring: #a1a1aa;
+  --sidebar: #fafafa;
+  --sidebar-foreground: #6b6b6b;
+  --sidebar-primary: #ececee;
+  --sidebar-primary-foreground: #161616;
+  --sidebar-accent: #f4f4f5;
+  --sidebar-accent-foreground: #161616;
+  --sidebar-border: #e4e4e7;
+  --sidebar-ring: #a1a1aa;
+  --line-strong: #d4d4d8;
+  --subtle: #71717a;
+  --faint: #a1a1aa;
+  --soft: #52525b;
+  --chip: #3f3f46;
+  --icon: #3f3f46;
+  --success: #15803d;
+  --warning: #b45309;
+  --danger: #c62828;
+  --trend: #047857;
+  --track: #e4e4e7;
+  --tag-blue-bg: #eaf2ff; --tag-blue-border: #c9dcfb; --tag-blue-text: #1e4b8f;
+  --tag-purple-bg: #f1effd; --tag-purple-border: #d9d3f7; --tag-purple-text: #4b3fa0;
+  --tag-green-bg: #e9f7ee; --tag-green-border: #c3e8d0; --tag-green-text: #166534;
+  --tag-moss-bg: #ecf5e8; --tag-moss-border: #cfe5c6; --tag-moss-text: #2f5e22;
+  --tag-red-bg: #fdecee; --tag-red-border: #f6cdd2; --tag-red-text: #9f1d2c;
+  --tag-orange-bg: #fdf0e8; --tag-orange-border: #f3d3bd; --tag-orange-text: #9a4a1c;
+  --tag-amber-bg: #fdf3e6; --tag-amber-border: #f2dcb9; --tag-amber-text: #8a5400;
+  --tag-teal-bg: #e7f6f2; --tag-teal-border: #c0e6dc; --tag-teal-text: #0f6b57;
+  --tag-yellow-bg: #fdf8e1; --tag-yellow-border: #efe2a6; --tag-yellow-text: #7a6300;
+  --tag-neutral-bg: #f4f4f5; --tag-neutral-border: #e4e4e7; --tag-neutral-text: #3f3f46;
+  --chart-up: oklch(0.62 0.14 158);
+  --chart-down: oklch(0.5 0.19 25);
+  --chart-grid: #e4e4e7;
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #4a3aa7;
+  --series-5: #eda100;
+  --series-6: #e87ba4;
+  --chart-1: #2a78d6;
+  --chart-2: #eb6834;
+  --chart-3: #1baf7a;
+  --chart-4: #4a3aa7;
+  --chart-5: #eda100;
 }
 
 /* Density */
 :root,
 [data-density="comfortable"] {
-  --density-row-height: 2.5rem;
+  --density-row-height: 42px;
   --density-cell-x: 0.75rem;
   --density-cell-y: 0.5rem;
   --density-section-gap: 1.5rem;
@@ -236,12 +314,47 @@
   * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground;
-  }
   html {
     @apply font-sans;
   }
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-size: 14px;
+    font-weight: 400;
+  }
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
+  /* Reference icons are thin 14px glyphs (stroke 1.6). */
+  svg.lucide {
+    stroke-width: 1.6px;
+  }
+  ::selection {
+    background: color-mix(in oklab, var(--primary) 55%, transparent);
+  }
+}
+
+/* Type scale from heulaulab-dashboard. */
+@utility p-style { font-size: 14px; line-height: 1.15; font-weight: 400; }
+@utility lead-style { font-size: 14px; line-height: 1; font-weight: 400; }
+@utility caption-style { font-size: 12px; line-height: 1; font-weight: 400; }
+@utility eyebrow-style { font-size: 12px; line-height: 1; font-weight: 400; letter-spacing: 1px; text-transform: uppercase; }
+@utility h1-style { font-size: 16px; line-height: 1; font-weight: 500; }
+@utility h2-style { font-size: 16px; line-height: 1; font-weight: 600; }
+@utility h3-style { font-size: 16px; line-height: 1; font-weight: 400; }
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
 }
 
 @layer utilities {
@@ -249,9 +362,9 @@
   .num {
     font-variant-numeric: tabular-nums;
   }
+  /* Reference style: tickers and figures in Geist Sans with tabular numerals (no monospace). */
   .ticker {
-    font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
-    letter-spacing: 0.01em;
+    letter-spacing: -0.005em;
   }
 }

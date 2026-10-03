@@ -44,7 +44,7 @@ export function ScreenerTable({ matches, meta, caption, maxHeight, onWhy }: { ma
       header: t("symbol"),
       meta: { className: "w-20" },
       cell: ({ row }) => (
-        <Link href={stockHref(row.original.symbol)} className="ticker font-medium text-primary hover:underline" data-testid={`screener-symbol-${row.original.symbol}`}>
+        <Link href={stockHref(row.original.symbol)} className="ticker font-medium text-link hover:underline" data-testid={`screener-symbol-${row.original.symbol}`}>
           {row.original.symbol}
         </Link>
       ),

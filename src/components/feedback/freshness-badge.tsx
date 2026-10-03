@@ -8,12 +8,12 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 
 /** Color carries meaning: only LIVE is green, delays/staleness are amber, unknown is muted. */
 const STYLES: Record<Freshness, { dot: string; text: string }> = {
-  LIVE: { dot: "bg-positive animate-pulse", text: "text-foreground" },
+  LIVE: { dot: "bg-status animate-pulse", text: "text-foreground" },
   DELAYED: { dot: "bg-warning", text: "text-foreground" },
   EOD: { dot: "bg-info", text: "text-foreground" },
-  HISTORICAL: { dot: "bg-neutral", text: "text-muted-foreground" },
+  HISTORICAL: { dot: "bg-soft", text: "text-soft" },
   STALE: { dot: "border border-warning bg-transparent", text: "text-warning" },
-  UNAVAILABLE: { dot: "border border-dashed border-muted-foreground bg-transparent", text: "text-muted-foreground" },
+  UNAVAILABLE: { dot: "border border-dashed border-subtle bg-transparent", text: "text-subtle" },
 };
 
 export type FreshnessBadgeProps = {
@@ -40,7 +40,7 @@ export function FreshnessBadge({ freshness, asOf, period, source, className }: F
           aria-label={t("ariaLabel", { state: label })}
           data-freshness={freshness}
           className={cn(
-            "inline-flex h-5 shrink-0 items-center gap-1.5 rounded-sm border border-border px-1.5 text-[11px] font-medium leading-none whitespace-nowrap outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            "caption-style inline-flex h-[20px] shrink-0 items-center gap-1 rounded-full border border-(--tag-neutral-border) bg-muted py-[3px] pr-[6px] pl-[5px] whitespace-nowrap outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
             style.text,
             className,
           )}

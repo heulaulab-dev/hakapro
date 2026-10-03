@@ -19,7 +19,7 @@ export function SeasonalityHeatmap({ data, meta }: { data: Seasonality; meta: Fr
     return { style: { background: `color-mix(in oklab, var(${value >= 0 ? "--chart-up" : "--chart-down"}) ${Math.round(alpha * 100)}%, transparent)` }, text: formatPercent(value, locale, { decimals: 1 }) };
   };
   return (
-    <div className="flex flex-col overflow-hidden rounded-lg border border-border bg-card" data-testid="seasonality">
+    <div className="flex flex-col overflow-hidden rounded-xl border border-border" data-testid="seasonality">
       <div className="flex items-center justify-between gap-2 border-b border-border px-cell-x py-2">
         <h3 className="text-sm font-semibold">{t("seasonality")}</h3>
         <FreshnessBadge {...meta} />

@@ -26,7 +26,7 @@ export function ChartCard({ title, description, meta, actions, table, footer, ch
   const t = useTranslations("table");
   const [showTable, setShowTable] = useState(false);
   return (
-    <section data-testid={testId} className={cn("flex min-w-0 flex-col gap-3 rounded-lg border border-border bg-card p-4", className)}>
+    <section data-testid={testId} className={cn("flex min-w-0 flex-col gap-3 rounded-xl border border-border p-4", className)}>
       <SectionHeader
         as="h3"
         title={title}
@@ -43,8 +43,11 @@ export function ChartCard({ title, description, meta, actions, table, footer, ch
           </>
         }
       />
-      <div className="min-w-0">{showTable && table ? table : children}</div>
-      {footer && <div className="text-[11px] text-muted-foreground">{footer}</div>}
+      <div className="flex min-w-0 flex-col gap-3 p-4">
+        {description && <p className="caption-style leading-snug text-subtle">{description}</p>}
+        <div className="min-w-0">{showTable && table ? table : children}</div>
+        {footer && <div className="caption-style text-faint">{footer}</div>}
+      </div>
     </section>
   );
 }

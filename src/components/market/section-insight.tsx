@@ -18,7 +18,7 @@ export function SectionInsight<T>({ title, section, observations, testId }: { ti
   if (section.status === "error") {
     const reason = KNOWN.has(section.error) ? section.error : "default";
     return (
-      <section data-testid={testId} data-status="error" className="flex flex-col gap-2 rounded-lg border border-border bg-card p-4">
+      <section data-testid={testId} data-status="error" className="flex flex-col gap-2 rounded-xl border border-border p-4">
         <SectionHeader as="h3" title={title} />
         <EmptyState compact icon={section.error === "NOT_RECORDED" || section.error === "UNSUPPORTED" ? <Database /> : <AlertTriangle />} title={t(`reasons.${reason}`)} description={<span className="ticker">{section.error}</span>} />
       </section>

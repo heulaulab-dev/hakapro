@@ -19,7 +19,7 @@ export function InsidersTable({ rows, meta, showSymbol, toolbar, testId = "insid
   const locale = useLocale() as Locale;
   const columns = useMemo<ColumnDef<InsiderTableRow, unknown>[]>(() => [
     { accessorKey: "date", header: t("date"), cell: ({ getValue }) => <span className="num whitespace-nowrap">{formatDate(getValue<string>(), locale)}</span> },
-    ...(showSymbol ? [{ id: "symbol", accessorKey: "symbol", header: "", cell: ({ row }) => <Link href={stockHref(row.original.symbol!, "insiders")} className="ticker text-primary hover:underline">{row.original.symbol}</Link> } satisfies ColumnDef<InsiderTableRow, unknown>] : []),
+    ...(showSymbol ? [{ id: "symbol", accessorKey: "symbol", header: "", cell: ({ row }) => <Link href={stockHref(row.original.symbol!, "insiders")} className="ticker text-link hover:underline">{row.original.symbol}</Link> } satisfies ColumnDef<InsiderTableRow, unknown>] : []),
     { accessorKey: "person", header: t("person"), cell: ({ row }) => <span className="flex flex-col"><span className="block max-w-60 truncate" title={row.original.person}>{row.original.person}</span>{row.original.roles.length > 0 && <span className="text-[11px] text-muted-foreground">{row.original.roles.join(", ")}</span>}</span> },
     { accessorKey: "action", header: t("action"), cell: ({ row }) => <StatusBadge tone={row.original.action === "BUY" ? "positive" : row.original.action === "SELL" ? "negative" : "neutral"}>{t(`actions.${row.original.action}`)}</StatusBadge> },
     { accessorKey: "changeShares", header: t("change"), meta: { numeric: true }, cell: ({ getValue }) => formatVolume(getValue<number | null>(), locale, { compact: true }) },

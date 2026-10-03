@@ -36,7 +36,7 @@ export function StatementTable({ rows, periods, meta, caption, selectedKey, onSe
   });
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-lg border border-border bg-card" data-testid="statement-table">
+    <div className="flex flex-col overflow-hidden rounded-xl border border-border" data-testid="statement-table">
       <div className="flex items-center justify-end border-b border-border px-cell-x py-2"><FreshnessBadge {...meta} /></div>
       <div className="overflow-x-auto">
         <table aria-label={caption} className="w-full border-separate border-spacing-0 text-data">

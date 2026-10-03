@@ -36,7 +36,7 @@ export function StrategiesView() {
                       <Link
                         href={`/discover/strategies/${strategy.id}`}
                         data-testid={`strategy-${strategy.id}`}
-                        className="group flex flex-col gap-2 rounded-lg border border-border bg-card p-4 transition-colors hover:bg-accent/40"
+                        className="group flex flex-col gap-2 rounded-xl border border-border p-4 transition-colors hover:bg-accent/40"
                       >
                         <div className="flex items-center justify-between gap-3">
                           <span className="font-semibold">{strategy.name}</span>

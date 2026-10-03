@@ -20,11 +20,11 @@ export function StockHeader({ symbol, name, price, change, changePercent, meta, 
     <div className="flex flex-wrap items-end justify-between gap-3">
       <div className="flex min-w-0 flex-col gap-1">
         <div className="flex items-baseline gap-2">
-          <span data-testid="stock-header-symbol" className="ticker text-xl font-semibold">{symbol}</span>
-          {name && <span className="truncate text-sm text-muted-foreground">{name}</span>}
+          <span data-testid="stock-header-symbol" className="ticker text-[20px] leading-tight font-semibold tracking-[-0.01em]">{symbol}</span>
+          {name && <span className="caption-style truncate text-soft">{name}</span>}
         </div>
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <span className="ticker text-2xl font-semibold">{formatIdr(price, locale)}</span>
+          <span className="ticker text-[22px] leading-none font-semibold tracking-[-0.01em]">{formatIdr(price, locale)}</span>
           <ChangeValue percent={changePercent} absolute={change ?? undefined} className="text-sm" />
           <FreshnessBadge {...meta} />
         </div>

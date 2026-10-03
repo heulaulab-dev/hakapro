@@ -14,8 +14,8 @@ export function AppHeader({ viewer, theme, density }: { viewer: ViewerSummary; t
   const t = useTranslations("header");
   const openPalette = useUiStore((state) => state.setPaletteOpen);
   return (
-    <header data-testid="app-header" className="flex h-12 shrink-0 items-center gap-2 border-b border-border bg-background px-3 md:px-4">
-      <Link href="/" className="ticker text-sm font-semibold tracking-wider md:hidden">
+    <header data-testid="app-header" className="flex h-[58px] shrink-0 items-center gap-2 border-b border-border bg-background px-4">
+      <Link href="/" className="lead-style font-medium tracking-[-0.01em] md:hidden">
         HAKAPRO
       </Link>
       {/* Global stock search lives in the command palette; this is its desktop entry point. */}
@@ -24,9 +24,9 @@ export function AppHeader({ viewer, theme, density }: { viewer: ViewerSummary; t
         onClick={() => openPalette(true)}
         aria-label={t("searchShortcut")}
         data-testid="header-search"
-        className="hidden h-8 w-full max-w-md items-center gap-2 rounded-md border border-input bg-muted/40 px-2.5 text-sm text-muted-foreground transition-colors hover:bg-muted md:flex"
+        className="caption-style hidden h-[30px] w-full max-w-md items-center gap-2 rounded-full bg-secondary px-3 text-subtle shadow-[0px_0px_0px_1px_rgba(0,0,0,0.4),inset_0px_1px_0px_0px_rgba(255,255,255,0.1),inset_0px_0px_0px_1px_rgba(255,255,255,0.06)] transition-[background-color,color] duration-150 ease-power3-out hover:bg-muted hover:text-soft md:flex"
       >
-        <Search className="size-4" />
+        <Search className="size-3.5" />
         <span className="truncate">{t("search")}</span>
         <Kbd className="ml-auto hidden lg:inline-flex">Ctrl K</Kbd>
       </button>

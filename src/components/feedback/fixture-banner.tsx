@@ -15,7 +15,7 @@ export async function FixtureBanner() {
     <div
       role="status"
       data-testid="fixture-banner"
-      className="flex shrink-0 items-center justify-center gap-3 border-b border-warning/40 bg-warning-muted px-4 py-1.5 text-xs font-medium text-warning"
+      className="caption-style flex shrink-0 items-center justify-center gap-3 border-b border-(--tag-amber-border) bg-(--tag-amber-bg) px-4 py-1.5 text-(--tag-amber-text)"
     >
       {fixture && (
         <span>

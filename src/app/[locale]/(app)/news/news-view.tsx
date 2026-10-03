@@ -25,7 +25,7 @@ function NewsList() {
       <SectionHeader title={t("news")} meta={query.data ? freshnessMeta(query.data) : undefined} />
       <DataState query={query} compact isEmpty={(envelope) => envelope.data.length === 0}>
         {(envelope) => (
-          <ul className="flex flex-col divide-y divide-border rounded-lg border border-border bg-card px-4">
+          <ul className="flex flex-col divide-y divide-border rounded-xl border border-border px-4">
             {envelope.data.map((item, index) => {
               const url = safeUrl(item.url);
               return (
@@ -54,17 +54,17 @@ function AnnouncementList() {
       <FilterBar><FilterSearch placeholder={t("keywords")} /></FilterBar>
       <DataState query={query} compact isEmpty={(envelope) => envelope.data.length === 0}>
         {(envelope) => (
-          <ul className="flex flex-col divide-y divide-border rounded-lg border border-border bg-card px-4">
+          <ul className="flex flex-col divide-y divide-border rounded-xl border border-border px-4">
             {envelope.data.map((item, index) => {
               const url = safeUrl(item.documentUrl);
               return (
                 <li key={`${item.title}-${index}`} className="flex flex-col gap-1 py-3">
                   <span className="flex items-center gap-2 text-xs text-muted-foreground">
                     <span className="num">{formatDate(item.date, locale)}</span>
-                    {item.symbol && <Link href={stockHref(item.symbol)} className="ticker text-primary hover:underline">{item.symbol}</Link>}
+                    {item.symbol && <Link href={stockHref(item.symbol)} className="ticker text-link hover:underline">{item.symbol}</Link>}
                   </span>
                   <span className="text-sm">{item.title}</span>
-                  {url && <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:underline">{t("open")}<ExternalLink className="size-3" /></a>}
+                  {url && <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-link hover:underline">{t("open")}<ExternalLink className="size-3" /></a>}
                 </li>
               );
             })}

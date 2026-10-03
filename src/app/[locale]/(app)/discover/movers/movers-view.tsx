@@ -4,6 +4,7 @@ import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useLocale, useTranslations } from "next-intl";
 import { StockRow } from "@/components/data/stock-row";
 import { DataState } from "@/components/feedback/data-state";
+import { Panel } from "@/components/layout/panel";
 import { SectionHeader } from "@/components/layout/section-header";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useMarketCap, useMarketOverview } from "@/lib/api/hooks";
@@ -21,9 +22,9 @@ export function MoversView() {
   const marketCap = useMarketCap();
   return (
     <div className="flex flex-col gap-section p-4 md:p-6" data-testid="movers-view">
-      <SectionHeader as="h1" title={t("movers.title")} description={t("movers.intro")} meta={market.data ? freshnessMeta(market.data) : undefined} />
+      <SectionHeader as="h1" title={t("movers.title")} description={t("movers.intro")} />
       <div className="grid gap-4 xl:grid-cols-[1fr_24rem]">
-        <section className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4">
+        <Panel title={t("movers.title")} meta={market.data ? freshnessMeta(market.data) : undefined}>
           <ToggleGroup type="single" size="sm" variant="outline" value={view} onValueChange={(value) => value && void setView(value as MoverView)} aria-label={t("movers.viewLabel")} className="self-start">
             {VIEWS.map((value) => <ToggleGroupItem key={value} value={value} className="px-2.5 text-xs" data-testid={`movers-${value}`}>{t(`movers.${value}`)}</ToggleGroupItem>)}
           </ToggleGroup>
@@ -39,9 +40,8 @@ export function MoversView() {
               </div>
             )}
           </DataState>
-        </section>
-        <section className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4" data-testid="largest-caps">
-          <SectionHeader as="h2" title={t("movers.largest")} meta={marketCap.data ? freshnessMeta(marketCap.data) : undefined} />
+        </Panel>
+        <Panel testId="largest-caps" title={t("movers.largest")} meta={marketCap.data ? freshnessMeta(marketCap.data) : undefined}>
           <DataState query={marketCap} compact>
             {(envelope) => (
               <div className="flex flex-col">
@@ -52,7 +52,7 @@ export function MoversView() {
               </div>
             )}
           </DataState>
-        </section>
+        </Panel>
       </div>
     </div>
   );

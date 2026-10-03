@@ -53,12 +53,12 @@ export function WatchlistView({ viewer }: { viewer: ViewerSummary }) {
           <Input id="add-symbol" value={input} onChange={(event) => setInput(event.target.value)} placeholder={t("addPlaceholder")} className="ticker uppercase" autoComplete="off" />
           {message && <p role="alert" className="text-xs text-negative">{message}</p>}
         </div>
-        <Button type="submit" disabled={add.isPending}>{t("add")}</Button>
+        <Button type="submit" variant="primary" size="md" disabled={add.isPending}>{t("add")}</Button>
       </form>
       {watchlist.isPending ? null : items.length === 0 ? (
         <EmptyState icon={<Bookmark />} title={t("empty")} />
       ) : (
-        <div className="rounded-lg border border-border bg-card p-2">
+        <div className="rounded-xl border border-border p-2">
           <QuoteList symbols={items.map((item) => ({ key: item.id, symbol: item.symbol }))} quotes={quotes.data?.data} onRemove={(key) => remove.mutate(key, { onError: () => setMessage(t("failed")) })} />
         </div>
       )}

@@ -48,7 +48,7 @@ export function WhyMatchedDrawer({ match, strategy, meta, onClose }: { match: St
             </div>
           )}
           <ResearchDisclaimer />
-          <Button asChild>
+          <Button asChild variant="primary" size="lg">
             <Link href={stockHref(match.symbol)} data-testid="why-research">{t("strategies.research", { symbol: match.symbol })}</Link>
           </Button>
         </div>

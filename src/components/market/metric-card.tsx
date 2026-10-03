@@ -18,7 +18,7 @@ export function MetricCard({ label, value, format, changePercent, hint, meta, cl
 }) {
   const locale = useLocale() as Locale;
   return (
-    <div className={cn("flex min-w-0 flex-col gap-1.5 rounded-lg border border-border bg-card px-cell-x py-3", className)}>
+    <div className={cn("flex min-w-0 flex-col gap-1.5 rounded-xl border border-border px-cell-x py-3", className)}>
       <div className="flex items-center justify-between gap-2">
         <span className="truncate text-xs text-muted-foreground">{label}</span>
         <FreshnessBadge {...meta} />
@@ -27,7 +27,7 @@ export function MetricCard({ label, value, format, changePercent, hint, meta, cl
       {(changePercent !== undefined || hint) && (
         <div className="flex items-center gap-2 text-xs">
           {changePercent !== undefined && <ChangeValue percent={changePercent} />}
-          {hint && <span className="truncate text-muted-foreground">{hint}</span>}
+          {hint && <span className="truncate text-subtle">{hint}</span>}
         </div>
       )}
     </div>

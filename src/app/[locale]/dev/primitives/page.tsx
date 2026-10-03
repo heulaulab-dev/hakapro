@@ -44,7 +44,7 @@ export default async function PrimitivesPage({ params }: PageProps<"/[locale]/de
           <h1 className="text-lg font-semibold">{t("dev.primitivesTitle")}</h1>
           <p className="text-sm text-muted-foreground">{t("dev.primitivesIntro")}</p>
         </div>
-        <Link href="/dev/primitives" locale={other} className="text-sm text-primary underline-offset-4 hover:underline">
+        <Link href="/dev/primitives" locale={other} className="text-sm text-link underline-offset-4 hover:underline">
           {t("locale.switchTo")}: {t(`locale.${other}`)}
         </Link>
       </header>

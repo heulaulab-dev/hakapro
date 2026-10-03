@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetBody, SheetContent, SheetHeader, SheetTrigger } from "@/components/ui/sheet";
 
 function useIsDesktop(): boolean {
   const [desktop, setDesktop] = useState(true);
@@ -36,11 +36,11 @@ export function Drawer({ open, onOpenChange, trigger, title, description, childr
         onOpenAutoFocus={(event) => { event.preventDefault(); (event.currentTarget as HTMLElement | null)?.focus(); }}
         tabIndex={-1}
       >
-        <SheetHeader>
-          <SheetTitle>{title}</SheetTitle>
-          {description && <SheetDescription>{description}</SheetDescription>}
-        </SheetHeader>
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6">{children}</div>
+        <SheetHeader title={title} description={typeof description === "string" ? description : undefined} />
+        <SheetBody className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+          {description && <p className="caption-style mb-4 text-subtle">{description}</p>}
+          {children}
+        </SheetBody>
       </SheetContent>
     </Sheet>
   );
