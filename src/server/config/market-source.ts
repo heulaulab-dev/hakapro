@@ -35,6 +35,27 @@ export function resolveMarketDataSource(env: Env): MarketDataSourceId {
   return source ?? "fixture";
 }
 
+/**
+ * Production also requires the chosen source's server-side settings, so a deploy can't start in a
+ * state where every market request fails with NOT_CONFIGURED. Provider URLs must be https.
+ */
+export function assertMarketSourceConfigured(env: Env): void {
+  if (!isProductionEnv(env)) return;
+  const source = resolveMarketDataSource(env);
+  const requireHttps = (name: string) => {
+    const value = env[name]?.trim();
+    if (!value) throw new MarketSourceConfigError(`${name} is required when MARKET_DATA_SOURCE=${source}`);
+    if (!/^https:\/\//i.test(value)) throw new MarketSourceConfigError(`${name} must be an https URL in production`);
+  };
+  if (source === "arjum") {
+    requireHttps("HEULATRADE_MARKET_API_BASE_URL");
+    if (!env.HEULATRADE_MARKET_API_KEY?.trim()) throw new MarketSourceConfigError("HEULATRADE_MARKET_API_KEY is required when MARKET_DATA_SOURCE=arjum");
+    // idx-bei fills capabilities arjum lacks only when configured; if it is, it must be https too.
+    if (env.MARKET_API_URL?.trim()) requireHttps("MARKET_API_URL");
+  }
+  if (source === "idx-bei") requireHttps("MARKET_API_URL");
+}
+
 export function isFixtureMode(env: Env): boolean {
   return resolveMarketDataSource(env) === "fixture";
 }

@@ -542,5 +542,15 @@
     "share": "Share",
     "role": "Role",
     "profileNote": "Ownership structure from IDX issuer profile data (no data date)."
+  },
+  "errors": {
+    "title": "Something went wrong",
+    "description": "This page couldn't be shown. Try again; if it persists, go back home.",
+    "retry": "Try again",
+    "home": "Go home",
+    "notFoundTitle": "Page not found",
+    "notFoundDescription": "This address doesn't exist or the ticker is invalid.",
+    "skipToContent": "Skip to content",
+    "reference": "Reference: {digest}"
   }
 }

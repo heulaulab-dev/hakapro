@@ -542,5 +542,15 @@
     "share": "Porsi",
     "role": "Jabatan",
     "profileNote": "Struktur kepemilikan dari data profil emiten IDX (tanpa tanggal data)."
+  },
+  "errors": {
+    "title": "Terjadi kesalahan",
+    "description": "Halaman ini tidak dapat ditampilkan. Coba lagi; jika berlanjut, kembali ke beranda.",
+    "retry": "Coba lagi",
+    "home": "Ke beranda",
+    "notFoundTitle": "Halaman tidak ditemukan",
+    "notFoundDescription": "Alamat ini tidak ada atau kode saham tidak valid.",
+    "skipToContent": "Lewati ke konten",
+    "reference": "Kode referensi: {digest}"
   }
 }

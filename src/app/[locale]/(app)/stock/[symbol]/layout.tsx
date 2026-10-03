@@ -1,9 +1,14 @@
+import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { StockTabsNav } from "@/components/layout/stock-tabs-nav";
 import { StockHeaderLive } from "@/components/market/stock-header-live";
 import { symbolSchema } from "@/server/schemas/inputs";
 import { getViewer } from "@/server/viewer";
+
+export async function generateMetadata({ params }: LayoutProps<"/[locale]/stock/[symbol]">): Promise<Metadata> {
+  return { title: (await params).symbol.toUpperCase() };
+}
 
 export default async function StockLayout({ children, params }: LayoutProps<"/[locale]/stock/[symbol]">) {
   const { locale, symbol: raw } = await params;

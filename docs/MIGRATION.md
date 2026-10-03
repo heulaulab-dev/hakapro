@@ -1,6 +1,6 @@
 # HAKAPRO — Migration inventory (HeulaTrade → HAKAPRO)
 
-Status: **Phase 1 vertical slice complete (Checkpoint 7). Port status in §7; final report in docs/PROGRESS.md.**
+Status: **Phase 1 complete through production readiness (slices S1–S7). Port status in §7; log in docs/PROGRESS.md.**
 Date: 2026-10-03
 
 | Input | Value |
@@ -187,9 +187,9 @@ Old `.env.local` contains **only the two Supabase variables**.
 | Provider number strings | `src/server/services/parse-number.ts` | ✅ new |
 | `lib/api/http.ts`, `arjum/route.ts` | `src/server/http.ts` (`marketRoute`) | ✅ ported |
 | `lib/supabase/*`, `proxy.ts`, `app/auth/callback` | `src/lib/supabase/*`, `src/proxy.ts`, `src/app/auth/callback` | ✅ ported (locale merge in Step 4) |
-| `app/api/jobs/evaluate-alerts` | — | ⏸ deferred (needs service-role key; no Phase 1 screen uses it) |
+| `app/api/jobs/evaluate-alerts` | `src/app/api/jobs/evaluate-alerts`, `src/server/services/alert-job.ts` | ✅ ported (EOD-only, tested) |
 | `app/api/analysis/[code]` | — | ⛔ not exposed (MIGRATION §9.5) |
-| `app/api/ready` | — | ⏸ deferred to deployment work |
+| `app/api/ready` | `src/app/api/ready`, `src/server/readiness.ts` | ✅ rewritten (states only, no secrets) |
 | Query keys / client fetchers | `src/lib/query/*`, `src/lib/api/*` | ✅ built (Steps 5–7) |
 
 ### Endpoint map (old → new)

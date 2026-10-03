@@ -12,7 +12,10 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "check:server-boundary": "node scripts/check-server-boundary.mjs",
-    "record:fixtures": "bun scripts/record-fixtures.ts"
+    "record:fixtures": "bun scripts/record-fixtures.ts",
+    "build:check": "MARKET_DATA_SOURCE=arjum HEULATRADE_MARKET_API_BASE_URL=https://build-check.invalid HEULATRADE_MARKET_API_KEY=build-check NEXT_PUBLIC_SUPABASE_URL=https://build-check.invalid NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=build-check DEV_AUTH_BYPASS= next build",
+    "check:prod-guards": "node scripts/check-prod-guards.mjs",
+    "verify": "bun run typecheck && bun run lint && bun run test && bun run check:prod-guards && bun run check:server-boundary && bun run build:check"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

@@ -9,7 +9,13 @@
 | 5 | App shell | ✅ done ("continue" 2026-10-03) | 3f35931 |
 | 6 | Primitives | ✅ approved 2026-10-03 | eabc709 |
 | 7 | Vertical slice: Home → Strategies → Why matched → Stock Overview | ✅ done ("continue" 2026-10-03) | e46e0ae |
-| S1 | Next slice 1: auth pages + watchlist with quotes | ✅ awaiting review | see git log |
+| S1 | Auth pages + watchlist with quotes | ✅ | ed25368 |
+| S2 | Stock Flow tab | ✅ | 399fec6 |
+| S3 | Stock Financials tab | ✅ | 37f6f15 |
+| S4 | Screener + saved screens | ✅ | 26f0a97 |
+| S5 | Movers, News & Calendar, Ownership Changes | ✅ | 558789a |
+| S6 | Chart, Insiders, History, Ownership tabs | ✅ | 54e2fae |
+| S7 | Production readiness | ✅ | see git log |
 
 ## Checkpoint 2 notes
 - Scaffold: create-next-app 16.3.8 (TS, App Router, Tailwind v4, ESLint, `src/`, `@/*`, Turbopack), shadcn 4.21.1 `radix-nova` preset, Radix base.
@@ -141,3 +147,25 @@
 - **Quotes:** `GET /api/quotes?symbols=A,B` (at most 30, deduplicated, validated). Each symbol succeeds or fails on its own; the envelope is as fresh as the stalest quote (`leastFresh`).
 - **Watchlist** (`lib/watchlist.ts`): browser Supabase client, scoped by the existing RLS policies (`watchlists_own`, `watchlist_items_own`). The default list is created on first add. The page has add/remove with validation and a QuoteList with per-row freshness or reason code. The Watch button sits in the stock header; Home's watchlist block shows quotes.
 - **Not verified here (needs a configured Supabase project):** real sign-in/up/reset, Google provider setup, redirect URLs (allow `/auth/callback`), and RLS isolation between two users.
+
+## Slices 2–7 (user pre-approved through production readiness, 2026-10-03)
+- **S2 Flow:** foreign-flow daily columns + range totals; broker summary (diverging bars + sortable table); broker accumulation (cumulative lines, max 6 brokers). New validated categorical tokens `--series-1..6` skip green/red, which mean up/down. Light mode carries a contrast WARN on 3 slots, mitigated by legend, tooltip and table view.
+- **S3 Financials:** statement tables with expand/collapse, empty-row pruning (toggle), reporting-lag banner, per-row chart across periods. Report type, period, row and empty-row toggle are URL state.
+- **S4 Screener:** condition builder (URL `?c=`), idx-bei `/v1/screener`. change1D is percent in the UI and converted to a fraction for app.py, both directions tested. Saved screens use Supabase `saved_screeners` (RLS), and Cmd+K `?screen=` loads one. ROE/ROA/dividend-yield units are unverified and shown as plain numbers.
+- **S5 Discover:** Movers ranking (gainers/losers need ≥ Rp1 M traded value; active by value) plus largest market caps (arjum). News & disclosures, rendering only http(s) links. Ownership Changes: market-wide feed unavailable (said plainly), stock lookup, insiders across the watchlist.
+- **S6 Stock tabs:** Chart (SMA 20/50 overlays + MACD pane, URL `?ind=`); Insiders (paged, action filter); History (daily table, localized seasonality heatmap with values printed in cells, trade tape in lots); Ownership (IDX profile + corporate actions; idx-bei only; record keys TODO(verify)).
+- **S7 Production readiness:**
+  - Production build/start refuses missing source credentials and non-https provider URLs (`check:prod-guards` covers 6 cases).
+  - `/api/ready` reports states only, never secrets.
+  - EOD alert job ported (`/api/jobs/evaluate-alerts`, pure `runAlertJob`, EOD-only, idempotent, constant-time secret check, Vercel cron 16:45 WIB).
+  - Security headers: CSP limited to self + Supabase, no eval in production, HSTS, frame-ancestors none, nosniff, Referrer-Policy, Permissions-Policy; `X-Powered-By` removed. Production hydration checked: zero CSP violations.
+  - Localized error and not-found pages, catch-all 404, global error fallback, skip link, page titles, `robots.txt`.
+  - Supabase migration + RLS test copied for reference; CI workflow; README rewritten.
+  - A route-level `loading.tsx` was tried and removed: streaming sent 200 before `notFound()`, which broke 404s for invalid tickers.
+
+## Remaining before go-live (needs people, credentials or external decisions)
+- Manual arjum check and `bun run record:fixtures` with real credentials.
+- Configure Supabase redirect URLs and Google; manual two-user RLS check; run `supabase/tests/rls.sql`.
+- Verify the IDX calendar, reporting deadlines, criteria wording, provider record keys (profile) and ratio units.
+- Data display rights.
+- Optional: CSP nonces, a shared rate limiter, an alerts management UI (the job exists; users can't create alerts in-app yet).

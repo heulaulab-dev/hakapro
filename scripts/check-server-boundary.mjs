@@ -46,7 +46,7 @@ try {
     encoding: "utf8",
     // The production guards need a non-fixture source and Supabase config. These placeholders are
     // compile-only: this probe build is expected to fail and its output is never served.
-    env: { ...process.env, MARKET_DATA_SOURCE: "arjum", DEV_AUTH_BYPASS: "", NEXT_PUBLIC_SUPABASE_URL: "https://build-check.invalid", NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "build-check-placeholder" },
+    env: { ...process.env, MARKET_DATA_SOURCE: "arjum", HEULATRADE_MARKET_API_BASE_URL: "https://build-check.invalid", HEULATRADE_MARKET_API_KEY: "build-check", DEV_AUTH_BYPASS: "", NEXT_PUBLIC_SUPABASE_URL: "https://build-check.invalid", NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "build-check-placeholder" },
   });
 } finally {
   rmSync(probeDir, { recursive: true, force: true });

@@ -5,19 +5,24 @@ import { CommandPalette } from "@/components/layout/command-palette";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { Providers } from "@/components/providers";
 import { DENSITY_COOKIE, parseDensity, parseTheme, THEME_COOKIE } from "@/lib/preferences";
+import { getTranslations } from "next-intl/server";
 import { getViewer } from "@/server/viewer";
 
 export default async function AppShellLayout({ children }: LayoutProps<"/[locale]">) {
   const [viewer, store] = await Promise.all([getViewer(), cookies()]);
   const theme = parseTheme(store.get(THEME_COOKIE)?.value);
   const density = parseDensity(store.get(DENSITY_COOKIE)?.value);
+  const t = await getTranslations("errors");
   return (
     <Providers>
+      <a href="#main" className="sr-only z-50 rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground focus:not-sr-only focus:fixed focus:top-2 focus:left-2">
+        {t("skipToContent")}
+      </a>
       <div data-testid="app-shell" className="flex min-h-0 flex-1">
         <AppSidebar />
         <div className="flex min-w-0 flex-1 flex-col">
           <AppHeader viewer={viewer} theme={theme} density={density} />
-          <main id="main" className="min-h-0 flex-1 overflow-y-auto">
+          <main id="main" tabIndex={-1} className="min-h-0 flex-1 overflow-y-auto outline-none">
             {children}
           </main>
           <MobileNav theme={theme} density={density} />
