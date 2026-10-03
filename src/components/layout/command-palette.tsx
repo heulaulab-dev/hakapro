@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { FreshnessBadge } from "@/components/feedback/freshness-badge";
 import { Command, CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command";
 import { usePathname, useRouter } from "@/i18n/navigation";
-import { searchStocks } from "@/lib/api/market";
+import { marketApi } from "@/lib/api/market";
 import { queryKeys } from "@/lib/query/keys";
 import { useUiStore } from "@/lib/stores/ui";
 import { createClient } from "@/lib/supabase/client";
@@ -50,7 +50,7 @@ export function CommandPalette({ viewer }: { viewer: ViewerSummary }) {
 
   const search = useQuery({
     queryKey: queryKeys.search(debounced),
-    queryFn: ({ signal }) => searchStocks(debounced, signal),
+    queryFn: ({ signal }) => marketApi.search(debounced, signal),
     enabled: open && debounced.length > 0,
   });
 

@@ -1,0 +1,55 @@
+"use client";
+
+import type { ColumnDef } from "@tanstack/react-table";
+import { HelpCircle } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { useMemo } from "react";
+import { StatusBadge } from "@/components/feedback/status-badge";
+import { stockHref } from "@/components/layout/nav-config";
+import { Link } from "@/i18n/navigation";
+import type { Criterion, StrategyMatch } from "@/lib/api/market";
+import type { FreshnessMeta } from "@/lib/freshness";
+import { DataTable } from "./data-table";
+
+/** "Why matched" as observed criteria. Unknown provider flags stay visible as "unrecognized". */
+export function CriteriaList({ criteria }: { criteria: Criterion[] }) {
+  const t = useTranslations("criteria");
+  return (
+    <span className="flex flex-wrap gap-1">
+      {criteria.map((criterion, index) =>
+        criterion.kind === "recognized" ? (
+          <StatusBadge key={`${criterion.key}-${index}`} tone="info" data-criterion={criterion.key}>
+            {t(criterion.key)}
+          </StatusBadge>
+        ) : (
+          <StatusBadge key={`unknown-${index}`} tone="neutral" icon={<HelpCircle />} title={criterion.providerLabel ?? criterion.flag} data-criterion="unrecognized">
+            {t("unrecognized")}
+            {criterion.providerLabel ? `: ${criterion.providerLabel}` : ""}
+          </StatusBadge>
+        ),
+      )}
+    </span>
+  );
+}
+
+/** Strategy/screen results with the reasons each stock matched. */
+export function ScreenerTable({ matches, meta, caption, maxHeight }: { matches: StrategyMatch[]; meta: FreshnessMeta; caption: string; maxHeight?: number }) {
+  const t = useTranslations("strategy");
+  const columns = useMemo<ColumnDef<StrategyMatch, unknown>[]>(() => [
+    {
+      id: "symbol",
+      accessorKey: "symbol",
+      header: t("symbol"),
+      meta: { className: "w-20" },
+      cell: ({ row }) => (
+        <Link href={stockHref(row.original.symbol)} className="ticker font-medium text-primary hover:underline" data-testid={`screener-symbol-${row.original.symbol}`}>
+          {row.original.symbol}
+        </Link>
+      ),
+    },
+    { id: "name", accessorKey: "name", header: t("company"), cell: ({ row }) => <span className="text-muted-foreground">{row.original.name}</span> },
+    { id: "criteria", header: t("whyMatched"), enableSorting: false, cell: ({ row }) => <CriteriaList criteria={row.original.criteria} /> },
+    { id: "note", accessorKey: "providerNote", header: t("providerNote"), enableSorting: false, cell: ({ row }) => <span className="text-xs text-muted-foreground">{row.original.providerNote ?? "—"}</span> },
+  ], [t]);
+  return <DataTable testId="screener-table" columns={columns} data={matches} meta={meta} caption={caption} getRowId={(row) => row.symbol} maxHeight={maxHeight} />;
+}

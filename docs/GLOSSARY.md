@@ -38,3 +38,21 @@ Indonesian investors already use these terms in English.
 | 10¹² | T (triliun) | T |
 
 Indonesian puts a space before the suffix (`Rp1,5 T`); English doesn't (`Rp1.5T`). Because "M" means 10⁹ in Indonesian but 10⁶ in English, the unit is always explicit and comes from a fixed table, never from Intl compact notation.
+
+## Strategy criteria (why matched)
+The flag-to-key mapping is in `src/server/services/why-matched.ts`; copy is in `messages.criteria`. Each phrasing is **our descriptive reading of the provider's short label**, so all of them are TODO(verify) with the provider before public launch.
+
+| Flag | Provider label | id | en |
+| --- | --- | --- | --- |
+| ✅ | akumulasi | Pola akumulasi teramati | Accumulation pattern observed |
+| ❌ | distribusi | Pola distribusi teramati | Distribution pattern observed |
+| 🏦 | broker pekat | Pembelian terkonsentrasi di sedikit broker | Buying concentrated in few brokers |
+| 🏛️ | institusi | Aktivitas broker institusi | Institutional broker activity |
+| 🌍 | asing beli | Asing membeli bersih | Net foreign buying |
+| 🔬 | teknikal kuat | Indikator teknikal menguat | Technical indicators strengthening |
+| 🥷 | senyap | Akumulasi tanpa lonjakan harga | Accumulation without a price spike |
+| 🧬 | edge historis | Pola ini punya catatan historis positif (uji penyedia) | Pattern has a positive historical record (provider's test) |
+| 🧨 | jebakan historis | … catatan historis negatif (uji penyedia) | … negative historical record (provider's test) |
+| 🚀⚠️ | pompa | Kenaikan cepat yang ditandai berisiko pompa | Rapid rise flagged as a possible pump |
+| ⏰ | telat | Pergerakan sudah berjalan jauh | Move already well advanced |
+| 🔥 | klimaks | Harga/volume mendekati klimaks | Price/volume near a climax |

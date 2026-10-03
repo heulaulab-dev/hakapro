@@ -6,8 +6,8 @@
 | 2 | Scaffold: typecheck / lint / build pass | ✅ approved 2026-10-03 | a46b4fc |
 | 3 | Data layer ported, fixture-backed `MarketDataSource`, unit tests | ✅ approved 2026-10-03 | 11cce02 |
 | 4 | Foundations: i18n, format module, tokens, FreshnessBadge | ✅ done ("continue" 2026-10-03) | 9470e2c |
-| 5 | App shell | ✅ awaiting approval | see git log |
-| 6 | Primitives | ⏳ | |
+| 5 | App shell | ✅ done ("continue" 2026-10-03) | 3f35931 |
+| 6 | Primitives | ✅ awaiting approval | see git log |
 | 7 | Vertical slice: Home → Strategies → Why matched → Stock Overview | ⏳ | |
 
 ## Checkpoint 2 notes
@@ -68,3 +68,16 @@
 - **Query setup:** `lib/query/{client,keys}.ts`; `lib/api/envelope.ts` validates every freshness envelope on the client.
 - **Pages:** placeholder pages exist for every nav route and stock tab, to be replaced in Steps 6–7. The account menu's Sign in link goes to `/login`, which isn't built yet.
 - **Testing:** Playwright projects are desktop (1280), tablet (820, touch) and mobile (Pixel 7).
+
+## Checkpoint 6 notes
+- **Primitives** (all rendered with API data on `/[locale]/dev/primitives`):
+  - `components/layout`: SectionHeader, FilterBar (+ FilterSearch, FilterChips; nuqs URL state), Drawer (right panel on desktop, bottom sheet on mobile), UrlTabs (nuqs `?tab=`), CommandPalette (in the shell).
+  - `components/market`: MetricCard, StockHeader, InsightCard, ChartCard (with a chart/table toggle), ChangeValue (▲/▼ plus sign).
+  - `components/data`: DataTable (TanStack Table v8 + Virtual, measured rows, sortable, sticky header), ScreenerTable + CriteriaList (why matched; unknown flags shown as "unrecognized criterion"), StockRow.
+  - `components/feedback`: StatusBadge, EmptyState, DataState (loading / error-with-reason-code / empty), FreshnessBadge.
+  - `components/charts`: PriceChart (Lightweight Charts: candles plus a separate volume pane, crosshair readout, TradingView attribution logo, NOTICE in code and `THIRD_PARTY_NOTICES.md`), DivergingBarChart (Recharts via shadcn chart), ChartRangeToggle (`?range=`).
+- **Freshness rule:** every container-level data component takes `meta: FreshnessMeta` and renders a FreshnessBadge. StockRow is the exception: rows inherit freshness from their section, so lists stay calm.
+- **Chart colors:** `--chart-up`/`--chart-down` were validated with the dataviz palette checker (lightness band, chroma, deutan ΔE ≥ 8, contrast) in both themes. Text keeps `--positive`/`--negative` (WCAG AA 5.0–8.7:1). Polarity is never color-only: signs, ▲/▼, side of baseline.
+- **Client API:** `lib/api/market.ts` holds Zod schemas mirroring the domain types and `marketApi`; `lib/api/hooks.ts` holds the TanStack Query hooks; `lib/query/keys.ts`.
+- **Playwright:** workers capped at 2 (dev-server compile contention at 4).
+- **TODO(verify):** the recorded broker-summary has 20 brokers, all net buyers, so the "top & bottom" chart shows no sellers. Check whether the provider truncates the list.

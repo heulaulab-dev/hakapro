@@ -5,6 +5,10 @@ const PORT = Number(process.env.PLAYWRIGHT_PORT ?? 3200);
 export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: true,
+  // E2E runs on `next dev` (production refuses fixture data); on-demand route compilation
+  // times out under heavier parallelism.
+  workers: process.env.CI ? 1 : 2,
+  expect: { timeout: 10_000 },
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   reporter: "list",

@@ -64,7 +64,17 @@
     "freshnessBadge": "FreshnessBadge",
     "formatting": "Format angka",
     "sampleInput": "Input",
-    "sampleOutput": "Hasil"
+    "sampleOutput": "Hasil",
+    "liveTitle": "Komponen dengan data API",
+    "liveIntro": "Data di bawah diambil lewat rute API yang di-port (sumber: fixture di mode dev).",
+    "statusTones": "StatusBadge",
+    "notRecordedDemo": "EmptyState via DataState (riwayat SOCI belum direkam)",
+    "drawerOpen": "Detail",
+    "marketCapList": "Kapitalisasi pasar terbesar",
+    "tabsLabel": "Contoh tab",
+    "priceTitle": "Harga BBCA",
+    "historyTable": "Tabel riwayat harga",
+    "paletteNote": "CommandPalette tersedia di shell aplikasi (Ctrl+K)."
   },
   "nav": {
     "label": "Navigasi utama",
@@ -127,5 +137,118 @@
   },
   "stock": {
     "invalidSymbol": "Kode saham tidak valid."
+  },
+  "dataState": {
+    "loading": "Memuat data…",
+    "empty": "Tidak ada data untuk ditampilkan.",
+    "retry": "Coba lagi",
+    "reasons": {
+      "NOT_RECORDED": "Belum ada rekaman fixture untuk data ini.",
+      "UNSUPPORTED": "Sumber data saat ini tidak menyediakan data ini.",
+      "NOT_CONFIGURED": "Sumber data belum dikonfigurasi.",
+      "AUTH_NOT_CONFIGURED": "Autentikasi belum dikonfigurasi.",
+      "UNAUTHORIZED": "Masuk untuk melihat data ini.",
+      "RATE_LIMITED": "Terlalu banyak permintaan. Coba lagi sebentar lagi.",
+      "PROVIDER_UNAVAILABLE": "Penyedia data sedang tidak tersedia.",
+      "PROVIDER_UNAUTHORIZED": "Penyedia data menolak kredensial server.",
+      "MALFORMED_PROVIDER_RESPONSE": "Format data dari penyedia berubah.",
+      "MALFORMED_RESPONSE": "Format respons tidak sesuai.",
+      "INVALID_REQUEST": "Permintaan tidak valid.",
+      "default": "Data tidak dapat dimuat."
+    }
+  },
+  "table": {
+    "rows": "{count, plural, other {# baris}}",
+    "sortAscending": "Urutkan naik",
+    "sortDescending": "Urutkan turun",
+    "showTable": "Lihat tabel",
+    "showChart": "Lihat grafik"
+  },
+  "chart": {
+    "attribution": "Grafik oleh TradingView Lightweight Charts",
+    "ranges": {
+      "1M": "1B",
+      "3M": "3B",
+      "6M": "6B",
+      "1Y": "1T"
+    },
+    "rangeLabel": "Rentang waktu",
+    "rangeLimited": "Data tersedia {count, plural, other {# hari bursa}}.",
+    "open": "Buka",
+    "high": "Tertinggi",
+    "low": "Terendah",
+    "close": "Tutup",
+    "volume": "Volume",
+    "netBuy": "Beli bersih",
+    "netSell": "Jual bersih",
+    "date": "Tanggal"
+  },
+  "metrics": {
+    "lastClose": "Harga penutupan",
+    "change": "Perubahan",
+    "value": "Nilai transaksi",
+    "volume": "Volume",
+    "foreignNet": "Asing bersih",
+    "marketCap": "Kapitalisasi pasar",
+    "frequency": "Frekuensi",
+    "listedShares": "Saham tercatat"
+  },
+  "criteria": {
+    "accumulation": "Pola akumulasi teramati",
+    "distribution": "Pola distribusi teramati",
+    "brokerConcentration": "Pembelian terkonsentrasi di sedikit broker",
+    "institutional": "Aktivitas broker institusi",
+    "foreignBuying": "Asing membeli bersih",
+    "strongTechnicals": "Indikator teknikal menguat",
+    "quietAccumulation": "Akumulasi tanpa lonjakan harga",
+    "historicalEdge": "Pola ini punya catatan historis positif (uji penyedia)",
+    "historicalTrap": "Pola ini punya catatan historis negatif (uji penyedia)",
+    "pumpRisk": "Kenaikan cepat yang ditandai berisiko pompa",
+    "lateEntry": "Pergerakan sudah berjalan jauh",
+    "climax": "Harga/volume mendekati klimaks",
+    "unrecognized": "Kriteria tidak dikenali"
+  },
+  "strategy": {
+    "whyMatched": "Alasan cocok",
+    "providerNote": "Catatan penyedia",
+    "matches": "{count, plural, other {# saham cocok}}",
+    "symbol": "Kode",
+    "company": "Perusahaan",
+    "marketCondition": "Kondisi pasar menurut penyedia: {label}, rata-rata perubahan {avg}.",
+    "universe": "{covered} saham terdata, {liquid} likuid, {skipped} dilewati.",
+    "screenTitle": "Hasil strategi",
+    "insightTitle": "Ringkasan screener"
+  },
+  "insiders": {
+    "title": "Transaksi orang dalam",
+    "person": "Nama",
+    "date": "Tanggal",
+    "action": "Aksi",
+    "change": "Perubahan",
+    "holding": "Kepemilikan",
+    "price": "Harga",
+    "actions": {
+      "BUY": "Beli",
+      "SELL": "Jual",
+      "CROSS": "Crossing",
+      "OTHER": "Lainnya"
+    }
+  },
+  "broker": {
+    "title": "Broker Summary",
+    "code": "Broker",
+    "net": "Nilai bersih",
+    "buy": "Nilai beli",
+    "sell": "Nilai jual",
+    "netVolume": "Volume bersih",
+    "topNet": "Nilai bersih per broker (10 teratas & terbawah)"
+  },
+  "filters": {
+    "label": "Filter",
+    "reset": "Atur ulang",
+    "search": "Cari…"
+  },
+  "drawer": {
+    "close": "Tutup"
   }
 }

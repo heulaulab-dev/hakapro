@@ -58,6 +58,9 @@
   --color-info: var(--info);
   --color-info-muted: var(--info-muted);
   --color-neutral: var(--neutral);
+  --color-chart-up: var(--chart-up);
+  --color-chart-down: var(--chart-down);
+  --color-chart-grid: var(--chart-grid);
   --color-surface-raised: var(--surface-raised);
 
   /* Density-driven spacing and type */
@@ -110,6 +113,14 @@
   --info-muted: oklch(0.52 0.12 235 / 12%);
   --neutral: oklch(0.55 0.01 255);
 
+  /*
+   * Chart marks for polarity (up/down, net buy/sell). Validated with the dataviz palette checker:
+   * lightness band, chroma, deutan CVD ΔE ≥ 8, contrast ≥ 3:1 vs surface. Text keeps
+   * --positive/--negative (WCAG AA). Polarity is never color-only: signs, ▲/▼, baseline side.
+   */
+  --chart-up: oklch(0.62 0.14 158);
+  --chart-down: oklch(0.5 0.19 25);
+  --chart-grid: oklch(0.92 0.005 250);
   --chart-1: oklch(0.52 0.12 235);
   --chart-2: oklch(0.6 0.1 185);
   --chart-3: oklch(0.55 0.08 285);
@@ -160,6 +171,9 @@
   --info-muted: oklch(0.75 0.11 225 / 14%);
   --neutral: oklch(0.66 0.012 255);
 
+  --chart-up: oklch(0.665 0.15 160);
+  --chart-down: oklch(0.54 0.19 25);
+  --chart-grid: oklch(1 0 0 / 7%);
   --chart-1: oklch(0.75 0.11 225);
   --chart-2: oklch(0.72 0.09 185);
   --chart-3: oklch(0.7 0.09 285);

@@ -164,3 +164,19 @@ export function formatPeriod(value: string | null | undefined, locale: Locale): 
 export function direction(value: number | null | undefined): "positive" | "negative" | "neutral" {
   return !isNumber(value) || value === 0 ? "neutral" : value > 0 ? "positive" : "negative";
 }
+
+export type ValueFormat = "idr" | "idrCompact" | "percent" | "number" | "compact" | "shares" | "sharesCompact" | "lots";
+
+/** One entry point for components that receive a raw number plus a declared format. */
+export function formatValue(value: number | null | undefined, format: ValueFormat, locale: Locale): string {
+  switch (format) {
+    case "idr": return formatIdr(value, locale);
+    case "idrCompact": return formatIdr(value, locale, { compact: true });
+    case "percent": return formatPercent(value, locale);
+    case "number": return formatNumber(value, locale);
+    case "compact": return formatCompact(value, locale);
+    case "shares": return formatVolume(value, locale);
+    case "sharesCompact": return formatVolume(value, locale, { compact: true });
+    case "lots": return formatVolume(value, locale, { unit: "lots" });
+  }
+}

@@ -64,7 +64,17 @@
     "freshnessBadge": "FreshnessBadge",
     "formatting": "Number formatting",
     "sampleInput": "Input",
-    "sampleOutput": "Output"
+    "sampleOutput": "Output",
+    "liveTitle": "Components with API data",
+    "liveIntro": "Data below is fetched through the ported API routes (source: fixtures in dev mode).",
+    "statusTones": "StatusBadge",
+    "notRecordedDemo": "EmptyState via DataState (SOCI history not recorded)",
+    "drawerOpen": "Details",
+    "marketCapList": "Largest market caps",
+    "tabsLabel": "Example tabs",
+    "priceTitle": "BBCA price",
+    "historyTable": "Price history table",
+    "paletteNote": "CommandPalette lives in the app shell (Ctrl+K)."
   },
   "nav": {
     "label": "Main navigation",
@@ -127,5 +137,118 @@
   },
   "stock": {
     "invalidSymbol": "Invalid ticker."
+  },
+  "dataState": {
+    "loading": "Loading data…",
+    "empty": "No data to show.",
+    "retry": "Try again",
+    "reasons": {
+      "NOT_RECORDED": "No fixture recording exists for this data yet.",
+      "UNSUPPORTED": "The current data source doesn't provide this data.",
+      "NOT_CONFIGURED": "The data source isn't configured.",
+      "AUTH_NOT_CONFIGURED": "Authentication isn't configured.",
+      "UNAUTHORIZED": "Sign in to see this data.",
+      "RATE_LIMITED": "Too many requests. Try again shortly.",
+      "PROVIDER_UNAVAILABLE": "The data provider is unavailable.",
+      "PROVIDER_UNAUTHORIZED": "The data provider rejected the server credential.",
+      "MALFORMED_PROVIDER_RESPONSE": "The provider's data format changed.",
+      "MALFORMED_RESPONSE": "The response format didn't match.",
+      "INVALID_REQUEST": "Invalid request.",
+      "default": "The data couldn't be loaded."
+    }
+  },
+  "table": {
+    "rows": "{count, plural, one {# row} other {# rows}}",
+    "sortAscending": "Sort ascending",
+    "sortDescending": "Sort descending",
+    "showTable": "Show table",
+    "showChart": "Show chart"
+  },
+  "chart": {
+    "attribution": "Charting by TradingView Lightweight Charts",
+    "ranges": {
+      "1M": "1M",
+      "3M": "3M",
+      "6M": "6M",
+      "1Y": "1Y"
+    },
+    "rangeLabel": "Time range",
+    "rangeLimited": "{count, plural, one {# trading day} other {# trading days}} available.",
+    "open": "Open",
+    "high": "High",
+    "low": "Low",
+    "close": "Close",
+    "volume": "Volume",
+    "netBuy": "Net buy",
+    "netSell": "Net sell",
+    "date": "Date"
+  },
+  "metrics": {
+    "lastClose": "Close",
+    "change": "Change",
+    "value": "Traded value",
+    "volume": "Volume",
+    "foreignNet": "Net foreign",
+    "marketCap": "Market cap",
+    "frequency": "Frequency",
+    "listedShares": "Listed shares"
+  },
+  "criteria": {
+    "accumulation": "Accumulation pattern observed",
+    "distribution": "Distribution pattern observed",
+    "brokerConcentration": "Buying concentrated in few brokers",
+    "institutional": "Institutional broker activity",
+    "foreignBuying": "Net foreign buying",
+    "strongTechnicals": "Technical indicators strengthening",
+    "quietAccumulation": "Accumulation without a price spike",
+    "historicalEdge": "Pattern has a positive historical record (provider's test)",
+    "historicalTrap": "Pattern has a negative historical record (provider's test)",
+    "pumpRisk": "Rapid rise flagged as a possible pump",
+    "lateEntry": "Move already well advanced",
+    "climax": "Price/volume near a climax",
+    "unrecognized": "Unrecognized criterion"
+  },
+  "strategy": {
+    "whyMatched": "Why matched",
+    "providerNote": "Provider note",
+    "matches": "{count, plural, one {# matching stock} other {# matching stocks}}",
+    "symbol": "Ticker",
+    "company": "Company",
+    "marketCondition": "Market condition per provider: {label}, average change {avg}.",
+    "universe": "{covered} stocks covered, {liquid} liquid, {skipped} skipped.",
+    "screenTitle": "Strategy results",
+    "insightTitle": "Screener summary"
+  },
+  "insiders": {
+    "title": "Insider transactions",
+    "person": "Name",
+    "date": "Date",
+    "action": "Action",
+    "change": "Change",
+    "holding": "Holding",
+    "price": "Price",
+    "actions": {
+      "BUY": "Buy",
+      "SELL": "Sell",
+      "CROSS": "Crossing",
+      "OTHER": "Other"
+    }
+  },
+  "broker": {
+    "title": "Broker Summary",
+    "code": "Broker",
+    "net": "Net value",
+    "buy": "Buy value",
+    "sell": "Sell value",
+    "netVolume": "Net volume",
+    "topNet": "Net value by broker (top & bottom 10)"
+  },
+  "filters": {
+    "label": "Filters",
+    "reset": "Reset",
+    "search": "Search…"
+  },
+  "drawer": {
+    "close": "Close"
   }
 }

@@ -22,3 +22,10 @@ export function withFreshness<T>(
 }
 
 export { classifySessionDate, jakartaClock, marketPhase, previousTradingDay, isTradingDay } from "./session";
+
+/** The freshness part of an envelope, as passed to data-bearing components. */
+export type FreshnessMeta = Pick<WithFreshness<unknown>, "freshness" | "asOf" | "period" | "source">;
+
+export function freshnessMeta(envelope: WithFreshness<unknown>): FreshnessMeta {
+  return { freshness: envelope.freshness, asOf: envelope.asOf, period: envelope.period, source: envelope.source };
+}
