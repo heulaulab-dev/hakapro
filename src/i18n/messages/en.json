@@ -404,5 +404,26 @@
     "total": "Total net",
     "broker": "Broker",
     "rangeNote": "The range is sent to the provider; fixture data doesn't follow it."
+  },
+  "financials": {
+    "title": "Financial statements",
+    "report": {
+      "INCOME_STATEMENT": "Income statement",
+      "BALANCE_SHEET": "Balance sheet",
+      "CASH_FLOW": "Cash flow"
+    },
+    "period": {
+      "quarterly": "Quarterly",
+      "annual": "Annual"
+    },
+    "reportLabel": "Report type",
+    "periodLabel": "Period",
+    "lag": "Latest report {latest}; the report for the period ending {expected} should already be available.",
+    "showEmpty": "Show empty rows",
+    "hideEmpty": "Hide empty rows",
+    "rowChart": "{label} by period",
+    "pickRow": "Pick a line item to chart it.",
+    "note": "Values are full rupiah from the provider. Filing date not available yet; fetched by the provider {fetched}.",
+    "labelsNote": "Line item names follow the provider's labels (Indonesian)."
   }
 }

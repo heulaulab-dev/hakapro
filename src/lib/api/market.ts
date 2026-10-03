@@ -129,3 +129,18 @@ export const accumulationApi = {
     return fetchEnvelope(`/api/broker-accumulation/${encodeURIComponent(symbol.toUpperCase())}${params.size ? `?${params}` : ""}`, brokerAccumulationSchema, { signal });
   },
 };
+
+// --- Financial statements (/api/financial-statements/[code]) ----------------------------------
+export const financialStatementsSchema = z.object({
+  symbol: z.string(), reportType: z.string(), period: z.string(),
+  periods: z.array(z.object({ year: z.string(), quarter: z.string(), label: z.string(), periodEnd: z.string().nullable(), filingDate: z.string().nullable(), fetchedAt: z.string() })),
+  rows: z.array(z.object({ key: z.string(), label: z.string(), depth: n, expandable: z.boolean(), values: z.array(nn) })),
+  reportingLag: z.object({ latestPeriodEnd: z.string().nullable(), expectedPeriodEnd: z.string(), behind: z.boolean() }),
+});
+export type FinancialStatements = z.infer<typeof financialStatementsSchema>;
+export const REPORT_TYPES = ["INCOME_STATEMENT", "BALANCE_SHEET", "CASH_FLOW"] as const;
+export type ReportType = (typeof REPORT_TYPES)[number];
+export const financialsApi = {
+  get: (symbol: string, reportType: ReportType, period: "quarterly" | "annual", signal?: AbortSignal) =>
+    fetchEnvelope(`/api/financial-statements/${encodeURIComponent(symbol.toUpperCase())}?report_type=${reportType}&period=${period}&limit=12`, financialStatementsSchema, { signal }),
+};

@@ -1,8 +1,8 @@
-import { getTranslations, setRequestLocale } from "next-intl/server";
-import { PagePlaceholder } from "@/components/layout/page-placeholder";
+import { setRequestLocale } from "next-intl/server";
+import { FinancialsView } from "./financials-view";
 
-export default async function Page({ params }: PageProps<"/[locale]/stock/[symbol]/financials">) {
-  setRequestLocale((await params).locale);
-  const t = await getTranslations("stockTabs");
-  return <PagePlaceholder level={2} title={t("financials")} />;
+export default async function FinancialsPage({ params }: PageProps<"/[locale]/stock/[symbol]/financials">) {
+  const { locale, symbol } = await params;
+  setRequestLocale(locale);
+  return <FinancialsView symbol={symbol} />;
 }

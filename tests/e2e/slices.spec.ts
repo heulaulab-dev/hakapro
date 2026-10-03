@@ -26,3 +26,27 @@ test.describe("slice 2: Flow tab", () => {
     await expect(page.getByTestId("flow-view").getByTestId("data-state-code").first()).toHaveText("NOT_RECORDED");
   });
 });
+
+test.describe("slice 3: Financials tab", () => {
+  test("statement table, lag banner, row chart, URL state", async ({ page }) => {
+    await page.goto("/id/stock/BBCA/financials");
+    await expect(page.getByTestId("lag-banner")).toContainText("Laporan terbaru Q1 2026");
+    const table = page.getByTestId("statement-table");
+    await expect(table.locator("thead th").nth(1)).toHaveText("Q1 2026");
+    await expect(table.locator('[data-key="laba_rugi"]')).toContainText("Rp14,69 T");
+    // Empty insurance lines are hidden by default and revealed on request.
+    await page.getByRole("button", { name: "Pendapatan Dan Beban Operasional" }).click();
+    await expect(table.locator('[data-key="pendapatan_dan_beban_operasional.pendapatan_pengelolaan_dana_oleh_bank_sebagai_mudharib"]')).toHaveCount(0);
+    await page.getByTestId("toggle-empty").click();
+    await expect(page).toHaveURL(/empty=true/);
+    await expect(table.locator('[data-key="pendapatan_dan_beban_operasional.pendapatan_pengelolaan_dana_oleh_bank_sebagai_mudharib"]')).toHaveCount(1);
+    await table.getByRole("button", { name: "Pendapatan Bunga" }).first().click();
+    await expect(page).toHaveURL(/row=pendapatan_dan_beban_operasional\.pendapatan_bunga/);
+    await expect(page.getByTestId("statement-chart").locator(".recharts-bar-rectangle")).toHaveCount(12);
+  });
+
+  test("unrecorded report type says so", async ({ page }) => {
+    await page.goto("/en/stock/BBCA/financials?report=BALANCE_SHEET");
+    await expect(page.getByTestId("financials-view").getByTestId("data-state-code")).toHaveText("NOT_RECORDED");
+  });
+});

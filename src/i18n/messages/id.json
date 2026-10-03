@@ -404,5 +404,26 @@
     "total": "Total bersih",
     "broker": "Broker",
     "rangeNote": "Rentang dikirim ke penyedia; data fixture tidak mengikuti rentang."
+  },
+  "financials": {
+    "title": "Laporan keuangan",
+    "report": {
+      "INCOME_STATEMENT": "Laba rugi",
+      "BALANCE_SHEET": "Neraca",
+      "CASH_FLOW": "Arus kas"
+    },
+    "period": {
+      "quarterly": "Kuartalan",
+      "annual": "Tahunan"
+    },
+    "reportLabel": "Jenis laporan",
+    "periodLabel": "Periode",
+    "lag": "Laporan terbaru {latest}; laporan periode {expected} seharusnya sudah tersedia.",
+    "showEmpty": "Tampilkan baris kosong",
+    "hideEmpty": "Sembunyikan baris kosong",
+    "rowChart": "{label} per periode",
+    "pickRow": "Pilih baris untuk melihat grafiknya.",
+    "note": "Nilai dalam rupiah penuh dari penyedia. Tanggal publikasi belum tersedia; data diambil penyedia {fetched}.",
+    "labelsNote": "Nama pos mengikuti label penyedia (bahasa Indonesia)."
   }
 }
