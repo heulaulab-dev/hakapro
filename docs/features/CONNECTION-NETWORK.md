@@ -1,6 +1,11 @@
-# Connection Network (Jaringan Koneksi) — N1 data discovery
+# Connection Network (Jaringan Koneksi) — Data Engine spec
 
-Status: **CHECKPOINT N1** — discovery only, no UI or model code. Scope decision pending.
+Status: **N1 reviewed 2026-10-03. Decision: no connection graph in Phase 1.** This document is now the spec for the
+Data Engine phase. In Phase 1, the useful parts live in the stock **Insiders** tab ("Holders" view, see "Phase 1
+outcome" below). The bounded overlap feature is deferred, and no paid arjum quota will be bought for now.
+
+**Provider conduct** (MIGRATION §10): the N1 probes of undocumented arjum paths and the user-agent change made after a
+Cloudflare block were mistakes. They are not to be repeated. Only documented endpoints the app uses are called.
 Date: 2026-10-03. Investigated: arjum public docs + live responses (user's key), the HeulaTrade repo
 (read-only), the ported HAKAPRO data layer and fixtures, and the upstream `nichsedge/idx-bei` repo
 (MIT) that HeulaTrade's `idx-bei` service reads its snapshots from.
@@ -145,9 +150,9 @@ records = 191 pages; median 6.5 pages, max 32):
   headers. Paid add-ons are +5k / +10k / +20k / +50k requests per day for 30 days; the quota resets
   at 00:00 WIB; 429s were seen when crawling fast. A sweep is a **crawler plus storage**, so the hard
   rules require the Data Engine path.
-- Note: Cloudflare in front of arjum answers 403 error 1010 for some client signatures (Python's
-  default user agent was blocked; Node `fetch` works). Any future crawler or script should send an
-  explicit user agent.
+- Note: Cloudflare in front of arjum blocked a discovery script's default Python user agent (error 1010). Under
+  MIGRATION §10 that block should have been reported instead of retried with another user agent. All HAKAPRO traffic
+  now sends the honest `PROVIDER_USER_AGENT`, which arjum accepts (checked 2026-10-03 with one call through the app).
 
 ## 3. Entity-name quality
 
@@ -215,7 +220,31 @@ real 2-hop structure needs the ≥1% data.
 newest-dated row. When several rows share that date and disagree (CBRE example), the edge shows all
 of them with an "ambiguous same-day disclosures" marker rather than picking one.
 
-## 6. Recommendation
+## Phase 1 outcome (built 2026-10-03)
+
+Stock → Insiders tab → **Holders** (default; Transactions remains a toggle):
+
+- Disclosures load newest first, one provider page (15) per user "Load older disclosures" click. Nothing loads in the
+  background. A source that ignores `page` (recordings) stops with "older disclosures aren't available".
+- Grouping (`src/lib/insider-holders.ts`):
+  - Organisations merge on exact equality after legal-form normalisation.
+  - People and names of unknown type merge only on the exact name (case and whitespace aside) and are labelled
+    "identity not verified".
+  - Truncated organisation names are flagged "possibly the same", never merged.
+- Each holder shows: every disclosed name variant, its kind (organisation / person / custodian-nominee / type not
+  stated), roles from badges as disclosed, the latest disclosed holding with its as-of date, and its event history
+  with the source and date range.
+- Contradictory same-day results show as **Ambiguous**, with every value; none is picked (live example: CBRE
+  2026-09-17, 61.13% and 57.98%).
+- Custodian/nominee account names get their own kind and the note "registered on behalf of clients; not presented as
+  the owner".
+- Coverage is stated ("newest N of M disclosures"), plus the note that this is not the shareholder register.
+- Provenance and freshness follow §5: `source` from the envelope, `asOf` = newest transaction date, `HISTORICAL`.
+
+idx-bei profile data is **not** used for connection edges (no dates). Where the Ownership tab shows it, it is labelled
+with the retrieval date and dataset, and tax/ID numbers are stripped at the parsing boundary (tested at the API route).
+
+## 6. Recommendation (N1, as submitted)
 
 **Phase 1 (fits the hard rules): 1-hop from arjum insiders, plus a bounded opt-in overlap.**
 
@@ -251,3 +280,34 @@ of them with an "ambiguous same-day disclosures" marker rather than picking one.
 3. Whether to request a paid arjum quota tier (only relevant if the Data Engine path picks arjum
    crawling over the ≥1% feed).
 4. Whether to pursue the ≥1% data's origin and licence for a later Data Engine phase.
+
+---
+
+## Data Engine inputs
+
+### ≥1% shareholder list (research only — not ingested, copied or committed)
+
+Researched 2026-10-03 from news coverage, OJK's press release, and third-party repos. **idx.co.id and ksei.co.id
+blocked automated reads (403)**, so IDX/KSEI page wording below comes from search snippets and secondary quotes and is
+marked *unverified*. No PDF or dataset was downloaded.
+
+| Question | Finding | Confidence |
+|---|---|---|
+| Original publisher | **KSEI** compiles the data; **IDX (BEI)** publishes it as an announcement, "Pemegang Saham di atas 1% (KSEI)", under idx.co.id → Berita → Pengumuman | High (Kontan, detik, OJK) |
+| Format | **PDF** via IDX e-reporting (`/StaticData/NewsAndAnnouncement/ANNOUNCEMENTSTOCK/From_EREP/<yyyymm>/…pdf`); the March 2026 release is ~73 pages. There is no official CSV: GitHub CSVs are extractions. The original also has nationality, domicile, and scrip/scripless split columns | High / medium |
+| Schedule | **Monthly.** First release 3 Mar 2026 after market close, with positions as of **27 Feb 2026** (matches the snapshot file name). Each release shows the last trading day of the prior month. A May 2026 release exists. The exact release day each month is unverified | High (cadence), medium (day) |
+| Legal basis | **Keputusan Dewan Komisioner OJK No. 1/KDK.04/2026** (KSEI and IDX as public ownership-data providers). Part of OJK's 8-point capital-market integrity plan (1 Feb 2026), confirmed delivered in OJK press release SP 64/OJK/DKPU/IV/2026 (2 Apr 2026). Related: IDX rule I-A revised (effective 31 Mar 2026); monthly registration reports (SK LBRE) add >5% holdings and ≥10% beneficial owners from the 30 Apr 2026 report; KSEI investor classification expanded to 39 types | High (OJK), unverified (letter S-20/PM.1/2026) |
+| Terms — KSEI | The cover letter in the PDF reportedly says the data "hanya dapat digunakan oleh PT Bursa Efek Indonesia (BEI) sesuai dengan tujuan penggunaan sebagaimana tercantum dalam Keputusan OJK". That is no public redistribution licence | Unverified (third-party quote) |
+| Terms — idx.co.id | Non-commercial use and quotation allowed with full attribution **and access date**. **No web scraping/crawling.** Commercial use or redistribution needs **prior written permission from BEI and/or the original owner** (here KSEI). IDX also runs a paid data-licence regime (Layanan Data BEI); whether announcements fall under it is unknown | Unverified wording (search snippets) |
+| Upstream copy (`nichsedge/idx-bei`) | Names "KSEI" but gives no source URL. Added in one commit on 2026-09-10. MIT covers the code only, with no data licence or attribution. Its columns are a subset of a third-party PDF extraction | Verified (repo files) |
+
+**Implications for a Data Engine:**
+
+1. A commercial product (HAKAPRO) needs **written permission from IDX, and likely KSEI,** before ingesting or showing
+   this data. Third-party CSV copies are not a licensed source.
+2. If licensed, ingest from the official monthly PDF (or a licensed feed), not by scraping idx.co.id. Keep `asOf` =
+   the position date, `source` = "KSEI via IDX announcement <id>", with attribution and access date as the terms ask.
+3. Keep the custodian/nominee classification (`INVESTOR_TYPE` plus the name patterns from §1.4). Strip any ID numbers
+   at ingestion.
+4. Open questions for the product owner: who requests the licence, and whether IDX's paid data services include a
+   machine-readable feed of this list.

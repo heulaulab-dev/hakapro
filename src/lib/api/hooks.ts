@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query/keys";
 import { accumulationApi, financialsApi, marketApi, overviewApi, quotesApi, screenerApi, stockApi, type ReportType, type ScreenCondition } from "./market";
 
@@ -30,5 +30,16 @@ export const useDoneDetails = (symbol: string) => useQuery({ queryKey: queryKeys
 export const useSeasonality = (symbol: string) => useQuery({ queryKey: queryKeys.seasonality(symbol), queryFn: ({ signal }) => stockApi.seasonality(symbol, signal) });
 export const useProfile = (symbol: string) => useQuery({ queryKey: queryKeys.profile(symbol), queryFn: ({ signal }) => stockApi.profile(symbol, signal) });
 export const useCorporateActions = (symbol: string) => useQuery({ queryKey: queryKeys.actions(symbol), queryFn: ({ signal }) => stockApi.actions(symbol, signal) });
+/**
+ * Newest-first insider disclosures, one provider page per user "load older" action (no background crawling).
+ * Stops when the provider answers with a different page than requested (e.g. a recording that ignores `page`).
+ */
+export const useInsiderDisclosures = (symbol: string, limit: number) =>
+  useInfiniteQuery({
+    queryKey: queryKeys.insiderDisclosures(symbol, limit),
+    queryFn: ({ pageParam, signal }) => stockApi.insiders(symbol, { page: pageParam, limit }, signal),
+    initialPageParam: 1,
+    getNextPageParam: (last, all) => (last.data.page === all.length && last.data.page < last.data.totalPages ? last.data.page + 1 : undefined),
+  });
 export const useInsidersPage = (symbol: string, page: number, limit: number, action: string | null) =>
   useQuery({ queryKey: queryKeys.insidersPage(symbol, page, limit, action), queryFn: ({ signal }) => stockApi.insiders(symbol, { page, limit, action }, signal), placeholderData: (previous) => previous });

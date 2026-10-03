@@ -543,7 +543,8 @@
     "name": "Name",
     "share": "Share",
     "role": "Role",
-    "profileNote": "Ownership structure from IDX issuer profile data (no data date)."
+    "profileNote": "Ownership structure from the IDX issuer profile snapshot. The snapshot carries no disclosure date, so it is shown as undated.",
+    "retrieved": "Retrieved {date} · source: {dataset}"
   },
   "errors": {
     "title": "Something went wrong",
@@ -588,5 +589,42 @@
     "invalid": "Check the ticker and value.",
     "failed": "The change wasn't saved.",
     "setAlert": "Alert"
+  },
+  "insiderHolders": {
+    "title": "Holders",
+    "views": {
+      "holders": "Holders",
+      "transactions": "Transactions"
+    },
+    "coverage": "Grouped from the newest {loaded} of {total} disclosures.",
+    "coverageAll": "Grouped from all {total} disclosures.",
+    "count": "{count, plural, one {# holder} other {# holders}}",
+    "loadOlder": "Load older disclosures",
+    "olderUnavailable": "Older disclosures aren't available from this data source.",
+    "holder": "Holder",
+    "latest": "Latest disclosed holding",
+    "asOf": "As of",
+    "disclosures": "Disclosures",
+    "showHistory": "Show disclosures for {name}",
+    "hideHistory": "Hide disclosures for {name}",
+    "kinds": {
+      "organization": "Organisation",
+      "person": "Person",
+      "nominee": "Custodian / nominee account",
+      "unknown": "Type not stated"
+    },
+    "roles": {
+      "director": "Director",
+      "commissioner": "Commissioner",
+      "controller": "Controller"
+    },
+    "variants": "Also disclosed as: {names}",
+    "nomineeNote": "An account registered on behalf of clients. It is not presented as the owner.",
+    "unverified": "Identity not verified: grouped by the exact disclosed name.",
+    "possiblySame": "Possibly the same disclosed name as {names}. Not merged.",
+    "ambiguous": "Ambiguous",
+    "ambiguousNote": "Several disclosures on {date} report different resulting holdings. None is picked.",
+    "source": "Source: {source} insider disclosures, {first} – {last}.",
+    "note": "Built only from disclosed transactions: a holder appears here only after reporting a transaction. This is not the full shareholder register. Roles are shown as disclosed."
   }
 }

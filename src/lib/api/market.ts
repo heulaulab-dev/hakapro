@@ -182,11 +182,13 @@ export const seasonalitySchema = z.object({
   summary: z.array(z.object({ month: z.string(), averagePercent: nn, upProbability: nn, samples: n })),
 });
 export type Seasonality = z.infer<typeof seasonalitySchema>;
-/** IDX company-detail records are provider-shaped; only these keys are read. TODO(verify) against a real response. */
+/** IDX company-detail records (keys verified upstream: Nama, Jabatan, Persentase, Kategori). ID numbers are stripped server-side. */
 const personRecord = z.record(z.string(), z.unknown());
 export const profileSchema = z.object({
   symbol: z.string(), companyName: z.string().nullable(), website: z.string().nullable(), description: z.string().nullable(),
   directors: z.array(personRecord), commissioners: z.array(personRecord), shareholders: z.array(personRecord), subsidiaries: z.array(personRecord),
+  /** When HAKAPRO retrieved the snapshot (not a disclosure date) and which dataset it came from. */
+  retrievedAt: z.string(), dataset: z.string().nullable(),
 });
 export type CompanyProfile = z.infer<typeof profileSchema>;
 export const corporateActionSchema = z.object({ date: z.string().nullable(), type: z.string().nullable(), description: z.string().nullable(), documentUrl: z.string().nullable() });

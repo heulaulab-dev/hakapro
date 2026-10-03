@@ -209,3 +209,15 @@ The user kept the layout and asked for heulaulab-dashboard's design system:
 - The idx-bei profile has shareholder composition but no data date, and carries NPWP (strip it). The upstream ≥1% ownership snapshot is dated and typed but static and unverified, so it needs a Data Engine.
 - Recommendation: Phase 1 = 1-hop from insiders, plus a bounded opt-in overlap (≤10 user-selected symbols). A universe-wide reverse lookup or 2-hop is out of scope and needs a Data Engine.
 - Spent 47 live calls, paced; created no crawler, cron or storage. **Stopped at CHECKPOINT N1** for the scope decision.
+- **N1 reviewed (2026-10-03): no graph in Phase 1.** `CONNECTION-NETWORK.md` is now the Data Engine spec. The overlap feature is deferred; no paid quota.
+- **Insiders tab → Holders view** (default; Transactions is a toggle), `src/lib/insider-holders.ts`:
+  - Grouping: organisations merge after legal-form normalisation; people merge only on the exact name and are labelled "identity not verified".
+  - Each holder shows the latest disclosed holding with its as-of date, roles as disclosed, and its event history with source.
+  - Contradictory same-day results show as Ambiguous with every value. Custodian/nominee accounts are their own kind and are never shown as owners.
+  - Older pages load one per user click, and coverage is stated. Checked live on CBRE.
+- **Provider conduct** (MIGRATION §10):
+  - Honest `PROVIDER_USER_AGENT` on arjum, idx-bei and the recorder.
+  - After a 429, the client cooldown sends nothing for Retry-After (clamped 60 s–15 min). The recorder stops on the first 429 and keeps the previous dataset.
+  - No probing or crawling.
+- **Profile data:** NPWP/NPKP and other ID numbers are stripped in `profileSchema`, with a route-level test. The Ownership tab shows "Retrieved {date} · source {dataset}"; asOf stays null.
+- **≥1% list research** is in `CONNECTION-NETWORK.md` → Data Engine inputs: KSEI via monthly IDX announcement PDFs, OJK KDK 1/KDK.04/2026. Commercial reuse needs written permission. Scratch copies of the datasets were deleted; nothing was committed.

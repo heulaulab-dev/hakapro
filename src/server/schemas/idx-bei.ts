@@ -1,6 +1,7 @@
 // Ported from heulatrade lib/market/contracts.ts + lib/market/providers/direct.ts (Zod 3 → Zod 4).
 // Lane A: the existing Python market-api over idx-bei datasets (services/market-api/app.py).
 import { z } from "zod";
+import { stripIdentifiers } from "@/server/services/strip-identifiers";
 import { symbolSchema } from "./inputs";
 
 const num = z.number().nullable();
@@ -55,11 +56,16 @@ export const foreignSignalSchema = z.object({
 export const signalsSchema = z.object({ tradingDate: z.string(), foreignFlow: z.array(foreignSignalSchema) });
 
 export const fundamentalsSchema = z.array(z.object({ periodDate: z.string().nullable(), periodType: z.string(), metrics: z.record(z.string(), num) }));
+/**
+ * IDX company-detail records (verified upstream keys: Direktur `Nama/Jabatan/Afiliasi`, Komisaris
+ * `Nama/Jabatan/Independen`, PemegangSaham `Nama/Kategori/Jumlah/Persentase/Pengendali`). Tax and ID numbers
+ * (NPWP, NPKP, ids) are stripped here, at the parsing boundary — they must never reach a response.
+ */
+const profileRecords = z.array(z.record(z.string(), z.unknown())).transform((records) => stripIdentifiers(records));
 export const profileSchema = z.object({
   symbol: symbolSchema, companyName: z.string().nullable(), website: z.string().nullable(), description: z.string().nullable(),
-  directors: z.array(z.record(z.string(), z.unknown())), commissioners: z.array(z.record(z.string(), z.unknown())),
-  shareholders: z.array(z.record(z.string(), z.unknown())), subsidiaries: z.array(z.record(z.string(), z.unknown())),
-});
+  directors: profileRecords, commissioners: profileRecords, shareholders: profileRecords, subsidiaries: profileRecords,
+}).strip();
 export const actionsSchema = z.array(z.object({ date: z.string().nullable(), type: z.string().nullable(), description: z.string().nullable(), documentUrl: z.string().nullable() }));
 
 // app.py /v1/news and /v1/announcements item shapes (the old BFF dropped these items — fixed here).

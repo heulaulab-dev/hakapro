@@ -11,6 +11,9 @@
  * and re-validated before anything is written. Output is staged in a temp dir and swapped in
  * atomically, so a failed run leaves the previous dataset untouched.
  *
+ * Provider conduct (MIGRATION §10): only documented endpoints the app uses, paced requests, an honest
+ * HAKAPRO user agent, and a hard stop on the first 429 — no retries, and the previous dataset is kept.
+ *
  * Must not import anything that imports `server-only` (Bun resolves its throwing entry).
  */
 import { existsSync, mkdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
@@ -23,6 +26,7 @@ import {
 import { screenerResponseSchema } from "../src/server/schemas/arjum";
 import { parseIndonesianDate } from "../src/server/services/screener-date";
 import { ARJUM_LIMITS } from "../src/lib/api/provider-limits";
+import { PROVIDER_USER_AGENT } from "../src/server/config/provider-identity";
 
 const SYMBOL = /^[A-Z0-9]{1,12}$/;
 const ALWAYS_RECORD = ["BBCA"];
@@ -42,6 +46,9 @@ export type RecordResult = { ok: boolean; manifest?: FixtureManifest; outputDir?
 
 type Query = Record<string, string | number>;
 
+/** Thrown on HTTP 429: the run stops immediately instead of retrying. */
+class RateLimitStop extends Error {}
+
 export async function recordFixtures(options: RecordOptions): Promise<RecordResult> {
   const { baseUrl, apiKey, rootDir, symbolLimit = 25, delayMs = 250, fetcher = fetch, log = console.log, now = () => new Date() } = options;
   const stamp = now().toISOString().replace(/[:.]/g, "-");
@@ -59,10 +66,12 @@ export async function recordFixtures(options: RecordOptions): Promise<RecordResu
     const url = new URL(path.replace(/^\//, ""), `${baseUrl.replace(/\/$/, "")}/`);
     for (const [key, value] of Object.entries(query)) url.searchParams.set(key, String(value));
     try {
-      const response = await fetcher(url, { headers: { "x-api-key": apiKey, accept: "application/json" }, signal: AbortSignal.timeout(20_000) });
+      const response = await fetcher(url, { headers: { "x-api-key": apiKey, accept: "application/json", "user-agent": PROVIDER_USER_AGENT }, signal: AbortSignal.timeout(20_000) });
+      if (response.status === 429) throw new RateLimitStop();
       if (!response.ok) return { status: response.status };
       return { status: response.status, body: await response.json() };
-    } catch {
+    } catch (error) {
+      if (error instanceof RateLimitStop) throw error;
       return { status: "NETWORK_ERROR" };
     }
   }
@@ -139,6 +148,10 @@ export async function recordFixtures(options: RecordOptions): Promise<RecordResu
     rmSync(previous, { recursive: true, force: true });
     log(`Recorded ${files.length} files for ${manifest.symbols.length} symbols (${failures.length} failures) → fixtures/arjum`);
     return { ok: true, manifest, outputDir: destination };
+  } catch (error) {
+    if (!(error instanceof RateLimitStop)) throw error;
+    log("Provider answered 429 (rate limited). Stopped without retrying; nothing was written and the previous dataset is kept. Try again after the daily quota resets (00:00 WIB).");
+    return { ok: false };
   } finally {
     rmSync(staging, { recursive: true, force: true });
   }

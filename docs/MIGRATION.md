@@ -216,3 +216,19 @@ Visual direction comes **only** from the HAKAPRO init prompt §6 (dark-first + l
 6. **Market data.** `MarketDataSource` interface with a fixture-backed implementation built from `tests/fixtures/arjum/*.json` (copied in). All tests run against fixtures. The user adds real arjum credentials to `.env.local` for a manual check. Env values are never printed, logged or committed.
 7. **Versions.** Schemas ported to Zod 4. `@tanstack/react-table` pinned to v8 to match shadcn.
 8. **Tracking.** `docs/PROGRESS.md`; no Plane.
+
+## 10. Provider conduct (permanent rule, decided at Connection Network N1, 2026-10-03)
+
+Applies to every provider (arjum, idx-bei, any future source), to app code, scripts, and agents working on this repo.
+
+1. **Only call documented endpoints the app actually uses.** No probing of undocumented paths, and no crawling: no loops over symbols or pages beyond what a user action, the reviewed fixture recorder, or the reviewed drift sweep needs.
+2. **On 429: stop and back off; never retry in a tight loop.**
+   - App (`src/server/providers/backoff.ts`): after a 429, the provider client sends nothing until the cooldown ends. The cooldown is `Retry-After`, clamped to 60 s–15 min. Callers get `RATE_LIMITED` with the remaining seconds. The browser never auto-retries a 4xx (`shouldRetry`).
+   - Recorder (`scripts/record-fixtures.ts`): the first 429 ends the run without a retry. Nothing is written, and the previous dataset is kept.
+3. **Honest identification.** Every outbound request sends `PROVIDER_USER_AGENT` (`src/server/config/provider-identity.ts`), which identifies HAKAPRO.
+   - Headers or clients are never chosen to get past a block.
+   - If a provider blocks a client, report it to the product owner instead of working around it.
+4. **Datasets from third parties** (snapshots, CSVs, other repos' data) are not ingested, copied or committed without a decision on origin and terms (see `docs/features/CONNECTION-NETWORK.md`, "Data Engine inputs").
+5. **Tax and ID numbers** (NPWP, NPKP, NIK/KTP, SID, passport) are stripped at the parsing boundary (`src/server/services/strip-identifiers.ts`, applied in `profileSchema`). They never reach a response, a log or the UI. A route-level test proves it.
+
+Record of a breach before this rule existed (N1 discovery): 6 undocumented arjum paths were probed (all 403). One Cloudflare block (error 1010) on a script's default Python user agent was bypassed by setting a different user agent rather than being reported first. Neither may happen again.

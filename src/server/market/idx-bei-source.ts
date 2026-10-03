@@ -6,6 +6,9 @@ import {
   profileSchema, screenRequestSchema, screenResultSchema, securitySchema, signalsSchema, stockSchema, type ScreenRequest,
 } from "@/server/schemas/idx-bei";
 import { symbolSchema } from "@/server/schemas/inputs";
+import { PROVIDER_USER_AGENT } from "@/server/config/provider-identity";
+import { logWarn } from "@/server/log";
+import { ProviderBackoff } from "@/server/providers/backoff";
 import { MarketDataError } from "./errors";
 import { BaseMarketDataSource, type PageQuery } from "./source";
 import type { Candle, Quote } from "./types";
@@ -16,6 +19,7 @@ const pct = (fraction: number | null) => (fraction === null ? null : fraction * 
 /** In-memory TTL cache, ported from heulatrade lib/market/providers/direct.ts. */
 const TTL_MS = { securities: 3_600_000, profile: 86_400_000, news: 900_000, market: 300_000 } as const;
 const cache = new Map<string, { value: unknown; at: number }>();
+const sharedBackoff = new ProviderBackoff();
 
 /**
  * idx-bei lane: the existing Python market-api (heulatrade services/market-api/app.py) at MARKET_API_URL.
@@ -28,6 +32,7 @@ export class IdxBeiSource extends BaseMarketDataSource {
     private readonly baseUrl: string,
     private readonly clock: Clock = () => new Date(),
     private readonly fetcher: typeof fetch = fetch,
+    private readonly backoff: ProviderBackoff = sharedBackoff,
   ) {
     super();
   }
@@ -41,18 +46,25 @@ export class IdxBeiSource extends BaseMarketDataSource {
   private async get<T extends z.ZodType>(path: string, data: T, ttl?: number, init?: RequestInit) {
     const key = init?.body ? null : path;
     const hit = key && ttl ? cache.get(key) : undefined;
-    if (hit && Date.now() - hit.at < ttl!) return hit.value as z.infer<ReturnType<typeof idxBeiEnvelope<T>>>;
+    if (hit && Date.now() - hit.at < ttl!) return { ...(hit.value as z.infer<ReturnType<typeof idxBeiEnvelope<T>>>), retrievedAt: new Date(hit.at).toISOString() };
+    this.backoff.check();
     let response: Response;
     try {
-      response = await this.fetcher(`${this.baseUrl}${path}`, { ...init, signal: AbortSignal.timeout(10_000), cache: "no-store" });
+      response = await this.fetcher(`${this.baseUrl}${path}`, { ...init, headers: { ...init?.headers, "user-agent": PROVIDER_USER_AGENT }, signal: AbortSignal.timeout(10_000), cache: "no-store" });
     } catch {
       throw new MarketDataError("PROVIDER_UNAVAILABLE", "Market service could not be reached", 503);
+    }
+    if (response.status === 429) {
+      const seconds = this.backoff.trip(Number(response.headers.get("retry-after")) || undefined);
+      logWarn("provider_rate_limited", { source: this.id, path, cooldownSeconds: seconds });
+      throw new MarketDataError("RATE_LIMITED", "Market service rate limit reached", 429, seconds);
     }
     if (!response.ok) throw new MarketDataError("PROVIDER_UNAVAILABLE", `Market service returned ${response.status}`, response.status === 400 ? 400 : 503);
     const parsed = idxBeiEnvelope(data).safeParse(await response.json().catch(() => undefined));
     if (!parsed.success) throw new MarketDataError("MALFORMED_PROVIDER_RESPONSE", "Market response format changed", 502);
-    if (key && ttl) cache.set(key, { value: parsed.data, at: Date.now() });
-    return parsed.data;
+    const at = Date.now();
+    if (key && ttl) cache.set(key, { value: parsed.data, at });
+    return { ...parsed.data, retrievedAt: new Date(at).toISOString() };
   }
 
   private wrap<T>(data: T, freshness: Freshness, asOf: string | null, period?: string): WithFreshness<T> {
@@ -95,9 +107,10 @@ export class IdxBeiSource extends BaseMarketDataSource {
   }
 
   async profile(symbol: string) {
-    // app.py returns no as-of for profiles → UNAVAILABLE freshness. TODO(verify) a source date.
-    const { data, meta } = await this.get(`/v1/stocks/${encodeURIComponent(symbolSchema.parse(symbol))}/profile`, profileSchema, TTL_MS.profile);
-    return this.wrap(data, "HISTORICAL", meta.dataAsOf);
+    // The upstream company details carry no disclosure date, so asOf stays null (→ UNAVAILABLE). The UI labels
+    // the data with when we retrieved it and from which dataset instead — never as a data date.
+    const { data, meta, retrievedAt } = await this.get(`/v1/stocks/${encodeURIComponent(symbolSchema.parse(symbol))}/profile`, profileSchema, TTL_MS.profile);
+    return this.wrap({ ...data, retrievedAt, dataset: meta.source }, "HISTORICAL", meta.dataAsOf);
   }
 
   async securities(q: string) {

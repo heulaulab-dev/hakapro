@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, test } from "vitest";
 import { recordFixtures } from "../../scripts/record-fixtures";
+import { PROVIDER_USER_AGENT } from "../../src/server/config/provider-identity";
 import { fixture } from "../support/fixtures";
 
 const KEY = "sk_test_recorder_key_123";
@@ -77,6 +78,26 @@ describe("recordFixtures (fake provider, no network)", () => {
     const { fetcher, calls } = fakeProvider();
     await run(mkdtempSync(join(tmpdir(), "hakapro-record-")), fetcher);
     expect(calls.every((call) => call.headers["x-api-key"] === KEY && !call.url.includes(KEY))).toBe(true);
+  });
+
+  test("identifies itself with the honest HAKAPRO user agent", async () => {
+    const { fetcher, calls } = fakeProvider();
+    await run(mkdtempSync(join(tmpdir(), "hakapro-record-")), fetcher);
+    expect(calls.every((call) => call.headers["user-agent"] === PROVIDER_USER_AGENT && /^HAKAPRO\//.test(call.headers["user-agent"]))).toBe(true);
+  });
+
+  test("a 429 stops the run at once: no retry, nothing written, previous dataset kept", async () => {
+    const root = mkdtempSync(join(tmpdir(), "hakapro-record-"));
+    mkdirSync(join(root, "fixtures/arjum"), { recursive: true });
+    writeFileSync(join(root, "fixtures/arjum/manifest.json"), "previous");
+    const lines: string[] = [];
+    const { fetcher, calls } = fakeProvider({ "/api/history/HRTA": () => new Response("{}", { status: 429 }) });
+    const result = await run(root, fetcher, lines);
+    expect(result.ok).toBe(false);
+    expect(calls.filter((call) => call.url.includes("/api/history/HRTA"))).toHaveLength(1);
+    expect(calls.at(-1)!.url).toContain("/api/history/HRTA");
+    expect(readFileSync(join(root, "fixtures/arjum/manifest.json"), "utf8")).toBe("previous");
+    expect(lines.at(-1)).toMatch(/429/);
   });
 
   test("per-request failures are listed in the manifest and the run continues", async () => {

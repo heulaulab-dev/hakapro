@@ -48,6 +48,8 @@ export type CompanyProfile = {
   symbol: string; companyName: string | null; website: string | null; description: string | null;
   directors: Array<Record<string, unknown>>; commissioners: Array<Record<string, unknown>>;
   shareholders: Array<Record<string, unknown>>; subsidiaries: Array<Record<string, unknown>>;
+  /** When HAKAPRO retrieved the snapshot (ISO) — not a disclosure date — and the upstream dataset name. */
+  retrievedAt: string; dataset: string | null;
 };
 export type CorporateAction = { date: string | null; type: string | null; description: string | null; documentUrl: string | null };
 export type ScreenResult = { rows: Array<{ symbol: string; name: string | null } & Record<string, number | string | null>>; total: number; supportedFields: string[] };

@@ -20,5 +20,6 @@ export const queryKeys = {
   profile: (symbol: string) => ["market", "profile", symbol.toUpperCase()] as const,
   actions: (symbol: string) => ["market", "actions", symbol.toUpperCase()] as const,
   insidersPage: (symbol: string, page: number, limit: number, action: string | null) => ["market", "insiders", symbol.toUpperCase(), page, limit, action] as const,
+  insiderDisclosures: (symbol: string, limit: number) => ["market", "insiders", symbol.toUpperCase(), "disclosures", limit] as const,
   savedScreens: (userId: string) => ["user", "saved-screens", userId] as const,
 };

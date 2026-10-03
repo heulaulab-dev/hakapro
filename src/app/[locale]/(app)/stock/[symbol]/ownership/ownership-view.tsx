@@ -9,7 +9,7 @@ import { useCorporateActions, useProfile } from "@/lib/api/hooks";
 import { freshnessMeta } from "@/lib/freshness";
 import { formatDate, type Locale } from "@/lib/format";
 
-/** Reads only well-known IDX company-detail keys; anything else is ignored rather than guessed. TODO(verify) keys. */
+/** Reads only the verified IDX company-detail keys (Nama, Jabatan, Persentase, Kategori); anything else is ignored. */
 function field(record: Record<string, unknown>, ...keys: string[]): string | null {
   for (const key of keys) {
     const value = record[key];
@@ -30,7 +30,10 @@ export function StockOwnershipView({ symbol }: { symbol: string }) {
       <ul className="p-style flex flex-col divide-y divide-border">
         {records.map((record, index) => (
           <li key={index} className="flex items-center justify-between gap-3 py-2">
-            <span className="truncate">{field(record, "Nama", "name") ?? "—"}</span>
+            <span className="flex min-w-0 flex-col">
+              <span className="truncate">{field(record, "Nama", "name") ?? "—"}</span>
+              {kind === "holder" && field(record, "Kategori") && <span className="text-[11px] text-muted-foreground">{field(record, "Kategori")}</span>}
+            </span>
             <span className="ticker shrink-0 text-xs text-muted-foreground">{kind === "holder" ? (field(record, "Persentase", "percentage") ?? "") : (field(record, "Jabatan", "position") ?? "")}</span>
           </li>
         ))}
@@ -43,6 +46,9 @@ export function StockOwnershipView({ symbol }: { symbol: string }) {
         {(envelope) => (
           <div className="flex flex-col gap-4">
             <SectionHeader title={t("title")} description={t("profileNote")} meta={freshnessMeta(envelope)} />
+            <p className="caption-style text-subtle" data-testid="profile-provenance">
+              {t("retrieved", { date: formatDate(envelope.data.retrievedAt, locale), dataset: envelope.data.dataset ?? envelope.source })}
+            </p>
             {envelope.data.description && <p className="text-sm text-muted-foreground">{envelope.data.description}</p>}
             {safeUrl(envelope.data.website) && <a href={safeUrl(envelope.data.website)!} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-link hover:underline">{t("website")}<ExternalLink className="size-3" /></a>}
             <div className="grid gap-4 lg:grid-cols-3">

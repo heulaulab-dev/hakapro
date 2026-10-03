@@ -543,7 +543,8 @@
     "name": "Nama",
     "share": "Porsi",
     "role": "Jabatan",
-    "profileNote": "Struktur kepemilikan dari data profil emiten IDX (tanpa tanggal data)."
+    "profileNote": "Struktur kepemilikan dari snapshot profil emiten IDX. Snapshot ini tidak mencantumkan tanggal keterbukaan informasi, sehingga ditampilkan tanpa tanggal data.",
+    "retrieved": "Diambil {date} · sumber: {dataset}"
   },
   "errors": {
     "title": "Terjadi kesalahan",
@@ -588,5 +589,42 @@
     "invalid": "Periksa kode saham dan nilai.",
     "failed": "Perubahan tidak tersimpan.",
     "setAlert": "Peringatan"
+  },
+  "insiderHolders": {
+    "title": "Pemegang",
+    "views": {
+      "holders": "Pemegang",
+      "transactions": "Transaksi"
+    },
+    "coverage": "Dikelompokkan dari {loaded} keterbukaan terbaru dari total {total}.",
+    "coverageAll": "Dikelompokkan dari seluruh {total} keterbukaan.",
+    "count": "{count} pemegang",
+    "loadOlder": "Muat keterbukaan lebih lama",
+    "olderUnavailable": "Keterbukaan yang lebih lama tidak tersedia dari sumber data ini.",
+    "holder": "Pemegang",
+    "latest": "Kepemilikan terakhir yang diungkapkan",
+    "asOf": "Per tanggal",
+    "disclosures": "Keterbukaan",
+    "showHistory": "Tampilkan keterbukaan {name}",
+    "hideHistory": "Sembunyikan keterbukaan {name}",
+    "kinds": {
+      "organization": "Organisasi",
+      "person": "Perorangan",
+      "nominee": "Rekening kustodian / nominee",
+      "unknown": "Jenis tidak disebutkan"
+    },
+    "roles": {
+      "director": "Direktur",
+      "commissioner": "Komisaris",
+      "controller": "Pengendali"
+    },
+    "variants": "Juga diungkapkan sebagai: {names}",
+    "nomineeNote": "Rekening yang terdaftar atas nama nasabah. Tidak ditampilkan sebagai pemilik.",
+    "unverified": "Identitas tidak diverifikasi: dikelompokkan berdasarkan nama yang diungkapkan persis sama.",
+    "possiblySame": "Mungkin nama yang sama dengan {names}. Tidak digabungkan.",
+    "ambiguous": "Ambigu",
+    "ambiguousNote": "Beberapa keterbukaan pada {date} melaporkan kepemilikan akhir yang berbeda. Tidak ada yang dipilih.",
+    "source": "Sumber: keterbukaan insider {source}, {first} – {last}.",
+    "note": "Hanya dari transaksi yang diungkapkan: pemegang muncul di sini setelah melaporkan transaksi. Ini bukan daftar pemegang saham lengkap. Jabatan ditampilkan sesuai keterbukaan."
   }
 }

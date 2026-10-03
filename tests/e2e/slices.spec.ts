@@ -136,8 +136,47 @@ test.describe("slice 6: Chart, Insiders, History, Ownership tabs", () => {
     await expect(page.getByTestId("full-chart").locator("canvas").first()).toBeVisible();
   });
 
-  test("insiders: paged table with action filter in the URL", async ({ page }) => {
+  test("insiders: holders view groups disclosures by holder, with coverage and provenance", async ({ page }) => {
     await page.goto("/en/stock/BBCA/insiders");
+    const holders = page.getByTestId("insider-holders");
+    await expect(holders.getByTestId("holder-count")).toHaveText("10 holders");
+    await expect(holders.getByTestId("holder-coverage")).toHaveText("Grouped from the newest 10 of 85 disclosures.");
+    const first = holders.getByTestId("holder-row").first();
+    await expect(first).toContainText("Identity not verified");
+    await first.getByRole("button", { name: /Show disclosures for/ }).click();
+    await expect(holders.getByTestId("holder-history")).toContainText("Source: fixture:arjum insider disclosures");
+    // The recording ignores `page`, so older disclosures are reported unavailable instead of duplicated.
+    await holders.getByTestId("load-older").click();
+    await expect(holders.getByTestId("older-unavailable")).toBeVisible();
+    await expect(holders.getByTestId("holder-count")).toHaveText("10 holders");
+    await expect(holders.getByTestId("load-older")).toHaveCount(0);
+  });
+
+  test("insiders: contradictory same-day holdings are ambiguous; nominee accounts are not owners", async ({ page }) => {
+    const base = { action: "BUY", nationality: "local", broker: null, previousShares: null, changeShares: null, previousPercent: null, changePercent: null, priceIdr: null };
+    await page.route("**/api/insiders/BBCA?*", (route) => route.fulfill({ json: {
+      data: { symbol: "BBCA", total: 3, page: 1, pageSize: 15, totalPages: 1, rows: [
+        { ...base, person: "PT CONTOH HOLDCO", date: "2026-09-17", roles: [], currentShares: 2774000000, currentPercent: 61.13 },
+        { ...base, person: "CONTOH HOLDCO", date: "2026-09-17", roles: [], currentShares: 2630000000, currentPercent: 57.98 },
+        { ...base, person: "DBS VICKERS SECS SINGAPORE (PTE) LTD A/C CLIENTS", date: "2026-08-27", roles: [], currentShares: 1000, currentPercent: 1.2 },
+      ] },
+      freshness: "HISTORICAL", asOf: "2026-09-17", source: "arjum",
+    } }));
+    await page.goto("/en/stock/BBCA/insiders");
+    const holders = page.getByTestId("insider-holders");
+    await expect(holders.getByTestId("holder-count")).toHaveText("2 holders");
+    const company = holders.locator('[data-testid="holder-row"][data-kind="organization"]');
+    await expect(company.getByTestId("holding-ambiguous")).toContainText("Ambiguous");
+    await expect(company.getByTestId("holding-ambiguous")).toContainText("61.13%");
+    await expect(company.getByTestId("holding-ambiguous")).toContainText("57.98%");
+    await expect(company).toContainText("Also disclosed as: CONTOH HOLDCO");
+    const nominee = holders.locator('[data-testid="holder-row"][data-kind="nominee"]');
+    await expect(nominee).toContainText("Custodian / nominee account");
+    await expect(nominee.getByTestId("nominee-note")).toHaveText("An account registered on behalf of clients. It is not presented as the owner.");
+  });
+
+  test("insiders: paged table with action filter in the URL", async ({ page }) => {
+    await page.goto("/en/stock/BBCA/insiders?view=transactions");
     const view = page.getByTestId("insiders-view");
     await expect(view.getByTestId("row-count")).toHaveText("10 rows");
     await expect(view.getByTestId("insider-page")).toHaveText("Page 1 of 9");
