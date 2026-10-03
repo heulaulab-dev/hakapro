@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import createNextIntlPlugin from "next-intl/plugin";
 import { resolveAuthConfig } from "./src/server/config/auth";
 import { resolveMarketDataSource } from "./src/server/config/market-source";
 
@@ -10,6 +11,8 @@ if (!process.argv.includes("typegen")) {
   resolveAuthConfig(process.env);
 }
 
+const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
+
 const nextConfig: NextConfig = {};
 
-export default nextConfig;
+export default withNextIntl(nextConfig);

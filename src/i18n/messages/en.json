@@ -1,1 +1,51 @@
-{}
+{
+  "app": {
+    "name": "HAKAPRO",
+    "tagline": "Indonesian equity research"
+  },
+  "locale": {
+    "id": "Bahasa Indonesia",
+    "en": "English",
+    "switchTo": "Change language"
+  },
+  "theme": {
+    "dark": "Dark",
+    "light": "Light"
+  },
+  "density": {
+    "comfortable": "Comfortable",
+    "compact": "Compact"
+  },
+  "devBanner": {
+    "fixture": "FIXTURE DATA",
+    "fixtureDetail": "Recorded samples, not current market data.",
+    "authBypass": "AUTH BYPASS"
+  },
+  "freshness": {
+    "states": {
+      "LIVE": { "label": "Live", "description": "Data updates directly from the source." },
+      "DELAYED": { "label": "Delayed", "description": "Data from the session in progress, delayed by the exchange." },
+      "EOD": { "label": "End of day", "description": "Closing data from the last trading session." },
+      "HISTORICAL": { "label": "Historical", "description": "Historical data, not current market conditions." },
+      "STALE": { "label": "Stale", "description": "Older than data that should already be available." },
+      "UNAVAILABLE": { "label": "Unavailable", "description": "The data date or freshness cannot be confirmed." }
+    },
+    "asOf": "Data as of {date}",
+    "noAsOf": "Data date unknown",
+    "period": "Period {period}",
+    "source": "Source: {source}",
+    "ariaLabel": "Data freshness: {state}"
+  },
+  "home": {
+    "title": "Home",
+    "placeholder": "The market overview will appear here."
+  },
+  "dev": {
+    "primitivesTitle": "Primitives",
+    "primitivesIntro": "Development page. Values below are sample component props, not market data.",
+    "freshnessBadge": "FreshnessBadge",
+    "formatting": "Number formatting",
+    "sampleInput": "Input",
+    "sampleOutput": "Output"
+  }
+}

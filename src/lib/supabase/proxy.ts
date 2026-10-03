@@ -1,24 +1,32 @@
-// Ported from heulatrade lib/supabase/proxy.ts. Locale handling is merged in Step 4.
+// Ported from heulatrade lib/supabase/proxy.ts; composed with next-intl routing in src/proxy.ts.
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import type { Database } from "./database.types";
+import { routing } from "@/i18n/routing";
 import { resolveAuthConfig } from "@/server/config/auth";
+import type { Database } from "./database.types";
 
-const PUBLIC_PREFIXES = ["/login", "/signup", "/forgot-password", "/reset-password", "/auth/callback"];
+const PUBLIC_PATHS = ["/login", "/signup", "/forgot-password", "/reset-password", "/auth/callback", "/dev"];
+const LOCALE_PREFIX = new RegExp(`^/(${routing.locales.join("|")})(?=/|$)`);
 
-export async function updateSession(request: NextRequest) {
+/** Path without its locale prefix: "/id/stock/BBCA" → "/stock/BBCA". */
+export function stripLocale(pathname: string): { locale: string; path: string } {
+  const match = LOCALE_PREFIX.exec(pathname);
+  return { locale: match?.[1] ?? routing.defaultLocale, path: pathname.slice(match?.[0].length ?? 0) || "/" };
+}
+
+/**
+ * Refreshes the Supabase session onto `response` (the next-intl response, so locale rewrites are
+ * kept) and redirects anonymous users away from protected pages. Bypass and unconfigured dev skip
+ * the refresh; protected data routes still refuse the unconfigured case via checkAccess().
+ */
+export async function updateSession(request: NextRequest, response: NextResponse = NextResponse.next({ request })) {
   const auth = resolveAuthConfig(process.env);
-  // Bypass (dev only) and unconfigured dev skip the session refresh; protected routes still
-  // enforce access themselves via checkAccess(), which refuses the unconfigured case.
-  if (auth.mode !== "supabase") return NextResponse.next({ request });
-  const env = auth;
-  let response = NextResponse.next({ request });
-  const supabase = createServerClient<Database>(env.url, env.key, {
+  if (auth.mode !== "supabase") return response;
+  const supabase = createServerClient<Database>(auth.url, auth.key, {
     cookies: {
       getAll() { return request.cookies.getAll(); },
       setAll(items) {
         items.forEach(({ name, value }) => request.cookies.set(name, value));
-        response = NextResponse.next({ request });
         items.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
       },
     },
@@ -27,16 +35,10 @@ export async function updateSession(request: NextRequest) {
   const isAuthenticated = Boolean(data?.claims?.sub);
   const { pathname } = request.nextUrl;
   // API routes answer 401 JSON themselves instead of being redirected to an HTML login page.
-  const isPublic = pathname === "/" || pathname.startsWith("/api/") || PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix));
-  if (!isAuthenticated && !isPublic) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    return NextResponse.redirect(url);
-  }
-  if (isAuthenticated && (pathname === "/login" || pathname === "/signup")) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/";
-    return NextResponse.redirect(url);
-  }
+  if (pathname.startsWith("/api/") || pathname.startsWith("/auth/")) return response;
+  const { locale, path } = stripLocale(pathname);
+  const isPublic = path === "/" || PUBLIC_PATHS.some((prefix) => path === prefix || path.startsWith(`${prefix}/`));
+  if (!isAuthenticated && !isPublic) return NextResponse.redirect(new URL(`/${locale}/login`, request.url));
+  if (isAuthenticated && (path === "/login" || path === "/signup")) return NextResponse.redirect(new URL(`/${locale}`, request.url));
   return response;
 }

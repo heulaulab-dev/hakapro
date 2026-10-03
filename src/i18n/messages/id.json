@@ -1,1 +1,51 @@
-{}
+{
+  "app": {
+    "name": "HAKAPRO",
+    "tagline": "Riset saham Indonesia"
+  },
+  "locale": {
+    "id": "Bahasa Indonesia",
+    "en": "English",
+    "switchTo": "Ganti bahasa"
+  },
+  "theme": {
+    "dark": "Gelap",
+    "light": "Terang"
+  },
+  "density": {
+    "comfortable": "Nyaman",
+    "compact": "Ringkas"
+  },
+  "devBanner": {
+    "fixture": "FIXTURE DATA",
+    "fixtureDetail": "Sampel rekaman, bukan data pasar terkini.",
+    "authBypass": "AUTH BYPASS"
+  },
+  "freshness": {
+    "states": {
+      "LIVE": { "label": "Real-time", "description": "Data diperbarui langsung dari sumber." },
+      "DELAYED": { "label": "Tertunda", "description": "Data sesi yang sedang berjalan, dengan jeda dari bursa." },
+      "EOD": { "label": "Penutupan", "description": "Data penutupan sesi perdagangan terakhir." },
+      "HISTORICAL": { "label": "Historis", "description": "Data historis, bukan kondisi pasar saat ini." },
+      "STALE": { "label": "Usang", "description": "Data lebih lama dari yang seharusnya sudah tersedia." },
+      "UNAVAILABLE": { "label": "Tidak tersedia", "description": "Tanggal atau kesegaran data tidak dapat dipastikan." }
+    },
+    "asOf": "Data per {date}",
+    "noAsOf": "Tanggal data tidak diketahui",
+    "period": "Periode {period}",
+    "source": "Sumber: {source}",
+    "ariaLabel": "Kesegaran data: {state}"
+  },
+  "home": {
+    "title": "Beranda",
+    "placeholder": "Ringkasan pasar akan tampil di sini."
+  },
+  "dev": {
+    "primitivesTitle": "Komponen dasar",
+    "primitivesIntro": "Halaman pengembangan. Nilai di bawah adalah contoh properti komponen, bukan data pasar.",
+    "freshnessBadge": "FreshnessBadge",
+    "formatting": "Format angka",
+    "sampleInput": "Input",
+    "sampleOutput": "Hasil"
+  }
+}
