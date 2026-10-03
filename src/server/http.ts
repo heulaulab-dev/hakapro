@@ -3,7 +3,7 @@ import "server-only";
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import type { WithFreshness } from "@/lib/freshness";
-import { createClient, isSupabaseConfigured } from "@/lib/supabase/server";
+import { checkAccess } from "@/server/auth";
 import { logError } from "@/server/log";
 import { getMarketDataSource, type MarketDataSource } from "@/server/market";
 import { MarketDataError } from "@/server/market/errors";
@@ -27,16 +27,6 @@ function clientKey(request: Request, endpoint: string): string {
   return `${endpoint}:${ip}`;
 }
 
-class Unauthorized extends Error {}
-
-async function requireUser(): Promise<void> {
-  // Without Supabase configured (local fixture work) market routes stay open, as in heulatrade.
-  if (!isSupabaseConfigured()) return;
-  const supabase = await createClient();
-  const { data, error } = await supabase.auth.getClaims();
-  if (error || !data?.claims?.sub) throw new Unauthorized();
-}
-
 function failure(code: string, status: number, requestId: string, headers?: HeadersInit) {
   return NextResponse.json(
     { error: code, requestId, data: null, freshness: "UNAVAILABLE", asOf: null, source: "none" },
@@ -46,7 +36,7 @@ function failure(code: string, status: number, requestId: string, headers?: Head
 
 type RouteOptions = { endpoint: string; limit?: number; cacheControl?: string };
 
-/** Wraps a market route: rate limit → auth → run → freshness envelope JSON, with uniform error mapping. */
+/** Wraps a market route: rate limit → auth (fails closed) → run → freshness envelope JSON, with uniform error mapping. */
 export async function marketRoute(
   request: Request,
   options: RouteOptions,
@@ -54,12 +44,13 @@ export async function marketRoute(
 ) {
   const requestId = crypto.randomUUID();
   if (!allowRequest(clientKey(request, options.endpoint), options.limit ?? 60)) return failure("RATE_LIMITED", 429, requestId);
+  const access = await checkAccess().catch(() => "unauthorized" as const);
+  if (access === "not_configured") return failure("AUTH_NOT_CONFIGURED", 503, requestId);
+  if (access !== "allow") return failure("UNAUTHORIZED", 401, requestId);
   try {
-    await requireUser();
     const body = await run(getMarketDataSource());
     return NextResponse.json(body, { headers: { "cache-control": options.cacheControl ?? "private, no-store", "x-request-id": requestId } });
   } catch (error) {
-    if (error instanceof Unauthorized) return failure("UNAUTHORIZED", 401, requestId);
     if (error instanceof ZodError) return failure("INVALID_REQUEST", 400, requestId);
     if (error instanceof MarketDataError) {
       return failure(error.code, error.status, requestId, error.retryAfterSeconds ? { "retry-after": String(error.retryAfterSeconds) } : undefined);

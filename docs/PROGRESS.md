@@ -4,8 +4,8 @@
 | --- | --- | --- | --- |
 | 1 | Inventory (`docs/MIGRATION.md`) | ✅ approved 2026-10-03 with corrections (MIGRATION §9) | — |
 | 2 | Scaffold: typecheck / lint / build pass | ✅ approved 2026-10-03 | a46b4fc |
-| 3 | Data layer ported, fixture-backed `MarketDataSource`, unit tests | ✅ awaiting approval | see git log |
-| 4 | Foundations: i18n, format module, tokens, FreshnessBadge | ⏳ | |
+| 3 | Data layer ported, fixture-backed `MarketDataSource`, unit tests | ✅ approved 2026-10-03 | 11cce02 |
+| 4 | Foundations: i18n, format module, tokens, FreshnessBadge | 🔄 in progress | |
 | 5 | App shell | ⏳ | |
 | 6 | Primitives | ⏳ | |
 | 7 | Vertical slice: Home → Strategies → Why matched → Stock Overview | ⏳ | |
@@ -26,3 +26,10 @@
 - **Server-only boundary:** `bun run check:server-boundary` checks that the Vitest stub is only aliased in `vitest.config.mts`, that the real package throws outside react-server, and that `next build` fails when a client component imports `src/server/log.ts`.
 - `asOf` is `string | null`: null only alongside UNAVAILABLE (enforced by `withFreshness`).
 - **Units:** all domain percent fields use percent units. arjum `change_pct` is already a percent; idx-bei fractions are multiplied by 100.
+
+## Post-Checkpoint 3: auth fails closed
+- `src/server/config/auth.ts` `resolveAuthConfig`. Production requires both Supabase vars and rejects `DEV_AUTH_BYPASS`, so `next build` and `next start` exit 1. Dev: `DEV_AUTH_BYPASS=1` (only the literal `1`) skips auth. Without the bypass and without Supabase config, protected routes answer 503 `AUTH_NOT_CONFIGURED`. A missing env var never opens access.
+- `checkAccess()` (`src/server/auth.ts`) must guard every protected server entry point, including future server components that read market data.
+- Guards are skipped only for `next typegen`, which generates route types and runs nothing.
+- **Local production build check:** `MARKET_DATA_SOURCE=arjum NEXT_PUBLIC_SUPABASE_URL=… NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=… bun run build`.
+- **Manual real-data check (dev):** in `.env.local` set `MARKET_DATA_SOURCE=arjum`, `HEULATRADE_MARKET_API_BASE_URL`, `HEULATRADE_MARKET_API_KEY` and `DEV_AUTH_BYPASS=1`. Run `bun run dev --port 3200` and open `/api/strategies`. The AUTH BYPASS notice stays visible.

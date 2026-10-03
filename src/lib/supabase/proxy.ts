@@ -2,13 +2,16 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "./database.types";
-import { supabaseEnv } from "./env";
+import { resolveAuthConfig } from "@/server/config/auth";
 
 const PUBLIC_PREFIXES = ["/login", "/signup", "/forgot-password", "/reset-password", "/auth/callback"];
 
 export async function updateSession(request: NextRequest) {
-  const env = supabaseEnv();
-  if (!env) return NextResponse.next({ request });
+  const auth = resolveAuthConfig(process.env);
+  // Bypass (dev only) and unconfigured dev skip the session refresh; protected routes still
+  // enforce access themselves via checkAccess(), which refuses the unconfigured case.
+  if (auth.mode !== "supabase") return NextResponse.next({ request });
+  const env = auth;
   let response = NextResponse.next({ request });
   const supabase = createServerClient<Database>(env.url, env.key, {
     cookies: {

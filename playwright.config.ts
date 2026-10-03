@@ -17,5 +17,7 @@ export default defineConfig({
     command: `bun run dev --port ${PORT}`,
     url: `http://127.0.0.1:${PORT}`,
     reuseExistingServer: !process.env.CI,
+    // Fixture data + explicit dev auth bypass; never valid in production (next.config.ts guards).
+    env: { DEV_AUTH_BYPASS: "1", MARKET_DATA_SOURCE: "fixture" },
   },
 });

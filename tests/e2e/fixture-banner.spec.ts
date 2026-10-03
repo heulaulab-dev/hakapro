@@ -1,11 +1,12 @@
 import { expect, test } from "@playwright/test";
 
-// The dev server runs with MARKET_DATA_SOURCE unset, i.e. fixture mode.
+// playwright.config.ts starts the dev server with MARKET_DATA_SOURCE=fixture and DEV_AUTH_BYPASS=1.
 test("fixture mode shows a persistent FIXTURE DATA banner", async ({ page }) => {
   await page.goto("/");
   const banner = page.getByTestId("fixture-banner");
   await expect(banner).toBeVisible();
   await expect(banner).toContainText("FIXTURE DATA");
+  await expect(page.getByTestId("auth-bypass-banner")).toBeVisible();
   await page.mouse.wheel(0, 2000);
   await expect(banner).toBeInViewport();
 });

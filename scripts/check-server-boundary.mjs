@@ -44,8 +44,9 @@ try {
   result = spawnSync("bun", ["run", "build"], {
     cwd: root,
     encoding: "utf8",
-    // Build needs a non-fixture source (production guard); no credentials are needed to compile.
-    env: { ...process.env, MARKET_DATA_SOURCE: "arjum" },
+    // The production guards need a non-fixture source and Supabase config. These placeholders are
+    // compile-only: this probe build is expected to fail and its output is never served.
+    env: { ...process.env, MARKET_DATA_SOURCE: "arjum", DEV_AUTH_BYPASS: "", NEXT_PUBLIC_SUPABASE_URL: "https://build-check.invalid", NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "build-check-placeholder" },
   });
 } finally {
   rmSync(probeDir, { recursive: true, force: true });

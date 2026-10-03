@@ -4,10 +4,6 @@ import { cookies } from "next/headers";
 import type { Database } from "./database.types";
 import { supabaseEnv } from "./env";
 
-export function isSupabaseConfigured(): boolean {
-  return supabaseEnv() !== null;
-}
-
 export async function createClient() {
   const env = supabaseEnv();
   if (!env) throw new Error("Supabase is not configured");
