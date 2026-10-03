@@ -203,3 +203,9 @@ The user kept the layout and asked for heulaulab-dashboard's design system:
 - **Drift sweep:** 25 symbols (top 20 market cap plus the screener) × 7 endpoints, 175 requests, 0 schema drift.
 - **Recorded fixtures:** `fixtures/arjum/` (73 files, 7 symbols, sanitized, 0 secret matches). Fixture mode prefers them; e2e pins `FIXTURE_DATASET=baseline`. The live screener of 2026-10-02 was added to the baseline for parser tests.
 - **Still not live:** the idx-bei lane (movers, news, disclosures, profile, screener builder) needs `MARKET_API_URL`.
+
+## Connection Network — N1 data discovery (2026-10-03)
+- Wrote `docs/features/CONNECTION-NETWORK.md` (discovery only, no code). The only live source is arjum insiders: transactions, a name-only entity key, no IDs. arjum has no shareholder, profile or holder-search endpoint (the probes return 403).
+- The idx-bei profile has shareholder composition but no data date, and carries NPWP (strip it). The upstream ≥1% ownership snapshot is dated and typed but static and unverified, so it needs a Data Engine.
+- Recommendation: Phase 1 = 1-hop from insiders, plus a bounded opt-in overlap (≤10 user-selected symbols). A universe-wide reverse lookup or 2-hop is out of scope and needs a Data Engine.
+- Spent 47 live calls, paced; created no crawler, cron or storage. **Stopped at CHECKPOINT N1** for the scope decision.
