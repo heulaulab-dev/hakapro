@@ -1,6 +1,6 @@
 # HAKAPRO — Migration inventory (HeulaTrade → HAKAPRO)
 
-Status: **Checkpoint 1 approved (2026-10-03) with corrections, see §9. Step 2 (scaffold) in progress.**
+Status: **Checkpoint 1 approved (2026-10-03) with corrections, see §9. Step 2 scaffold done (Checkpoint 2).**
 Date: 2026-10-03
 
 | Input | Value |
