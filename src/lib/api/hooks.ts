@@ -13,7 +13,8 @@ export const useInsiders = (symbol: string) => useQuery({ queryKey: queryKeys.in
 export const useMarketCap = () => useQuery({ queryKey: queryKeys.marketCap(), queryFn: ({ signal }) => marketApi.marketCap(signal) });
 export const useStockOverview = (symbol: string) => useQuery({ queryKey: queryKeys.stockOverview(symbol), queryFn: ({ signal }) => overviewApi.stock(symbol, signal) });
 export const useMarketOverview = () => useQuery({ queryKey: queryKeys.marketOverview(), queryFn: ({ signal }) => overviewApi.market(signal) });
-export const useNews = () => useQuery({ queryKey: queryKeys.news(), queryFn: ({ signal }) => overviewApi.news(signal) });
+export const useNews = (perPage = 8) => useQuery({ queryKey: queryKeys.news(perPage), queryFn: ({ signal }) => overviewApi.news(signal, perPage) });
+export const useAnnouncements = (keywords: string) => useQuery({ queryKey: queryKeys.announcements(keywords), queryFn: ({ signal }) => overviewApi.announcements(keywords, signal) });
 /** Company name for a ticker from search results (exact symbol match only). */
 export const useCompanyName = (symbol: string) =>
   useQuery({ queryKey: queryKeys.search(symbol), queryFn: ({ signal }) => marketApi.search(symbol, signal), select: (envelope) => envelope.data.find((row) => row.symbol === symbol.toUpperCase())?.companyName ?? null });

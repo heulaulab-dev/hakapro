@@ -473,5 +473,34 @@
     "savedEmpty": "No saved screens yet.",
     "ratioNote": "ROE, ROA and dividend yield units follow the provider (unverified), so they're shown as-is.",
     "saveFailed": "The screen wasn't saved."
+  },
+  "movers": {
+    "title": "Movers",
+    "intro": "Stocks with the largest moves and traded value in the latest available session.",
+    "gainers": "Top gainers",
+    "losers": "Top losers",
+    "active": "Most active",
+    "liquidityNote": "Gainers/losers include only stocks with traded value of at least {min}.",
+    "largest": "Largest market caps",
+    "viewLabel": "View"
+  },
+  "news": {
+    "title": "News & Calendar",
+    "intro": "Market news and issuer disclosures.",
+    "news": "News",
+    "announcements": "Disclosures",
+    "calendarNote": "A market-wide corporate-action calendar isn't available from the data sources yet; per-stock corporate actions will appear on stock pages.",
+    "open": "Open document",
+    "keywords": "Search disclosures (ticker or keyword)"
+  },
+  "ownershipChanges": {
+    "title": "Ownership Changes",
+    "intro": "Reported insider transactions (directors, commissioners, major holders).",
+    "marketWideUnavailable": "A market-wide ownership-change feed isn't available from the current data source.",
+    "checkStock": "See insider transactions for a stock",
+    "go": "Go",
+    "watchlistTitle": "Insiders in your watchlist",
+    "watchlistSignIn": "Sign in to see insider transactions for the stocks you watch.",
+    "watchlistEmpty": "Add stocks to your watchlist to see their insider transactions."
   }
 }

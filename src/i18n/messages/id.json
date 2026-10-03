@@ -473,5 +473,34 @@
     "savedEmpty": "Belum ada screen tersimpan.",
     "ratioNote": "Satuan ROE, ROA, dan dividend yield mengikuti penyedia (belum diverifikasi), jadi ditampilkan apa adanya.",
     "saveFailed": "Screen tidak tersimpan."
+  },
+  "movers": {
+    "title": "Penggerak Pasar",
+    "intro": "Saham dengan perubahan dan nilai transaksi terbesar pada sesi terakhir yang tersedia.",
+    "gainers": "Naik terbesar",
+    "losers": "Turun terbesar",
+    "active": "Teraktif",
+    "liquidityNote": "Naik/turun terbesar hanya untuk saham dengan nilai transaksi minimal {min}.",
+    "largest": "Kapitalisasi pasar terbesar",
+    "viewLabel": "Tampilan"
+  },
+  "news": {
+    "title": "Berita & Kalender",
+    "intro": "Berita pasar dan keterbukaan informasi emiten.",
+    "news": "Berita",
+    "announcements": "Keterbukaan informasi",
+    "calendarNote": "Kalender aksi korporasi lintas pasar belum tersedia dari sumber data; aksi korporasi per saham akan tampil di halaman saham.",
+    "open": "Buka dokumen",
+    "keywords": "Cari keterbukaan (kode atau kata)"
+  },
+  "ownershipChanges": {
+    "title": "Perubahan Kepemilikan",
+    "intro": "Transaksi orang dalam (direksi, komisaris, pemegang besar) yang dilaporkan.",
+    "marketWideUnavailable": "Umpan perubahan kepemilikan lintas pasar belum tersedia dari sumber data saat ini.",
+    "checkStock": "Lihat transaksi insider untuk saham",
+    "go": "Lihat",
+    "watchlistTitle": "Insider di daftar pantau Anda",
+    "watchlistSignIn": "Masuk untuk melihat transaksi insider pada saham yang Anda pantau.",
+    "watchlistEmpty": "Tambahkan saham ke daftar pantau untuk melihat transaksi insider-nya."
   }
 }

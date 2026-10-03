@@ -95,10 +95,13 @@ export const marketOverviewSchema = z.object({
 });
 export const newsItemSchema = z.object({ date: z.string().nullable(), title: z.string().nullable(), summary: z.string().nullable(), url: z.string().nullable() });
 
+export const announcementSchema = z.object({ date: z.string().nullable(), symbol: z.string().nullable(), title: z.string().nullable(), documentUrl: z.string().nullable() });
+
 export const overviewApi = {
   stock: (symbol: string, signal?: AbortSignal) => fetchEnvelope(`/api/overview/${encodeURIComponent(symbol.toUpperCase())}`, stockOverviewSchema, { signal }),
   market: (signal?: AbortSignal) => fetchEnvelope("/api/market", marketOverviewSchema, { signal }),
-  news: (signal?: AbortSignal) => fetchEnvelope("/api/news?per_page=8", z.array(newsItemSchema), { signal }),
+  news: (signal?: AbortSignal, perPage = 8) => fetchEnvelope(`/api/news?per_page=${perPage}`, z.array(newsItemSchema), { signal }),
+  announcements: (keywords: string, signal?: AbortSignal) => fetchEnvelope(`/api/announcements?per_page=30${keywords ? `&keywords=${encodeURIComponent(keywords)}` : ""}`, z.array(announcementSchema), { signal }),
 };
 
 // --- Quotes (/api/quotes) ------------------------------------------------------------------

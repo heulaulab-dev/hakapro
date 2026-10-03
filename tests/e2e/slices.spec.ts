@@ -79,3 +79,47 @@ test.describe("slice 4: Screener", () => {
     await expect(results.locator('[data-freshness="EOD"]')).toBeVisible();
   });
 });
+
+test.describe("slice 5: Movers, News & Calendar, Ownership Changes", () => {
+  test("movers: fixture states UNSUPPORTED for the session list; market caps come from arjum", async ({ page }) => {
+    await page.goto("/en/discover/movers");
+    await expect(page.getByTestId("movers-view").getByTestId("data-state-code").first()).toHaveText("UNSUPPORTED");
+    await expect(page.getByTestId("largest-caps").getByTestId("stock-row-BBCA")).toContainText("Rp768.87T");
+  });
+
+  test("movers ranking with an idx-bei-shaped response (intercepted, test-only)", async ({ page }) => {
+    await page.route("**/api/market", (route) => route.fulfill({ json: { data: {
+      indices: [], breadth: { advancers: 2, decliners: 1, unchanged: 0, valueIdr: 1, volumeShares: 1, frequency: 1 },
+      movers: [
+        { symbol: "AAAA", name: "Liquid Gainer", close: 100, changePercent: 12.5, volumeShares: 1e7, valueIdr: 5e9, frequency: 10 },
+        { symbol: "BBBB", name: "Illiquid Spike", close: 50, changePercent: 34, volumeShares: 1e3, valueIdr: 5e4, frequency: 1 },
+        { symbol: "CCCC", name: "Liquid Loser", close: 80, changePercent: -6.2, volumeShares: 1e7, valueIdr: 2e9, frequency: 10 },
+      ] }, freshness: "EOD", asOf: "2026-09-18", source: "test-intercept" } }));
+    await page.goto("/en/discover/movers");
+    const view = page.getByTestId("movers-view");
+    await expect(view.getByTestId("stock-row-AAAA")).toContainText("+12.50%");
+    await expect(view.getByTestId("stock-row-BBBB")).toHaveCount(0);
+    await view.getByTestId("movers-losers").click();
+    await expect(page).toHaveURL(/view=losers/);
+    await expect(view.getByTestId("stock-row-CCCC")).toContainText("-6.20%");
+  });
+
+  test("news & disclosures render safely (intercepted, test-only)", async ({ page }) => {
+    await page.route("**/api/news**", (route) => route.fulfill({ json: { data: [{ date: "2026-09-18", title: "Safe headline", summary: "Summary", url: "https://example.com/a" }, { date: "2026-09-17", title: "Unsafe headline", summary: null, url: "javascript:alert(1)" }], freshness: "HISTORICAL", asOf: "2026-09-18", source: "test-intercept" } }));
+    await page.goto("/en/news");
+    const list = page.getByTestId("news-list");
+    await expect(list.getByRole("link", { name: "Safe headline" })).toHaveAttribute("href", "https://example.com/a");
+    await expect(list.getByText("Unsafe headline")).toBeVisible();
+    await expect(list.getByRole("link", { name: "Unsafe headline" })).toHaveCount(0);
+    await page.getByTestId("tab-disclosures").click();
+    await expect(page.getByTestId("announcement-list").getByTestId("data-state-code")).toHaveText("UNSUPPORTED");
+  });
+
+  test("ownership changes: honest about market-wide data; stock lookup navigates", async ({ page }) => {
+    await page.goto("/id/discover/ownership");
+    await expect(page.getByTestId("ownership-view")).toContainText("Umpan perubahan kepemilikan lintas pasar belum tersedia");
+    await page.getByTestId("ownership-symbol").fill("bbca");
+    await page.keyboard.press("Enter");
+    await expect(page).toHaveURL(/\/id\/stock\/BBCA\/insiders$/);
+  });
+});

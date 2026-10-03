@@ -1,8 +1,7 @@
-import { getTranslations, setRequestLocale } from "next-intl/server";
-import { PagePlaceholder } from "@/components/layout/page-placeholder";
+import { setRequestLocale } from "next-intl/server";
+import { MoversView } from "./movers-view";
 
-export default async function Page({ params }: PageProps<"/[locale]/discover/movers">) {
+export default async function MoversPage({ params }: PageProps<"/[locale]/discover/movers">) {
   setRequestLocale((await params).locale);
-  const t = await getTranslations("nav");
-  return <PagePlaceholder title={t("movers")} />;
+  return <MoversView />;
 }

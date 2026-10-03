@@ -1,8 +1,8 @@
-import { getTranslations, setRequestLocale } from "next-intl/server";
-import { PagePlaceholder } from "@/components/layout/page-placeholder";
+import { setRequestLocale } from "next-intl/server";
+import { getViewer } from "@/server/viewer";
+import { OwnershipView } from "./ownership-view";
 
-export default async function Page({ params }: PageProps<"/[locale]/discover/ownership">) {
+export default async function OwnershipChangesPage({ params }: PageProps<"/[locale]/discover/ownership">) {
   setRequestLocale((await params).locale);
-  const t = await getTranslations("nav");
-  return <PagePlaceholder title={t("ownership")} />;
+  return <OwnershipView viewer={await getViewer()} />;
 }
