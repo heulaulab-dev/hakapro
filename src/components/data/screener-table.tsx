@@ -5,6 +5,7 @@ import { HelpCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useMemo } from "react";
 import { StatusBadge } from "@/components/feedback/status-badge";
+import { Button } from "@/components/ui/button";
 import { stockHref } from "@/components/layout/nav-config";
 import { Link } from "@/i18n/navigation";
 import type { Criterion, StrategyMatch } from "@/lib/api/market";
@@ -33,8 +34,9 @@ export function CriteriaList({ criteria }: { criteria: Criterion[] }) {
 }
 
 /** Strategy/screen results with the reasons each stock matched. */
-export function ScreenerTable({ matches, meta, caption, maxHeight }: { matches: StrategyMatch[]; meta: FreshnessMeta; caption: string; maxHeight?: number }) {
+export function ScreenerTable({ matches, meta, caption, maxHeight, onWhy }: { matches: StrategyMatch[]; meta: FreshnessMeta; caption: string; maxHeight?: number; onWhy?: (match: StrategyMatch) => void }) {
   const t = useTranslations("strategy");
+  const tWhy = useTranslations("strategies");
   const columns = useMemo<ColumnDef<StrategyMatch, unknown>[]>(() => [
     {
       id: "symbol",
@@ -50,6 +52,13 @@ export function ScreenerTable({ matches, meta, caption, maxHeight }: { matches: 
     { id: "name", accessorKey: "name", header: t("company"), cell: ({ row }) => <span className="text-muted-foreground">{row.original.name}</span> },
     { id: "criteria", header: t("whyMatched"), enableSorting: false, cell: ({ row }) => <CriteriaList criteria={row.original.criteria} /> },
     { id: "note", accessorKey: "providerNote", header: t("providerNote"), enableSorting: false, cell: ({ row }) => <span className="text-xs text-muted-foreground">{row.original.providerNote ?? "—"}</span> },
-  ], [t]);
+    ...(onWhy
+      ? [{ id: "why", header: "", enableSorting: false, meta: { className: "w-20 text-right" }, cell: ({ row }) => (
+          <Button variant="outline" size="sm" onClick={() => onWhy(row.original)} data-testid={`why-${row.original.symbol}`}>
+            {tWhy("why")}
+          </Button>
+        ) } satisfies ColumnDef<StrategyMatch, unknown>]
+      : []),
+  ], [t, tWhy, onWhy]);
   return <DataTable testId="screener-table" columns={columns} data={matches} meta={meta} caption={caption} getRowId={(row) => row.symbol} maxHeight={maxHeight} />;
 }

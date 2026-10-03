@@ -1,6 +1,6 @@
 # HAKAPRO — Migration inventory (HeulaTrade → HAKAPRO)
 
-Status: **Checkpoints 1–2 approved. Step 3 (data layer) done — Checkpoint 3.**
+Status: **Phase 1 vertical slice complete (Checkpoint 7). Port status in §7; final report in docs/PROGRESS.md.**
 Date: 2026-10-03
 
 | Input | Value |
@@ -190,7 +190,7 @@ Old `.env.local` contains **only the two Supabase variables**.
 | `app/api/jobs/evaluate-alerts` | — | ⏸ deferred (needs service-role key; no Phase 1 screen uses it) |
 | `app/api/analysis/[code]` | — | ⛔ not exposed (MIGRATION §9.5) |
 | `app/api/ready` | — | ⏸ deferred to deployment work |
-| Query keys / client fetchers | `src/lib/query/*` | ⏸ built with the first screens (Step 6–7) |
+| Query keys / client fetchers | `src/lib/query/*`, `src/lib/api/*` | ✅ built (Steps 5–7) |
 
 ### Endpoint map (old → new)
 

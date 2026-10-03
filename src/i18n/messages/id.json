@@ -56,7 +56,21 @@
   },
   "home": {
     "title": "Beranda",
-    "placeholder": "Ringkasan pasar akan tampil di sini."
+    "placeholder": "Ringkasan pasar akan tampil di sini.",
+    "subtitle": "Apa yang penting sekarang",
+    "marketCondition": "Kondisi pasar",
+    "indices": "Indeks & breadth",
+    "breadth": "{adv} naik · {dec} turun · {unch} tetap",
+    "movers": "Penggerak pasar",
+    "sectors": "Sektor aktif",
+    "sectorsUnavailable": "Kinerja per sektor belum tersedia dari sumber data saat ini.",
+    "strategies": "Peluang strategi",
+    "strategiesHint": "Saham yang memenuhi kriteria strategi pada screen terbaru. Lihat alasan cocok sebelum meriset.",
+    "viewAll": "Lihat semua",
+    "watchlist": "Aktivitas daftar pantau",
+    "watchlistSignIn": "Masuk untuk melihat daftar pantau Anda.",
+    "watchlistEmpty": "Daftar pantau masih kosong.",
+    "news": "Berita & peristiwa penting"
   },
   "dev": {
     "primitivesTitle": "Komponen dasar",
@@ -250,5 +264,67 @@
   },
   "drawer": {
     "close": "Tutup"
+  },
+  "disclaimer": {
+    "label": "Catatan riset",
+    "text": "Untuk riset dan edukasi, bukan rekomendasi jual atau beli. Kriteria menjelaskan apa yang teramati pada data; keputusan sepenuhnya di tangan Anda."
+  },
+  "strategies": {
+    "title": "Strategi",
+    "intro": "Strategi mengelompokkan saham berdasarkan pola yang teramati pada data penyedia screener.",
+    "open": "Lihat hasil",
+    "notFound": "Strategi ini tidak ada pada screen terbaru.",
+    "why": "Alasan",
+    "whyTitle": "Mengapa {symbol} cocok?",
+    "whyIntro": "{symbol} masuk strategi {strategy} karena kriteria berikut teramati:",
+    "research": "Riset {symbol}",
+    "about": "Tentang strategi ini",
+    "back": "Semua strategi",
+    "empty": "Tidak ada strategi pada screen terbaru."
+  },
+  "overview": {
+    "keyMetrics": "Ringkasan",
+    "priceTitle": "Harga",
+    "flowTitle": "Flow",
+    "brokerTitle": "Broker",
+    "ownershipTitle": "Kepemilikan & insider",
+    "financialTitle": "Keuangan",
+    "chartTitle": "Grafik harga",
+    "deepDive": "Telusuri lebih dalam",
+    "hints": {
+      "chart": "Candlestick, volume, dan rentang waktu",
+      "flow": "Broker Summary dan Foreign Flow",
+      "financials": "Laporan laba rugi, neraca, arus kas",
+      "ownership": "Struktur pemegang saham",
+      "insiders": "Transaksi direksi, komisaris, dan pemegang besar",
+      "history": "Tabel harga harian"
+    },
+    "price": {
+      "range": "Dalam {sessions} sesi terakhir harga berubah {change}, dengan rentang {low}–{high}.",
+      "above": "Harga penutupan di atas rata-rata 20 hari ({sma}).",
+      "below": "Harga penutupan di bawah rata-rata 20 hari ({sma}).",
+      "at": "Harga penutupan sama dengan rata-rata 20 hari ({sma})."
+    },
+    "foreign": {
+      "sessions": "Asing beli bersih di {buy} dan jual bersih di {sell} dari {sessions} sesi terakhir.",
+      "net": "Total asing bersih {sessions} sesi: {net}.",
+      "net20": "Total asing bersih 20 sesi: {net}."
+    },
+    "brokers": {
+      "topBuyers": "Beli bersih terbesar ({date}): {list}.",
+      "topSellers": "Jual bersih terbesar: {list}.",
+      "noSellers": "Tidak ada broker dengan jual bersih dalam data yang diterima."
+    },
+    "ownership": {
+      "summary": "{count} transaksi insider terbaru: {buys} beli, {sells} jual.",
+      "net": "Perubahan kepemilikan bersih: {net}.",
+      "latest": "Terakhir dilaporkan {date}; {total} transaksi tercatat seluruhnya."
+    },
+    "financial": {
+      "latest": "Laporan terbaru: {period} (periode berakhir {end}).",
+      "behind": "Laporan periode {expected} seharusnya sudah tersedia; data ini tertinggal.",
+      "onTime": "Sesuai jadwal pelaporan yang diharapkan.",
+      "periods": "{count} periode kuartalan tersedia."
+    }
   }
 }

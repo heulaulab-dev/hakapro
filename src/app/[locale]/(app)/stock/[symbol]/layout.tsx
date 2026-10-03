@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { StockTabsNav } from "@/components/layout/stock-tabs-nav";
+import { StockHeaderLive } from "@/components/market/stock-header-live";
 import { symbolSchema } from "@/server/schemas/inputs";
 
 export default async function StockLayout({ children, params }: LayoutProps<"/[locale]/stock/[symbol]">) {
@@ -13,7 +14,8 @@ export default async function StockLayout({ children, params }: LayoutProps<"/[l
   return (
     <div className="flex flex-col">
       <div className="flex flex-col gap-3 px-4 pt-4 md:px-6">
-        <h1 data-testid="stock-symbol" className="ticker text-xl font-semibold">{parsed.data}</h1>
+        <h1 data-testid="stock-symbol" className="sr-only">{parsed.data}</h1>
+        <StockHeaderLive symbol={parsed.data} />
         <StockTabsNav symbol={parsed.data} />
       </div>
       {children}

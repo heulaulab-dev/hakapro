@@ -1,8 +1,8 @@
-import { getTranslations, setRequestLocale } from "next-intl/server";
-import { PagePlaceholder } from "@/components/layout/page-placeholder";
+import { setRequestLocale } from "next-intl/server";
+import { OverviewView } from "./overview-view";
 
 export default async function StockOverviewPage({ params }: PageProps<"/[locale]/stock/[symbol]">) {
-  setRequestLocale((await params).locale);
-  const t = await getTranslations("stockTabs");
-  return <PagePlaceholder level={2} title={t("overview")} />;
+  const { locale, symbol } = await params;
+  setRequestLocale(locale);
+  return <OverviewView symbol={symbol} />;
 }

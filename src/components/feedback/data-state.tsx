@@ -7,6 +7,7 @@ import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ApiError } from "@/lib/api/envelope";
+import { shouldRetry } from "@/lib/query/client";
 import { EmptyState } from "./empty-state";
 
 const KNOWN = new Set(["NOT_RECORDED", "UNSUPPORTED", "NOT_CONFIGURED", "AUTH_NOT_CONFIGURED", "UNAUTHORIZED", "RATE_LIMITED", "PROVIDER_UNAVAILABLE", "PROVIDER_UNAUTHORIZED", "MALFORMED_PROVIDER_RESPONSE", "MALFORMED_RESPONSE", "INVALID_REQUEST"]);
@@ -30,7 +31,7 @@ export function DataState<T>({ query, children, isEmpty, skeleton, compact }: {
     const code = query.error instanceof ApiError ? query.error.code : "default";
     const reason = KNOWN.has(code) ? code : "default";
     const icon = code === "UNAUTHORIZED" || code === "AUTH_NOT_CONFIGURED" ? <Lock /> : code === "NOT_RECORDED" || code === "UNSUPPORTED" ? <Database /> : <AlertTriangle />;
-    const retryable = !(query.error instanceof ApiError) || query.error.status >= 500 || code === "RATE_LIMITED";
+    const retryable = shouldRetry(0, query.error) || code === "RATE_LIMITED";
     return (
       <EmptyState
         compact={compact}

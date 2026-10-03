@@ -27,7 +27,7 @@ test.describe("desktop", () => {
     await page.getByTestId("nav-strategies").click();
     await expect(page).toHaveURL(/\/en\/discover\/strategies$/);
     await expect(page.getByTestId("nav-strategies")).toHaveAttribute("aria-current", "page");
-    await expect(page.getByTestId("page-title")).toHaveText("Strategies");
+    await expect(page.getByRole("heading", { level: 1, name: "Strategies" })).toBeVisible();
   });
 
   test("Ctrl+K searches stocks and opens the stock page", async ({ page }) => {

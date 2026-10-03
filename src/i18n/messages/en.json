@@ -56,7 +56,21 @@
   },
   "home": {
     "title": "Home",
-    "placeholder": "The market overview will appear here."
+    "placeholder": "The market overview will appear here.",
+    "subtitle": "What matters now",
+    "marketCondition": "Market condition",
+    "indices": "Indices & breadth",
+    "breadth": "{adv} up · {dec} down · {unch} unchanged",
+    "movers": "Movers",
+    "sectors": "Active sectors",
+    "sectorsUnavailable": "Sector performance isn't available from the current data source yet.",
+    "strategies": "Strategy opportunities",
+    "strategiesHint": "Stocks meeting a strategy's criteria in the latest screen. Check why they matched before researching.",
+    "viewAll": "View all",
+    "watchlist": "Watchlist activity",
+    "watchlistSignIn": "Sign in to see your watchlist.",
+    "watchlistEmpty": "Your watchlist is empty.",
+    "news": "Key news & events"
   },
   "dev": {
     "primitivesTitle": "Primitives",
@@ -250,5 +264,67 @@
   },
   "drawer": {
     "close": "Close"
+  },
+  "disclaimer": {
+    "label": "Research note",
+    "text": "For research and education only, not a buy or sell recommendation. Criteria describe what was observed in the data; the decision is entirely yours."
+  },
+  "strategies": {
+    "title": "Strategies",
+    "intro": "Strategies group stocks by patterns observed in the screener provider's data.",
+    "open": "View results",
+    "notFound": "This strategy isn't in the latest screen.",
+    "why": "Why",
+    "whyTitle": "Why did {symbol} match?",
+    "whyIntro": "{symbol} is in {strategy} because these criteria were observed:",
+    "research": "Research {symbol}",
+    "about": "About this strategy",
+    "back": "All strategies",
+    "empty": "No strategies in the latest screen."
+  },
+  "overview": {
+    "keyMetrics": "Summary",
+    "priceTitle": "Price",
+    "flowTitle": "Flow",
+    "brokerTitle": "Brokers",
+    "ownershipTitle": "Ownership & insiders",
+    "financialTitle": "Financials",
+    "chartTitle": "Price chart",
+    "deepDive": "Go deeper",
+    "hints": {
+      "chart": "Candles, volume and time ranges",
+      "flow": "Broker Summary and Foreign Flow",
+      "financials": "Income statement, balance sheet, cash flow",
+      "ownership": "Shareholder structure",
+      "insiders": "Director, commissioner and major-holder transactions",
+      "history": "Daily price table"
+    },
+    "price": {
+      "range": "Over the last {sessions} sessions the price changed {change}, ranging {low}–{high}.",
+      "above": "The close is above the 20-day average ({sma}).",
+      "below": "The close is below the 20-day average ({sma}).",
+      "at": "The close equals the 20-day average ({sma})."
+    },
+    "foreign": {
+      "sessions": "Foreign investors were net buyers in {buy} and net sellers in {sell} of the last {sessions} sessions.",
+      "net": "Net foreign over {sessions} sessions: {net}.",
+      "net20": "Net foreign over 20 sessions: {net}."
+    },
+    "brokers": {
+      "topBuyers": "Largest net buyers ({date}): {list}.",
+      "topSellers": "Largest net sellers: {list}.",
+      "noSellers": "No broker was a net seller in the data received."
+    },
+    "ownership": {
+      "summary": "{count} most recent insider transactions: {buys} buys, {sells} sells.",
+      "net": "Net holding change: {net}.",
+      "latest": "Last reported {date}; {total} transactions on record in total."
+    },
+    "financial": {
+      "latest": "Latest report: {period} (period ending {end}).",
+      "behind": "The {expected} report should already be available; this data is behind.",
+      "onTime": "In line with the expected reporting schedule.",
+      "periods": "{count} quarterly periods available."
+    }
   }
 }

@@ -10,6 +10,16 @@ import { MarketDataError } from "@/server/market/errors";
 
 const windows = new Map<string, { count: number; reset: number }>();
 
+/**
+ * E2E_RATE_LIMIT_SCALE multiplies per-route limits for the local e2e server, where every test shares
+ * one IP. Ignored in production.
+ */
+function rateLimitScale(): number {
+  if (process.env.NODE_ENV === "production" || process.env.VERCEL_ENV === "production") return 1;
+  const scale = Number(process.env.E2E_RATE_LIMIT_SCALE);
+  return Number.isFinite(scale) && scale >= 1 ? scale : 1;
+}
+
 /** Per-instance fixed window. Good enough for one Node process; not a distributed limiter. */
 export function allowRequest(key: string, limit = 60, now = Date.now()): boolean {
   const entry = windows.get(key);
@@ -43,7 +53,7 @@ export async function marketRoute(
   run: (source: MarketDataSource) => Promise<WithFreshness<unknown>>,
 ) {
   const requestId = crypto.randomUUID();
-  if (!allowRequest(clientKey(request, options.endpoint), options.limit ?? 60)) return failure("RATE_LIMITED", 429, requestId);
+  if (!allowRequest(clientKey(request, options.endpoint), (options.limit ?? 60) * rateLimitScale())) return failure("RATE_LIMITED", 429, requestId);
   const access = await checkAccess().catch(() => "unauthorized" as const);
   if (access === "not_configured") return failure("AUTH_NOT_CONFIGURED", 503, requestId);
   if (access !== "allow") return failure("UNAUTHORIZED", 401, requestId);

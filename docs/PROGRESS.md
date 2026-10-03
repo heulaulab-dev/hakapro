@@ -7,8 +7,8 @@
 | 3 | Data layer ported, fixture-backed `MarketDataSource`, unit tests | ✅ approved 2026-10-03 | 11cce02 |
 | 4 | Foundations: i18n, format module, tokens, FreshnessBadge | ✅ done ("continue" 2026-10-03) | 9470e2c |
 | 5 | App shell | ✅ done ("continue" 2026-10-03) | 3f35931 |
-| 6 | Primitives | ✅ awaiting approval | see git log |
-| 7 | Vertical slice: Home → Strategies → Why matched → Stock Overview | ⏳ | |
+| 6 | Primitives | ✅ approved 2026-10-03 | eabc709 |
+| 7 | Vertical slice: Home → Strategies → Why matched → Stock Overview | ✅ awaiting approval | see git log |
 
 ## Checkpoint 2 notes
 - Scaffold: create-next-app 16.3.8 (TS, App Router, Tailwind v4, ESLint, `src/`, `@/*`, Turbopack), shadcn 4.21.1 `radix-nova` preset, Radix base.
@@ -81,3 +81,52 @@
 - **Client API:** `lib/api/market.ts` holds Zod schemas mirroring the domain types and `marketApi`; `lib/api/hooks.ts` holds the TanStack Query hooks; `lib/query/keys.ts`.
 - **Playwright:** workers capped at 2 (dev-server compile contention at 4).
 - **TODO(verify):** the recorded broker-summary has 20 brokers, all net buyers, so the "top & bottom" chart shows no sellers. Check whether the provider truncates the list.
+
+## Checkpoint 7 (final): vertical slice report
+
+### What works (fixture data in dev; same code path for arjum)
+- **Home** (`/[locale]`): market condition and coverage from the screener (provider's own label); strategy opportunities with why-matched criteria and the research disclaimer; indices/breadth, movers and news via the idx-bei lane (they show their reason when that lane is absent); active sectors states there is no source; watchlist activity from Supabase when signed in, otherwise a sign-in prompt.
+- **Strategies** (`/discover/strategies`): screener context plus a list of strategies with description, match count, tickers and criteria.
+- **Strategy** (`/discover/strategies/[id]`): ScreenerTable with observed criteria; "Why" opens the why-matched drawer (`?why=SOCI` URL state), which shows criteria, provider note, strategy description, freshness, disclaimer and a "Research SOCI" link to the overview.
+- **Stock Overview** (`/stock/[symbol]`): the header (price, ▲/▼ change, freshness, company name) sits above the tabs. Then key metrics, a price chart with URL range, and five independent insight sections, each with its own freshness or error reason:
+  - price: range change, high/low, close vs 20-day SMA
+  - foreign flow: 5/20-session net
+  - brokers: top net buyers/sellers, with no invented sellers
+  - insiders
+  - financials: latest period plus reporting-lag warning
+  - Followed by deep-dive links and the disclaimer.
+- **Server:** `/api/overview/[code]` aggregates per-dataset summaries (`src/server/services/stock-summary.ts`, pure and unit-tested; `stock-overview.ts` with partial-failure tolerance).
+- **Reusable `ResearchDisclaimer`** is shown wherever strategies or derived observations appear.
+
+### Stubbed / not built
+- Stock tabs other than Overview are placeholders.
+- The Screener, Movers, Ownership Changes, Watchlist and News pages are placeholders.
+- `(auth)` login/signup pages: the account menu "Sign in" link 404s.
+- Watchlist rows have no quotes (needs a batched quote endpoint).
+- Saved-screen links don't run screens yet.
+- Analysis text is deliberately not exposed (MIGRATION §9.5).
+- Alert job route and `/api/ready` are deferred.
+
+### Known issues
+- **Fixture coverage:** only BBCA has per-stock recordings, so the strategy flow lands on SOCI/HRTA pages that honestly show NOT_RECORDED until `bun run record:fixtures` is run.
+- **Recorded broker summary** has only net buyers (20 brokers); the provider may truncate. TODO(verify).
+- **Dev-only React warning** "Failed to execute 'measure' on 'Performance' … negative time stamp" (Next dev performance tracks); no user impact observed.
+- **E2E rate limits:** e2e needs `E2E_RATE_LIMIT_SCALE` (set in playwright.config) because all tests share one IP against the per-route rate limiter.
+
+### Open TODO(verify)
+- Real arjum responses (manual check with credentials) and a fresh recording.
+- IDX session times, Friday hours, holiday calendar (`src/server/config/idx-calendar.ts`).
+- OJK/IDX reporting deadlines (`src/server/config/reporting.ts`).
+- Criteria phrasings vs provider meaning (`docs/GLOSSARY.md`); screener legend stability across versions.
+- Seasonality and up-probability units; financial-statement fetch timezone; filing date source.
+- idx-bei lane end-to-end (no `MARKET_API_URL` tested); news/announcements live shape.
+- Market-data display rights (product/legal).
+
+### Proposed next slices
+1. **Auth pages** (login/signup/reset with Supabase, locale-aware) and the watchlist page with quotes (batched quote endpoint).
+2. **Stock Flow tab:** broker summary table + accumulation chart + foreign flow series (data already ported).
+3. **Stock Financials tab:** statement tables from `buildFinancialRows`, period switcher, lag banner.
+4. **Screener page:** idx-bei `/v1/screener` builder with FilterBar + saved screens (Supabase `saved_screeners`).
+5. **Movers and News & Calendar:** once the idx-bei lane (or a licensed source) is connected.
+6. **Insiders and Ownership tabs;** History tab (DataTable over history).
+7. **Production readiness:** `/api/ready`, alert job schedule, RLS test run, a distributed rate limiter.

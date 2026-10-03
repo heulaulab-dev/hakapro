@@ -70,3 +70,33 @@ export const marketApi = {
   insiders: (symbol: string, signal?: AbortSignal) => fetchEnvelope(`/api/insiders/${sym(symbol)}`, insidersSchema, { signal }),
   marketCap: (signal?: AbortSignal) => fetchEnvelope("/api/market-cap", marketCapSchema, { signal }),
 };
+
+// --- Stock overview (/api/overview/[code]) -------------------------------------------------
+const freshnessFields = { freshness: z.enum(["LIVE", "DELAYED", "EOD", "HISTORICAL", "STALE", "UNAVAILABLE"]), asOf: z.string().nullable(), period: z.string().optional(), source: z.string() };
+const section = <T extends z.ZodType>(data: T) =>
+  z.discriminatedUnion("status", [z.object({ status: z.literal("ok"), data, ...freshnessFields }), z.object({ status: z.literal("error"), error: z.string() })]);
+const brokerNet = z.object({ code: z.string(), netValueIdr: n });
+export const stockOverviewSchema = z.object({
+  symbol: z.string(),
+  price: section(z.object({ date: z.string(), close: n, change: n, changePercent: n, rangeSessions: n, rangeChangePercent: nn, rangeHigh: n, rangeLow: n, sma20: nn, closeVsSma20: z.enum(["above", "below", "at"]).nullable() })),
+  foreignFlow: section(z.object({ sessions: n, netBuySessions: n, netSellSessions: n, netShares: n, netShares20: nn, latestDate: z.string() })),
+  brokers: section(z.object({ startDate: z.string(), endDate: z.string(), topBuyers: z.array(brokerNet), topSellers: z.array(brokerNet) })),
+  ownership: section(z.object({ transactions: n, buys: n, sells: n, netChangeShares: nn, latestDate: z.string().nullable(), totalReported: n })),
+  financials: section(z.object({ reportType: z.string(), latestPeriod: z.string().nullable(), latestPeriodEnd: z.string().nullable(), expectedPeriodEnd: z.string(), behind: z.boolean(), periods: n })),
+});
+export type StockOverview = z.infer<typeof stockOverviewSchema>;
+export type OverviewSection = StockOverview[keyof Omit<StockOverview, "symbol">];
+
+// --- idx-bei lane (market overview, news) ---------------------------------------------------
+export const marketOverviewSchema = z.object({
+  indices: z.array(z.object({ code: z.string().nullable(), name: z.string().nullable(), close: nn, previousClose: nn, changePercent: nn })),
+  breadth: z.object({ advancers: n, decliners: n, unchanged: n, valueIdr: n, volumeShares: n, frequency: n }),
+  movers: z.array(z.object({ symbol: z.string().nullable(), name: z.string().nullable(), close: nn, changePercent: nn, volumeShares: nn, valueIdr: nn, frequency: nn })),
+});
+export const newsItemSchema = z.object({ date: z.string().nullable(), title: z.string().nullable(), summary: z.string().nullable(), url: z.string().nullable() });
+
+export const overviewApi = {
+  stock: (symbol: string, signal?: AbortSignal) => fetchEnvelope(`/api/overview/${encodeURIComponent(symbol.toUpperCase())}`, stockOverviewSchema, { signal }),
+  market: (signal?: AbortSignal) => fetchEnvelope("/api/market", marketOverviewSchema, { signal }),
+  news: (signal?: AbortSignal) => fetchEnvelope("/api/news?per_page=8", z.array(newsItemSchema), { signal }),
+};

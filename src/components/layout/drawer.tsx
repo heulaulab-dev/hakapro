@@ -28,7 +28,14 @@ export function Drawer({ open, onOpenChange, trigger, title, description, childr
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       {trigger && <SheetTrigger asChild>{trigger}</SheetTrigger>}
-      <SheetContent side={desktop ? "right" : "bottom"} className={desktop ? "w-full sm:max-w-md" : "max-h-[85dvh]"} data-testid="drawer">
+      <SheetContent
+        side={desktop ? "right" : "bottom"}
+        className={desktop ? "w-full sm:max-w-md" : "max-h-[85dvh]"}
+        data-testid="drawer"
+        // Focus the panel itself, not its first control: a focused badge would pop its tooltip.
+        onOpenAutoFocus={(event) => { event.preventDefault(); (event.currentTarget as HTMLElement | null)?.focus(); }}
+        tabIndex={-1}
+      >
         <SheetHeader>
           <SheetTitle>{title}</SheetTitle>
           {description && <SheetDescription>{description}</SheetDescription>}

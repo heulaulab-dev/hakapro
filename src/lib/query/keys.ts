@@ -6,5 +6,9 @@ export const queryKeys = {
   strategies: () => ["market", "strategies"] as const,
   insiders: (symbol: string) => ["market", "insiders", symbol.toUpperCase()] as const,
   marketCap: () => ["market", "market-cap"] as const,
+  stockOverview: (symbol: string) => ["market", "overview", symbol.toUpperCase()] as const,
+  marketOverview: () => ["market", "market-overview"] as const,
+  news: () => ["market", "news"] as const,
+  watchlist: (userId: string) => ["user", "watchlist", userId] as const,
   savedScreens: (userId: string) => ["user", "saved-screens", userId] as const,
 };
