@@ -21,4 +21,4 @@ export function withFreshness<T>(
   return { data, freshness, asOf: meta.asOf, source: meta.source, ...(meta.period ? { period: meta.period } : {}) };
 }
 
-export { classifySessionDate, jakartaClock, previousTradingDay, isTradingDay, SESSION_HOURS } from "./session";
+export { classifySessionDate, jakartaClock, marketPhase, previousTradingDay, isTradingDay } from "./session";

@@ -50,7 +50,20 @@ describe("fixture mode freshness (Checkpoint 2 rule)", () => {
     const result = await new FixtureSource(duringRecordedSession).history(FIXTURE_SYMBOL, {});
     expect(result.asOf).toBe("2026-09-18");
     const financials = await new FixtureSource(duringRecordedSession).financialStatements(FIXTURE_SYMBOL, {});
-    expect(financials.period).toBe("Q1 2026");
+    expect(financials).toMatchObject({ asOf: "2026-03-31", period: "Q1 2026", freshness: "HISTORICAL" });
+    const seasonality = await new FixtureSource(duringRecordedSession).seasonality(FIXTURE_SYMBOL);
+    expect(seasonality).toMatchObject({ freshness: "HISTORICAL", asOf: "2026-09", period: "2020-01/2026-09" });
+  });
+
+  test("live rules mark financials STALE when the newest period is behind the reporting calendar", async () => {
+    const live = new ArjumSource(fixtureFetcher, "arjum", () => wib("2026-10-03T10:00:00"));
+    const result = await live.financialStatements(FIXTURE_SYMBOL, {});
+    expect(result.freshness).toBe("STALE");
+    expect(result.data.reportingLag.behind).toBe(true);
+    // Fixture mode caps the label, but the lag itself stays visible in the data.
+    const fixtureResult = await new FixtureSource(() => wib("2026-10-03T10:00:00")).financialStatements(FIXTURE_SYMBOL, {});
+    expect(fixtureResult.freshness).toBe("HISTORICAL");
+    expect(fixtureResult.data.reportingLag.behind).toBe(true);
   });
 });
 

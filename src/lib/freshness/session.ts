@@ -1,11 +1,5 @@
+import { IDX_CALENDAR, isHoliday, sessionsFor, toMinutes } from "@/server/config/idx-calendar";
 import type { Freshness } from "./index";
-
-/**
- * IDX regular-market window in Asia/Jakarta (WIB), minutes since midnight.
- * TODO(verify): Friday break and pre-closing/post-trading phases are ignored, and
- * exchange holidays are not modelled (weekdays are treated as trading days).
- */
-export const SESSION_HOURS = { open: 9 * 60, close: 16 * 60 } as const;
 
 const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
 
@@ -13,7 +7,7 @@ export type JakartaClock = { date: string; minutes: number; weekday: number };
 
 export function jakartaClock(now: Date): JakartaClock {
   const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Jakarta",
+    timeZone: IDX_CALENDAR.timeZone,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -38,8 +32,7 @@ function shiftDays(isoDate: string, days: number): string {
 }
 
 export function isTradingDay(isoDate: string): boolean {
-  const weekday = toUtcDate(isoDate).getUTCDay();
-  return weekday !== 0 && weekday !== 6;
+  return sessionsFor(toUtcDate(isoDate).getUTCDay()).length > 0 && !isHoliday(isoDate);
 }
 
 export function previousTradingDay(isoDate: string): string {
@@ -49,18 +42,28 @@ export function previousTradingDay(isoDate: string): string {
 }
 
 function isValidIsoDate(value: string): boolean {
-  const match = ISO_DATE.exec(value);
-  if (!match) return false;
+  if (!ISO_DATE.test(value)) return false;
   const date = toUtcDate(value);
   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
 }
 
+export type MarketPhase = "non_trading_day" | "pre_open" | "in_progress" | "closed";
+
+/** Phase of today's IDX trading day. The lunch break and closing auction count as in progress. */
+export function marketPhase(clock: JakartaClock): MarketPhase {
+  if (!isTradingDay(clock.date)) return "non_trading_day";
+  const sessions = sessionsFor(clock.weekday);
+  if (clock.minutes < toMinutes(sessions[0].start)) return "pre_open";
+  if (clock.minutes < toMinutes(IDX_CALENDAR.finalAfter)) return "in_progress";
+  return "closed";
+}
+
 /**
- * Classifies a provider data date against the IDX session clock.
- *   date of the session in progress  → DELAYED
+ * Classifies a provider data date against the IDX calendar (src/server/config/idx-calendar.ts).
+ *   date of today's session while it is in progress (incl. lunch break, closing auction) → DELAYED
  *   date of the last completed session → EOD
- *   anything older                    → STALE
- *   unparseable or in the future      → UNAVAILABLE
+ *   anything older → STALE
+ *   unparseable, in the future, or not a session we can vouch for → UNAVAILABLE
  * Never returns LIVE: no Phase 1 source is a realtime feed.
  */
 export function classifySessionDate(dataDate: string | null | undefined, now: Date): Freshness {
@@ -69,14 +72,13 @@ export function classifySessionDate(dataDate: string | null | undefined, now: Da
   if (!isValidIsoDate(day)) return "UNAVAILABLE";
 
   const clock = jakartaClock(now);
-  const todayIsTrading = isTradingDay(clock.date);
-  const inSession = todayIsTrading && clock.minutes >= SESSION_HOURS.open && clock.minutes < SESSION_HOURS.close;
-  const lastCompleted = todayIsTrading && clock.minutes >= SESSION_HOURS.close ? clock.date : previousTradingDay(clock.date);
+  const phase = marketPhase(clock);
+  const lastCompleted = phase === "closed" ? clock.date : previousTradingDay(clock.date);
 
   if (day > clock.date) return "UNAVAILABLE";
-  if (inSession && day === clock.date) return "DELAYED";
+  if (day === clock.date && phase === "in_progress") return "DELAYED";
   if (day === lastCompleted) return "EOD";
   if (day < lastCompleted) return "STALE";
-  // Today's date before the session opened, or a non-trading day: not a session we can vouch for.
+  // Today before the open, a non-trading day, or a date the calendar lists as a holiday.
   return "UNAVAILABLE";
 }

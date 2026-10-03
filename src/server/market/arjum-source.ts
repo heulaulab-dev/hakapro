@@ -1,5 +1,5 @@
 import "server-only";
-import { classifySessionDate, withFreshness, type Freshness, type WithFreshness } from "@/lib/freshness";
+import { classifySessionDate, jakartaClock, withFreshness, type Freshness, type WithFreshness } from "@/lib/freshness";
 import { logWarn } from "@/server/log";
 import { ArjumClient, type RawFetcher } from "@/server/providers/arjum/client";
 import {
@@ -69,8 +69,9 @@ export class ArjumSource extends BaseMarketDataSource {
   }
 
   async seasonality(symbol: string, signal?: AbortSignal) {
-    // TODO(verify): the provider gives no as-of date for seasonality, so it is reported as UNAVAILABLE freshness.
-    return this.wrap(normalizeSeasonality(await this.fetchRaw(`/api/seasonal/${symbol}`, seasonalityResponseSchema, {}, signal)), "HISTORICAL", null);
+    // As-of is the last covered month (ISO 8601 YYYY-MM); the period is the covered range.
+    const data = normalizeSeasonality(await this.fetchRaw(`/api/seasonal/${symbol}`, seasonalityResponseSchema, {}, signal));
+    return this.wrap(data, "HISTORICAL", data.coverage?.to ?? null, data.coverage ? `${data.coverage.from}/${data.coverage.to}` : undefined);
   }
 
   async marketCap(query: PageQuery & { date?: string }, signal?: AbortSignal) {
@@ -79,9 +80,12 @@ export class ArjumSource extends BaseMarketDataSource {
   }
 
   async financialStatements(symbol: string, query: FinancialsQuery, signal?: AbortSignal) {
-    const data = normalizeFinancialStatements(await this.fetchRaw(`/api/financial-statements/${symbol}`, financialStatementsResponseSchema, { report_type: query.reportType, period: query.period, limit: query.limit, year: query.year }, signal));
-    const newest = data.periods[0];
-    return this.wrap(data, "HISTORICAL", newest ? newest.fetchedAt.replace(" ", "T") : null, newest?.label);
+    const today = jakartaClock(this.clock()).date;
+    const data = normalizeFinancialStatements(await this.fetchRaw(`/api/financial-statements/${symbol}`, financialStatementsResponseSchema, { report_type: query.reportType, period: query.period, limit: query.limit, year: query.year }, signal), today);
+    // As-of is the reporting period end, not the scrape time. A dataset behind the reporting
+    // calendar is STALE (data.reportingLag says by how much), never quietly HISTORICAL.
+    const newest = data.periods.find((period) => period.periodEnd === data.reportingLag.latestPeriodEnd);
+    return this.wrap(data, data.reportingLag.behind ? "STALE" : "HISTORICAL", data.reportingLag.latestPeriodEnd, newest?.label);
   }
 
   async insiders(symbol: string, query: InsidersQuery, signal?: AbortSignal) {

@@ -46,3 +46,23 @@ test("withFreshness forces UNAVAILABLE when the as-of date is unknown", () => {
   expect(withFreshness([], { freshness: "EOD", asOf: null, source: "x" }).freshness).toBe("UNAVAILABLE");
   expect(withFreshness([], { freshness: "EOD", asOf: "2026-09-18", source: "x", period: "Q1 2026" })).toEqual({ data: [], freshness: "EOD", asOf: "2026-09-18", source: "x", period: "Q1 2026" });
 });
+
+describe("IDX calendar config (TODO(verify) times)", () => {
+  test("lunch break and closing auction still count as the session in progress", () => {
+    expect(classifySessionDate("2026-09-17", wib("2026-09-17T12:45:00"))).toBe("DELAYED"); // Thu break
+    expect(classifySessionDate("2026-09-18", wib("2026-09-18T12:30:00"))).toBe("DELAYED"); // Fri long break
+    expect(classifySessionDate("2026-09-18", wib("2026-09-18T15:55:00"))).toBe("DELAYED");
+  });
+
+  test("today's data is EOD only after post-trading, not at the closing bell (less fresh when uncertain)", () => {
+    expect(classifySessionDate("2026-09-18", wib("2026-09-18T16:05:00"))).toBe("DELAYED");
+    expect(classifySessionDate("2026-09-18", wib("2026-09-18T16:15:00"))).toBe("EOD");
+  });
+
+  test("listed exchange holidays are skipped", () => {
+    // 2026-08-17 (Mon) is listed; the last session before Tue 2026-08-18 is Fri 2026-08-14.
+    expect(previousTradingDay("2026-08-18")).toBe("2026-08-14");
+    expect(classifySessionDate("2026-08-14", wib("2026-08-17T12:00:00"))).toBe("EOD");
+    expect(classifySessionDate("2026-08-17", wib("2026-08-18T12:00:00"))).toBe("UNAVAILABLE");
+  });
+});

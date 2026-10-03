@@ -10,6 +10,7 @@ import type {
   BrokerAccumulationResponse, BrokerSummaryResponse, DoneDetailsResponse, FinancialStatementsResponse,
   HistoryResponse, InsidersResponse, MarketCapResponse, SearchResponse, SeasonalityResponse,
 } from "@/server/schemas/arjum";
+import { expectedLatestPeriodEnd, periodEnd } from "@/server/config/reporting";
 import { parseProviderNumber, type ParseOptions } from "./parse-number";
 
 export type NumberIssue = { field: string; input: string; reason: string };
@@ -78,13 +79,18 @@ export function normalizeHistory(value: HistoryResponse): History {
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] as const;
 export type Seasonality = {
   symbol: string; months: string[];
+  /** First and last year-month (YYYY-MM) that have a return value. */
+  coverage: { from: string; to: string } | null;
   rows: Array<{ year: string; averagePercent: number | null; valuesPercent: Array<number | null> }>;
   summary: Array<{ month: string; averagePercent: number | null; upProbability: number | null; samples: number }>;
 };
 // TODO(verify): monthly_returns/up_prob units (percent vs fraction) are unconfirmed; field names assume percent.
 export function normalizeSeasonality(value: SeasonalityResponse): Seasonality {
+  const covered = value.years.flatMap((year) => MONTHS.map((month, index) => (value.monthly_returns[month]?.[year] === undefined ? null : `${year}-${String(index + 1).padStart(2, "0")}`)))
+    .filter((key): key is string => key !== null).sort();
   return {
     symbol: value.stock_code, months: [...MONTHS],
+    coverage: covered.length ? { from: covered[0], to: covered.at(-1)! } : null,
     rows: value.years.map((year) => ({ year, averagePercent: value.yearly_avg[year] ?? null, valuesPercent: MONTHS.map((month) => value.monthly_returns[month]?.[year] ?? null) })),
     summary: MONTHS.map((month) => ({ month, averagePercent: value.summary[month]?.avg ?? null, upProbability: value.summary[month]?.up_prob ?? null, samples: value.summary[month]?.total ?? 0 })),
   };
@@ -101,10 +107,21 @@ export function normalizeMarketCap(value: MarketCapResponse): MarketCap {
 }
 
 export type FinancialRow = { key: string; label: string; depth: number; expandable: boolean; values: Array<number | null> };
+export type FinancialPeriod = {
+  year: string; quarter: string; label: string;
+  /** Last day of the reporting period (YYYY-MM-DD); null when the provider period is unreadable. */
+  periodEnd: string | null;
+  /** Filing/publication date. The provider does not supply it yet. */
+  filingDate: string | null;
+  /** When the provider scraped the report — not the data date. */
+  fetchedAt: string;
+};
 export type FinancialStatements = {
   symbol: string; reportType: string; period: string;
-  periods: Array<{ year: string; quarter: string; label: string; fetchedAt: string }>;
+  periods: FinancialPeriod[];
   rows: FinancialRow[];
+  /** Whether the newest available period is older than what should be public by now. */
+  reportingLag: { latestPeriodEnd: string | null; expectedPeriodEnd: string; behind: boolean };
 };
 function labelFor(key: string): string {
   return key.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
@@ -130,11 +147,17 @@ export function buildFinancialRows(items: FinancialStatementsResponse["items"]):
     }),
   }));
 }
-export function normalizeFinancialStatements(value: FinancialStatementsResponse): FinancialStatements {
+export function normalizeFinancialStatements(value: FinancialStatementsResponse, today: string): FinancialStatements {
+  const periods = value.items.map((item) => ({
+    year: item.year, quarter: item.quarter, label: item.label,
+    periodEnd: periodEnd(item.year, item.quarter, value.period), filingDate: null, fetchedAt: item.fetched_at,
+  }));
+  const latestPeriodEnd = periods.map((period) => period.periodEnd).filter((end): end is string => end !== null).sort().at(-1) ?? null;
+  const expectedPeriodEnd = expectedLatestPeriodEnd(today, value.period);
   return {
-    symbol: value.stock_code, reportType: value.report_type, period: value.period,
-    periods: value.items.map((item) => ({ year: item.year, quarter: item.quarter, label: item.label, fetchedAt: item.fetched_at })),
+    symbol: value.stock_code, reportType: value.report_type, period: value.period, periods,
     rows: buildFinancialRows(value.items),
+    reportingLag: { latestPeriodEnd, expectedPeriodEnd, behind: latestPeriodEnd === null || latestPeriodEnd < expectedPeriodEnd },
   };
 }
 

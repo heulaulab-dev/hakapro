@@ -72,3 +72,19 @@ describe("insiders: provider strings parsed into numbers", () => {
     expect(issues).toEqual([expect.objectContaining({ field: "insiders.price_formatted", input: "n/a" })]);
   });
 });
+
+describe("Checkpoint 3 freshness corrections", () => {
+  test("financial statements: period end per period, fetch time kept separately, lag surfaced", async () => {
+    const { normalizeFinancialStatements } = await import("./arjum-normalize");
+    const data = normalizeFinancialStatements(financialStatementsResponseSchema.parse(fixture("financial-statements")), "2026-10-03");
+    expect(data.periods[0]).toEqual({ year: "2026", quarter: "1", label: "Q1 2026", periodEnd: "2026-03-31", filingDate: null, fetchedAt: "2026-09-13 18:06:34" });
+    expect(data.reportingLag).toEqual({ latestPeriodEnd: "2026-03-31", expectedPeriodEnd: "2026-06-30", behind: true });
+    const onTime = normalizeFinancialStatements(financialStatementsResponseSchema.parse(fixture("financial-statements")), "2026-05-15");
+    expect(onTime.reportingLag.behind).toBe(false);
+  });
+
+  test("seasonality coverage is derived from the data", () => {
+    const matrix = normalizeSeasonality(seasonalityResponseSchema.parse(fixture("seasonal")));
+    expect(matrix.coverage).toEqual({ from: "2020-01", to: "2026-09" });
+  });
+});
