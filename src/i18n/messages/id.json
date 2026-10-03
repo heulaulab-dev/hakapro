@@ -23,12 +23,30 @@
   },
   "freshness": {
     "states": {
-      "LIVE": { "label": "Real-time", "description": "Data diperbarui langsung dari sumber." },
-      "DELAYED": { "label": "Tertunda", "description": "Data sesi yang sedang berjalan, dengan jeda dari bursa." },
-      "EOD": { "label": "Penutupan", "description": "Data penutupan sesi perdagangan terakhir." },
-      "HISTORICAL": { "label": "Historis", "description": "Data historis, bukan kondisi pasar saat ini." },
-      "STALE": { "label": "Usang", "description": "Data lebih lama dari yang seharusnya sudah tersedia." },
-      "UNAVAILABLE": { "label": "Tidak tersedia", "description": "Tanggal atau kesegaran data tidak dapat dipastikan." }
+      "LIVE": {
+        "label": "Real-time",
+        "description": "Data diperbarui langsung dari sumber."
+      },
+      "DELAYED": {
+        "label": "Tertunda",
+        "description": "Data sesi yang sedang berjalan, dengan jeda dari bursa."
+      },
+      "EOD": {
+        "label": "Penutupan",
+        "description": "Data penutupan sesi perdagangan terakhir."
+      },
+      "HISTORICAL": {
+        "label": "Historis",
+        "description": "Data historis, bukan kondisi pasar saat ini."
+      },
+      "STALE": {
+        "label": "Usang",
+        "description": "Data lebih lama dari yang seharusnya sudah tersedia."
+      },
+      "UNAVAILABLE": {
+        "label": "Tidak tersedia",
+        "description": "Tanggal atau kesegaran data tidak dapat dipastikan."
+      }
     },
     "asOf": "Data per {date}",
     "noAsOf": "Tanggal data tidak diketahui",
@@ -47,5 +65,67 @@
     "formatting": "Format angka",
     "sampleInput": "Input",
     "sampleOutput": "Hasil"
+  },
+  "nav": {
+    "label": "Navigasi utama",
+    "home": "Beranda",
+    "discover": "Jelajahi",
+    "screener": "Screener",
+    "strategies": "Strategi",
+    "movers": "Penggerak Pasar",
+    "ownership": "Perubahan Kepemilikan",
+    "watchlist": "Daftar Pantau",
+    "news": "Berita & Kalender",
+    "more": "Lainnya",
+    "search": "Cari"
+  },
+  "stockTabs": {
+    "label": "Bagian saham",
+    "overview": "Ringkasan",
+    "chart": "Grafik",
+    "flow": "Flow",
+    "financials": "Keuangan",
+    "ownership": "Kepemilikan",
+    "insiders": "Insider",
+    "history": "Riwayat"
+  },
+  "header": {
+    "search": "Cari saham atau halaman…",
+    "searchShortcut": "Buka pencarian (Ctrl+K)",
+    "theme": "Ganti tema",
+    "themeToDark": "Pakai tema gelap",
+    "themeToLight": "Pakai tema terang",
+    "density": "Kepadatan tampilan",
+    "locale": "Bahasa",
+    "display": "Tampilan"
+  },
+  "palette": {
+    "title": "Palet perintah",
+    "description": "Cari saham, buka halaman, atau jalankan screen tersimpan.",
+    "placeholder": "Ketik kode saham, nama perusahaan, atau halaman…",
+    "stocks": "Saham",
+    "pages": "Halaman",
+    "tabsFor": "Bagian {symbol}",
+    "savedScreens": "Screen tersimpan",
+    "savedScreensSignIn": "Masuk untuk melihat screen tersimpan.",
+    "savedScreensEmpty": "Belum ada screen tersimpan.",
+    "noResults": "Tidak ada hasil.",
+    "searching": "Mencari…",
+    "searchError": "Pencarian saham tidak tersedia saat ini.",
+    "typeToSearch": "Ketik untuk mencari saham."
+  },
+  "account": {
+    "menu": "Akun",
+    "signedInAs": "Masuk sebagai {email}",
+    "signOut": "Keluar",
+    "signIn": "Masuk",
+    "bypass": "Mode dev: autentikasi dilewati",
+    "unconfigured": "Autentikasi belum dikonfigurasi"
+  },
+  "placeholder": {
+    "comingSoon": "Halaman ini dibangun pada langkah berikutnya."
+  },
+  "stock": {
+    "invalidSymbol": "Kode saham tidak valid."
   }
 }

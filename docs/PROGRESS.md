@@ -5,8 +5,8 @@
 | 1 | Inventory (`docs/MIGRATION.md`) | ✅ approved 2026-10-03 with corrections (MIGRATION §9) | — |
 | 2 | Scaffold: typecheck / lint / build pass | ✅ approved 2026-10-03 | a46b4fc |
 | 3 | Data layer ported, fixture-backed `MarketDataSource`, unit tests | ✅ approved 2026-10-03 | 11cce02 |
-| 4 | Foundations: i18n, format module, tokens, FreshnessBadge | ✅ awaiting approval | see git log |
-| 5 | App shell | ⏳ | |
+| 4 | Foundations: i18n, format module, tokens, FreshnessBadge | ✅ done ("continue" 2026-10-03) | 9470e2c |
+| 5 | App shell | ✅ awaiting approval | see git log |
 | 6 | Primitives | ⏳ | |
 | 7 | Vertical slice: Home → Strategies → Why matched → Stock Overview | ⏳ | |
 
@@ -53,3 +53,18 @@
 - **FreshnessBadge:** `src/components/feedback/freshness-badge.tsx`. Six localized states; tooltip on hover/focus shows as-of, period and source.
 - **Dev page:** `/[locale]/dev/primitives` (404 in production). Shows every state in both themes × both densities; switch locale via the link.
 - **Testing:** use `localhost`, not `127.0.0.1`. Next 16 blocks dev resources for other origins, so pages don't hydrate.
+
+## Checkpoint 5 notes
+- **Shell:** `src/app/[locale]/(app)/layout.tsx`. A fixed-height frame: the banner, then sidebar | (header, scrolling main, mobile bottom nav). The banner stays visible because only `main` scrolls.
+- **Sidebar** (`components/layout/app-sidebar.tsx`): pure CSS breakpoints, so server and client render the same.
+  - Hidden below `md`.
+  - `md`–`lg` (tablet): a 56px icon rail with tooltips; labels stay in the accessible name.
+  - `xl`+: full labels, with Discover as a labelled group.
+  - Stock pages are not nav items.
+- **Header:** the search box opens the Cmd+K palette (the only global stock search), plus the language, theme and density switches and the account menu. Theme and density are written to cookies and applied to `<html>` immediately. Initial state comes from server-read cookies, so there are no hydration mismatches.
+- **Cmd/Ctrl+K palette:** stock search via `/api/search`, with a freshness badge on the result group. Stock tabs appear for the current page's stock, the top result or a typed ticker. All pages are listed. Saved screens come from Supabase `saved_screeners` when signed in; otherwise it shows a sign-in hint. Open state lives in zustand (`lib/stores/ui.ts`).
+- **Mobile:** a bottom nav (Home, Search, Watchlist, More). The More sheet holds Discover, News and display settings. "Alerts" isn't built, so the fourth item is More.
+- **URL state:** `NuqsAdapter` is mounted. Stock tabs are routes (`/stock/BBCA/chart`). Lower-case tickers redirect to the canonical upper-case URL; invalid tickers 404.
+- **Query setup:** `lib/query/{client,keys}.ts`; `lib/api/envelope.ts` validates every freshness envelope on the client.
+- **Pages:** placeholder pages exist for every nav route and stock tab, to be replaced in Steps 6–7. The account menu's Sign in link goes to `/login`, which isn't built yet.
+- **Testing:** Playwright projects are desktop (1280), tablet (820, touch) and mobile (Pixel 7).

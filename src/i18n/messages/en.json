@@ -23,12 +23,30 @@
   },
   "freshness": {
     "states": {
-      "LIVE": { "label": "Live", "description": "Data updates directly from the source." },
-      "DELAYED": { "label": "Delayed", "description": "Data from the session in progress, delayed by the exchange." },
-      "EOD": { "label": "End of day", "description": "Closing data from the last trading session." },
-      "HISTORICAL": { "label": "Historical", "description": "Historical data, not current market conditions." },
-      "STALE": { "label": "Stale", "description": "Older than data that should already be available." },
-      "UNAVAILABLE": { "label": "Unavailable", "description": "The data date or freshness cannot be confirmed." }
+      "LIVE": {
+        "label": "Live",
+        "description": "Data updates directly from the source."
+      },
+      "DELAYED": {
+        "label": "Delayed",
+        "description": "Data from the session in progress, delayed by the exchange."
+      },
+      "EOD": {
+        "label": "End of day",
+        "description": "Closing data from the last trading session."
+      },
+      "HISTORICAL": {
+        "label": "Historical",
+        "description": "Historical data, not current market conditions."
+      },
+      "STALE": {
+        "label": "Stale",
+        "description": "Older than data that should already be available."
+      },
+      "UNAVAILABLE": {
+        "label": "Unavailable",
+        "description": "The data date or freshness cannot be confirmed."
+      }
     },
     "asOf": "Data as of {date}",
     "noAsOf": "Data date unknown",
@@ -47,5 +65,67 @@
     "formatting": "Number formatting",
     "sampleInput": "Input",
     "sampleOutput": "Output"
+  },
+  "nav": {
+    "label": "Main navigation",
+    "home": "Home",
+    "discover": "Discover",
+    "screener": "Screener",
+    "strategies": "Strategies",
+    "movers": "Movers",
+    "ownership": "Ownership Changes",
+    "watchlist": "Watchlist",
+    "news": "News & Calendar",
+    "more": "More",
+    "search": "Search"
+  },
+  "stockTabs": {
+    "label": "Stock sections",
+    "overview": "Overview",
+    "chart": "Chart",
+    "flow": "Flow",
+    "financials": "Financials",
+    "ownership": "Ownership",
+    "insiders": "Insiders",
+    "history": "History"
+  },
+  "header": {
+    "search": "Search stocks or pages…",
+    "searchShortcut": "Open search (Ctrl+K)",
+    "theme": "Change theme",
+    "themeToDark": "Use dark theme",
+    "themeToLight": "Use light theme",
+    "density": "Display density",
+    "locale": "Language",
+    "display": "Display"
+  },
+  "palette": {
+    "title": "Command palette",
+    "description": "Search stocks, open pages, or run saved screens.",
+    "placeholder": "Type a ticker, company name, or page…",
+    "stocks": "Stocks",
+    "pages": "Pages",
+    "tabsFor": "{symbol} sections",
+    "savedScreens": "Saved screens",
+    "savedScreensSignIn": "Sign in to see saved screens.",
+    "savedScreensEmpty": "No saved screens yet.",
+    "noResults": "No results.",
+    "searching": "Searching…",
+    "searchError": "Stock search is unavailable right now.",
+    "typeToSearch": "Type to search stocks."
+  },
+  "account": {
+    "menu": "Account",
+    "signedInAs": "Signed in as {email}",
+    "signOut": "Sign out",
+    "signIn": "Sign in",
+    "bypass": "Dev mode: auth bypassed",
+    "unconfigured": "Auth not configured"
+  },
+  "placeholder": {
+    "comingSoon": "This page is built in a later step."
+  },
+  "stock": {
+    "invalidSymbol": "Invalid ticker."
   }
 }

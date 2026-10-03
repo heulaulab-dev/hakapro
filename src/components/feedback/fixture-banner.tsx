@@ -15,15 +15,15 @@ export async function FixtureBanner() {
     <div
       role="status"
       data-testid="fixture-banner"
-      className="sticky top-0 z-50 flex items-center justify-center gap-3 border-b border-warning/40 bg-warning-muted px-4 py-1.5 text-xs font-medium text-warning"
+      className="flex shrink-0 items-center justify-center gap-3 border-b border-warning/40 bg-warning-muted px-4 py-1.5 text-xs font-medium text-warning"
     >
       {fixture && (
         <span>
-          <span className="ticker">{t("fixture")}</span>
-          <span className="ml-2 opacity-80">{t("fixtureDetail")}</span>
+          <span className="ticker whitespace-nowrap">{t("fixture")}</span>
+          <span className="ml-2 hidden opacity-80 sm:inline">{t("fixtureDetail")}</span>
         </span>
       )}
-      {bypass && <span data-testid="auth-bypass-banner" className="ticker">{t("authBypass")}</span>}
+      {bypass && <span data-testid="auth-bypass-banner" className="ticker whitespace-nowrap">{t("authBypass")}</span>}
     </div>
   );
 }

@@ -11,7 +11,7 @@ import { routing } from "@/i18n/routing";
 import { DENSITY_COOKIE, parseDensity, parseTheme, THEME_COOKIE } from "@/lib/preferences";
 import "../globals.css";
 
-const CLIENT_NAMESPACES = ["freshness", "locale", "theme", "density"] as const;
+const CLIENT_NAMESPACES = ["freshness", "locale", "theme", "density", "nav", "stockTabs", "header", "palette", "account"] as const;
 
 export async function generateMetadata({ params }: LayoutProps<"/[locale]">): Promise<Metadata> {
   const { locale } = await params;
@@ -32,7 +32,7 @@ export default async function LocaleLayout({ children, params }: LayoutProps<"/[
 
   return (
     <html lang={locale} className={`${GeistSans.variable} ${GeistMono.variable} ${theme} h-full antialiased`} data-density={density}>
-      <body className="flex min-h-full flex-col">
+      <body className="flex h-dvh flex-col overflow-hidden">
         <NextIntlClientProvider messages={clientMessages}>
           <TooltipProvider delayDuration={150}>
             <FixtureBanner />
