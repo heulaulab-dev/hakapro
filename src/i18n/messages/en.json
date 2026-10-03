@@ -146,9 +146,6 @@
     "bypass": "Dev mode: auth bypassed",
     "unconfigured": "Auth not configured"
   },
-  "placeholder": {
-    "comingSoon": "This page is built in a later step."
-  },
   "stock": {
     "invalidSymbol": "Invalid ticker."
   },
@@ -502,5 +499,48 @@
     "watchlistTitle": "Insiders in your watchlist",
     "watchlistSignIn": "Sign in to see insider transactions for the stocks you watch.",
     "watchlistEmpty": "Add stocks to your watchlist to see their insider transactions."
+  },
+  "stockChart": {
+    "title": "Price chart",
+    "indicators": "Indicators",
+    "sma20": "SMA 20",
+    "sma50": "SMA 50",
+    "macd": "MACD",
+    "indicatorsNote": "Indicators are computed from the daily prices shown."
+  },
+  "stockInsiders": {
+    "title": "Insider transactions",
+    "perPage": "Per page",
+    "previous": "Previous",
+    "next": "Next",
+    "page": "Page {page} of {total}",
+    "filterAll": "All"
+  },
+  "stockHistory": {
+    "title": "Daily price history",
+    "seasonality": "Seasonality (monthly return, %)",
+    "year": "Year",
+    "average": "Average",
+    "upProbability": "Up probability",
+    "samples": "Samples",
+    "tape": "Latest trades ({date})",
+    "time": "Time",
+    "board": "Board",
+    "buyer": "Buyer",
+    "seller": "Seller",
+    "aggressor": "Aggressor",
+    "tapeNote": "First page of {total} trades; quantity in lots (100 shares). Odd lots show as 0 lots."
+  },
+  "stockOwnership": {
+    "title": "Ownership",
+    "shareholders": "Shareholders",
+    "directors": "Directors",
+    "commissioners": "Commissioners",
+    "actions": "Corporate actions",
+    "website": "Website",
+    "name": "Name",
+    "share": "Share",
+    "role": "Role",
+    "profileNote": "Ownership structure from IDX issuer profile data (no data date)."
   }
 }

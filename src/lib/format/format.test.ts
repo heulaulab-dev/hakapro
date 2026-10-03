@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { formatShortDate, direction, EMPTY, formatChange, formatCompact, formatDate, formatIdr, formatNumber, formatPercent, formatPeriod, formatVolume } from "./index";
+import { formatMonthName, formatShortDate, direction, EMPTY, formatChange, formatCompact, formatDate, formatIdr, formatNumber, formatPercent, formatPeriod, formatVolume } from "./index";
 
 describe("abbreviation collision (init prompt §6)", () => {
   test("1.5e12 → Rp1,5 T (id) and Rp1.5T (en)", () => {
@@ -83,6 +83,9 @@ test("signed net volume and short dates", () => {
   expect(formatVolume(-56_760_000, "id", { compact: true, signed: true })).toBe("-56,76 jt lembar");
   expect(formatShortDate("2026-06-24", "en")).toBe("Jun 24");
   expect(formatShortDate("2026-06-24", "id")).toBe("24 Jun");
+  expect(formatMonthName(5, "id")).toBe("Mei");
+  expect(formatMonthName(5, "en")).toBe("May");
+  expect(formatMonthName(13, "en")).toBe("—");
 });
 
 describe("dates", () => {

@@ -3,7 +3,7 @@
  * Pure functions: they return numbers and keys, never advice or prose (the UI localizes them).
  */
 import type { BrokerSummary, FinancialStatements, History, Insiders } from "./arjum-normalize";
-import { calculateSimpleMovingAverage } from "./indicators";
+import { calculateSimpleMovingAverage } from "@/lib/indicators";
 
 export type PriceFacts = {
   date: string;

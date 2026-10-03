@@ -123,3 +123,40 @@ test.describe("slice 5: Movers, News & Calendar, Ownership Changes", () => {
     await expect(page).toHaveURL(/\/id\/stock\/BBCA\/insiders$/);
   });
 });
+
+test.describe("slice 6: Chart, Insiders, History, Ownership tabs", () => {
+  test("chart indicators are URL state with a legend", async ({ page }) => {
+    await page.goto("/en/stock/BBCA/chart");
+    await page.getByTestId("ind-sma20").click();
+    await page.getByTestId("ind-macd").click();
+    await expect(page).toHaveURL(/ind=sma20(%2C|,)macd/);
+    const legend = page.getByTestId("chart-legend");
+    await expect(legend).toContainText("SMA 20");
+    await expect(legend).toContainText("MACD (12, 26)");
+    await expect(page.getByTestId("full-chart").locator("canvas").first()).toBeVisible();
+  });
+
+  test("insiders: paged table with action filter in the URL", async ({ page }) => {
+    await page.goto("/en/stock/BBCA/insiders");
+    const view = page.getByTestId("insiders-view");
+    await expect(view.getByTestId("row-count")).toHaveText("10 rows");
+    await expect(view.getByTestId("insider-page")).toHaveText("Page 1 of 9");
+    await view.getByTestId("insider-action-SELL").click();
+    await expect(page).toHaveURL(/action=SELL/);
+    await expect(view.getByTestId("row-count")).toHaveText("0 rows");
+  });
+
+  test("history: daily table, localized seasonality heatmap, latest trades", async ({ page }) => {
+    await page.goto("/id/stock/BBCA/history");
+    await expect(page.getByTestId("history-table").getByTestId("row-count")).toHaveText("120 baris");
+    const heatmap = page.getByTestId("seasonality");
+    await expect(heatmap.locator("thead th").nth(5)).toHaveText("Mei");
+    await expect(heatmap).toContainText("-16,9%");
+    await expect(page.getByTestId("tape-table").getByTestId("row-count")).toHaveText("100 baris");
+  });
+
+  test("ownership tab states the idx-bei source is absent in fixture mode", async ({ page }) => {
+    await page.goto("/en/stock/BBCA/ownership");
+    await expect(page.getByTestId("stock-ownership-view").getByTestId("data-state-code").first()).toHaveText("UNSUPPORTED");
+  });
+});

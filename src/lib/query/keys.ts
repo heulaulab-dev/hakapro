@@ -15,5 +15,10 @@ export const queryKeys = {
   brokerAccumulation: (symbol: string, startDate = "", top = 0) => ["market", "broker-accumulation", symbol.toUpperCase(), startDate, top] as const,
   financials: (symbol: string, reportType: string, period: string) => ["market", "financials", symbol.toUpperCase(), reportType, period] as const,
   screen: (conditions: unknown) => ["market", "screen", JSON.stringify(conditions)] as const,
+  doneDetails: (symbol: string) => ["market", "done-details", symbol.toUpperCase()] as const,
+  seasonality: (symbol: string) => ["market", "seasonality", symbol.toUpperCase()] as const,
+  profile: (symbol: string) => ["market", "profile", symbol.toUpperCase()] as const,
+  actions: (symbol: string) => ["market", "actions", symbol.toUpperCase()] as const,
+  insidersPage: (symbol: string, page: number, limit: number, action: string | null) => ["market", "insiders", symbol.toUpperCase(), page, limit, action] as const,
   savedScreens: (userId: string) => ["user", "saved-screens", userId] as const,
 };

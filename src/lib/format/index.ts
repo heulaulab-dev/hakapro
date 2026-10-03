@@ -161,6 +161,12 @@ export function formatShortDate(value: string | null | undefined, locale: Locale
   return new Intl.DateTimeFormat(INTL_LOCALE[locale], { day: "numeric", month: "short", timeZone: "UTC" }).format(date);
 }
 
+/** Short month name for a 1-based month: 1 → "Jan"; 5 → "Mei" (id) / "May" (en). */
+export function formatMonthName(month: number, locale: Locale): string {
+  if (!Number.isInteger(month) || month < 1 || month > 12) return EMPTY;
+  return new Intl.DateTimeFormat(INTL_LOCALE[locale], { month: "short", timeZone: "UTC" }).format(new Date(Date.UTC(2000, month - 1, 1)));
+}
+
 /** Period strings from the API: "Q1 2026" passes through; "2020-01/2026-09" → "Jan 2020 – Sep 2026". */
 export function formatPeriod(value: string | null | undefined, locale: Locale): string {
   if (!value) return EMPTY;

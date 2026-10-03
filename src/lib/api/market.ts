@@ -169,3 +169,33 @@ export const screenerApi = {
   run: (conditions: ScreenCondition[], signal?: AbortSignal) =>
     fetchEnvelope("/api/screener", screenResultSchema, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ conditions, limit: 500 }), signal }),
 };
+
+// --- Done details, profile, corporate actions, paged insiders --------------------------------
+export const doneDetailsSchema = z.object({
+  symbol: z.string(), date: z.string(), total: n, page: n, perPage: n, totalPages: n,
+  rows: z.array(z.object({ time: z.string(), board: z.string(), priceIdr: n, lots: n, valueIdr: n, buyer: z.string(), seller: z.string(), buyerType: z.string(), sellerType: z.string(), aggressor: z.string() })),
+});
+export type DoneDetailRow = z.infer<typeof doneDetailsSchema>["rows"][number];
+export const seasonalitySchema = z.object({
+  symbol: z.string(), months: z.array(z.string()), coverage: z.object({ from: z.string(), to: z.string() }).nullable(),
+  rows: z.array(z.object({ year: z.string(), averagePercent: nn, valuesPercent: z.array(nn) })),
+  summary: z.array(z.object({ month: z.string(), averagePercent: nn, upProbability: nn, samples: n })),
+});
+export type Seasonality = z.infer<typeof seasonalitySchema>;
+/** IDX company-detail records are provider-shaped; only these keys are read. TODO(verify) against a real response. */
+const personRecord = z.record(z.string(), z.unknown());
+export const profileSchema = z.object({
+  symbol: z.string(), companyName: z.string().nullable(), website: z.string().nullable(), description: z.string().nullable(),
+  directors: z.array(personRecord), commissioners: z.array(personRecord), shareholders: z.array(personRecord), subsidiaries: z.array(personRecord),
+});
+export type CompanyProfile = z.infer<typeof profileSchema>;
+export const corporateActionSchema = z.object({ date: z.string().nullable(), type: z.string().nullable(), description: z.string().nullable(), documentUrl: z.string().nullable() });
+
+export const stockApi = {
+  doneDetails: (symbol: string, signal?: AbortSignal) => fetchEnvelope(`/api/done-details?code=${encodeURIComponent(symbol.toUpperCase())}&per_page=100`, doneDetailsSchema, { signal }),
+  seasonality: (symbol: string, signal?: AbortSignal) => fetchEnvelope(`/api/seasonal/${encodeURIComponent(symbol.toUpperCase())}`, seasonalitySchema, { signal }),
+  profile: (symbol: string, signal?: AbortSignal) => fetchEnvelope(`/api/stocks/${encodeURIComponent(symbol.toUpperCase())}/profile`, profileSchema, { signal }),
+  actions: (symbol: string, signal?: AbortSignal) => fetchEnvelope(`/api/stocks/${encodeURIComponent(symbol.toUpperCase())}/actions`, z.array(corporateActionSchema), { signal }),
+  insiders: (symbol: string, query: { page: number; limit: number; action?: string | null }, signal?: AbortSignal) =>
+    fetchEnvelope(`/api/insiders/${encodeURIComponent(symbol.toUpperCase())}?page=${query.page}&limit=${query.limit}${query.action ? `&action_type=${query.action.toLowerCase()}` : ""}`, insidersSchema, { signal }),
+};

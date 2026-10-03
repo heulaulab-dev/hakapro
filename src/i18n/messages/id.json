@@ -146,9 +146,6 @@
     "bypass": "Mode dev: autentikasi dilewati",
     "unconfigured": "Autentikasi belum dikonfigurasi"
   },
-  "placeholder": {
-    "comingSoon": "Halaman ini dibangun pada langkah berikutnya."
-  },
   "stock": {
     "invalidSymbol": "Kode saham tidak valid."
   },
@@ -502,5 +499,48 @@
     "watchlistTitle": "Insider di daftar pantau Anda",
     "watchlistSignIn": "Masuk untuk melihat transaksi insider pada saham yang Anda pantau.",
     "watchlistEmpty": "Tambahkan saham ke daftar pantau untuk melihat transaksi insider-nya."
+  },
+  "stockChart": {
+    "title": "Grafik harga",
+    "indicators": "Indikator",
+    "sma20": "SMA 20",
+    "sma50": "SMA 50",
+    "macd": "MACD",
+    "indicatorsNote": "Indikator dihitung dari data harga harian yang ditampilkan."
+  },
+  "stockInsiders": {
+    "title": "Transaksi insider",
+    "perPage": "Per halaman",
+    "previous": "Sebelumnya",
+    "next": "Berikutnya",
+    "page": "Halaman {page} dari {total}",
+    "filterAll": "Semua"
+  },
+  "stockHistory": {
+    "title": "Riwayat harga harian",
+    "seasonality": "Musiman (return bulanan, %)",
+    "year": "Tahun",
+    "average": "Rata-rata",
+    "upProbability": "Peluang naik",
+    "samples": "Sampel",
+    "tape": "Transaksi terakhir ({date})",
+    "time": "Waktu",
+    "board": "Papan",
+    "buyer": "Pembeli",
+    "seller": "Penjual",
+    "aggressor": "Inisiator",
+    "tapeNote": "Halaman pertama dari {total} transaksi; jumlah dalam lot (100 lembar). Odd lot tercatat 0 lot."
+  },
+  "stockOwnership": {
+    "title": "Kepemilikan",
+    "shareholders": "Pemegang saham",
+    "directors": "Direksi",
+    "commissioners": "Komisaris",
+    "actions": "Aksi korporasi",
+    "website": "Situs web",
+    "name": "Nama",
+    "share": "Porsi",
+    "role": "Jabatan",
+    "profileNote": "Struktur kepemilikan dari data profil emiten IDX (tanpa tanggal data)."
   }
 }

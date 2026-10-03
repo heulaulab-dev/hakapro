@@ -84,7 +84,7 @@ export type Seasonality = {
   rows: Array<{ year: string; averagePercent: number | null; valuesPercent: Array<number | null> }>;
   summary: Array<{ month: string; averagePercent: number | null; upProbability: number | null; samples: number }>;
 };
-// TODO(verify): monthly_returns/up_prob units (percent vs fraction) are unconfirmed; field names assume percent.
+// Units verified against the recorded sample: monthly returns, yearly averages and up_prob are percent units.
 export function normalizeSeasonality(value: SeasonalityResponse): Seasonality {
   const covered = value.years.flatMap((year) => MONTHS.map((month, index) => (value.monthly_returns[month]?.[year] === undefined ? null : `${year}-${String(index + 1).padStart(2, "0")}`)))
     .filter((key): key is string => key !== null).sort();

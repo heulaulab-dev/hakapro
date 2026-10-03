@@ -2,7 +2,7 @@
 import { describe, expect, it, test } from "vitest";
 import type { Candle, Quote } from "@/server/market/types";
 import { foreignNet, observedMetric, triggered } from "./alerts";
-import { calculateMacd, calculateSimpleMovingAverage } from "./indicators";
+import { calculateMacd, calculateSimpleMovingAverage } from "@/lib/indicators";
 import { calculatePortfolio } from "./portfolio";
 
 const quote: Quote = { symbol: "BBCA", date: "2026-09-21", open: null, high: null, low: null, close: 9100, previousClose: 9000, change: 100, changePercent: (100 / 9000) * 100, volumeShares: 100, valueIdr: null, frequency: null, foreignBuyShares: null, foreignSellShares: null };

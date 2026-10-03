@@ -5,17 +5,24 @@
  * Copyright (с) 2025 TradingView, Inc. https://www.tradingview.com/
  * (Apache-2.0; attribution logo kept on, see THIRD_PARTY_NOTICES.md)
  */
-import { CandlestickSeries, ColorType, createChart, HistogramSeries, type IChartApi, type ISeriesApi, type UTCTimestamp } from "lightweight-charts";
+import { CandlestickSeries, ColorType, createChart, HistogramSeries, LineSeries, type IChartApi, type ISeriesApi, type UTCTimestamp } from "lightweight-charts";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import type { HistoryRow } from "@/lib/api/market";
 import { observeTheme, resolveCssColor } from "@/lib/charts/colors";
 import { formatCompact, formatDate, formatIdr, formatNumber, formatVolume, type Locale } from "@/lib/format";
+import type { MacdPoint } from "@/lib/indicators";
+import { SERIES_TOKENS } from "./series";
+
+export type PriceOverlay = { key: string; label: string; points: Array<{ time: string; value: number }> };
 
 const toTime = (date: string) => (Date.parse(`${date}T00:00:00Z`) / 1000) as UTCTimestamp;
 
-/** Daily candles with a separate volume pane (no dual axis). Crosshair readout above the plot. */
-export function PriceChart({ rows, height = 320 }: { rows: HistoryRow[]; height?: number }) {
+/**
+ * Daily candles with a separate volume pane (no dual axis). Optional same-unit overlays (e.g. SMA)
+ * in categorical series colors with a legend, and an optional MACD pane. Crosshair readout above.
+ */
+export function PriceChart({ rows, height = 320, overlays = [], macd }: { rows: HistoryRow[]; height?: number; overlays?: PriceOverlay[]; macd?: MacdPoint[] }) {
   const t = useTranslations("chart");
   const locale = useLocale() as Locale;
   const containerRef = useRef<HTMLDivElement>(null);
@@ -24,6 +31,9 @@ export function PriceChart({ rows, height = 320 }: { rows: HistoryRow[]; height?
   const [hovered, setHovered] = useState<HistoryRow | null>(null);
   const latest = rows.at(-1) ?? null;
   const rowsRef = useRef(rows);
+  // Bumped on theme/density changes so overlay series repaint with the new token colors.
+  const [themeTick, setThemeTick] = useState(0);
+  useEffect(() => observeTheme(() => setThemeTick((tick) => tick + 1)), []);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -80,6 +90,36 @@ export function PriceChart({ rows, height = 320 }: { rows: HistoryRow[]; height?
     chartRef.current?.timeScale().fitContent();
   }, [rows, height, locale]);
 
+  // Overlays and the MACD pane are rebuilt when their inputs change.
+  useEffect(() => {
+    const chart = chartRef.current;
+    const container = containerRef.current;
+    if (!chart || !container) return;
+    const added: Array<ISeriesApi<"Line"> | ISeriesApi<"Histogram">> = [];
+    overlays.forEach((overlay, index) => {
+      const line = chart.addSeries(LineSeries, { color: resolveCssColor(container, SERIES_TOKENS[index % SERIES_TOKENS.length]), lineWidth: 2, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false });
+      line.setData(overlay.points.map((point) => ({ time: toTime(point.time), value: point.value })));
+      added.push(line);
+    });
+    if (macd?.length) {
+      const histogram = chart.addSeries(HistogramSeries, { priceLineVisible: false, lastValueVisible: false, priceFormat: { type: "custom", minMove: 0.01, formatter: (value: number) => formatNumber(value, locale, { decimals: 1 }) } }, 2);
+      const up = resolveCssColor(container, "--chart-up", 0.6);
+      const down = resolveCssColor(container, "--chart-down", 0.6);
+      histogram.setData(macd.map((point) => ({ time: toTime(point.time), value: point.histogram, color: point.histogram >= 0 ? up : down })));
+      const macdLine = chart.addSeries(LineSeries, { color: resolveCssColor(container, SERIES_TOKENS[overlays.length % SERIES_TOKENS.length]), lineWidth: 2, priceLineVisible: false, lastValueVisible: false }, 2);
+      macdLine.setData(macd.map((point) => ({ time: toTime(point.time), value: point.macd })));
+      const signalLine = chart.addSeries(LineSeries, { color: resolveCssColor(container, SERIES_TOKENS[(overlays.length + 1) % SERIES_TOKENS.length]), lineWidth: 2, priceLineVisible: false, lastValueVisible: false }, 2);
+      signalLine.setData(macd.map((point) => ({ time: toTime(point.time), value: point.signal })));
+      added.push(histogram, macdLine, signalLine);
+      chart.panes()[2]?.setHeight(Math.round(height * 0.25));
+    }
+    return () => {
+      for (const series of added) {
+        try { chart.removeSeries(series); } catch { /* chart already removed */ }
+      }
+    };
+  }, [overlays, macd, height, locale, themeTick]);
+
   const shown = hovered ?? latest;
   return (
     <div className="flex flex-col gap-2">
@@ -95,7 +135,21 @@ export function PriceChart({ rows, height = 320 }: { rows: HistoryRow[]; height?
           </>
         )}
       </dl>
-      <div ref={containerRef} style={{ height }} data-testid="price-chart" className="w-full" />
+      <div ref={containerRef} style={{ height: macd?.length ? Math.round(height * 1.3) : height }} data-testid="price-chart" className="w-full" />
+      {(overlays.length > 0 || Boolean(macd?.length)) && (
+        <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground" data-testid="chart-legend">
+          {overlays.map((overlay, index) => (
+            <li key={overlay.key} className="flex items-center gap-1.5"><span aria-hidden className="h-0.5 w-3 rounded-full" style={{ background: `var(${SERIES_TOKENS[index % SERIES_TOKENS.length]})` }} />{overlay.label}</li>
+          ))}
+          {macd?.length ? (
+            <>
+              {/* MACD lines take the next categorical slots so no color means two things in one chart. */}
+              <li className="flex items-center gap-1.5"><span aria-hidden className="h-0.5 w-3 rounded-full" style={{ background: `var(${SERIES_TOKENS[overlays.length % SERIES_TOKENS.length]})` }} />MACD (12, 26)</li>
+              <li className="flex items-center gap-1.5"><span aria-hidden className="h-0.5 w-3 rounded-full" style={{ background: `var(${SERIES_TOKENS[(overlays.length + 1) % SERIES_TOKENS.length]})` }} />Signal (9)</li>
+            </>
+          ) : null}
+        </ul>
+      )}
     </div>
   );
 }

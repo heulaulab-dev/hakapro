@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query/keys";
-import { accumulationApi, financialsApi, marketApi, overviewApi, quotesApi, screenerApi, type ReportType, type ScreenCondition } from "./market";
+import { accumulationApi, financialsApi, marketApi, overviewApi, quotesApi, screenerApi, stockApi, type ReportType, type ScreenCondition } from "./market";
 
 export const useHistory = (symbol: string, query: { frame?: string; limit?: number } = {}) =>
   useQuery({ queryKey: queryKeys.history(symbol, query.frame, query.limit), queryFn: ({ signal }) => marketApi.history(symbol, query, signal) });
@@ -26,3 +26,9 @@ export const useFinancials = (symbol: string, reportType: ReportType, period: "q
   useQuery({ queryKey: queryKeys.financials(symbol, reportType, period), queryFn: ({ signal }) => financialsApi.get(symbol, reportType, period, signal) });
 export const useScreen = (conditions: ScreenCondition[], enabled: boolean) =>
   useQuery({ queryKey: queryKeys.screen(conditions), queryFn: ({ signal }) => screenerApi.run(conditions, signal), enabled });
+export const useDoneDetails = (symbol: string) => useQuery({ queryKey: queryKeys.doneDetails(symbol), queryFn: ({ signal }) => stockApi.doneDetails(symbol, signal) });
+export const useSeasonality = (symbol: string) => useQuery({ queryKey: queryKeys.seasonality(symbol), queryFn: ({ signal }) => stockApi.seasonality(symbol, signal) });
+export const useProfile = (symbol: string) => useQuery({ queryKey: queryKeys.profile(symbol), queryFn: ({ signal }) => stockApi.profile(symbol, signal) });
+export const useCorporateActions = (symbol: string) => useQuery({ queryKey: queryKeys.actions(symbol), queryFn: ({ signal }) => stockApi.actions(symbol, signal) });
+export const useInsidersPage = (symbol: string, page: number, limit: number, action: string | null) =>
+  useQuery({ queryKey: queryKeys.insidersPage(symbol, page, limit, action), queryFn: ({ signal }) => stockApi.insiders(symbol, { page, limit, action }, signal), placeholderData: (previous) => previous });
