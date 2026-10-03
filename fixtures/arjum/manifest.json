@@ -1,0 +1,615 @@
+{
+  "provider": "arjum",
+  "recordedAt": "2026-10-03T11:28:41.439Z",
+  "screenerDate": "2026-10-02",
+  "symbols": [
+    "SAPX",
+    "WOOD",
+    "DSSA",
+    "ARCI",
+    "SIMP",
+    "TINS",
+    "BBCA"
+  ],
+  "files": [
+    {
+      "path": "global/screener.json",
+      "endpoint": "screener",
+      "params": {}
+    },
+    {
+      "path": "global/market-cap.json",
+      "endpoint": "market-cap",
+      "params": {
+        "page": 1
+      }
+    },
+    {
+      "path": "global/health.json",
+      "endpoint": "health",
+      "params": {}
+    },
+    {
+      "path": "search/SAPX.json",
+      "endpoint": "search",
+      "params": {
+        "q": "SAPX"
+      }
+    },
+    {
+      "path": "symbols/SAPX/broker-summary.json",
+      "endpoint": "broker-summary",
+      "symbol": "SAPX",
+      "params": {}
+    },
+    {
+      "path": "symbols/SAPX/broker-accumulation.json",
+      "endpoint": "broker-accumulation",
+      "symbol": "SAPX",
+      "params": {}
+    },
+    {
+      "path": "symbols/SAPX/history.json",
+      "endpoint": "history",
+      "symbol": "SAPX",
+      "params": {
+        "frame": "daily",
+        "limit": 250
+      }
+    },
+    {
+      "path": "symbols/SAPX/seasonal.json",
+      "endpoint": "seasonal",
+      "symbol": "SAPX",
+      "params": {}
+    },
+    {
+      "path": "symbols/SAPX/financial-statements.INCOME_STATEMENT.json",
+      "endpoint": "financial-statements",
+      "symbol": "SAPX",
+      "params": {
+        "report_type": "INCOME_STATEMENT",
+        "period": "quarterly",
+        "limit": 12
+      }
+    },
+    {
+      "path": "symbols/SAPX/financial-statements.BALANCE_SHEET.json",
+      "endpoint": "financial-statements",
+      "symbol": "SAPX",
+      "params": {
+        "report_type": "BALANCE_SHEET",
+        "period": "quarterly",
+        "limit": 12
+      }
+    },
+    {
+      "path": "symbols/SAPX/financial-statements.CASH_FLOW_REPORT.json",
+      "endpoint": "financial-statements",
+      "symbol": "SAPX",
+      "params": {
+        "report_type": "CASH_FLOW_REPORT",
+        "period": "quarterly",
+        "limit": 12
+      }
+    },
+    {
+      "path": "symbols/SAPX/insiders.json",
+      "endpoint": "insiders",
+      "symbol": "SAPX",
+      "params": {
+        "page": 1,
+        "limit": 15
+      }
+    },
+    {
+      "path": "symbols/SAPX/done-details.json",
+      "endpoint": "done-details",
+      "symbol": "SAPX",
+      "params": {
+        "code": "SAPX",
+        "page": 1,
+        "per_page": 100
+      }
+    },
+    {
+      "path": "search/WOOD.json",
+      "endpoint": "search",
+      "params": {
+        "q": "WOOD"
+      }
+    },
+    {
+      "path": "symbols/WOOD/broker-summary.json",
+      "endpoint": "broker-summary",
+      "symbol": "WOOD",
+      "params": {}
+    },
+    {
+      "path": "symbols/WOOD/broker-accumulation.json",
+      "endpoint": "broker-accumulation",
+      "symbol": "WOOD",
+      "params": {}
+    },
+    {
+      "path": "symbols/WOOD/history.json",
+      "endpoint": "history",
+      "symbol": "WOOD",
+      "params": {
+        "frame": "daily",
+        "limit": 250
+      }
+    },
+    {
+      "path": "symbols/WOOD/seasonal.json",
+      "endpoint": "seasonal",
+      "symbol": "WOOD",
+      "params": {}
+    },
+    {
+      "path": "symbols/WOOD/financial-statements.INCOME_STATEMENT.json",
+      "endpoint": "financial-statements",
+      "symbol": "WOOD",
+      "params": {
+        "report_type": "INCOME_STATEMENT",
+        "period": "quarterly",
+        "limit": 12
+      }
+    },
+    {
+      "path": "symbols/WOOD/financial-statements.BALANCE_SHEET.json",
+      "endpoint": "financial-statements",
+      "symbol": "WOOD",
+      "params": {
+        "report_type": "BALANCE_SHEET",
+        "period": "quarterly",
+        "limit": 12
+      }
+    },
+    {
+      "path": "symbols/WOOD/financial-statements.CASH_FLOW_REPORT.json",
+      "endpoint": "financial-statements",
+      "symbol": "WOOD",
+      "params": {
+        "report_type": "CASH_FLOW_REPORT",
+        "period": "quarterly",
+        "limit": 12
+      }
+    },
+    {
+      "path": "symbols/WOOD/insiders.json",
+      "endpoint": "insiders",
+      "symbol": "WOOD",
+      "params": {
+        "page": 1,
+        "limit": 15
+      }
+    },
+    {
+      "path": "symbols/WOOD/done-details.json",
+      "endpoint": "done-details",
+      "symbol": "WOOD",
+      "params": {
+        "code": "WOOD",
+        "page": 1,
+        "per_page": 100
+      }
+    },
+    {
+      "path": "search/DSSA.json",
+      "endpoint": "search",
+      "params": {
+        "q": "DSSA"
+      }
+    },
+    {
+      "path": "symbols/DSSA/broker-summary.json",
+      "endpoint": "broker-summary",
+      "symbol": "DSSA",
+      "params": {}
+    },
+    {
+      "path": "symbols/DSSA/broker-accumulation.json",
+      "endpoint": "broker-accumulation",
+      "symbol": "DSSA",
+      "params": {}
+    },
+    {
+      "path": "symbols/DSSA/history.json",
+      "endpoint": "history",
+      "symbol": "DSSA",
+      "params": {
+        "frame": "daily",
+        "limit": 250
+      }
+    },
+    {
+      "path": "symbols/DSSA/seasonal.json",
+      "endpoint": "seasonal",
+      "symbol": "DSSA",
+      "params": {}
+    },
+    {
+      "path": "symbols/DSSA/financial-statements.INCOME_STATEMENT.json",
+      "endpoint": "financial-statements",
+      "symbol": "DSSA",
+      "params": {
+        "report_type": "INCOME_STATEMENT",
+        "period": "quarterly",
+        "limit": 12
+      }
+    },
+    {
+      "path": "symbols/DSSA/financial-statements.BALANCE_SHEET.json",
+      "endpoint": "financial-statements",
+      "symbol": "DSSA",
+      "params": {
+        "report_type": "BALANCE_SHEET",
+        "period": "quarterly",
+        "limit": 12
+      }
+    },
+    {
+      "path": "symbols/DSSA/financial-statements.CASH_FLOW_REPORT.json",
+      "endpoint": "financial-statements",
+      "symbol": "DSSA",
+      "params": {
+        "report_type": "CASH_FLOW_REPORT",
+        "period": "quarterly",
+        "limit": 12
+      }
+    },
+    {
+      "path": "symbols/DSSA/insiders.json",
+      "endpoint": "insiders",
+      "symbol": "DSSA",
+      "params": {
+        "page": 1,
+        "limit": 15
+      }
+    },
+    {
+      "path": "symbols/DSSA/done-details.json",
+      "endpoint": "done-details",
+      "symbol": "DSSA",
+      "params": {
+        "code": "DSSA",
+        "page": 1,
+        "per_page": 100
+      }
+    },
+    {
+      "path": "search/ARCI.json",
+      "endpoint": "search",
+      "params": {
+        "q": "ARCI"
+      }
+    },
+    {
+      "path": "symbols/ARCI/broker-summary.json",
+      "endpoint": "broker-summary",
+      "symbol": "ARCI",
+      "params": {}
+    },
+    {
+      "path": "symbols/ARCI/broker-accumulation.json",
+      "endpoint": "broker-accumulation",
+      "symbol": "ARCI",
+      "params": {}
+    },
+    {
+      "path": "symbols/ARCI/history.json",
+      "endpoint": "history",
+      "symbol": "ARCI",
+      "params": {
+        "frame": "daily",
+        "limit": 250
+      }
+    },
+    {
+      "path": "symbols/ARCI/seasonal.json",
+      "endpoint": "seasonal",
+      "symbol": "ARCI",
+      "params": {}
+    },
+    {
+      "path": "symbols/ARCI/financial-statements.INCOME_STATEMENT.json",
+      "endpoint": "financial-statements",
+      "symbol": "ARCI",
+      "params": {
+        "report_type": "INCOME_STATEMENT",
+        "period": "quarterly",
+        "limit": 12
+      }
+    },
+    {
+      "path": "symbols/ARCI/financial-statements.BALANCE_SHEET.json",
+      "endpoint": "financial-statements",
+      "symbol": "ARCI",
+      "params": {
+        "report_type": "BALANCE_SHEET",
+        "period": "quarterly",
+        "limit": 12
+      }
+    },
+    {
+      "path": "symbols/ARCI/financial-statements.CASH_FLOW_REPORT.json",
+      "endpoint": "financial-statements",
+      "symbol": "ARCI",
+      "params": {
+        "report_type": "CASH_FLOW_REPORT",
+        "period": "quarterly",
+        "limit": 12
+      }
+    },
+    {
+      "path": "symbols/ARCI/insiders.json",
+      "endpoint": "insiders",
+      "symbol": "ARCI",
+      "params": {
+        "page": 1,
+        "limit": 15
+      }
+    },
+    {
+      "path": "symbols/ARCI/done-details.json",
+      "endpoint": "done-details",
+      "symbol": "ARCI",
+      "params": {
+        "code": "ARCI",
+        "page": 1,
+        "per_page": 100
+      }
+    },
+    {
+      "path": "search/SIMP.json",
+      "endpoint": "search",
+      "params": {
+        "q": "SIMP"
+      }
+    },
+    {
+      "path": "symbols/SIMP/broker-summary.json",
+      "endpoint": "broker-summary",
+      "symbol": "SIMP",
+      "params": {}
+    },
+    {
+      "path": "symbols/SIMP/broker-accumulation.json",
+      "endpoint": "broker-accumulation",
+      "symbol": "SIMP",
+      "params": {}
+    },
+    {
+      "path": "symbols/SIMP/history.json",
+      "endpoint": "history",
+      "symbol": "SIMP",
+      "params": {
+        "frame": "daily",
+        "limit": 250
+      }
+    },
+    {
+      "path": "symbols/SIMP/seasonal.json",
+      "endpoint": "seasonal",
+      "symbol": "SIMP",
+      "params": {}
+    },
+    {
+      "path": "symbols/SIMP/financial-statements.INCOME_STATEMENT.json",
+      "endpoint": "financial-statements",
+      "symbol": "SIMP",
+      "params": {
+        "report_type": "INCOME_STATEMENT",
+        "period": "quarterly",
+        "limit": 12
+      }
+    },
+    {
+      "path": "symbols/SIMP/financial-statements.BALANCE_SHEET.json",
+      "endpoint": "financial-statements",
+      "symbol": "SIMP",
+      "params": {
+        "report_type": "BALANCE_SHEET",
+        "period": "quarterly",
+        "limit": 12
+      }
+    },
+    {
+      "path": "symbols/SIMP/financial-statements.CASH_FLOW_REPORT.json",
+      "endpoint": "financial-statements",
+      "symbol": "SIMP",
+      "params": {
+        "report_type": "CASH_FLOW_REPORT",
+        "period": "quarterly",
+        "limit": 12
+      }
+    },
+    {
+      "path": "symbols/SIMP/insiders.json",
+      "endpoint": "insiders",
+      "symbol": "SIMP",
+      "params": {
+        "page": 1,
+        "limit": 15
+      }
+    },
+    {
+      "path": "symbols/SIMP/done-details.json",
+      "endpoint": "done-details",
+      "symbol": "SIMP",
+      "params": {
+        "code": "SIMP",
+        "page": 1,
+        "per_page": 100
+      }
+    },
+    {
+      "path": "search/TINS.json",
+      "endpoint": "search",
+      "params": {
+        "q": "TINS"
+      }
+    },
+    {
+      "path": "symbols/TINS/broker-summary.json",
+      "endpoint": "broker-summary",
+      "symbol": "TINS",
+      "params": {}
+    },
+    {
+      "path": "symbols/TINS/broker-accumulation.json",
+      "endpoint": "broker-accumulation",
+      "symbol": "TINS",
+      "params": {}
+    },
+    {
+      "path": "symbols/TINS/history.json",
+      "endpoint": "history",
+      "symbol": "TINS",
+      "params": {
+        "frame": "daily",
+        "limit": 250
+      }
+    },
+    {
+      "path": "symbols/TINS/seasonal.json",
+      "endpoint": "seasonal",
+      "symbol": "TINS",
+      "params": {}
+    },
+    {
+      "path": "symbols/TINS/financial-statements.INCOME_STATEMENT.json",
+      "endpoint": "financial-statements",
+      "symbol": "TINS",
+      "params": {
+        "report_type": "INCOME_STATEMENT",
+        "period": "quarterly",
+        "limit": 12
+      }
+    },
+    {
+      "path": "symbols/TINS/financial-statements.BALANCE_SHEET.json",
+      "endpoint": "financial-statements",
+      "symbol": "TINS",
+      "params": {
+        "report_type": "BALANCE_SHEET",
+        "period": "quarterly",
+        "limit": 12
+      }
+    },
+    {
+      "path": "symbols/TINS/financial-statements.CASH_FLOW_REPORT.json",
+      "endpoint": "financial-statements",
+      "symbol": "TINS",
+      "params": {
+        "report_type": "CASH_FLOW_REPORT",
+        "period": "quarterly",
+        "limit": 12
+      }
+    },
+    {
+      "path": "symbols/TINS/insiders.json",
+      "endpoint": "insiders",
+      "symbol": "TINS",
+      "params": {
+        "page": 1,
+        "limit": 15
+      }
+    },
+    {
+      "path": "symbols/TINS/done-details.json",
+      "endpoint": "done-details",
+      "symbol": "TINS",
+      "params": {
+        "code": "TINS",
+        "page": 1,
+        "per_page": 100
+      }
+    },
+    {
+      "path": "search/BBCA.json",
+      "endpoint": "search",
+      "params": {
+        "q": "BBCA"
+      }
+    },
+    {
+      "path": "symbols/BBCA/broker-summary.json",
+      "endpoint": "broker-summary",
+      "symbol": "BBCA",
+      "params": {}
+    },
+    {
+      "path": "symbols/BBCA/broker-accumulation.json",
+      "endpoint": "broker-accumulation",
+      "symbol": "BBCA",
+      "params": {}
+    },
+    {
+      "path": "symbols/BBCA/history.json",
+      "endpoint": "history",
+      "symbol": "BBCA",
+      "params": {
+        "frame": "daily",
+        "limit": 250
+      }
+    },
+    {
+      "path": "symbols/BBCA/seasonal.json",
+      "endpoint": "seasonal",
+      "symbol": "BBCA",
+      "params": {}
+    },
+    {
+      "path": "symbols/BBCA/financial-statements.INCOME_STATEMENT.json",
+      "endpoint": "financial-statements",
+      "symbol": "BBCA",
+      "params": {
+        "report_type": "INCOME_STATEMENT",
+        "period": "quarterly",
+        "limit": 12
+      }
+    },
+    {
+      "path": "symbols/BBCA/financial-statements.BALANCE_SHEET.json",
+      "endpoint": "financial-statements",
+      "symbol": "BBCA",
+      "params": {
+        "report_type": "BALANCE_SHEET",
+        "period": "quarterly",
+        "limit": 12
+      }
+    },
+    {
+      "path": "symbols/BBCA/financial-statements.CASH_FLOW_REPORT.json",
+      "endpoint": "financial-statements",
+      "symbol": "BBCA",
+      "params": {
+        "report_type": "CASH_FLOW_REPORT",
+        "period": "quarterly",
+        "limit": 12
+      }
+    },
+    {
+      "path": "symbols/BBCA/insiders.json",
+      "endpoint": "insiders",
+      "symbol": "BBCA",
+      "params": {
+        "page": 1,
+        "limit": 15
+      }
+    },
+    {
+      "path": "symbols/BBCA/done-details.json",
+      "endpoint": "done-details",
+      "symbol": "BBCA",
+      "params": {
+        "code": "BBCA",
+        "page": 1,
+        "per_page": 100
+      }
+    }
+  ],
+  "failures": []
+}

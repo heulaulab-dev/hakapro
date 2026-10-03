@@ -9,9 +9,10 @@ import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useInsidersPage } from "@/lib/api/hooks";
 import { freshnessMeta } from "@/lib/freshness";
+import { ARJUM_LIMITS } from "@/lib/api/provider-limits";
 
 const ACTIONS = ["BUY", "SELL", "CROSS"] as const;
-const LIMIT = 50;
+const LIMIT = ARJUM_LIMITS.insiders;
 
 export function InsidersView({ symbol }: { symbol: string }) {
   const t = useTranslations();

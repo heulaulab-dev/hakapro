@@ -3,6 +3,7 @@
 import { HelpCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { FreshnessBadge } from "@/components/feedback/freshness-badge";
+import { StatusBadge } from "@/components/feedback/status-badge";
 import { ResearchDisclaimer } from "@/components/feedback/research-disclaimer";
 import { Drawer } from "@/components/layout/drawer";
 import { stockHref } from "@/components/layout/nav-config";
@@ -36,10 +37,12 @@ export function WhyMatchedDrawer({ match, strategy, meta, onClose }: { match: St
               </li>
             ))}
           </ul>
-          {match.providerNote && (
-            <p className="text-xs text-muted-foreground">
-              {t("strategy.providerNote")}: <span className="text-foreground">{match.providerNote}</span>
-            </p>
+          {(match.pattern || match.notes.length > 0) && (
+            <div className="flex flex-col gap-2" data-testid="why-notes">
+              <h3 className="eyebrow-style text-subtle">{t("strategy.providerNote")}</h3>
+              {match.pattern && <p className="p-style">{t("strategy.pattern")}: {match.pattern}</p>}
+              <span className="flex flex-wrap gap-1">{match.notes.map((note) => <StatusBadge key={note} tone="neutral">{note}</StatusBadge>)}</span>
+            </div>
           )}
           {strategy.description && (
             <div className="flex flex-col gap-1">

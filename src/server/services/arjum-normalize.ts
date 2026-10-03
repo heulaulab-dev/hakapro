@@ -59,7 +59,7 @@ export function normalizeBrokerAccumulation(value: BrokerAccumulationResponse): 
 }
 
 export type HistoryRow = {
-  date: string; open: number; high: number; low: number; close: number; averageIdr: number;
+  date: string; open: number; high: number; low: number; close: number; averageIdr: number | null;
   change: number; changePercent: number; valueIdr: number; volumeShares: number; frequency: number;
   foreignBuyShares: number; foreignSellShares: number; foreignNetShares: number;
 };

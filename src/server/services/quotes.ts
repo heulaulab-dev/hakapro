@@ -1,5 +1,6 @@
 import "server-only";
 import { leastFresh, withFreshness, type FreshnessMeta, type WithFreshness } from "@/lib/freshness";
+import { ARJUM_LIMITS } from "@/lib/api/provider-limits";
 import { MarketDataError } from "@/server/market/errors";
 import type { MarketDataSource } from "@/server/market/source";
 
@@ -16,7 +17,7 @@ export type Quote =
 export async function getQuotes(source: MarketDataSource, symbols: string[], signal?: AbortSignal): Promise<WithFreshness<Quote[]>> {
   const quotes = await Promise.all(symbols.slice(0, MAX_QUOTES).map(async (symbol): Promise<Quote> => {
     try {
-      const envelope = await source.history(symbol, { frame: "daily", limit: 2 }, signal);
+      const envelope = await source.history(symbol, { frame: "daily", limit: ARJUM_LIMITS.historyMinRows }, signal);
       const latest = envelope.data.rows.at(-1);
       if (!latest) return { symbol, status: "error", error: "EMPTY" };
       return { symbol, status: "ok", date: latest.date, close: latest.close, change: latest.change, changePercent: latest.changePercent, freshness: envelope.freshness, asOf: envelope.asOf, period: envelope.period, source: envelope.source };

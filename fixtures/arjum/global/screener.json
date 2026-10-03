@@ -1,0 +1,68 @@
+{
+  "date": "📊 **SCREENER V5.2** — Jumat, 2 Oktober 2026",
+  "source": "screener_v5.py",
+  "rows": [
+    {
+      "stock_code": "SAPX",
+      "stock_name": "Satria Antaran Prima Tbk.",
+      "bucket": "🩸 RISIKO PANTULAN",
+      "summary": "🧬 ⬆️ — Gabungan (Asing + Teknikal) WR Event71.4% rata2 event+3.27% D3+5.81% potensi +15% | DD -5% (+12)",
+      "wr_event": 71.4,
+      "potential": 15,
+      "drawdown": -5,
+      "note": "jatuh tajam | teknikal lemah"
+    },
+    {
+      "stock_code": "WOOD",
+      "stock_name": "Integra Indocabinet Tbk.",
+      "bucket": "🩸 RISIKO PANTULAN",
+      "summary": "❌ 🏦 🧬 ⬇️ — volume klimaks 5-8x WR Event59.3% rata2 event+2.35% D3+0.84% potensi +7% | DD -3% (-2)",
+      "wr_event": 59.3,
+      "potential": 7,
+      "drawdown": -3,
+      "note": "risiko pantulan | volume tinggi | broker distribusi | teknikal lemah"
+    },
+    {
+      "stock_code": "DSSA",
+      "stock_name": "Dian Swastatika Sentosa Tbk",
+      "bucket": "⚔️ KONFLIK DISTRIBUSI",
+      "summary": "🧬 ⬆️ — Gabungan (Broker + Teknikal) WR Event56.2% rata2 event+1.49% D3+1.56% potensi +7% | DD -3% (+8)",
+      "wr_event": 56.2,
+      "potential": 7,
+      "drawdown": -3,
+      "note": "asing jual kuat | teknikal lemah | base rendah"
+    },
+    {
+      "stock_code": "ARCI",
+      "stock_name": "Archi Indonesia Tbk.",
+      "bucket": "🥷 AKUMULASI SENYAP",
+      "summary": "🌍 🥷",
+      "wr_event": null,
+      "potential": null,
+      "drawdown": null,
+      "note": "mode senyap"
+    },
+    {
+      "stock_code": "SIMP",
+      "stock_name": "Salim Ivomas Pratama Tbk.",
+      "bucket": "🥷 AKUMULASI SENYAP",
+      "summary": "🌍 🥷",
+      "wr_event": null,
+      "potential": null,
+      "drawdown": null,
+      "note": "mode senyap"
+    },
+    {
+      "stock_code": "TINS",
+      "stock_name": "TIMAH (Persero",
+      "bucket": "🥷 AKUMULASI SENYAP",
+      "summary": "Tbk.) 🌍 🥷",
+      "wr_event": null,
+      "potential": null,
+      "drawdown": null,
+      "note": "mode senyap"
+    }
+  ],
+  "raw": "📊 **SCREENER V5.2** — Jumat, 2 Oktober 2026\n🟡 **FLAT MARKET** — Rata-rata +0.6% | FLAT 5d:0.6%\n_963 terdata | 250 likuid | 713 skip | 0.4s_\n\n_✅=akumulasi | ❌=distribusi | 🏦=broker pekat | 🏛️=institusi | 🌍=asing beli | 🔬=teknikal kuat | 🥷=senyap | 🧬=edge historis | 🧨=jebakan historis | 🚀⚠️=pompa | ⏰=telat | 🔥=klimaks_\n\n**🩸 RISIKO PANTULAN** — Pola historis kuat, tapi harga jatuh tajam; tunggu konfirmasi\n──────────────────────────────\n1. **SAPX** (Satria Antaran Prima Tbk.) 🧬 ⬆️ — Gabungan (Asing + Teknikal) WR Event71.4% rata2 event+3.27% D3+5.81% potensi +15% | DD -5% (+12) `jatuh tajam | teknikal lemah`\n2. **WOOD** (Integra Indocabinet Tbk.) ❌ 🏦 🧬 ⬇️ — volume klimaks 5-8x WR Event59.3% rata2 event+2.35% D3+0.84% potensi +7% | DD -3% (-2) `risiko pantulan | volume tinggi | broker distribusi | teknikal lemah`\n\n**⚔️ KONFLIK DISTRIBUSI** — Pola historis kuat, tapi bentrok distribusi broker/asing\n──────────────────────────────\n1. **DSSA** (Dian Swastatika Sentosa Tbk) 🧬 ⬆️ — Gabungan (Broker + Teknikal) WR Event56.2% rata2 event+1.49% D3+1.56% potensi +7% | DD -3% (+8) `asing jual kuat | teknikal lemah | base rendah`\n\n**🥷 AKUMULASI SENYAP** — Akumulasi senyap versi base-only, belum ada edge historis khusus\n──────────────────────────────\n1. **ARCI** (Archi Indonesia Tbk.) 🌍 🥷 `mode senyap`\n2. **SIMP** (Salim Ivomas Pratama Tbk.) 🌍 🥷 `mode senyap`\n3. **TINS** (TIMAH (Persero) Tbk.) 🌍 🥷 `mode senyap`\n\n_Screener berdasarkan POLA historis dan filter khusus._\n**🏆 Disclaimer, Bukan Ajakan Jual Atau Beli ! Semua keputusan ada di tangan Masing masing**\n\n_⏱️ 0.4s | 250 stocks_\n",
+  "cached_for_seconds": 86391
+}

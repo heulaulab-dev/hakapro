@@ -12,7 +12,7 @@ export const searchResultSchema = z.object({ symbol: z.string(), companyName: z.
 export type SearchResult = z.infer<typeof searchResultSchema>;
 
 export const historyRowSchema = z.object({
-  date: z.string(), open: n, high: n, low: n, close: n, averageIdr: n, change: n, changePercent: n,
+  date: z.string(), open: n, high: n, low: n, close: n, averageIdr: nn, change: n, changePercent: n,
   valueIdr: n, volumeShares: n, frequency: n, foreignBuyShares: n, foreignSellShares: n, foreignNetShares: n,
 });
 export const historySchema = z.object({ symbol: z.string(), frame: z.string(), rows: z.array(historyRowSchema) });
@@ -30,7 +30,7 @@ export const criterionSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("recognized"), key: z.string(), flag: z.string() }),
   z.object({ kind: z.literal("unrecognized"), flag: z.string(), providerLabel: z.string().nullable() }),
 ]);
-export const strategyMatchSchema = z.object({ symbol: z.string(), name: z.string(), criteria: z.array(criterionSchema), providerNote: z.string().nullable() });
+export const strategyMatchSchema = z.object({ symbol: z.string(), name: z.string(), criteria: z.array(criterionSchema), pattern: z.string().nullable(), notes: z.array(z.string()) });
 export const strategySchema = z.object({ id: z.string(), name: z.string(), description: z.string().nullable(), matches: z.array(strategyMatchSchema) });
 export const strategyScreenSchema = z.object({
   date: z.string().nullable(),

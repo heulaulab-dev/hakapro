@@ -229,7 +229,8 @@
     "marketCondition": "Kondisi pasar menurut penyedia: {label}, rata-rata perubahan {avg}.",
     "universe": "{covered} saham terdata, {liquid} likuid, {skipped} dilewati.",
     "screenTitle": "Hasil strategi",
-    "insightTitle": "Ringkasan screener"
+    "insightTitle": "Ringkasan screener",
+    "pattern": "Pola"
   },
   "insiders": {
     "title": "Transaksi orang dalam",

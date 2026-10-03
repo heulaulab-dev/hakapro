@@ -17,7 +17,8 @@ export const SYMBOL_ENDPOINTS = {
   insiders: insidersResponseSchema,
   "done-details": doneDetailsResponseSchema,
 } as const;
-export const REPORT_TYPES = ["INCOME_STATEMENT", "BALANCE_SHEET", "CASH_FLOW"] as const;
+/** Provider report_type values (arjum calls cash flow "CASH_FLOW_REPORT"). */
+export const REPORT_TYPES = ["INCOME_STATEMENT", "BALANCE_SHEET", "CASH_FLOW_REPORT"] as const;
 
 export type GlobalEndpoint = keyof typeof GLOBAL_ENDPOINTS;
 export type SymbolEndpoint = keyof typeof SYMBOL_ENDPOINTS;

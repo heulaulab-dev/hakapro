@@ -20,6 +20,7 @@ import { sliceByRange } from "@/lib/charts/range";
 import { foreignRangeTotals, rangeStartDate } from "@/lib/flow";
 import { freshnessMeta } from "@/lib/freshness";
 import { formatDate, formatIdr, formatValue, formatVolume, type Locale } from "@/lib/format";
+import { ARJUM_LIMITS } from "@/lib/api/provider-limits";
 
 export function FlowView({ symbol }: { symbol: string }) {
   const t = useTranslations();
@@ -28,7 +29,7 @@ export function FlowView({ symbol }: { symbol: string }) {
   const history = useHistory(symbol, OVERVIEW_HISTORY);
   const brokers = useBrokerSummary(symbol);
   const latestDate = history.data?.data.rows.at(-1)?.date;
-  const accumulation = useBrokerAccumulation(symbol, { startDate: latestDate ? rangeStartDate(range, latestDate) : undefined, top: 6 });
+  const accumulation = useBrokerAccumulation(symbol, { startDate: latestDate ? rangeStartDate(range, latestDate) : undefined, top: ARJUM_LIMITS.accumulationTop });
 
   const foreignColumns = useMemo<ColumnDef<HistoryRow, unknown>[]>(() => [
     { accessorKey: "date", header: t("chart.date"), cell: ({ getValue }) => <span className="num">{formatDate(getValue<string>(), locale)}</span> },

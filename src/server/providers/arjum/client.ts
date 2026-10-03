@@ -2,6 +2,7 @@
 import "server-only";
 import type { z } from "zod";
 import { MarketDataError } from "@/server/market/errors";
+import { logWarn } from "@/server/log";
 import { buildProviderUrl, type QueryValue } from "./queries";
 
 export type ArjumClientOptions = { baseUrl?: string; apiKey?: string; timeoutMs?: number; fetcher?: typeof fetch };
@@ -37,6 +38,11 @@ export class ArjumClient {
     }
     if (response.status === 401 || response.status === 403) throw new MarketDataError("PROVIDER_UNAUTHORIZED", "Provider rejected its server credential", 502);
     if (response.status === 429) throw new MarketDataError("RATE_LIMITED", "Provider rate limit reached", 429, Number(response.headers.get("retry-after")) || undefined);
+    // 400/422 mean our request broke a provider rule (e.g. a page-size limit): a bug to fix, not an outage.
+    if (response.status === 400 || response.status === 422) {
+      logWarn("provider_rejected_request", { path, status: response.status });
+      throw new MarketDataError("INVALID_REQUEST", "Provider rejected the request parameters", 400);
+    }
     if (!response.ok) throw new MarketDataError("PROVIDER_UNAVAILABLE", `Provider returned ${response.status}`, 503);
     const parsed = schema.safeParse(await response.json().catch(() => undefined));
     if (!parsed.success) throw new MarketDataError("MALFORMED_PROVIDER_RESPONSE", "Provider response did not match its contract", 502);

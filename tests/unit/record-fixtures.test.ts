@@ -48,7 +48,7 @@ describe("recordFixtures (fake provider, no network)", () => {
       const files = readdirSync(join(root, "fixtures/arjum/symbols", symbol)).sort();
       expect(files).toEqual([
         "broker-accumulation.json", "broker-summary.json", "done-details.json",
-        "financial-statements.BALANCE_SHEET.json", "financial-statements.CASH_FLOW.json", "financial-statements.INCOME_STATEMENT.json",
+        "financial-statements.BALANCE_SHEET.json", "financial-statements.CASH_FLOW_REPORT.json", "financial-statements.INCOME_STATEMENT.json",
         "history.json", "insiders.json", "seasonal.json",
       ]);
     }

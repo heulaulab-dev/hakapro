@@ -13,7 +13,7 @@ describe("ArjumClient", () => {
     expect(fetcher).toHaveBeenCalledWith("https://provider.test/api/history/BBCA?frame=daily&limit=120", expect.objectContaining({ headers: expect.objectContaining({ "x-api-key": "test-key" }) }));
   });
 
-  test.each([[401, "PROVIDER_UNAUTHORIZED"], [403, "PROVIDER_UNAUTHORIZED"], [429, "RATE_LIMITED"], [500, "PROVIDER_UNAVAILABLE"]] as const)("maps HTTP %s to %s", async (status, code) => {
+  test.each([[401, "PROVIDER_UNAUTHORIZED"], [403, "PROVIDER_UNAUTHORIZED"], [422, "INVALID_REQUEST"], [400, "INVALID_REQUEST"], [429, "RATE_LIMITED"], [500, "PROVIDER_UNAVAILABLE"]] as const)("maps HTTP %s to %s", async (status, code) => {
     const client = new ArjumClient({ baseUrl: "https://provider.test", apiKey: "k", fetcher: async () => new Response("{}", { status }) });
     await expect(client.get("/api/history/BBCA", historyResponseSchema)).rejects.toMatchObject({ code });
   });

@@ -22,6 +22,7 @@ import {
 } from "../src/server/market/fixture-layout";
 import { screenerResponseSchema } from "../src/server/schemas/arjum";
 import { parseIndonesianDate } from "../src/server/services/screener-date";
+import { ARJUM_LIMITS } from "../src/lib/api/provider-limits";
 
 const SYMBOL = /^[A-Z0-9]{1,12}$/;
 const ALWAYS_RECORD = ["BBCA"];
@@ -107,13 +108,13 @@ export async function recordFixtures(options: RecordOptions): Promise<RecordResu
       await record("search", "/api/search", { q: symbol }, { searchKey: symbol });
       await record("broker-summary", `/api/broker-summary/${symbol}`, {}, at);
       await record("broker-accumulation", `/api/broker-accumulation/${symbol}`, {}, at);
-      await record("history", `/api/history/${symbol}`, { frame: "daily", limit: 120 }, at);
+      await record("history", `/api/history/${symbol}`, { frame: "daily", limit: 250 }, at);
       await record("seasonal", `/api/seasonal/${symbol}`, {}, at);
       for (const reportType of REPORT_TYPES) {
         await record("financial-statements", `/api/financial-statements/${symbol}`, { report_type: reportType, period: "quarterly", limit: 12 }, { symbol, reportType });
       }
-      await record("insiders", `/api/insiders/${symbol}`, { page: 1, limit: 50 }, at);
-      await record("done-details", "/api/done-details", { code: symbol, page: 1, per_page: 100 }, at);
+      await record("insiders", `/api/insiders/${symbol}`, { page: 1, limit: ARJUM_LIMITS.insiders }, at);
+      await record("done-details", "/api/done-details", { code: symbol, page: 1, per_page: ARJUM_LIMITS.doneDetailsPerPage }, at);
     }
 
     const manifest = manifestSchema.parse({

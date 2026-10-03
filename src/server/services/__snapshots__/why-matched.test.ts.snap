@@ -29,7 +29,10 @@ exports[`why matched — recorded screener V5.2 > snapshot of the structured scr
               },
             ],
             "name": "Soechi Lines Tbk.",
-            "providerNote": "mode senyap",
+            "notes": [
+              "mode senyap",
+            ],
+            "pattern": null,
             "symbol": "SOCI",
           },
           {
@@ -46,7 +49,10 @@ exports[`why matched — recorded screener V5.2 > snapshot of the structured scr
               },
             ],
             "name": "Hartadinata Abadi Tbk.",
-            "providerNote": "mode senyap",
+            "notes": [
+              "mode senyap",
+            ],
+            "pattern": null,
             "symbol": "HRTA",
           },
         ],

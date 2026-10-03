@@ -29,3 +29,12 @@ describe("arjum recorded response contracts (Zod 4)", () => {
     expect(historyResponseSchema.safeParse(value).success).toBe(false);
   });
 });
+
+test("live drift: a broker level side can be null; history average can be null", () => {
+  const brokers = fixture<{ broker_levels: Array<{ sell: unknown }> }>("broker-summary");
+  brokers.broker_levels[brokers.broker_levels.length - 1].sell = null;
+  expect(brokerSummaryResponseSchema.safeParse(brokers).success).toBe(true);
+  const history = fixture<{ rows: Array<{ avg: unknown }> }>("history");
+  history.rows[3].avg = null;
+  expect(historyResponseSchema.safeParse(history).success).toBe(true);
+});

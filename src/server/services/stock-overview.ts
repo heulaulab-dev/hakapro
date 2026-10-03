@@ -3,6 +3,7 @@ import { withFreshness, type FreshnessMeta, type WithFreshness } from "@/lib/fre
 import { MarketDataError } from "@/server/market/errors";
 import type { MarketDataSource } from "@/server/market/source";
 import { summarizeBrokers, summarizeFinancials, summarizeForeignFlow, summarizeInsiders, summarizePrice, type FinancialFacts, type FlowFacts, type OwnershipFacts, type PriceFacts } from "./stock-summary";
+import { ARJUM_LIMITS } from "@/lib/api/provider-limits";
 
 export type Section<T> = ({ status: "ok"; data: T } & FreshnessMeta) | { status: "error"; error: string };
 
@@ -38,7 +39,7 @@ export async function getStockOverview(source: MarketDataSource, symbol: string,
     section(() => history, (data) => summarizePrice(data)),
     section(() => history, (data) => summarizeForeignFlow(data)),
     section(() => source.brokerSummary(symbol, signal), (data) => summarizeBrokers(data)),
-    section(() => source.insiders(symbol, { limit: 50 }, signal), (data) => summarizeInsiders(data)),
+    section(() => source.insiders(symbol, { limit: ARJUM_LIMITS.insiders }, signal), (data) => summarizeInsiders(data)),
     section(() => source.financialStatements(symbol, { reportType: "INCOME_STATEMENT", period: "quarterly", limit: 12 }, signal), (data) => summarizeFinancials(data)),
   ]);
   const overview: StockOverview = { symbol, price, foreignFlow, brokers, ownership, financials };

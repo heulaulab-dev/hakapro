@@ -16,6 +16,9 @@ import { BaseMarketDataSource, type BrokerAccumulationQuery, type FinancialsQuer
 
 export type Clock = () => Date;
 
+/** Our API names → provider report_type values (verified live: cash flow is "CASH_FLOW_REPORT"). */
+export const PROVIDER_REPORT_TYPE = { INCOME_STATEMENT: "INCOME_STATEMENT", BALANCE_SHEET: "BALANCE_SHEET", CASH_FLOW: "CASH_FLOW_REPORT" } as const;
+
 /**
  * arjum lane. Freshness rules (MIGRATION §9.4): "latest snapshot" datasets are classified by their
  * data date against the IDX session clock; series datasets are HISTORICAL as of their newest point.
@@ -81,7 +84,7 @@ export class ArjumSource extends BaseMarketDataSource {
 
   async financialStatements(symbol: string, query: FinancialsQuery, signal?: AbortSignal) {
     const today = jakartaClock(this.clock()).date;
-    const data = normalizeFinancialStatements(await this.fetchRaw(`/api/financial-statements/${symbol}`, financialStatementsResponseSchema, { report_type: query.reportType, period: query.period, limit: query.limit, year: query.year }, signal), today);
+    const data = normalizeFinancialStatements(await this.fetchRaw(`/api/financial-statements/${symbol}`, financialStatementsResponseSchema, { report_type: query.reportType ? PROVIDER_REPORT_TYPE[query.reportType] : undefined, period: query.period, limit: query.limit, year: query.year }, signal), today);
     // As-of is the reporting period end, not the scrape time. A dataset behind the reporting
     // calendar is STALE (data.reportingLag says by how much), never quietly HISTORICAL.
     const newest = data.periods.find((period) => period.periodEnd === data.reportingLag.latestPeriodEnd);

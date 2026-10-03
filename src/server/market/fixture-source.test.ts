@@ -139,3 +139,13 @@ describe("manifest-driven dataset", () => {
     expect((await baseline().financialStatements(FIXTURE_SYMBOL, { reportType: "INCOME_STATEMENT" })).data.reportType).toBe("INCOME_STATEMENT");
   });
 });
+
+test("cash flow is requested with the provider's report_type name", async () => {
+  const seen: Array<Record<string, unknown>> = [];
+  const fetcher = (async (path: string, schema: never, query: Record<string, unknown> = {}) => {
+    seen.push(query);
+    return fixtureFetcher(path, schema, { ...query, report_type: "INCOME_STATEMENT" });
+  }) as unknown as typeof fixtureFetcher;
+  await new ArjumSource(fetcher, "arjum", duringRecordedSession).financialStatements(FIXTURE_SYMBOL, { reportType: "CASH_FLOW" });
+  expect(seen[0].report_type).toBe("CASH_FLOW_REPORT");
+});

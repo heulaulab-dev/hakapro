@@ -12,7 +12,7 @@ import {
 describe("units verified against recorded data", () => {
   test("history volume is in shares (value / volume equals the average price)", () => {
     const rows = normalizeHistory(historyResponseSchema.parse(fixture("history"))).rows;
-    for (const row of rows.slice(-5)) expect(row.valueIdr / row.volumeShares).toBeCloseTo(row.averageIdr, 3);
+    for (const row of rows.slice(-5)) if (row.averageIdr !== null) expect(row.valueIdr / row.volumeShares).toBeCloseTo(row.averageIdr, 3);
   });
 
   test("history change is in percent units and rows are sorted ascending", () => {

@@ -1,0 +1,18 @@
+[
+  {
+    "stock_code": "WOOD",
+    "stock_name": "Integra Indocabinet Tbk.",
+    "last_date": "2026-10-02",
+    "_nn": "integra indocabinet",
+    "_nc": "integraindocabinet",
+    "_init": "ii"
+  },
+  {
+    "stock_code": "GWSA",
+    "stock_name": "Greenwood Sejahtera Tbk.",
+    "last_date": "2026-10-02",
+    "_nn": "greenwood sejahtera",
+    "_nc": "greenwoodsejahtera",
+    "_init": "gs"
+  }
+]

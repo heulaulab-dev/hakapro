@@ -34,9 +34,10 @@ export const brokerSummaryResponseSchema = z.object({
     sval: finite, svol: finite, sfrq: finite,
     nval: finite, nvol: finite,
   })),
+  // A side is null when fewer brokers traded on it (seen live for WOOD on 2026-10-02).
   broker_levels: z.array(z.object({
-    buy: brokerBase.extend({ bval: finite, bvol: finite, bfrq: finite, bavg: finite }),
-    sell: brokerBase.extend({ sval: finite, svol: finite, sfrq: finite, savg: finite }),
+    buy: brokerBase.extend({ bval: finite, bvol: finite, bfrq: finite, bavg: finite }).nullable(),
+    sell: brokerBase.extend({ sval: finite, svol: finite, sfrq: finite, savg: finite }).nullable(),
   })),
   broker_start_date: z.string(), broker_end_date: z.string(), broker_date_min: z.string(), broker_date_max: z.string(),
   broker_net: z.boolean(), flow: z.string(),
@@ -60,7 +61,8 @@ export const historyResponseSchema = z.object({
     date: z.string(), close: finite, change: finite, change_pct: finite,
     value: finite, volume: finite, freq: finite, f_buy: finite,
     f_sell: finite, n_foreign: finite, open: finite, high: finite,
-    low: finite, avg: finite,
+    // Live data has null averages on some days (e.g. SAPX); never coerced to 0.
+    low: finite, avg: nullableFinite,
   })),
 });
 

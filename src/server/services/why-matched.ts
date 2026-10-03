@@ -24,12 +24,26 @@ export const KNOWN_FLAGS = {
   "🔥": { key: "climax", providerLabel: "klimaks" },
 } as const;
 
+/**
+ * Recognized but deliberately not shown: the direction arrow is the provider's forward-looking call
+ * (MIGRATION §9.5 — no signals). Listed explicitly so they are neither displayed nor "unrecognized".
+ */
+export const OMITTED_FLAGS = ["⬆️", "⬇️", "⬆", "⬇"] as const;
+
 export type CriterionKey = (typeof KNOWN_FLAGS)[keyof typeof KNOWN_FLAGS]["key"];
 export type Criterion =
   | { kind: "recognized"; key: CriterionKey; flag: string }
   | { kind: "unrecognized"; flag: string; providerLabel: string | null };
 
-export type StrategyMatch = { symbol: string; name: string; criteria: Criterion[]; providerNote: string | null };
+export type StrategyMatch = {
+  symbol: string;
+  name: string;
+  criteria: Criterion[];
+  /** Provider's descriptive pattern label, e.g. "Gabungan (Asing + Teknikal)". Stats are stripped. */
+  pattern: string | null;
+  /** Observed facts from the provider note, e.g. ["jatuh tajam", "teknikal lemah"]. */
+  notes: string[];
+};
 export type Strategy = { id: string; name: string; description: string | null; matches: StrategyMatch[] };
 export type StrategyScreen = {
   date: string | null;
@@ -42,7 +56,8 @@ export type StrategyScreen = {
 export type WhyMatchedIssue =
   | { type: "unrecognized_flag"; flag: string; symbol: string; providerLabel: string | null }
   | { type: "legend_drift"; flag: string; expected: string; actual: string }
-  | { type: "unparseable_date"; text: string };
+  | { type: "unparseable_date"; text: string }
+  | { type: "summary_noise"; symbol: string; text: string };
 
 const stripVariation = (value: string) => value.replace(/️/g, "");
 const FLAG_ENTRIES = Object.entries(KNOWN_FLAGS)
@@ -85,11 +100,40 @@ export function tokenizeFlags(summary: string): string[] {
         continue;
       }
       const [first] = segmenter.segment(rest);
-      flags.push(first.segment);
+      // Keep runs of plain text together so noise is reported once, not character by character.
+      if (!isPictographic(first.segment) && flags.length && !isPictographic(flags[flags.length - 1]) && !FLAG_ENTRIES.some((entry) => entry.flag === flags[flags.length - 1])) {
+        flags[flags.length - 1] += first.segment;
+      } else {
+        flags.push(first.segment);
+      }
       rest = rest.slice(first.segment.length);
     }
   }
   return flags;
+}
+
+const SEPARATOR = /\s+[—–]\s+/;
+/** Forward-looking numbers (win rate, average event return, D3, potential, drawdown) start here. */
+const STATS_START = /\s*(WR\s*Event|rata2\s*event|D3[+-]|potensi|\|\s*DD)/i;
+const isPictographic = (grapheme: string) => /\p{Extended_Pictographic}|\p{Emoji_Presentation}/u.test(grapheme);
+
+/**
+ * Splits a provider summary into flag graphemes and a descriptive pattern label:
+ *   "🧬 ⬆️ — Gabungan (Asing + Teknikal) WR Event71.4% … | DD -5% (+12)" →
+ *   flags ["🧬", "⬆️"], pattern "Gabungan (Asing + Teknikal)".
+ * Non-emoji text before the separator (a provider glitch like "Tbk.)") is returned as noise.
+ */
+export function splitSummary(summary: string): { flags: string[]; pattern: string | null; noise: string[] } {
+  const [flagPart, ...rest] = summary.split(SEPARATOR);
+  const detail = rest.join(" — ");
+  const flags: string[] = [];
+  const noise: string[] = [];
+  for (const token of tokenizeFlags(flagPart)) {
+    if (isPictographic(token) || FLAG_ENTRIES.some((entry) => entry.flag === token)) flags.push(token);
+    else noise.push(token);
+  }
+  const pattern = detail ? detail.split(STATS_START)[0].trim() || null : null;
+  return { flags, pattern, noise: noise.length ? [noise.join("").trim()].filter(Boolean) : [] };
 }
 
 export function strategyId(bucket: string): string {
@@ -133,14 +177,18 @@ export function parseStrategyScreen(response: ScreenerResponse): { screen: Strat
     if (!strategies.has(id)) {
       strategies.set(id, { id, name: bucketName(row.bucket), description: descriptions.get(row.bucket.trim()) ?? null, matches: [] });
     }
-    const criteria: Criterion[] = tokenizeFlags(row.summary).map((flag) => {
+    const { flags, pattern, noise } = splitSummary(row.summary);
+    for (const text of noise) issues.push({ type: "summary_noise", symbol: row.stock_code, text });
+    const omitted = new Set(OMITTED_FLAGS.map(stripVariation));
+    const criteria: Criterion[] = flags.filter((flag) => !omitted.has(stripVariation(flag))).map((flag) => {
       const known = FLAG_ENTRIES.find((entry) => entry.flag === flag);
       if (known) return { kind: "recognized", key: known.meta.key, flag };
       const providerLabel = legend.get(stripVariation(flag)) ?? null;
       issues.push({ type: "unrecognized_flag", flag, symbol: row.stock_code, providerLabel });
       return { kind: "unrecognized", flag, providerLabel };
     });
-    strategies.get(id)!.matches.push({ symbol: row.stock_code, name: row.stock_name, criteria, providerNote: row.note.trim() || null });
+    const notes = row.note.split("|").map((part) => part.trim()).filter(Boolean);
+    strategies.get(id)!.matches.push({ symbol: row.stock_code, name: row.stock_name, criteria, pattern, notes });
   }
 
   return {

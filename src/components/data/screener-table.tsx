@@ -51,7 +51,17 @@ export function ScreenerTable({ matches, meta, caption, maxHeight, onWhy }: { ma
     },
     { id: "name", accessorKey: "name", header: t("company"), cell: ({ row }) => <span className="text-muted-foreground">{row.original.name}</span> },
     { id: "criteria", header: t("whyMatched"), enableSorting: false, cell: ({ row }) => <CriteriaList criteria={row.original.criteria} /> },
-    { id: "note", accessorKey: "providerNote", header: t("providerNote"), enableSorting: false, cell: ({ row }) => <span className="text-xs text-muted-foreground">{row.original.providerNote ?? "—"}</span> },
+    {
+      id: "note", header: t("providerNote"), enableSorting: false,
+      cell: ({ row }) => (
+        <span className="flex flex-col gap-1">
+          {row.original.pattern && <span className="caption-style text-soft">{row.original.pattern}</span>}
+          <span className="flex flex-wrap gap-1">
+            {row.original.notes.map((note) => <StatusBadge key={note} tone="neutral">{note}</StatusBadge>)}
+          </span>
+        </span>
+      ),
+    },
     ...(onWhy
       ? [{ id: "why", header: "", enableSorting: false, meta: { className: "w-20 text-right" }, cell: ({ row }) => (
           <Button variant="outline" size="sm" onClick={() => onWhy(row.original)} data-testid={`why-${row.original.symbol}`}>

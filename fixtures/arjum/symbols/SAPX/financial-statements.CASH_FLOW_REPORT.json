@@ -1,0 +1,556 @@
+{
+  "stock_code": "SAPX",
+  "report_type": "CASH_FLOW_REPORT",
+  "period": "quarterly",
+  "count": 12,
+  "items": [
+    {
+      "year": "2026",
+      "quarter": "1",
+      "label": "Q1 2026",
+      "fetched_at": "2026-09-27 18:00:17",
+      "data": {
+        "arus_kas_dari_aktivitas_operasi": {
+          "penerimaan_kas_dari_aktivitas_operasi": {
+            "penerimaan_dari_pelanggan": 123918371098,
+            "total": 123918371098
+          },
+          "pembayaran_kas_dari_aktivitas_operasi": {
+            "pembayaran_kepada_pemasok_atas_barang_dan_jasa": -62442139080,
+            "pembayaran_gaji_dan_tunjangan": -66485780905,
+            "total": -128927919985
+          },
+          "kas_diperoleh_dari_digunakan_untuk_operasi": -5009548887,
+          "penerimaan_pengembalian_pembayaran_pajak_penghasilan_dari_aktivitas_operasi": 8732117665,
+          "arus_kas_bersih_yang_diperoleh_dari_digunakan_untuk_aktivitas_operasi": 3722568778,
+          "total": 3722568778
+        },
+        "arus_kas_dari_aktivitas_investasi": {
+          "penerimaan_dari_penjualan_aset_tetap": 1200000000,
+          "pembayaran_untuk_perolehan_aset_tetap": -42708256,
+          "pembayaran_untuk_perolehan_properti_pertambangan": -15100000,
+          "pencairan_penempatan_dana_yang_dibatasi_penggunaannya_dari_aktivitas_investasi": -5850000000,
+          "arus_kas_bersih_yang_diperoleh_dari_digunakan_untuk_aktivitas_investasi": -4622391744,
+          "total": -4622391744
+        },
+        "arus_kas_dari_aktivitas_pendanaan": {
+          "penerimaan_pinjaman_bank": 71500000000,
+          "pembayaran_pinjaman_bank": -60900000000,
+          "pembayaran_utang_pembiayaan_konsumen": -43180000,
+          "pembayaran_bunga_dari_aktivitas_pendanaan": -2972132830,
+          "arus_kas_bersih_yang_diperoleh_dari_digunakan_untuk_aktivitas_pendanaan": 7584687170,
+          "total": 7584687170
+        },
+        "kenaikan_penurunan_bersih_kas_dan_setara_kas": 6684864204,
+        "kas_dan_setara_kas_arus_kas_awal_periode": 20217835096,
+        "kas_dan_setara_kas_arus_kas_akhir_periode": 26902699300
+      }
+    },
+    {
+      "year": "2025",
+      "quarter": "4",
+      "label": "Q4 2025",
+      "fetched_at": "2026-09-27 18:00:17",
+      "data": {
+        "arus_kas_dari_aktivitas_operasi": {
+          "penerimaan_kas_dari_aktivitas_operasi": {
+            "penerimaan_dari_pelanggan": 131681958441,
+            "total": 131681958441
+          },
+          "pembayaran_kas_dari_aktivitas_operasi": {
+            "pembayaran_kepada_pemasok_atas_barang_dan_jasa": -41977054805,
+            "pembayaran_gaji_dan_tunjangan": -69764055590,
+            "total": -111741110395
+          },
+          "kas_diperoleh_dari_digunakan_untuk_operasi": 19940848046,
+          "penerimaan_pengembalian_pembayaran_pajak_penghasilan_dari_aktivitas_operasi": 1100907456,
+          "pembayaran_pajak_penghasilan_badan": -7144760350,
+          "arus_kas_bersih_yang_diperoleh_dari_digunakan_untuk_aktivitas_operasi": 13896995152,
+          "total": 13896995152
+        },
+        "arus_kas_dari_aktivitas_investasi": {
+          "penerimaan_dari_penjualan_aset_tetap": 1947942147,
+          "pembayaran_untuk_perolehan_aset_tetap": -2164449938,
+          "penerimaan_dari_penjualan_aset_takberwujud": 99078900,
+          "pembayaran_untuk_perolehan_aset_takberwujud": -988921194,
+          "pencairan_penempatan_investasi_jangka_pendek": 17000000,
+          "pencairan_penempatan_dana_yang_dibatasi_penggunaannya_dari_aktivitas_investasi": -3600000000,
+          "penerimaan_pengeluaran_kas_lainnya_dari_aktivitas_investasi": -99510400,
+          "arus_kas_bersih_yang_diperoleh_dari_digunakan_untuk_aktivitas_investasi": -3906162703,
+          "total": -3906162703
+        },
+        "arus_kas_dari_aktivitas_pendanaan": {
+          "penerimaan_pinjaman_bank": 291480639603,
+          "pembayaran_pinjaman_bank": -297780639603,
+          "pembayaran_utang_pembiayaan_konsumen": -129540000,
+          "pembayaran_liabilitas_sewa_pembiayaan": -3383161934,
+          "pembayaran_utang_pihak_berelasi": -500000000,
+          "pembayaran_bunga_dari_aktivitas_pendanaan": -3584276067,
+          "arus_kas_bersih_yang_diperoleh_dari_digunakan_untuk_aktivitas_pendanaan": -13396978001,
+          "total": -13396978001
+        },
+        "kenaikan_penurunan_bersih_kas_dan_setara_kas": -3406145552,
+        "kas_dan_setara_kas_arus_kas_awal_periode": 23623980645,
+        "kas_dan_setara_kas_arus_kas_akhir_periode": 20217835093
+      }
+    },
+    {
+      "year": "2025",
+      "quarter": "3",
+      "label": "Q3 2025",
+      "fetched_at": "2026-09-27 18:00:17",
+      "data": {
+        "arus_kas_dari_aktivitas_operasi": {
+          "penerimaan_kas_dari_aktivitas_operasi": {
+            "penerimaan_dari_pelanggan": 123520856731,
+            "total": 123520856731
+          },
+          "pembayaran_kas_dari_aktivitas_operasi": {
+            "pembayaran_kepada_pemasok_atas_barang_dan_jasa": -62533728956,
+            "pembayaran_gaji_dan_tunjangan": -69204397468,
+            "total": -131738126424
+          },
+          "kas_diperoleh_dari_digunakan_untuk_operasi": -8217269693,
+          "penerimaan_dividen_dari_aktivitas_operasi": -6801311564,
+          "penerimaan_pengembalian_pembayaran_pajak_penghasilan_dari_aktivitas_operasi": 6888173374,
+          "arus_kas_bersih_yang_diperoleh_dari_digunakan_untuk_aktivitas_operasi": -8130407883,
+          "total": -8130407883
+        },
+        "arus_kas_dari_aktivitas_investasi": {
+          "penerimaan_dari_penjualan_aset_tetap": 184642560,
+          "pembayaran_untuk_perolehan_aset_tetap": 1775955094,
+          "pencairan_penempatan_dana_yang_dibatasi_penggunaannya_dari_aktivitas_investasi": -12000000000,
+          "penerimaan_pengeluaran_kas_lainnya_dari_aktivitas_investasi": 14768400,
+          "arus_kas_bersih_yang_diperoleh_dari_digunakan_untuk_aktivitas_investasi": -9935410534,
+          "total": -9935410534
+        },
+        "arus_kas_dari_aktivitas_pendanaan": {
+          "penerimaan_pinjaman_bank": -3900000000,
+          "pembayaran_pinjaman_bank": 23000000000,
+          "pembayaran_utang_pembiayaan_konsumen": -129576000,
+          "pembayaran_utang_pihak_berelasi": -2631863034,
+          "pembayaran_bunga_dari_aktivitas_pendanaan": -2954903071,
+          "arus_kas_bersih_yang_diperoleh_dari_digunakan_untuk_aktivitas_pendanaan": 16015520929,
+          "total": 16015520929
+        },
+        "kenaikan_penurunan_bersih_kas_dan_setara_kas": -2050297488,
+        "kas_dan_setara_kas_arus_kas_awal_periode": 25674278133,
+        "kas_dan_setara_kas_arus_kas_akhir_periode": 23623980645
+      }
+    },
+    {
+      "year": "2025",
+      "quarter": "2",
+      "label": "Q2 2025",
+      "fetched_at": "2026-09-27 18:00:17",
+      "data": {
+        "arus_kas_dari_aktivitas_operasi": {
+          "penerimaan_kas_dari_aktivitas_operasi": {
+            "penerimaan_dari_pelanggan": 126727911559,
+            "penerimaan_kas_lainnya_dari_aktivitas_operasi": -6801311564,
+            "total": 119926599995
+          },
+          "pembayaran_kas_dari_aktivitas_operasi": {
+            "pembayaran_kepada_pemasok_atas_barang_dan_jasa": -60864741574,
+            "pembayaran_gaji_dan_tunjangan": -64247531909,
+            "total": -125112273483
+          },
+          "kas_diperoleh_dari_digunakan_untuk_operasi": -5185673488,
+          "penerimaan_dividen_dari_aktivitas_operasi": 6801311564,
+          "arus_kas_sebelum_perubahan_dalam_aset_dan_liabilitas_yang_diperoleh_dari_digunakan_untuk_aktivitas_operasi": 14047982912,
+          "arus_kas_bersih_yang_diperoleh_dari_digunakan_untuk_aktivitas_operasi": 1615638076,
+          "total": 1615638076
+        },
+        "arus_kas_dari_aktivitas_investasi": {
+          "penerimaan_dari_penjualan_aset_tetap": -5669327,
+          "pembayaran_untuk_perolehan_aset_tetap": -1678909896,
+          "pencairan_penempatan_investasi_jangka_pendek": -17000000,
+          "penerimaan_pengeluaran_kas_lainnya_dari_aktivitas_investasi": 90819324,
+          "arus_kas_bersih_yang_diperoleh_dari_digunakan_untuk_aktivitas_investasi": -1593759899,
+          "total": -1593759899
+        },
+        "arus_kas_dari_aktivitas_pendanaan": {
+          "penerimaan_pinjaman_bank": -73580639603,
+          "pembayaran_pinjaman_bank": 60949574215,
+          "pembayaran_utang_pembiayaan_konsumen": -364890000,
+          "pembayaran_utang_pihak_berelasi": -5000000000,
+          "pembayaran_bunga_dari_aktivitas_pendanaan": -4272384079,
+          "arus_kas_bersih_yang_diperoleh_dari_digunakan_untuk_aktivitas_pendanaan": -17268339467,
+          "total": -17268339467
+        },
+        "kenaikan_penurunan_bersih_kas_dan_setara_kas": -17246461290,
+        "kas_dan_setara_kas_arus_kas_awal_periode": 42920739423,
+        "kas_dan_setara_kas_arus_kas_akhir_periode": 25674278133
+      }
+    },
+    {
+      "year": "2025",
+      "quarter": "1",
+      "label": "Q1 2025",
+      "fetched_at": "2026-09-27 18:00:17",
+      "data": {
+        "arus_kas_dari_aktivitas_operasi": {
+          "penerimaan_kas_dari_aktivitas_operasi": {
+            "penerimaan_dari_pelanggan": 131746994755,
+            "penerimaan_kas_lainnya_dari_aktivitas_operasi": 6801311564,
+            "total": 138548306319
+          },
+          "pembayaran_kas_dari_aktivitas_operasi": {
+            "pembayaran_kepada_pemasok_atas_barang_dan_jasa": -65222792717,
+            "pembayaran_gaji_dan_tunjangan": -87373496514,
+            "total": -152596289231
+          },
+          "kas_diperoleh_dari_digunakan_untuk_operasi": -14047982912,
+          "arus_kas_sebelum_perubahan_dalam_aset_dan_liabilitas_yang_diperoleh_dari_digunakan_untuk_aktivitas_operasi": -14047982912,
+          "arus_kas_bersih_yang_diperoleh_dari_digunakan_untuk_aktivitas_operasi": -14047982912,
+          "total": -14047982912
+        },
+        "arus_kas_dari_aktivitas_investasi": {
+          "pembayaran_untuk_perolehan_aset_tetap": -141656904,
+          "pencairan_penempatan_dana_yang_dibatasi_penggunaannya_dari_aktivitas_investasi": 18300000000,
+          "penerimaan_pengeluaran_kas_lainnya_dari_aktivitas_investasi": -6077324,
+          "arus_kas_bersih_yang_diperoleh_dari_digunakan_untuk_aktivitas_investasi": 18152265772,
+          "total": 18152265772
+        },
+        "arus_kas_dari_aktivitas_pendanaan": {
+          "penerimaan_pinjaman_bank": 122000000000,
+          "pembayaran_pinjaman_bank": -99949574215,
+          "pembayaran_utang_pembiayaan_konsumen": -973236195,
+          "pembayaran_bunga_dari_aktivitas_pendanaan": -1802988402,
+          "arus_kas_bersih_yang_diperoleh_dari_digunakan_untuk_aktivitas_pendanaan": 19274201188,
+          "total": 19274201188
+        },
+        "kenaikan_penurunan_bersih_kas_dan_setara_kas": 23378484048,
+        "kas_dan_setara_kas_arus_kas_awal_periode": 19542255375,
+        "kas_dan_setara_kas_arus_kas_akhir_periode": 42920739423
+      }
+    },
+    {
+      "year": "2024",
+      "quarter": "4",
+      "label": "Q4 2024",
+      "fetched_at": "2026-09-27 18:00:17",
+      "data": {
+        "arus_kas_dari_aktivitas_operasi": {
+          "penerimaan_kas_dari_aktivitas_operasi": {
+            "penerimaan_dari_pelanggan": 141168468480,
+            "total": 141168468480
+          },
+          "pembayaran_kas_dari_aktivitas_operasi": {
+            "pembayaran_kepada_pemasok_atas_barang_dan_jasa": -55660520265,
+            "pembayaran_gaji_dan_tunjangan": -75933201641,
+            "pembayaran_kas_lainnya_untuk_beban_operasi": 1641833144,
+            "total": -129951888762
+          },
+          "kas_diperoleh_dari_digunakan_untuk_operasi": 9574746574,
+          "penerimaan_pengembalian_pembayaran_pajak_penghasilan_dari_aktivitas_operasi": -8847442453,
+          "arus_kas_bersih_yang_diperoleh_dari_digunakan_untuk_aktivitas_operasi": 727304121,
+          "total": 727304121
+        },
+        "arus_kas_dari_aktivitas_investasi": {
+          "pembayaran_uang_muka_pembelian_aset_tetap": -2665000000,
+          "pembayaran_untuk_perolehan_aset_tetap": -669331163,
+          "pembayaran_untuk_perolehan_aset_takberwujud": -609741194,
+          "pencairan_penempatan_investasi_jangka_pendek": 1700000000,
+          "pencairan_penempatan_dana_yang_dibatasi_penggunaannya_dari_aktivitas_investasi": -64300000000,
+          "pembayaran_uang_muka_investasi": 18291458122,
+          "penerimaan_pengeluaran_kas_lainnya_dari_aktivitas_investasi": -313180000,
+          "arus_kas_bersih_yang_diperoleh_dari_digunakan_untuk_aktivitas_investasi": -65875252357,
+          "total": -65875252357
+        },
+        "arus_kas_dari_aktivitas_pendanaan": {
+          "penerimaan_pinjaman_bank": 126000000000,
+          "pembayaran_pinjaman_bank": -88000000000,
+          "pembayaran_utang_pembiayaan_konsumen": -781709232,
+          "pembayaran_liabilitas_sewa_pembiayaan": -6554931031,
+          "pembayaran_utang_pihak_berelasi": -500000000,
+          "pembayaran_bunga_dari_aktivitas_pendanaan": -2404298258,
+          "arus_kas_bersih_yang_diperoleh_dari_digunakan_untuk_aktivitas_pendanaan": 27759061479,
+          "total": 27759061479
+        },
+        "kenaikan_penurunan_bersih_kas_dan_setara_kas": -37388886757,
+        "kas_dan_setara_kas_arus_kas_awal_periode": 56931142132,
+        "kas_dan_setara_kas_arus_kas_akhir_periode": 19542255375
+      }
+    },
+    {
+      "year": "2024",
+      "quarter": "3",
+      "label": "Q3 2024",
+      "fetched_at": "2026-09-27 18:00:17",
+      "data": {
+        "arus_kas_dari_aktivitas_operasi": {
+          "penerimaan_kas_dari_aktivitas_operasi": {
+            "penerimaan_dari_pelanggan": 166323495370,
+            "total": 166323495370
+          },
+          "pembayaran_kas_dari_aktivitas_operasi": {
+            "pembayaran_kepada_pemasok_atas_barang_dan_jasa": -95550448022,
+            "pembayaran_gaji_dan_tunjangan": -86184746042,
+            "pembayaran_kas_lainnya_untuk_beban_operasi": -1641833144,
+            "total": -183377027208
+          },
+          "kas_diperoleh_dari_digunakan_untuk_operasi": -28486259927,
+          "arus_kas_bersih_yang_diperoleh_dari_digunakan_untuk_aktivitas_operasi": -15411698694,
+          "total": -15411698694
+        },
+        "arus_kas_dari_aktivitas_investasi": {
+          "pembayaran_untuk_perolehan_aset_tetap": -1105346089,
+          "pencairan_penempatan_dana_yang_dibatasi_penggunaannya_dari_aktivitas_investasi": 25500000000,
+          "pembayaran_uang_muka_investasi": -18291458122,
+          "penerimaan_pengeluaran_kas_lainnya_dari_aktivitas_investasi": -43000000,
+          "arus_kas_bersih_yang_diperoleh_dari_digunakan_untuk_aktivitas_investasi": 24351653911,
+          "total": 24351653911
+        },
+        "arus_kas_dari_aktivitas_pendanaan": {
+          "penerimaan_pinjaman_bank": 88000000000,
+          "pembayaran_pinjaman_bank": -100000000000,
+          "pembayaran_utang_pembiayaan_konsumen": -834557379,
+          "penerimaan_utang_pihak_berelasi": -3000000000,
+          "pembayaran_utang_pihak_berelasi": -2631863034,
+          "pembayaran_bunga_dari_aktivitas_pendanaan": -1722454736,
+          "arus_kas_bersih_yang_diperoleh_dari_digunakan_untuk_aktivitas_pendanaan": -17188875149,
+          "total": -17188875149
+        },
+        "kenaikan_penurunan_bersih_kas_dan_setara_kas": -8248919932,
+        "kas_dan_setara_kas_arus_kas_awal_periode": 65180062064,
+        "kas_dan_setara_kas_arus_kas_akhir_periode": 56931142132
+      }
+    },
+    {
+      "year": "2024",
+      "quarter": "2",
+      "label": "Q2 2024",
+      "fetched_at": "2026-09-27 18:00:17",
+      "data": {
+        "arus_kas_dari_aktivitas_operasi": {
+          "penerimaan_kas_dari_aktivitas_operasi": {
+            "penerimaan_dari_pelanggan": 170098113965,
+            "total": 170098113965
+          },
+          "pembayaran_kas_dari_aktivitas_operasi": {
+            "pembayaran_kepada_pemasok_atas_barang_dan_jasa": -82727189119,
+            "pembayaran_gaji_dan_tunjangan": -108253707904,
+            "pembayaran_kas_lainnya_untuk_beban_operasi": 71930166,
+            "total": -190908966857
+          },
+          "kas_diperoleh_dari_digunakan_untuk_operasi": -7808221825,
+          "arus_kas_sebelum_perubahan_dalam_aset_dan_liabilitas_yang_diperoleh_dari_digunakan_untuk_aktivitas_operasi": -7808221825,
+          "arus_kas_bersih_yang_diperoleh_dari_digunakan_untuk_aktivitas_operasi": -20882783058,
+          "total": -20882783058
+        },
+        "arus_kas_dari_aktivitas_investasi": {
+          "pembayaran_uang_muka_pembelian_aset_tetap": 975000000,
+          "pembayaran_untuk_perolehan_aset_tetap": -1575092829,
+          "pencairan_penempatan_dana_yang_dibatasi_penggunaannya_dari_aktivitas_investasi": -10500000000,
+          "penempatan_aset_keuangan_biaya_perolehan_diamortisasi": 1700000000,
+          "penerimaan_pengeluaran_kas_lainnya_dari_aktivitas_investasi": -3000000,
+          "arus_kas_bersih_yang_diperoleh_dari_digunakan_untuk_aktivitas_investasi": -12078092829,
+          "total": -12078092829
+        },
+        "arus_kas_dari_aktivitas_pendanaan": {
+          "penerimaan_pinjaman_bank": 100000000000,
+          "pembayaran_pinjaman_bank": -56595166096,
+          "pembayaran_utang_pembiayaan_konsumen": -890803801,
+          "pembayaran_liabilitas_sewa_pembiayaan": 3584733334,
+          "penerimaan_utang_pihak_berelasi": 3000000000,
+          "pembayaran_utang_pihak_berelasi": -2000000000,
+          "pembayaran_bunga_dari_aktivitas_pendanaan": -1580878255,
+          "arus_kas_bersih_yang_diperoleh_dari_digunakan_untuk_aktivitas_pendanaan": 38933151848,
+          "total": 38933151848
+        },
+        "kenaikan_penurunan_bersih_kas_dan_setara_kas": 5972275961,
+        "kas_dan_setara_kas_arus_kas_awal_periode": 59207786103,
+        "kas_dan_setara_kas_arus_kas_akhir_periode": 65180062064
+      }
+    },
+    {
+      "year": "2024",
+      "quarter": "1",
+      "label": "Q1 2024",
+      "fetched_at": "2026-09-27 18:00:17",
+      "data": {
+        "arus_kas_dari_aktivitas_operasi": {
+          "penerimaan_kas_dari_aktivitas_operasi": {
+            "penerimaan_dari_pelanggan": 174244885042,
+            "total": 174244885042
+          },
+          "pembayaran_kas_dari_aktivitas_operasi": {
+            "pembayaran_kepada_pemasok_atas_barang_dan_jasa": -68445551168,
+            "pembayaran_gaji_dan_tunjangan": -97991112049,
+            "pembayaran_kas_lainnya_untuk_beban_operasi": -71930166,
+            "total": -166508593383
+          },
+          "kas_diperoleh_dari_digunakan_untuk_operasi": 7808221825,
+          "arus_kas_sebelum_perubahan_dalam_aset_dan_liabilitas_yang_diperoleh_dari_digunakan_untuk_aktivitas_operasi": 7808221825,
+          "arus_kas_bersih_yang_diperoleh_dari_digunakan_untuk_aktivitas_operasi": 7808221825,
+          "total": 7808221825
+        },
+        "arus_kas_dari_aktivitas_investasi": {
+          "pembayaran_uang_muka_pembelian_aset_tetap": -975000000,
+          "pembayaran_untuk_perolehan_aset_tetap": -709723038,
+          "pencairan_penempatan_investasi_jangka_pendek": -17000000,
+          "pencairan_penempatan_dana_yang_dibatasi_penggunaannya_dari_aktivitas_investasi": 2000000000,
+          "penempatan_aset_keuangan_biaya_perolehan_diamortisasi": -1700000000,
+          "penerimaan_pengeluaran_kas_lainnya_dari_aktivitas_investasi": -20000000,
+          "arus_kas_bersih_yang_diperoleh_dari_digunakan_untuk_aktivitas_investasi": 1253276962,
+          "total": 1253276962
+        },
+        "arus_kas_dari_aktivitas_pendanaan": {
+          "penerimaan_pinjaman_bank": 66595166096,
+          "pembayaran_pinjaman_bank": -74403459267,
+          "pembayaran_utang_pembiayaan_konsumen": -909336697,
+          "pembayaran_liabilitas_sewa_pembiayaan": -3584733334,
+          "pembayaran_utang_pihak_berelasi": -3000000000,
+          "pembayaran_bunga_dari_aktivitas_pendanaan": -1388306062,
+          "arus_kas_bersih_yang_diperoleh_dari_digunakan_untuk_aktivitas_pendanaan": -13105935930,
+          "total": -13105935930
+        },
+        "kenaikan_penurunan_bersih_kas_dan_setara_kas": -4044437143,
+        "kas_dan_setara_kas_arus_kas_awal_periode": 63252223246,
+        "kas_dan_setara_kas_arus_kas_akhir_periode": 59207786103
+      }
+    },
+    {
+      "year": "2023",
+      "quarter": "4",
+      "label": "Q4 2023",
+      "fetched_at": "2026-09-27 18:00:17",
+      "data": {
+        "arus_kas_dari_aktivitas_operasi": {
+          "penerimaan_kas_dari_aktivitas_operasi": {
+            "penerimaan_dari_pelanggan": 157019042383,
+            "total": 157019042383
+          },
+          "pembayaran_kas_dari_aktivitas_operasi": {
+            "pembayaran_kepada_pemasok_atas_barang_dan_jasa": -88950027991,
+            "pembayaran_gaji_dan_tunjangan": -75855038281,
+            "pembayaran_kas_lainnya_untuk_beban_operasi": 1641833144,
+            "total": -163163233128
+          },
+          "kas_diperoleh_dari_digunakan_untuk_operasi": 5389610438,
+          "penerimaan_pengembalian_pembayaran_pajak_penghasilan_dari_aktivitas_operasi": -1666379656,
+          "pengembalian_penempatan_uang_jaminan": -61465400,
+          "arus_kas_bersih_yang_diperoleh_dari_digunakan_untuk_aktivitas_operasi": -7812570401,
+          "total": -7812570401
+        },
+        "arus_kas_dari_aktivitas_investasi": {
+          "pembayaran_uang_muka_pembelian_aset_tetap": -2665000000,
+          "pembayaran_untuk_perolehan_aset_tetap": -5509046671,
+          "pencairan_penempatan_investasi_jangka_pendek": 3318002540,
+          "pencairan_penempatan_obligasi_dan_atau_sukuk": -10766798898,
+          "penempatan_aset_keuangan_biaya_perolehan_diamortisasi": -1700000000,
+          "pembayaran_uang_muka_investasi": 18291458122,
+          "penerimaan_pengembalian_uang_muka_dan_pinjaman_diberikan_kepada_pihak_lain": 210875000,
+          "penerimaan_dari_pelepasan_aset_tidak_lancar_atau_kelompok_lepasan_yang_diklasifikasikan_sebagai_dimiliki_untuk_dijual_dan_operasi_yang_dihentikan": 680000000,
+          "arus_kas_bersih_yang_diperoleh_dari_digunakan_untuk_aktivitas_investasi": 13435413991,
+          "total": 13435413991
+        },
+        "arus_kas_dari_aktivitas_pendanaan": {
+          "penerimaan_pinjaman_bank": 123697517248,
+          "pembayaran_pinjaman_bank": -106984919102,
+          "pembayaran_utang_pembiayaan_konsumen": -1268904066,
+          "pembayaran_liabilitas_sewa_pembiayaan": -1826552753,
+          "pembayaran_utang_pihak_berelasi": -2368136966,
+          "pembayaran_bunga_dari_aktivitas_pendanaan": -1406306109,
+          "arus_kas_bersih_yang_diperoleh_dari_digunakan_untuk_aktivitas_pendanaan": 6455607142,
+          "total": 6455607142
+        },
+        "kenaikan_penurunan_bersih_kas_dan_setara_kas": 12078450732,
+        "kas_dan_setara_kas_arus_kas_awal_periode": 51173772514,
+        "kas_dan_setara_kas_arus_kas_akhir_periode": 63252223246
+      }
+    },
+    {
+      "year": "2023",
+      "quarter": "3",
+      "label": "Q3 2023",
+      "fetched_at": "2026-09-27 18:00:17",
+      "data": {
+        "arus_kas_dari_aktivitas_operasi": {
+          "penerimaan_kas_dari_aktivitas_operasi": {
+            "penerimaan_dari_pelanggan": 118513547974,
+            "total": 118513547974
+          },
+          "pembayaran_kas_dari_aktivitas_operasi": {
+            "pembayaran_kepada_pemasok_atas_barang_dan_jasa": -21570454316,
+            "pembayaran_gaji_dan_tunjangan": -89445941204,
+            "pembayaran_kas_lainnya_untuk_beban_operasi": -1298380788,
+            "total": -112314776308
+          },
+          "arus_kas_bersih_yang_diperoleh_dari_digunakan_untuk_aktivitas_operasi": 6198771666,
+          "total": 6198771666
+        },
+        "arus_kas_dari_aktivitas_investasi": {
+          "pembayaran_untuk_perolehan_aset_tetap": 7940886258,
+          "pencairan_penempatan_investasi_jangka_pendek": 62388640,
+          "pencairan_penempatan_dana_yang_dibatasi_penggunaannya_dari_aktivitas_investasi": -9500000000,
+          "pencairan_penempatan_obligasi_dan_atau_sukuk": 10766798898,
+          "pembayaran_uang_muka_investasi": -18161463202,
+          "penerimaan_pengembalian_uang_muka_dan_pinjaman_diberikan_kepada_pihak_lain": -210875000,
+          "penerimaan_pengeluaran_kas_lainnya_dari_aktivitas_investasi": -174750000,
+          "arus_kas_bersih_yang_diperoleh_dari_digunakan_untuk_aktivitas_investasi": -40934107996,
+          "total": -40934107996
+        },
+        "arus_kas_dari_aktivitas_pendanaan": {
+          "penerimaan_pinjaman_bank": 47690861121,
+          "pembayaran_utang_pembiayaan_konsumen": -1411882528,
+          "pembayaran_utang_pihak_berelasi": -1000000000,
+          "pembayaran_bunga_dari_aktivitas_pendanaan": -1291434994,
+          "arus_kas_bersih_yang_diperoleh_dari_digunakan_untuk_aktivitas_pendanaan": 37987543599,
+          "total": 37987543599
+        },
+        "kenaikan_penurunan_bersih_kas_dan_setara_kas": 3252207269,
+        "kas_dan_setara_kas_arus_kas_awal_periode": 47921565245,
+        "kas_dan_setara_kas_arus_kas_akhir_periode": 51173772514
+      }
+    },
+    {
+      "year": "2023",
+      "quarter": "2",
+      "label": "Q2 2023",
+      "fetched_at": "2026-09-27 18:00:17",
+      "data": {
+        "arus_kas_dari_aktivitas_operasi": {
+          "penerimaan_kas_dari_aktivitas_operasi": {
+            "penerimaan_dari_pelanggan": 173672277675,
+            "total": 173672277675
+          },
+          "pembayaran_kas_dari_aktivitas_operasi": {
+            "pembayaran_kepada_pemasok_atas_barang_dan_jasa": -79667155516,
+            "pembayaran_gaji_dan_tunjangan": -91327388542,
+            "pembayaran_kas_lainnya_untuk_beban_operasi": -271522190,
+            "total": -171266066248
+          },
+          "kas_diperoleh_dari_digunakan_untuk_operasi": -3072678422,
+          "arus_kas_sebelum_perubahan_dalam_aset_dan_liabilitas_yang_diperoleh_dari_digunakan_untuk_aktivitas_operasi": -3072678422,
+          "arus_kas_bersih_yang_diperoleh_dari_digunakan_untuk_aktivitas_operasi": 2262351095,
+          "total": 2262351095
+        },
+        "arus_kas_dari_aktivitas_investasi": {
+          "pembayaran_uang_muka_pembelian_aset_tetap": 975000000,
+          "penerimaan_dari_penjualan_aset_tetap": 4509139286,
+          "pembayaran_untuk_perolehan_aset_tetap": -10009422929,
+          "pencairan_penempatan_investasi_jangka_pendek": -11923862037,
+          "pencairan_penempatan_dana_yang_dibatasi_penggunaannya_dari_aktivitas_investasi": -7500000000,
+          "penempatan_aset_keuangan_biaya_perolehan_diamortisasi": 1700000000,
+          "pembayaran_uang_muka_investasi": -129994920,
+          "penerimaan_pengeluaran_kas_lainnya_dari_aktivitas_investasi": 113284600,
+          "arus_kas_bersih_yang_diperoleh_dari_digunakan_untuk_aktivitas_investasi": -6496159588,
+          "total": -6496159588
+        },
+        "arus_kas_dari_aktivitas_pendanaan": {
+          "pembayaran_utang_pembiayaan_konsumen": -464660365,
+          "pembayaran_liabilitas_sewa_pembiayaan": 197642224,
+          "pembayaran_utang_pihak_berelasi": 1686684709,
+          "pembayaran_bunga_dari_aktivitas_pendanaan": -849328797,
+          "arus_kas_bersih_yang_diperoleh_dari_digunakan_untuk_aktivitas_pendanaan": 9957428881,
+          "total": 9957428881
+        },
+        "kenaikan_penurunan_bersih_kas_dan_setara_kas": 5723620388,
+        "kas_dan_setara_kas_arus_kas_awal_periode": 40197974857,
+        "kas_dan_setara_kas_arus_kas_akhir_periode": 45921595245
+      }
+    }
+  ]
+}

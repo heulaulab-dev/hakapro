@@ -23,6 +23,6 @@ export default defineConfig({
     url: `http://localhost:${PORT}`,
     reuseExistingServer: !process.env.CI,
     // Fixture data + explicit dev auth bypass; never valid in production (next.config.ts guards).
-    env: { DEV_AUTH_BYPASS: "1", MARKET_DATA_SOURCE: "fixture", E2E_RATE_LIMIT_SCALE: "50" },
+    env: { DEV_AUTH_BYPASS: "1", MARKET_DATA_SOURCE: "fixture", FIXTURE_DATASET: "baseline", E2E_RATE_LIMIT_SCALE: "50" },
   },
 });

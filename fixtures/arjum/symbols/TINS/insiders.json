@@ -1,0 +1,40 @@
+{
+  "stock_code": "TINS",
+  "count": 2,
+  "total": 2,
+  "page": 1,
+  "page_size": 15,
+  "total_pages": 1,
+  "items": [
+    {
+      "name": "MINERAL INDUSTRI",
+      "date": "2023-03-21",
+      "action_type": "cross",
+      "nationality": "foreign",
+      "previous_value": "0",
+      "previous_percentage": "0.00",
+      "current_value": "4,841,053,951",
+      "current_percentage": "65.0002",
+      "changes_value": "+4,841,053,951",
+      "changes_percentage": "+65.0002",
+      "price_formatted": "0",
+      "broker_code": "",
+      "badges": []
+    },
+    {
+      "name": "INDONESIA ASAHAN ALUMINIUM",
+      "date": "2023-03-21",
+      "action_type": "cross",
+      "nationality": "local",
+      "previous_value": "4,841,053,951",
+      "previous_percentage": "65.0002",
+      "current_value": "0",
+      "current_percentage": "0.00",
+      "changes_value": "-4,841,053,951",
+      "changes_percentage": "-65.0002",
+      "price_formatted": "0",
+      "broker_code": "",
+      "badges": []
+    }
+  ]
+}

@@ -1,0 +1,249 @@
+{
+  "stock_code": "ARCI",
+  "count": 15,
+  "total": 110,
+  "page": 1,
+  "page_size": 15,
+  "total_pages": 8,
+  "items": [
+    {
+      "name": "HIDAYAT DWIPUTRO SULAKSONO",
+      "date": "2026-06-26",
+      "action_type": "buy",
+      "nationality": "local",
+      "previous_value": "25,971,900",
+      "previous_percentage": "0.10",
+      "current_value": "26,471,900",
+      "current_percentage": "0.10",
+      "changes_value": "+500,000",
+      "changes_percentage": "+0.0020",
+      "price_formatted": "900",
+      "broker_code": "",
+      "badges": [
+        "DIREKTUR"
+      ]
+    },
+    {
+      "name": "RAJAWALI CORPORA",
+      "date": "2026-06-23",
+      "action_type": "sell",
+      "nationality": "local",
+      "previous_value": "16,605,550,000",
+      "previous_percentage": "65.80",
+      "current_value": "0",
+      "current_percentage": "0.00",
+      "changes_value": "-16,605,550,000",
+      "changes_percentage": "-65.80",
+      "price_formatted": "1,100",
+      "broker_code": "",
+      "badges": [
+        "PENGENDALI"
+      ]
+    },
+    {
+      "name": "RAJAWALI KAPITAL EMAS",
+      "date": "2026-06-23",
+      "action_type": "buy",
+      "nationality": "local",
+      "previous_value": "4,504,200,000",
+      "previous_percentage": "17.85",
+      "current_value": "21,109,750,000",
+      "current_percentage": "83.65",
+      "changes_value": "+16,605,550,000",
+      "changes_percentage": "+65.80",
+      "price_formatted": "1,100",
+      "broker_code": "",
+      "badges": []
+    },
+    {
+      "name": "RAJAWALI KAPITAL EMAS",
+      "date": "2026-06-23",
+      "action_type": "buy",
+      "nationality": "local",
+      "previous_value": "15,270,286,000",
+      "previous_percentage": "60.51",
+      "current_value": "21,109,750,000",
+      "current_percentage": "83.65",
+      "changes_value": "+5,839,464,000",
+      "changes_percentage": "+23.14",
+      "price_formatted": "0",
+      "broker_code": "",
+      "badges": []
+    },
+    {
+      "name": "RAJAWALI KAPITAL EMAS",
+      "date": "2026-06-23",
+      "action_type": "buy",
+      "nationality": "local",
+      "previous_value": "6,208,750,000",
+      "previous_percentage": "24.60",
+      "current_value": "15,270,286,000",
+      "current_percentage": "60.51",
+      "changes_value": "+9,061,536,000",
+      "changes_percentage": "+35.91",
+      "price_formatted": "0",
+      "broker_code": "",
+      "badges": []
+    },
+    {
+      "name": "RAJAWALI KAPITAL EMAS",
+      "date": "2026-06-23",
+      "action_type": "buy",
+      "nationality": "local",
+      "previous_value": "4,504,200,000",
+      "previous_percentage": "17.85",
+      "current_value": "6,208,750,000",
+      "current_percentage": "24.60",
+      "changes_value": "+1,704,550,000",
+      "changes_percentage": "+6.75",
+      "price_formatted": "0",
+      "broker_code": "",
+      "badges": []
+    },
+    {
+      "name": "RAJAWALI KAPITAL EMAS",
+      "date": "2026-06-11",
+      "action_type": "transfer",
+      "nationality": "local",
+      "previous_value": "4,754,200,000",
+      "previous_percentage": "18.84",
+      "current_value": "4,504,200,000",
+      "current_percentage": "17.85",
+      "changes_value": "-250,000,000",
+      "changes_percentage": "-0.99",
+      "price_formatted": "0",
+      "broker_code": "YU",
+      "badges": []
+    },
+    {
+      "name": "RAJAWALI KAPITAL EMAS",
+      "date": "2026-06-11",
+      "action_type": "transfer",
+      "nationality": "local",
+      "previous_value": "4,504,200,000",
+      "previous_percentage": "17.85",
+      "current_value": "4,754,200,000",
+      "current_percentage": "18.84",
+      "changes_value": "+250,000,000",
+      "changes_percentage": "+0.99",
+      "price_formatted": "0",
+      "broker_code": "AR",
+      "badges": []
+    },
+    {
+      "name": "RUDY SUHENDRA",
+      "date": "2026-06-04",
+      "action_type": "buy",
+      "nationality": "local",
+      "previous_value": "27,000,000",
+      "previous_percentage": "0.11",
+      "current_value": "28,500,000",
+      "current_percentage": "0.11",
+      "changes_value": "+1,500,000",
+      "changes_percentage": "+0.0059",
+      "price_formatted": "1,036",
+      "broker_code": "",
+      "badges": [
+        "DIREKTUR"
+      ]
+    },
+    {
+      "name": "RAJAWALI KAPITAL EMAS",
+      "date": "2026-06-03",
+      "action_type": "transfer",
+      "nationality": "local",
+      "previous_value": "4,686,650,000",
+      "previous_percentage": "18.57",
+      "current_value": "4,504,200,000",
+      "current_percentage": "17.85",
+      "changes_value": "-182,450,000",
+      "changes_percentage": "-0.72",
+      "price_formatted": "0",
+      "broker_code": "YU",
+      "badges": []
+    },
+    {
+      "name": "RAJAWALI KAPITAL EMAS",
+      "date": "2026-06-03",
+      "action_type": "transfer",
+      "nationality": "local",
+      "previous_value": "4,504,200,000",
+      "previous_percentage": "17.85",
+      "current_value": "4,686,650,000",
+      "current_percentage": "18.57",
+      "changes_value": "+182,450,000",
+      "changes_percentage": "+0.72",
+      "price_formatted": "0",
+      "broker_code": "AR",
+      "badges": []
+    },
+    {
+      "name": "RAJAWALI CORPORA",
+      "date": "2026-05-07",
+      "action_type": "transfer",
+      "nationality": "local",
+      "previous_value": "16,742,550,000",
+      "previous_percentage": "66.35",
+      "current_value": "16,605,550,000",
+      "current_percentage": "65.80",
+      "changes_value": "-137,000,000",
+      "changes_percentage": "-0.54",
+      "price_formatted": "0",
+      "broker_code": "MG",
+      "badges": [
+        "PENGENDALI"
+      ]
+    },
+    {
+      "name": "RAJAWALI CORPORA",
+      "date": "2026-05-07",
+      "action_type": "transfer",
+      "nationality": "local",
+      "previous_value": "16,605,550,000",
+      "previous_percentage": "65.80",
+      "current_value": "16,742,550,000",
+      "current_percentage": "66.35",
+      "changes_value": "+137,000,000",
+      "changes_percentage": "+0.54",
+      "price_formatted": "0",
+      "broker_code": "YU",
+      "badges": [
+        "PENGENDALI"
+      ]
+    },
+    {
+      "name": "RAJAWALI CORPORA",
+      "date": "2026-04-24",
+      "action_type": "transfer",
+      "nationality": "local",
+      "previous_value": "18,173,100,000",
+      "previous_percentage": "72.02",
+      "current_value": "16,605,550,000",
+      "current_percentage": "65.80",
+      "changes_value": "-1,567,550,000",
+      "changes_percentage": "-6.21",
+      "price_formatted": "0",
+      "broker_code": "AR",
+      "badges": [
+        "PENGENDALI"
+      ]
+    },
+    {
+      "name": "RAJAWALI CORPORA",
+      "date": "2026-04-24",
+      "action_type": "transfer",
+      "nationality": "local",
+      "previous_value": "16,605,550,000",
+      "previous_percentage": "65.80",
+      "current_value": "18,173,100,000",
+      "current_percentage": "72.02",
+      "changes_value": "+1,567,550,000",
+      "changes_percentage": "+6.21",
+      "price_formatted": "0",
+      "broker_code": "YU",
+      "badges": [
+        "PENGENDALI"
+      ]
+    }
+  ]
+}

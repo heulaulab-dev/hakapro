@@ -64,3 +64,30 @@ describe("unknown flags are surfaced, never dropped", () => {
     expect(issues).toContainEqual({ type: "unparseable_date", text: "SCREENER V6" });
   });
 });
+
+describe("why matched — live screener 2026-10-02 (pattern text, arrows, provider glitch)", () => {
+  const live = () => screenerResponseSchema.parse(fixture("screener-2026-10-02"));
+  const match = (symbol: string) => parseStrategyScreen(live()).screen.strategies.flatMap((strategy) => strategy.matches).find((item) => item.symbol === symbol)!;
+
+  test("three strategies with descriptions", () => {
+    const { screen } = parseStrategyScreen(live());
+    expect(screen.strategies.map((strategy) => [strategy.id, strategy.matches.length])).toEqual([["risiko-pantulan", 2], ["konflik-distribusi", 1], ["akumulasi-senyap", 3]]);
+    expect(screen.date).toBe("2026-10-02");
+  });
+
+  test("flags become criteria; the direction arrow and forward-looking stats are never shown", () => {
+    const sapx = match("SAPX");
+    expect(sapx.criteria).toEqual([{ kind: "recognized", key: "historicalEdge", flag: "🧬" }]);
+    expect(sapx.pattern).toBe("Gabungan (Asing + Teknikal)");
+    expect(JSON.stringify(sapx)).not.toMatch(/potensi|WR Event|DD -|⬆/);
+    expect(sapx.notes).toEqual(["jatuh tajam", "teknikal lemah"]);
+    expect(match("WOOD").criteria.map((criterion) => criterion.kind === "recognized" && criterion.key)).toEqual(["distribution", "brokerConcentration", "historicalEdge"]);
+    expect(match("WOOD").pattern).toBe("volume klimaks 5-8x");
+  });
+
+  test("provider text glitch before the flags is reported as noise, not as criteria", () => {
+    const { issues } = parseStrategyScreen(live());
+    expect(match("TINS").criteria.map((criterion) => criterion.kind === "recognized" && criterion.key)).toEqual(["foreignBuying", "quietAccumulation"]);
+    expect(issues).toEqual([{ type: "summary_noise", symbol: "TINS", text: "Tbk.)" }]);
+  });
+});

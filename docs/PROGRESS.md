@@ -191,3 +191,15 @@ The user kept the layout and asked for heulaulab-dashboard's design system:
   - The `.light` theme is a HAKAPRO companion; the reference is dark-only.
   - Heulau Lab brand assets (logo, pink accent, Syne) are not used.
 - **Light mode** now uses the same design language as dark. Every surface effect the components used as a literal (raised and primary shadows, active inset, hover overlays, outline/danger fills, scrims, scrollbars, chevron/checkbox tints) is a theme token in `globals.css`: dashboard values in dark, equivalent soft shadows and overlays in light. ChartCard and InsightCard are built on Panel, so every section shares the same hairline header.
+
+## Real data (arjum, 2026-10-03)
+- The user provided the arjum key; it lives only in the git-ignored `.env.local` (mode 600). Dev runs with `MARKET_DATA_SOURCE=arjum` and Supabase copied from heulatrade.
+- **Live-API fixes**, none of which the old single sample could reveal:
+  - Provider limits (422 above them): insiders ≤15, market-cap ≤50/page, done-details ≤100, history 20–500 rows, accumulation top ≤5. They're centralized in `src/lib/api/provider-limits.ts` and enforced by routes, views, services and the recorder.
+  - The cash-flow report_type is `CASH_FLOW_REPORT` (HeulaTrade sent `CASH_FLOW`, which always failed). It's mapped in ArjumSource.
+  - The provider's 400/422 now map to `INVALID_REQUEST` and are logged, instead of looking like an outage.
+  - History `avg` can be null (SAPX), and a broker-level side can be null (WOOD).
+  - Screener `summary` carries a pattern label plus forward-looking stats after an em dash. The parser keeps flags as criteria, shows the pattern label, splits `note` into observation tags, and never shows the ⬆️/⬇️ arrow, win rate, "potensi" or drawdown (§9.5). Provider glitches like "Tbk.)" are logged as `summary_noise`.
+- **Drift sweep:** 25 symbols (top 20 market cap plus the screener) × 7 endpoints, 175 requests, 0 schema drift.
+- **Recorded fixtures:** `fixtures/arjum/` (73 files, 7 symbols, sanitized, 0 secret matches). Fixture mode prefers them; e2e pins `FIXTURE_DATASET=baseline`. The live screener of 2026-10-02 was added to the baseline for parser tests.
+- **Still not live:** the idx-bei lane (movers, news, disclosures, profile, screener builder) needs `MARKET_API_URL`.

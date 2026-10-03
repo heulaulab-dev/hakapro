@@ -1,0 +1,703 @@
+{
+  "stock_code": "SAPX",
+  "brokers": [
+    {
+      "broker_code": "XC",
+      "broker_name": "AJAIB SEKURITAS ASIA",
+      "bval": 359931000,
+      "bvol": 863100,
+      "bfrq": 317,
+      "sval": 187273400,
+      "svol": 432500,
+      "sfrq": 197,
+      "nval": 172657600,
+      "nvol": 430600
+    },
+    {
+      "broker_code": "KK",
+      "broker_name": "PHILLIP SEKURITAS INDONESIA",
+      "bval": 172936600,
+      "bvol": 384100,
+      "bfrq": 65,
+      "sval": 37064600,
+      "svol": 88800,
+      "sfrq": 27,
+      "nval": 135872000,
+      "nvol": 295300
+    },
+    {
+      "broker_code": "AZ",
+      "broker_name": "SUCOR SEKURITAS",
+      "bval": 110191000,
+      "bvol": 254500,
+      "bfrq": 38,
+      "sval": 22500400,
+      "svol": 48500,
+      "sfrq": 15,
+      "nval": 87690600,
+      "nvol": 206000
+    },
+    {
+      "broker_code": "AG",
+      "broker_name": "KIWOOM SEKURITAS INDONESIA",
+      "bval": 55670000,
+      "bvol": 136200,
+      "bfrq": 33,
+      "sval": 14809400,
+      "svol": 32000,
+      "sfrq": 17,
+      "nval": 40860600,
+      "nvol": 104200
+    },
+    {
+      "broker_code": "YP",
+      "broker_name": "MIRAE ASSET SEKURITAS INDONESIA",
+      "bval": 176566000,
+      "bvol": 406200,
+      "bfrq": 224,
+      "sval": 137237200,
+      "svol": 320900,
+      "sfrq": 187,
+      "nval": 39328800,
+      "nvol": 85300
+    },
+    {
+      "broker_code": "XA",
+      "broker_name": "NH KORINDO SEKURITAS INDONESIA",
+      "bval": 36571800,
+      "bvol": 82800,
+      "bfrq": 59,
+      "sval": 389600,
+      "svol": 900,
+      "sfrq": 4,
+      "nval": 36182200,
+      "nvol": 81900
+    },
+    {
+      "broker_code": "YJ",
+      "broker_name": "LOTUS ANDALAN SEKURITAS",
+      "bval": 55533400,
+      "bvol": 133000,
+      "bfrq": 25,
+      "sval": 24863400,
+      "svol": 60000,
+      "sfrq": 18,
+      "nval": 30670000,
+      "nvol": 73000
+    },
+    {
+      "broker_code": "AK",
+      "broker_name": "UBS SEKURITAS INDONESIA",
+      "bval": 332914800,
+      "bvol": 804300,
+      "bfrq": 96,
+      "sval": 309071400,
+      "svol": 742900,
+      "sfrq": 209,
+      "nval": 23843400,
+      "nvol": 61400
+    },
+    {
+      "broker_code": "YU",
+      "broker_name": "CGS INTERNATIONAL SEKURITAS INDONESIA",
+      "bval": 21687400,
+      "bvol": 51400,
+      "bfrq": 14,
+      "sval": 691800,
+      "svol": 1700,
+      "sfrq": 5,
+      "nval": 20995600,
+      "nvol": 49700
+    },
+    {
+      "broker_code": "MG",
+      "broker_name": "SEMESTA INDOVEST SEKURITAS",
+      "bval": 19056000,
+      "bvol": 44800,
+      "bfrq": 6,
+      "sval": 475200,
+      "svol": 1200,
+      "sfrq": 2,
+      "nval": 18580800,
+      "nvol": 43600
+    },
+    {
+      "broker_code": "DR",
+      "broker_name": "RHB SEKURITAS INDONESIA",
+      "bval": 18293000,
+      "bvol": 42500,
+      "bfrq": 15,
+      "sval": 3319400,
+      "svol": 8000,
+      "sfrq": 4,
+      "nval": 14973600,
+      "nvol": 34500
+    },
+    {
+      "broker_code": "CP",
+      "broker_name": "KB VALBURY SEKURITAS",
+      "bval": 15142800,
+      "bvol": 33800,
+      "bfrq": 13,
+      "sval": 4722000,
+      "svol": 10200,
+      "sfrq": 5,
+      "nval": 10420800,
+      "nvol": 23600
+    },
+    {
+      "broker_code": "CC",
+      "broker_name": "MANDIRI SEKURITAS",
+      "bval": 454132200,
+      "bvol": 1065400,
+      "bfrq": 368,
+      "sval": 446028600,
+      "svol": 1060100,
+      "sfrq": 328,
+      "nval": 8103600,
+      "nvol": 5300
+    },
+    {
+      "broker_code": "YB",
+      "broker_name": "YAKIN BERTUMBUH SEKURITAS",
+      "bval": 7700000,
+      "bvol": 17000,
+      "bfrq": 4,
+      "sval": 4100000,
+      "svol": 10000,
+      "sfrq": 9,
+      "nval": 3600000,
+      "nvol": 7000
+    },
+    {
+      "broker_code": "BQ",
+      "broker_name": "KOREA INVESTMENT AND SEKURITAS INDONESIA",
+      "bval": 22934000,
+      "bvol": 51500,
+      "bfrq": 23,
+      "sval": 20765400,
+      "svol": 47900,
+      "sfrq": 21,
+      "nval": 2168600,
+      "nvol": 3600
+    },
+    {
+      "broker_code": "MI",
+      "broker_name": "VICTORIA SEKURITAS INDONESIA",
+      "bval": 2085000,
+      "bvol": 5000,
+      "bfrq": 4,
+      "sval": 0,
+      "svol": 0,
+      "sfrq": 0,
+      "nval": 2085000,
+      "nvol": 5000
+    },
+    {
+      "broker_code": "DH",
+      "broker_name": "SINARMAS SEKURITAS",
+      "bval": 4889400,
+      "bvol": 11700,
+      "bfrq": 9,
+      "sval": 3940000,
+      "svol": 10000,
+      "sfrq": 2,
+      "nval": 949400,
+      "nvol": 1700
+    },
+    {
+      "broker_code": "EP",
+      "broker_name": "MNC SEKURITAS",
+      "bval": 1248000,
+      "bvol": 3000,
+      "bfrq": 2,
+      "sval": 450000,
+      "svol": 1000,
+      "sfrq": 1,
+      "nval": 798000,
+      "nvol": 2000
+    },
+    {
+      "broker_code": "LS",
+      "broker_name": "RELIANCE SEKURITAS INDONESIA TBK.",
+      "bval": 612000,
+      "bvol": 1500,
+      "bfrq": 2,
+      "sval": 0,
+      "svol": 0,
+      "sfrq": 0,
+      "nval": 612000,
+      "nvol": 1500
+    },
+    {
+      "broker_code": "LG",
+      "broker_name": "TRIMEGAH SEKURITAS INDONESIA TBK.",
+      "bval": 3215000,
+      "bvol": 7100,
+      "bfrq": 7,
+      "sval": 2718600,
+      "svol": 6900,
+      "sfrq": 3,
+      "nval": 496400,
+      "nvol": 200
+    }
+  ],
+  "broker_levels": [
+    {
+      "buy": {
+        "broker_code": "XL",
+        "broker_name": "STOCKBIT SEKURITAS DIGITAL",
+        "bval": 1215193000,
+        "bvol": 2857600,
+        "bfrq": 1474,
+        "bavg": 425.24951007838746
+      },
+      "sell": {
+        "broker_code": "XL",
+        "broker_name": "STOCKBIT SEKURITAS DIGITAL",
+        "sval": 1714731800,
+        "svol": 4030700,
+        "sfrq": 1724,
+        "savg": 425.4178678641427
+      }
+    },
+    {
+      "buy": {
+        "broker_code": "CC",
+        "broker_name": "MANDIRI SEKURITAS",
+        "bval": 454132200,
+        "bvol": 1065400,
+        "bfrq": 368,
+        "bavg": 426.2551154495964
+      },
+      "sell": {
+        "broker_code": "CC",
+        "broker_name": "MANDIRI SEKURITAS",
+        "sval": 446028600,
+        "svol": 1060100,
+        "sfrq": 328,
+        "savg": 420.742005471182
+      }
+    },
+    {
+      "buy": {
+        "broker_code": "XC",
+        "broker_name": "AJAIB SEKURITAS ASIA",
+        "bval": 359931000,
+        "bvol": 863100,
+        "bfrq": 317,
+        "bavg": 417.02120264164057
+      },
+      "sell": {
+        "broker_code": "AK",
+        "broker_name": "UBS SEKURITAS INDONESIA",
+        "sval": 309071400,
+        "svol": 742900,
+        "sfrq": 209,
+        "savg": 416.0336519046978
+      }
+    },
+    {
+      "buy": {
+        "broker_code": "AK",
+        "broker_name": "UBS SEKURITAS INDONESIA",
+        "bval": 332914800,
+        "bvol": 804300,
+        "bfrq": 96,
+        "bavg": 413.91868705706827
+      },
+      "sell": {
+        "broker_code": "XC",
+        "broker_name": "AJAIB SEKURITAS ASIA",
+        "sval": 187273400,
+        "svol": 432500,
+        "sfrq": 197,
+        "savg": 433.0020809248555
+      }
+    },
+    {
+      "buy": {
+        "broker_code": "YP",
+        "broker_name": "MIRAE ASSET SEKURITAS INDONESIA",
+        "bval": 176566000,
+        "bvol": 406200,
+        "bfrq": 224,
+        "bavg": 434.67749876907925
+      },
+      "sell": {
+        "broker_code": "YP",
+        "broker_name": "MIRAE ASSET SEKURITAS INDONESIA",
+        "sval": 137237200,
+        "svol": 320900,
+        "sfrq": 187,
+        "savg": 427.6634465565597
+      }
+    },
+    {
+      "buy": {
+        "broker_code": "KK",
+        "broker_name": "PHILLIP SEKURITAS INDONESIA",
+        "bval": 172936600,
+        "bvol": 384100,
+        "bfrq": 65,
+        "bavg": 450.2384795626139
+      },
+      "sell": {
+        "broker_code": "PD",
+        "broker_name": "INDO PREMIER SEKURITAS",
+        "sval": 116191200,
+        "svol": 270000,
+        "sfrq": 173,
+        "savg": 430.3377777777778
+      }
+    },
+    {
+      "buy": {
+        "broker_code": "AZ",
+        "broker_name": "SUCOR SEKURITAS",
+        "bval": 110191000,
+        "bvol": 254500,
+        "bfrq": 38,
+        "bavg": 432.9705304518664
+      },
+      "sell": {
+        "broker_code": "OD",
+        "broker_name": "BRI DANAREKSA SEKURITAS",
+        "sval": 113373400,
+        "svol": 262800,
+        "sfrq": 72,
+        "savg": 431.4056316590563
+      }
+    },
+    {
+      "buy": {
+        "broker_code": "PD",
+        "broker_name": "INDO PREMIER SEKURITAS",
+        "bval": 107654200,
+        "bvol": 250900,
+        "bfrq": 182,
+        "bavg": 429.0721402949382
+      },
+      "sell": {
+        "broker_code": "HP",
+        "broker_name": "HENAN PUTIHRAI SEKURITAS",
+        "sval": 93069400,
+        "svol": 222700,
+        "sfrq": 71,
+        "savg": 417.91378536147283
+      }
+    },
+    {
+      "buy": {
+        "broker_code": "OD",
+        "broker_name": "BRI DANAREKSA SEKURITAS",
+        "bval": 76020000,
+        "bvol": 180500,
+        "bfrq": 66,
+        "bavg": 421.1634349030471
+      },
+      "sell": {
+        "broker_code": "SQ",
+        "broker_name": "BCA SEKURITAS",
+        "sval": 53909400,
+        "svol": 120800,
+        "sfrq": 23,
+        "savg": 446.2698675496689
+      }
+    },
+    {
+      "buy": {
+        "broker_code": "AG",
+        "broker_name": "KIWOOM SEKURITAS INDONESIA",
+        "bval": 55670000,
+        "bvol": 136200,
+        "bfrq": 33,
+        "bavg": 408.7371512481645
+      },
+      "sell": {
+        "broker_code": "KK",
+        "broker_name": "PHILLIP SEKURITAS INDONESIA",
+        "sval": 37064600,
+        "svol": 88800,
+        "sfrq": 27,
+        "savg": 417.39414414414415
+      }
+    },
+    {
+      "buy": {
+        "broker_code": "YJ",
+        "broker_name": "LOTUS ANDALAN SEKURITAS",
+        "bval": 55533400,
+        "bvol": 133000,
+        "bfrq": 25,
+        "bavg": 417.5443609022556
+      },
+      "sell": {
+        "broker_code": "YJ",
+        "broker_name": "LOTUS ANDALAN SEKURITAS",
+        "sval": 24863400,
+        "svol": 60000,
+        "sfrq": 18,
+        "savg": 414.39
+      }
+    },
+    {
+      "buy": {
+        "broker_code": "SQ",
+        "broker_name": "BCA SEKURITAS",
+        "bval": 41613200,
+        "bvol": 96500,
+        "bfrq": 41,
+        "bavg": 431.22487046632125
+      },
+      "sell": {
+        "broker_code": "NI",
+        "broker_name": "BNI SEKURITAS",
+        "sval": 24799000,
+        "svol": 59500,
+        "sfrq": 36,
+        "savg": 416.78991596638656
+      }
+    },
+    {
+      "buy": {
+        "broker_code": "HP",
+        "broker_name": "HENAN PUTIHRAI SEKURITAS",
+        "bval": 39000000,
+        "bvol": 100000,
+        "bfrq": 2,
+        "bavg": 390
+      },
+      "sell": {
+        "broker_code": "AZ",
+        "broker_name": "SUCOR SEKURITAS",
+        "sval": 22500400,
+        "svol": 48500,
+        "sfrq": 15,
+        "savg": 463.9257731958763
+      }
+    },
+    {
+      "buy": {
+        "broker_code": "XA",
+        "broker_name": "NH KORINDO SEKURITAS INDONESIA",
+        "bval": 36571800,
+        "bvol": 82800,
+        "bfrq": 59,
+        "bavg": 441.68840579710144
+      },
+      "sell": {
+        "broker_code": "BQ",
+        "broker_name": "KOREA INVESTMENT AND SEKURITAS INDONESIA",
+        "sval": 20765400,
+        "svol": 47900,
+        "sfrq": 21,
+        "savg": 433.51565762004174
+      }
+    },
+    {
+      "buy": {
+        "broker_code": "BQ",
+        "broker_name": "KOREA INVESTMENT AND SEKURITAS INDONESIA",
+        "bval": 22934000,
+        "bvol": 51500,
+        "bfrq": 23,
+        "bavg": 445.3203883495146
+      },
+      "sell": {
+        "broker_code": "AO",
+        "broker_name": "ERDIKHA ELIT SEKURITAS",
+        "sval": 16300000,
+        "svol": 40000,
+        "sfrq": 6,
+        "savg": 407.5
+      }
+    },
+    {
+      "buy": {
+        "broker_code": "YU",
+        "broker_name": "CGS INTERNATIONAL SEKURITAS INDONESIA",
+        "bval": 21687400,
+        "bvol": 51400,
+        "bfrq": 14,
+        "bavg": 421.9338521400778
+      },
+      "sell": {
+        "broker_code": "AG",
+        "broker_name": "KIWOOM SEKURITAS INDONESIA",
+        "sval": 14809400,
+        "svol": 32000,
+        "sfrq": 17,
+        "savg": 462.79375
+      }
+    },
+    {
+      "buy": {
+        "broker_code": "MG",
+        "broker_name": "SEMESTA INDOVEST SEKURITAS",
+        "bval": 19056000,
+        "bvol": 44800,
+        "bfrq": 6,
+        "bavg": 425.35714285714283
+      },
+      "sell": {
+        "broker_code": "AT",
+        "broker_name": "PHINTRACO SEKURITAS",
+        "sval": 10997800,
+        "svol": 25700,
+        "sfrq": 8,
+        "savg": 427.92996108949416
+      }
+    },
+    {
+      "buy": {
+        "broker_code": "DR",
+        "broker_name": "RHB SEKURITAS INDONESIA",
+        "bval": 18293000,
+        "bvol": 42500,
+        "bfrq": 15,
+        "bavg": 430.4235294117647
+      },
+      "sell": {
+        "broker_code": "KI",
+        "broker_name": "CIPTADANA SEKURITAS ASIA",
+        "sval": 6459600,
+        "svol": 14400,
+        "sfrq": 3,
+        "savg": 448.5833333333333
+      }
+    },
+    {
+      "buy": {
+        "broker_code": "CP",
+        "broker_name": "KB VALBURY SEKURITAS",
+        "bval": 15142800,
+        "bvol": 33800,
+        "bfrq": 13,
+        "bavg": 448.0118343195266
+      },
+      "sell": {
+        "broker_code": "GR",
+        "broker_name": "PANIN SEKURITAS TBK.",
+        "sval": 5581000,
+        "svol": 13800,
+        "sfrq": 8,
+        "savg": 404.42028985507244
+      }
+    },
+    {
+      "buy": {
+        "broker_code": "NI",
+        "broker_name": "BNI SEKURITAS",
+        "bval": 12849600,
+        "bvol": 30700,
+        "bfrq": 25,
+        "bavg": 418.55374592833874
+      },
+      "sell": {
+        "broker_code": "CP",
+        "broker_name": "KB VALBURY SEKURITAS",
+        "sval": 4722000,
+        "svol": 10200,
+        "sfrq": 5,
+        "savg": 462.94117647058823
+      }
+    },
+    {
+      "buy": {
+        "broker_code": "YB",
+        "broker_name": "YAKIN BERTUMBUH SEKURITAS",
+        "bval": 7700000,
+        "bvol": 17000,
+        "bfrq": 4,
+        "bavg": 452.94117647058823
+      },
+      "sell": {
+        "broker_code": "YB",
+        "broker_name": "YAKIN BERTUMBUH SEKURITAS",
+        "sval": 4100000,
+        "svol": 10000,
+        "sfrq": 9,
+        "savg": 410
+      }
+    },
+    {
+      "buy": {
+        "broker_code": "AT",
+        "broker_name": "PHINTRACO SEKURITAS",
+        "bval": 6315200,
+        "bvol": 14700,
+        "bfrq": 6,
+        "bavg": 429.6054421768707
+      },
+      "sell": {
+        "broker_code": "DH",
+        "broker_name": "SINARMAS SEKURITAS",
+        "sval": 3940000,
+        "svol": 10000,
+        "sfrq": 2,
+        "savg": 394
+      }
+    },
+    {
+      "buy": {
+        "broker_code": "KI",
+        "broker_name": "CIPTADANA SEKURITAS ASIA",
+        "bval": 5040600,
+        "bvol": 12200,
+        "bfrq": 45,
+        "bavg": 413.1639344262295
+      },
+      "sell": {
+        "broker_code": "DR",
+        "broker_name": "RHB SEKURITAS INDONESIA",
+        "sval": 3319400,
+        "svol": 8000,
+        "sfrq": 4,
+        "savg": 414.925
+      }
+    },
+    {
+      "buy": {
+        "broker_code": "DH",
+        "broker_name": "SINARMAS SEKURITAS",
+        "bval": 4889400,
+        "bvol": 11700,
+        "bfrq": 9,
+        "bavg": 417.8974358974359
+      },
+      "sell": {
+        "broker_code": "LG",
+        "broker_name": "TRIMEGAH SEKURITAS INDONESIA TBK.",
+        "sval": 2718600,
+        "svol": 6900,
+        "sfrq": 3,
+        "savg": 394
+      }
+    },
+    {
+      "buy": {
+        "broker_code": "LG",
+        "broker_name": "TRIMEGAH SEKURITAS INDONESIA TBK.",
+        "bval": 3215000,
+        "bvol": 7100,
+        "bfrq": 7,
+        "bavg": 452.8169014084507
+      },
+      "sell": {
+        "broker_code": "AI",
+        "broker_name": "KAY HIAN SEKURITAS",
+        "sval": 924000,
+        "svol": 2000,
+        "sfrq": 2,
+        "savg": 462
+      }
+    }
+  ],
+  "broker_start_date": "2026-10-02",
+  "broker_end_date": "2026-10-02",
+  "broker_date_min": "2020-01-14",
+  "broker_date_max": "2026-10-02",
+  "broker_net": false,
+  "flow": "all"
+}

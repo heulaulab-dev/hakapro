@@ -15,7 +15,13 @@ export const RECORDED_DIR = "fixtures/arjum";
 export const BASELINE_DIR = "fixtures/arjum-baseline";
 
 /** Prefers a recorded dataset when one exists, otherwise the frozen baseline. */
-export function defaultFixtureDir(cwd = process.cwd()): string {
+/**
+ * FIXTURE_DATASET=baseline pins the frozen samples (e2e uses this so assertions stay stable);
+ * =recorded requires a recording; unset prefers a recording when one exists.
+ */
+export function defaultFixtureDir(cwd = process.cwd(), choice = process.env.FIXTURE_DATASET): string {
+  if (choice === "baseline") return join(cwd, BASELINE_DIR);
+  if (choice === "recorded") return join(cwd, RECORDED_DIR);
   return existsSync(join(cwd, RECORDED_DIR, "manifest.json")) ? join(cwd, RECORDED_DIR) : join(cwd, BASELINE_DIR);
 }
 

@@ -6,6 +6,7 @@ export const BASELINE_DIR = fileURLToPath(new URL("../../fixtures/arjum-baseline
 
 const PATHS: Record<string, string> = {
   screener: "global/screener.json",
+  "screener-2026-10-02": "global/screener-2026-10-02.json",
   "market-cap": "global/market-cap.json",
   health: "global/health.json",
   search: "search/_bank.json",

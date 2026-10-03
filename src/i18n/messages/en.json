@@ -229,7 +229,8 @@
     "marketCondition": "Market condition per provider: {label}, average change {avg}.",
     "universe": "{covered} stocks covered, {liquid} liquid, {skipped} skipped.",
     "screenTitle": "Strategy results",
-    "insightTitle": "Screener summary"
+    "insightTitle": "Screener summary",
+    "pattern": "Pattern"
   },
   "insiders": {
     "title": "Insider transactions",
