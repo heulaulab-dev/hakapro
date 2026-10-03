@@ -22,7 +22,7 @@ function SheetOverlay({ className, ...props }: React.ComponentProps<typeof Sheet
     <SheetPrimitive.Overlay
       data-slot="sheet-overlay"
       className={cn(
-        "fixed inset-0 z-50 bg-black/60 backdrop-blur-[6px] duration-350 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:duration-250 data-[state=open]:animate-in data-[state=open]:fade-in-0",
+        "fixed inset-0 z-50 bg-(--scrim) backdrop-blur-[6px] duration-350 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:duration-250 data-[state=open]:animate-in data-[state=open]:fade-in-0",
         className,
       )}
       {...props}
@@ -89,7 +89,7 @@ function SheetHeader({
       <div className="flex items-center gap-1">
         {actions}
         <SheetPrimitive.Close
-          className="-mr-1 inline-flex size-6 items-center justify-center rounded-full text-subtle outline-none transition-colors duration-150 hover:bg-white/6 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60"
+          className="-mr-1 inline-flex size-6 items-center justify-center rounded-full text-subtle outline-none transition-colors duration-150 hover:bg-(--overlay-hover) hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60"
           aria-label="Close"
         >
           <X className="size-3.5" />

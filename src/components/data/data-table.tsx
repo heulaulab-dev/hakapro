@@ -121,7 +121,7 @@ export function DataTable<T>({ columns, data, meta, caption, getRowId, initialSo
             {items.map((item) => {
               const row = rows[item.index];
               return (
-                <tr key={row.id} ref={virtualizer.measureElement} data-index={item.index} aria-rowindex={item.index + 2} className="h-row transition-colors hover:bg-white/4">
+                <tr key={row.id} ref={virtualizer.measureElement} data-index={item.index} aria-rowindex={item.index + 2} className="h-row transition-colors hover:bg-(--overlay-soft)">
                   {row.getVisibleCells().map((cell) => (
                     <td
                       key={cell.id}

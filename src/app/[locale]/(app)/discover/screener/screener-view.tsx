@@ -122,7 +122,7 @@ export function ScreenerView({ viewer }: { viewer: ViewerSummary }) {
               <ul className="flex flex-col">
                 {saved.data?.map((screen) => (
                   <li key={screen.id} className="flex items-center gap-1">
-                    <button type="button" className="lead-style min-w-0 flex-1 truncate rounded-lg px-2 py-2 text-left transition-colors hover:bg-white/4" onClick={() => { setDraft(screen.conditions); void setApplied(screen.conditions); }}>{screen.name}</button>
+                    <button type="button" className="lead-style min-w-0 flex-1 truncate rounded-lg px-2 py-2 text-left transition-colors hover:bg-(--overlay-soft)" onClick={() => { setDraft(screen.conditions); void setApplied(screen.conditions); }}>{screen.name}</button>
                     <Button variant="ghost" size="icon" aria-label={`${t("delete")} ${screen.name}`} onClick={() => remove.mutate(screen.id)}><Trash2 /></Button>
                   </li>
                 ))}

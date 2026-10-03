@@ -49,17 +49,17 @@ export function MobileNav({ theme, density }: { theme: Theme; density: Density }
             <section>
               <h2 className="eyebrow-style mb-2 font-medium text-faint">{t("nav.discover")}</h2>
               {discover.children!.map((item) => (
-                <Link key={item.key} href={item.href} onClick={() => setMoreOpen(false)} className="lead-style flex h-11 items-center gap-3 rounded-lg px-2 transition-colors hover:bg-white/4">
+                <Link key={item.key} href={item.href} onClick={() => setMoreOpen(false)} className="lead-style flex h-11 items-center gap-3 rounded-lg px-2 transition-colors hover:bg-(--overlay-soft)">
                   <item.icon className="size-3.5 text-subtle" />
                   {t(`nav.${item.key}`)}
                 </Link>
               ))}
-              <Link href="/news" onClick={() => setMoreOpen(false)} className="lead-style flex h-11 items-center gap-3 rounded-lg px-2 transition-colors hover:bg-white/4">
+              <Link href="/news" onClick={() => setMoreOpen(false)} className="lead-style flex h-11 items-center gap-3 rounded-lg px-2 transition-colors hover:bg-(--overlay-soft)">
                 <news.icon className="size-3.5 text-subtle" />
                 {t("nav.news")}
               </Link>
               {SECONDARY.map((item) => (
-                <Link key={item.key} href={item.href} onClick={() => setMoreOpen(false)} className="lead-style flex h-11 items-center gap-3 rounded-lg px-2 transition-colors hover:bg-white/4">
+                <Link key={item.key} href={item.href} onClick={() => setMoreOpen(false)} className="lead-style flex h-11 items-center gap-3 rounded-lg px-2 transition-colors hover:bg-(--overlay-soft)">
                   <item.icon className="size-3.5 text-subtle" />
                   {t(`nav.${item.key}`)}
                 </Link>

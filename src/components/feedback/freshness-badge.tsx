@@ -40,7 +40,7 @@ export function FreshnessBadge({ freshness, asOf, period, source, className }: F
           aria-label={t("ariaLabel", { state: label })}
           data-freshness={freshness}
           className={cn(
-            "caption-style inline-flex h-[20px] shrink-0 items-center gap-1 rounded-full border border-(--tag-neutral-border) bg-muted py-[3px] pr-[6px] pl-[5px] whitespace-nowrap outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
+            "caption-style inline-flex h-[20px] shrink-0 items-center gap-1 rounded-full normal-case tracking-normal border border-(--tag-neutral-border) bg-muted py-[3px] pr-[6px] pl-[5px] whitespace-nowrap outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
             style.text,
             className,
           )}

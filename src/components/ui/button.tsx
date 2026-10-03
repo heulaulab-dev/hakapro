@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils"
 
 // Shadows and sizes copied from the reference CRM's buttons.
 const raised =
-  "shadow-[0px_0px_0px_1px_rgba(0,0,0,0.4),inset_0px_1px_0px_0px_rgba(255,255,255,0.1),inset_0px_0px_0px_1px_rgba(255,255,255,0.06)]"
+  "shadow-(--shadow-raised)"
 
 const buttonVariants = cva(
   "inline-flex shrink-0 cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap rounded-full font-medium leading-none outline-none select-none transition-[background-color,color,box-shadow] duration-150 ease-power3-out focus-visible:ring-2 focus-visible:ring-ring/60 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
@@ -14,13 +14,13 @@ const buttonVariants = cva(
       variant: {
         secondary: `bg-secondary text-secondary-foreground ${raised} hover:bg-muted data-[state=open]:bg-muted data-[active=true]:bg-muted`,
         primary:
-          "bg-primary text-primary-foreground shadow-[0px_4px_4px_0px_rgba(42,42,42,0.32),0px_0px_0px_1px_#0e0e0e,inset_0px_4px_6px_0px_rgba(255,255,255,0.2),inset_0px_0px_0px_1px_rgba(255,255,255,0.15),inset_0px_-8px_14px_0px_rgba(0,0,0,0.15)] hover:bg-[#4b30ff]",
-        muted: `bg-muted text-foreground ${raised} hover:bg-[#333333]`,
-        outline: "bg-[#232323] text-foreground shadow-[0px_0px_0px_1px_#333333] hover:bg-muted",
-        ghost: "text-foreground hover:bg-white/6 hover:text-foreground data-[state=open]:bg-white/6",
-        subtle: "text-subtle hover:bg-white/6 hover:text-foreground data-[state=open]:bg-white/6",
+          "bg-primary text-primary-foreground shadow-(--shadow-primary) hover:bg-(--primary-hover)",
+        muted: `bg-muted text-foreground ${raised} hover:bg-(--muted-hover)`,
+        outline: "bg-(--outline-bg) text-foreground shadow-[0px_0px_0px_1px_var(--outline-ring)] hover:bg-muted",
+        ghost: "text-foreground hover:bg-(--overlay-hover) hover:text-foreground data-[state=open]:bg-(--overlay-hover)",
+        subtle: "text-subtle hover:bg-(--overlay-hover) hover:text-foreground data-[state=open]:bg-(--overlay-hover)",
         danger:
-          "bg-(--tag-red-bg) text-(--tag-red-text) shadow-[0px_0px_0px_1px_var(--tag-red-border)] hover:bg-[#4a2224]",
+          "bg-(--tag-red-bg) text-(--tag-red-text) shadow-[0px_0px_0px_1px_var(--tag-red-border)] hover:bg-(--danger-hover)",
         link: "rounded-none p-0 text-foreground underline decoration-from-font underline-offset-2 hover:text-soft",
       },
       size: {

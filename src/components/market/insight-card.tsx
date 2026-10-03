@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type { StatusTone } from "@/components/feedback/status-badge";
-import { SectionHeader } from "@/components/layout/section-header";
+import { Panel } from "@/components/layout/panel";
 import type { FreshnessMeta } from "@/lib/freshness";
 import { cn } from "@/lib/utils";
 
@@ -21,9 +21,8 @@ export function InsightCard({ title, description, observations, meta, footer, cl
   className?: string;
 }) {
   return (
-    <section className={cn("flex flex-col gap-3 rounded-xl border border-border p-4", className)}>
-      <SectionHeader as="h3" title={title} description={description} meta={meta} />
-      <ul className="flex flex-col gap-2">
+    <Panel className={className} title={title} meta={meta} description={description}>
+      <ul className="flex flex-col gap-2.5">
         {observations.map((observation) => (
           <li key={observation.id} className="p-style flex items-start gap-2">
             <span aria-hidden className={cn("mt-1.5 size-1.5 shrink-0 rounded-full", DOT[observation.tone ?? "neutral"])} />
@@ -31,7 +30,7 @@ export function InsightCard({ title, description, observations, meta, footer, cl
           </li>
         ))}
       </ul>
-      {footer && <div className="caption-style border-t border-border px-4 py-3 text-subtle">{footer}</div>}
-    </section>
+      {footer && <div className="caption-style border-t border-border pt-3 text-subtle">{footer}</div>}
+    </Panel>
   );
 }

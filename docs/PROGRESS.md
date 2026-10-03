@@ -190,3 +190,4 @@ The user kept the layout and asked for heulaulab-dashboard's design system:
   - Chart mark colors keep the validated up/down and categorical steps, because the reference's green/red and pastel tag colors fail the colorblind/lightness checks for marks.
   - The `.light` theme is a HAKAPRO companion; the reference is dark-only.
   - Heulau Lab brand assets (logo, pink accent, Syne) are not used.
+- **Light mode** now uses the same design language as dark. Every surface effect the components used as a literal (raised and primary shadows, active inset, hover overlays, outline/danger fills, scrims, scrollbars, chevron/checkbox tints) is a theme token in `globals.css`: dashboard values in dark, equivalent soft shadows and overlays in light. ChartCard and InsightCard are built on Panel, so every section shares the same hairline header.

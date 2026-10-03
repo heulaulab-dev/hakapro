@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils"
 type Compat = { variant?: string; size?: string }
 
 const raised =
-  "shadow-[0px_0px_0px_1px_rgba(0,0,0,0.4),inset_0px_1px_0px_0px_rgba(255,255,255,0.1),inset_0px_0px_0px_1px_rgba(255,255,255,0.06)]"
+  "shadow-(--shadow-raised)"
 
 function ToggleGroup({ className, variant: _variant, size: _size, ...props }: React.ComponentProps<typeof ToggleGroupPrimitive.Root> & Compat) {
   return (
@@ -28,7 +28,7 @@ function ToggleGroupItem({ className, variant: _variant, size: _size, ...props }
     <ToggleGroupPrimitive.Item
       data-slot="toggle-group-item"
       className={cn(
-        "cursor-pointer rounded-full px-2.5 py-[6px] text-[12px] leading-none text-subtle outline-none transition-[background-color,color] duration-150 ease-power3-out hover:text-soft focus-visible:ring-2 focus-visible:ring-ring/60 data-[state=on]:bg-muted data-[state=on]:text-foreground data-[state=on]:shadow-[inset_0px_1px_0px_0px_rgba(255,255,255,0.08)]",
+        "cursor-pointer rounded-full px-2.5 py-[6px] text-[12px] leading-none text-subtle outline-none transition-[background-color,color] duration-150 ease-power3-out hover:text-soft focus-visible:ring-2 focus-visible:ring-ring/60 data-[state=on]:bg-muted data-[state=on]:text-foreground data-[state=on]:shadow-(--shadow-active)",
         className,
       )}
       {...props}

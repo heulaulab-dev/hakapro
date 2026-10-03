@@ -96,7 +96,7 @@
   --radius-2xl: 1rem;
   --radius-3xl: 1.5rem;
 
-  --shadow-overlay: 0px 16px 40px 0px #00000080, 0px 0px 0px 1px #0e0e0e;
+  --shadow-overlay: var(--shadow-overlay-token);
 
   --ease-power1-in: cubic-bezier(0.11, 0, 0.5, 0);
   --ease-power1-out: cubic-bezier(0.5, 1, 0.89, 1);
@@ -166,6 +166,26 @@
   --status: #16c89e;
   --sidebar-width: 254px;
 
+  /* Surface effects (dashboard values). Components use these instead of literal rgba/hex. */
+  --shadow-raised: 0px 0px 0px 1px rgba(0, 0, 0, 0.4), inset 0px 1px 0px 0px rgba(255, 255, 255, 0.1), inset 0px 0px 0px 1px rgba(255, 255, 255, 0.06);
+  --shadow-primary: 0px 4px 4px 0px rgba(42, 42, 42, 0.32), 0px 0px 0px 1px #0e0e0e, inset 0px 4px 6px 0px rgba(255, 255, 255, 0.2), inset 0px 0px 0px 1px rgba(255, 255, 255, 0.15), inset 0px -8px 14px 0px rgba(0, 0, 0, 0.15);
+  --shadow-active: inset 0px 1px 0px 0px rgba(255, 255, 255, 0.08);
+  --shadow-mark: 0px 0px 0px 1px var(--border), 0px 4px 4px 0px rgba(15, 15, 15, 0.24);
+  --shadow-overlay-token: 0px 16px 40px 0px #00000080, 0px 0px 0px 1px #0e0e0e;
+  --overlay-hover: rgba(255, 255, 255, 0.06);
+  --overlay-soft: rgba(255, 255, 255, 0.04);
+  --overlay-strong: rgba(255, 255, 255, 0.08);
+  --muted-hover: #333333;
+  --outline-bg: #232323;
+  --outline-ring: #333333;
+  --primary-hover: #4b30ff;
+  --danger-hover: #4a2224;
+  --scrim: rgba(0, 0, 0, 0.6);
+  --scrollbar: rgba(255, 255, 255, 0.2);
+  --scrollbar-hover: rgba(255, 255, 255, 0.35);
+  --chevron: #898b8d;
+  --checkbox-off: #323232;
+
   --tag-blue-bg: #1d2b3e;
   --tag-blue-border: #23354c;
   --tag-blue-text: #bfdbfe;
@@ -229,6 +249,25 @@
 /* Companion light theme (same roles, light surfaces). */
 .light {
   color-scheme: light;
+  --shadow-raised: 0px 0px 0px 1px rgba(0, 0, 0, 0.08), 0px 1px 2px 0px rgba(0, 0, 0, 0.06), inset 0px 1px 0px 0px rgba(255, 255, 255, 0.9);
+  --shadow-primary: 0px 2px 4px 0px rgba(65, 36, 251, 0.22), 0px 0px 0px 1px #3a1fe0, inset 0px 4px 6px 0px rgba(255, 255, 255, 0.2), inset 0px 0px 0px 1px rgba(255, 255, 255, 0.15), inset 0px -8px 14px 0px rgba(0, 0, 0, 0.12);
+  --shadow-active: 0px 0px 0px 1px rgba(0, 0, 0, 0.06), 0px 1px 2px 0px rgba(0, 0, 0, 0.08);
+  --shadow-mark: 0px 0px 0px 1px var(--border), 0px 2px 4px 0px rgba(0, 0, 0, 0.06);
+  --shadow-overlay-token: 0px 16px 40px 0px rgba(0, 0, 0, 0.12), 0px 0px 0px 1px rgba(0, 0, 0, 0.08);
+  --overlay-hover: rgba(0, 0, 0, 0.05);
+  --overlay-soft: rgba(0, 0, 0, 0.035);
+  --overlay-strong: rgba(0, 0, 0, 0.07);
+  --muted-hover: #e4e4e7;
+  --outline-bg: #ffffff;
+  --outline-ring: #d4d4d8;
+  --primary-hover: #4b30ff;
+  --danger-hover: #fbdde1;
+  --scrim: rgba(24, 24, 27, 0.35);
+  --scrollbar: rgba(0, 0, 0, 0.2);
+  --scrollbar-hover: rgba(0, 0, 0, 0.35);
+  --chevron: #71717a;
+  --checkbox-off: #d4d4d8;
+
   --background: #f6f6f7;
   --foreground: #161616;
   --card: #ffffff;

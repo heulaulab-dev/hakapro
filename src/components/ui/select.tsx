@@ -36,7 +36,7 @@ function SelectTrigger({
     >
       {children}
       <SelectPrimitive.Icon asChild>
-        <ChevronDown className="size-3 shrink-0 text-[#898b8d] transition-transform duration-200 ease-power3-out group-data-[state=open]:rotate-180" />
+        <ChevronDown className="size-3 shrink-0 text-(--chevron) transition-transform duration-200 ease-power3-out group-data-[state=open]:rotate-180" />
       </SelectPrimitive.Icon>
     </SelectPrimitive.Trigger>
   )
@@ -82,7 +82,7 @@ function SelectItem({ className, children, ...props }: React.ComponentProps<type
     <SelectPrimitive.Item
       data-slot="select-item"
       className={cn(
-        "relative flex cursor-pointer items-center gap-2 rounded-md py-2 pr-2 pl-6 text-[14px] leading-none text-soft outline-none select-none transition-colors duration-150 ease-power3-out data-[highlighted]:bg-white/6 data-[highlighted]:text-foreground data-[state=checked]:text-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+        "relative flex cursor-pointer items-center gap-2 rounded-md py-2 pr-2 pl-6 text-[14px] leading-none text-soft outline-none select-none transition-colors duration-150 ease-power3-out data-[highlighted]:bg-(--overlay-hover) data-[highlighted]:text-foreground data-[state=checked]:text-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
         className,
       )}
       {...props}

@@ -35,8 +35,8 @@ export function Meter({
       aria-valuenow={Math.round(pct)}
       aria-label={label}
       className={cn(
-        "flex items-center gap-[2px] overflow-hidden rounded-[2px] bg-white/8",
-        size === "sm" ? "h-[14px] w-[74px] px-[2px]" : "h-3 w-full border border-white/4 px-px",
+        "flex items-center gap-[2px] overflow-hidden rounded-[2px] bg-(--overlay-strong)",
+        size === "sm" ? "h-[14px] w-[74px] px-[2px]" : "h-3 w-full border border-(--overlay-soft) px-px",
         className,
       )}
     >
@@ -45,7 +45,7 @@ export function Meter({
         const color = !on
           ? size === "sm"
             ? "bg-track"
-            : "bg-white/8"
+            : "bg-(--overlay-strong)"
           : tone === "auto"
             ? i < redEnd
               ? "bg-danger"
