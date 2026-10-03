@@ -115,8 +115,9 @@ export type VolumeUnit = "shares" | "lots";
  * Volume with an always-visible unit. Input is shares; `unit: "lots"` converts (1 lot = 100 shares).
  * 1_234_567 shares → "1,23 jt lembar" / "1.23M shares" (compact) or "12.345 lot" / "12,345 lots".
  */
-export function formatVolume(shares: number | null | undefined, locale: Locale, options: { unit?: VolumeUnit; compact?: boolean } = {}): string {
+export function formatVolume(shares: number | null | undefined, locale: Locale, options: { unit?: VolumeUnit; compact?: boolean; signed?: boolean } = {}): string {
   if (!isNumber(shares)) return EMPTY;
+  if (options.signed && shares > 0) return `+${formatVolume(shares, locale, { ...options, signed: false })}`;
   const unit = options.unit ?? "shares";
   const amount = unit === "lots" ? shares / SHARES_PER_LOT : shares;
   const text = options.compact ? formatCompact(amount, locale) : formatNumber(amount, locale, { decimals: unit === "lots" ? 2 : 0 });
@@ -153,6 +154,13 @@ export function formatDate(value: string | null | undefined, locale: Locale): st
   return `${formatDate(wib.slice(0, 10), locale)}${locale === "en" ? "," : ""} ${time} WIB`;
 }
 
+/** Axis-length date without the year: "18 Sep" (id) / "Sep 18" (en). */
+export function formatShortDate(value: string | null | undefined, locale: Locale): string {
+  if (!value || !DATE_ONLY.test(value.slice(0, 10))) return EMPTY;
+  const date = new Date(`${value.slice(0, 10)}T00:00:00Z`);
+  return new Intl.DateTimeFormat(INTL_LOCALE[locale], { day: "numeric", month: "short", timeZone: "UTC" }).format(date);
+}
+
 /** Period strings from the API: "Q1 2026" passes through; "2020-01/2026-09" → "Jan 2020 – Sep 2026". */
 export function formatPeriod(value: string | null | undefined, locale: Locale): string {
   if (!value) return EMPTY;
@@ -165,7 +173,7 @@ export function direction(value: number | null | undefined): "positive" | "negat
   return !isNumber(value) || value === 0 ? "neutral" : value > 0 ? "positive" : "negative";
 }
 
-export type ValueFormat = "idr" | "idrCompact" | "percent" | "number" | "compact" | "shares" | "sharesCompact" | "lots";
+export type ValueFormat = "idr" | "idrCompact" | "percent" | "number" | "compact" | "shares" | "sharesCompact" | "netSharesCompact" | "lots";
 
 /** One entry point for components that receive a raw number plus a declared format. */
 export function formatValue(value: number | null | undefined, format: ValueFormat, locale: Locale): string {
@@ -177,6 +185,7 @@ export function formatValue(value: number | null | undefined, format: ValueForma
     case "compact": return formatCompact(value, locale);
     case "shares": return formatVolume(value, locale);
     case "sharesCompact": return formatVolume(value, locale, { compact: true });
+    case "netSharesCompact": return formatVolume(value, locale, { compact: true, signed: true });
     case "lots": return formatVolume(value, locale, { unit: "lots" });
   }
 }

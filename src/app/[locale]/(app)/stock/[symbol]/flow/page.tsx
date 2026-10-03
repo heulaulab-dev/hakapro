@@ -1,8 +1,8 @@
-import { getTranslations, setRequestLocale } from "next-intl/server";
-import { PagePlaceholder } from "@/components/layout/page-placeholder";
+import { setRequestLocale } from "next-intl/server";
+import { FlowView } from "./flow-view";
 
-export default async function Page({ params }: PageProps<"/[locale]/stock/[symbol]/flow">) {
-  setRequestLocale((await params).locale);
-  const t = await getTranslations("stockTabs");
-  return <PagePlaceholder level={2} title={t("flow")} />;
+export default async function FlowPage({ params }: PageProps<"/[locale]/stock/[symbol]/flow">) {
+  const { locale, symbol } = await params;
+  setRequestLocale(locale);
+  return <FlowView symbol={symbol} />;
 }

@@ -110,3 +110,22 @@ export type QuoteItem = z.infer<typeof quoteSchema>;
 export const quotesApi = {
   get: (symbols: string[], signal?: AbortSignal) => fetchEnvelope(`/api/quotes?symbols=${symbols.map(encodeURIComponent).join(",")}`, z.array(quoteSchema), { signal }),
 };
+
+// --- Broker accumulation (/api/broker-accumulation/[code]) ------------------------------------
+const accumulationPoint = z.object({ date: z.string(), netValueIdr: n, netVolumeShares: n, cumulativeNetValueIdr: n, buyAverageIdr: nn, sellAverageIdr: nn });
+const brokerTotal = z.object({ code: z.string(), name: z.string(), totalNetValueIdr: n });
+export const brokerAccumulationSchema = z.object({
+  symbol: z.string(), startDate: z.string(), endDate: z.string(),
+  series: z.array(z.object({ code: z.string(), name: z.string(), points: z.array(accumulationPoint) })),
+  topBuyers: z.array(brokerTotal), topSellers: z.array(brokerTotal),
+});
+export type BrokerAccumulation = z.infer<typeof brokerAccumulationSchema>;
+export const accumulationApi = {
+  get: (symbol: string, query: { startDate?: string; endDate?: string; top?: number }, signal?: AbortSignal) => {
+    const params = new URLSearchParams();
+    if (query.startDate) params.set("start_date", query.startDate);
+    if (query.endDate) params.set("end_date", query.endDate);
+    if (query.top) params.set("top", String(query.top));
+    return fetchEnvelope(`/api/broker-accumulation/${encodeURIComponent(symbol.toUpperCase())}${params.size ? `?${params}` : ""}`, brokerAccumulationSchema, { signal });
+  },
+};

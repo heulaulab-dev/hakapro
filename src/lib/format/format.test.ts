@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { direction, EMPTY, formatChange, formatCompact, formatDate, formatIdr, formatNumber, formatPercent, formatPeriod, formatVolume } from "./index";
+import { formatShortDate, direction, EMPTY, formatChange, formatCompact, formatDate, formatIdr, formatNumber, formatPercent, formatPeriod, formatVolume } from "./index";
 
 describe("abbreviation collision (init prompt §6)", () => {
   test("1.5e12 → Rp1,5 T (id) and Rp1.5T (en)", () => {
@@ -76,6 +76,13 @@ describe("volume units are always labelled", () => {
     expect(formatVolume(100, "en", { unit: "lots" })).toBe("1 lot");
     expect(formatVolume(64, "en", { unit: "lots" })).toBe("0.64 lots");
   });
+});
+
+test("signed net volume and short dates", () => {
+  expect(formatVolume(34_080_000, "en", { compact: true, signed: true })).toBe("+34.08M shares");
+  expect(formatVolume(-56_760_000, "id", { compact: true, signed: true })).toBe("-56,76 jt lembar");
+  expect(formatShortDate("2026-06-24", "en")).toBe("Jun 24");
+  expect(formatShortDate("2026-06-24", "id")).toBe("24 Jun");
 });
 
 describe("dates", () => {

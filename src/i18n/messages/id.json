@@ -384,5 +384,25 @@
     "data": "Data",
     "symbol": "Kode",
     "failed": "Perubahan tidak tersimpan. Coba lagi."
+  },
+  "flow": {
+    "foreignTitle": "Foreign Flow",
+    "foreignDesc": "Beli dan jual bersih investor asing per hari (lembar).",
+    "netRange": "Asing bersih {sessions} sesi",
+    "buySessions": "Sesi beli bersih",
+    "sellSessions": "Sesi jual bersih",
+    "buy": "Beli asing",
+    "sell": "Jual asing",
+    "net": "Bersih",
+    "brokerTitle": "Broker Summary",
+    "brokerDesc": "Nilai bersih per broker untuk {start} – {end}.",
+    "accumulationTitle": "Akumulasi broker",
+    "accumulationDesc": "Nilai bersih kumulatif per broker ({start} – {end}).",
+    "topBuyers": "Pembeli bersih terbesar",
+    "topSellers": "Penjual bersih terbesar",
+    "none": "Tidak ada",
+    "total": "Total bersih",
+    "broker": "Broker",
+    "rangeNote": "Rentang dikirim ke penyedia; data fixture tidak mengikuti rentang."
   }
 }

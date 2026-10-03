@@ -44,7 +44,7 @@ export function OverviewView({ symbol }: { symbol: string }) {
                   <MetricCard label={t("metrics.lastClose")} value={latest.close} format="idr" changePercent={latest.changePercent} meta={meta} />
                   <MetricCard label={t("metrics.value")} value={latest.valueIdr} format="idrCompact" meta={meta} />
                   <MetricCard label={t("metrics.volume")} value={latest.volumeShares} format="sharesCompact" hint={formatVolume(latest.volumeShares, locale, { unit: "lots", compact: true })} meta={meta} />
-                  <MetricCard label={t("metrics.foreignNet")} value={latest.foreignNetShares} format="sharesCompact" meta={meta} />
+                  <MetricCard label={t("metrics.foreignNet")} value={latest.foreignNetShares} format="netSharesCompact" meta={meta} />
                 </div>
               </section>
               <ChartCard

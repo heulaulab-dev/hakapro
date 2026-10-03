@@ -61,6 +61,12 @@
   --color-chart-up: var(--chart-up);
   --color-chart-down: var(--chart-down);
   --color-chart-grid: var(--chart-grid);
+  --color-series-1: var(--series-1);
+  --color-series-2: var(--series-2);
+  --color-series-3: var(--series-3);
+  --color-series-4: var(--series-4);
+  --color-series-5: var(--series-5);
+  --color-series-6: var(--series-6);
   --color-surface-raised: var(--surface-raised);
 
   /* Density-driven spacing and type */
@@ -121,6 +127,18 @@
   --chart-up: oklch(0.62 0.14 158);
   --chart-down: oklch(0.5 0.19 25);
   --chart-grid: oklch(0.92 0.005 250);
+  /*
+   * Categorical series, fixed order (never cycled; >6 folds into "Other"). Green/red slots of the
+   * reference palette are skipped because they mean up/down here. Validated with the dataviz
+   * checker: light passes with a contrast WARN on slots 3/5/6 (legend + table view required);
+   * dark passes all checks.
+   */
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #4a3aa7;
+  --series-5: #eda100;
+  --series-6: #e87ba4;
   --chart-1: oklch(0.52 0.12 235);
   --chart-2: oklch(0.6 0.1 185);
   --chart-3: oklch(0.55 0.08 285);
@@ -174,6 +192,12 @@
   --chart-up: oklch(0.665 0.15 160);
   --chart-down: oklch(0.54 0.19 25);
   --chart-grid: oklch(1 0 0 / 7%);
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #9085e9;
+  --series-5: #c98500;
+  --series-6: #d55181;
   --chart-1: oklch(0.75 0.11 225);
   --chart-2: oklch(0.72 0.09 185);
   --chart-3: oklch(0.7 0.09 285);

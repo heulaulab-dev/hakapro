@@ -384,5 +384,25 @@
     "data": "Data",
     "symbol": "Ticker",
     "failed": "The change wasn't saved. Try again."
+  },
+  "flow": {
+    "foreignTitle": "Foreign Flow",
+    "foreignDesc": "Daily foreign net buying and selling (shares).",
+    "netRange": "Net foreign, {sessions} sessions",
+    "buySessions": "Net-buy sessions",
+    "sellSessions": "Net-sell sessions",
+    "buy": "Foreign buy",
+    "sell": "Foreign sell",
+    "net": "Net",
+    "brokerTitle": "Broker Summary",
+    "brokerDesc": "Net value by broker for {start} – {end}.",
+    "accumulationTitle": "Broker accumulation",
+    "accumulationDesc": "Cumulative net value by broker ({start} – {end}).",
+    "topBuyers": "Largest net buyers",
+    "topSellers": "Largest net sellers",
+    "none": "None",
+    "total": "Total net",
+    "broker": "Broker",
+    "rangeNote": "The range is sent to the provider; fixture data doesn't follow it."
   }
 }

@@ -11,5 +11,6 @@ export const queryKeys = {
   news: () => ["market", "news"] as const,
   watchlist: (userId: string) => ["user", "watchlist", userId] as const,
   quotes: (symbols: string[]) => ["market", "quotes", [...symbols].sort().join(",")] as const,
+  brokerAccumulation: (symbol: string, startDate = "", top = 0) => ["market", "broker-accumulation", symbol.toUpperCase(), startDate, top] as const,
   savedScreens: (userId: string) => ["user", "saved-screens", userId] as const,
 };
