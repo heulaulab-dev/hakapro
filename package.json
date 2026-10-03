@@ -11,7 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "check:server-boundary": "node scripts/check-server-boundary.mjs"
+    "check:server-boundary": "node scripts/check-server-boundary.mjs",
+    "record:fixtures": "bun scripts/record-fixtures.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

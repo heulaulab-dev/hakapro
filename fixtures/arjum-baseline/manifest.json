@@ -1,0 +1,81 @@
+{
+  "provider": "arjum",
+  "recordedAt": "2026-09-18",
+  "note": "Migrated from heulatrade tests/fixtures/arjum. recordedAt is approximate (the data date, not a capture timestamp); search params are inferred. Exchange order numbers redacted.",
+  "screenerDate": "2026-09-18",
+  "symbols": [
+    "BBCA"
+  ],
+  "files": [
+    {
+      "path": "global/screener.json",
+      "endpoint": "screener",
+      "params": {}
+    },
+    {
+      "path": "global/market-cap.json",
+      "endpoint": "market-cap",
+      "params": {
+        "page": 1
+      }
+    },
+    {
+      "path": "global/health.json",
+      "endpoint": "health",
+      "params": {}
+    },
+    {
+      "path": "search/_bank.json",
+      "endpoint": "search",
+      "params": {
+        "q": "bank"
+      }
+    },
+    {
+      "path": "symbols/BBCA/broker-summary.json",
+      "endpoint": "broker-summary",
+      "symbol": "BBCA",
+      "params": {}
+    },
+    {
+      "path": "symbols/BBCA/broker-accumulation.json",
+      "endpoint": "broker-accumulation",
+      "symbol": "BBCA",
+      "params": {}
+    },
+    {
+      "path": "symbols/BBCA/history.json",
+      "endpoint": "history",
+      "symbol": "BBCA",
+      "params": {}
+    },
+    {
+      "path": "symbols/BBCA/seasonal.json",
+      "endpoint": "seasonal",
+      "symbol": "BBCA",
+      "params": {}
+    },
+    {
+      "path": "symbols/BBCA/insiders.json",
+      "endpoint": "insiders",
+      "symbol": "BBCA",
+      "params": {}
+    },
+    {
+      "path": "symbols/BBCA/done-details.json",
+      "endpoint": "done-details",
+      "symbol": "BBCA",
+      "params": {}
+    },
+    {
+      "path": "symbols/BBCA/financial-statements.INCOME_STATEMENT.json",
+      "endpoint": "financial-statements",
+      "symbol": "BBCA",
+      "params": {
+        "report_type": "INCOME_STATEMENT",
+        "period": "quarterly"
+      }
+    }
+  ],
+  "failures": []
+}
