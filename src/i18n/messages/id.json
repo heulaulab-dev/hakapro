@@ -425,5 +425,53 @@
     "pickRow": "Pilih baris untuk melihat grafiknya.",
     "note": "Nilai dalam rupiah penuh dari penyedia. Tanggal publikasi belum tersedia; data diambil penyedia {fetched}.",
     "labelsNote": "Nama pos mengikuti label penyedia (bahasa Indonesia)."
+  },
+  "screener": {
+    "title": "Screener",
+    "intro": "Saring saham berdasarkan data penutupan terakhir dan rasio keuangan terbaru.",
+    "fields": {
+      "price": "Harga (Rp)",
+      "volume": "Volume (lembar)",
+      "value": "Nilai transaksi (Rp)",
+      "frequency": "Frekuensi",
+      "foreignNetShares": "Asing bersih (lembar)",
+      "marketCap": "Kapitalisasi pasar (Rp)",
+      "per": "PER (x)",
+      "pbv": "PBV (x)",
+      "roe": "ROE",
+      "roa": "ROA",
+      "eps": "EPS (Rp)",
+      "der": "DER (x)",
+      "dividendYield": "Dividend yield",
+      "change1D": "Perubahan 1 hari (%)"
+    },
+    "operators": {
+      "GT": ">",
+      "GTE": "≥",
+      "LT": "<",
+      "LTE": "≤",
+      "EQ": "="
+    },
+    "field": "Kolom",
+    "operator": "Operator",
+    "value": "Nilai",
+    "and": "DAN",
+    "or": "ATAU",
+    "addCondition": "Tambah kondisi",
+    "remove": "Hapus kondisi",
+    "run": "Jalankan",
+    "results": "Hasil screen",
+    "resultCount": "{shown} dari {total} saham",
+    "noConditions": "Tambahkan setidaknya satu kondisi.",
+    "invalid": "Lengkapi nilai setiap kondisi.",
+    "saved": "Screen tersimpan",
+    "saveName": "Nama screen",
+    "save": "Simpan",
+    "load": "Muat",
+    "delete": "Hapus",
+    "savedSignIn": "Masuk untuk menyimpan dan memuat screen.",
+    "savedEmpty": "Belum ada screen tersimpan.",
+    "ratioNote": "Satuan ROE, ROA, dan dividend yield mengikuti penyedia (belum diverifikasi), jadi ditampilkan apa adanya.",
+    "saveFailed": "Screen tidak tersimpan."
   }
 }

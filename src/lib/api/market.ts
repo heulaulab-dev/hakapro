@@ -144,3 +144,25 @@ export const financialsApi = {
   get: (symbol: string, reportType: ReportType, period: "quarterly" | "annual", signal?: AbortSignal) =>
     fetchEnvelope(`/api/financial-statements/${encodeURIComponent(symbol.toUpperCase())}?report_type=${reportType}&period=${period}&limit=12`, financialStatementsSchema, { signal }),
 };
+
+// --- Screener (POST /api/screener, idx-bei lane) ---------------------------------------------
+export const SCREEN_FIELDS = ["price", "volume", "value", "frequency", "foreignNetShares", "marketCap", "per", "pbv", "roe", "roa", "eps", "der", "dividendYield", "change1D"] as const;
+export type ScreenField = (typeof SCREEN_FIELDS)[number];
+export const SCREEN_OPERATORS = ["GT", "GTE", "LT", "LTE", "EQ"] as const;
+export const screenConditionSchema = z.object({
+  field: z.enum(SCREEN_FIELDS),
+  operator: z.enum(SCREEN_OPERATORS),
+  value: z.number(),
+  connective: z.enum(["AND", "OR"]).default("AND"),
+});
+export type ScreenCondition = z.infer<typeof screenConditionSchema>;
+export const screenResultSchema = z.object({
+  rows: z.array(z.object({ symbol: z.string(), name: z.string().nullable() }).catchall(z.number().nullable())),
+  total: n,
+  supportedFields: z.array(z.string()),
+});
+export type ScreenResult = z.infer<typeof screenResultSchema>;
+export const screenerApi = {
+  run: (conditions: ScreenCondition[], signal?: AbortSignal) =>
+    fetchEnvelope("/api/screener", screenResultSchema, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ conditions, limit: 500 }), signal }),
+};

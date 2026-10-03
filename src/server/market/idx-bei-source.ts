@@ -120,7 +120,9 @@ export class IdxBeiSource extends BaseMarketDataSource {
   }
 
   async screen(request: ScreenRequest) {
-    const body = screenRequestSchema.parse(request);
+    const parsed = screenRequestSchema.parse(request);
+    // The API takes change1D in percent units (domain convention); app.py compares fractions.
+    const body = { ...parsed, conditions: parsed.conditions.map((condition) => (condition.field === "change1D" ? { ...condition, value: condition.value / 100 } : condition)) };
     const { data, meta } = await this.get("/v1/screener", screenResultSchema, undefined, { method: "POST", body: JSON.stringify(body), headers: { "content-type": "application/json" } });
     // change1D comes back as a fraction; domain percent fields are percent units.
     return this.snapshot({ ...data, rows: data.rows.map((row) => ({ ...row, change1D: typeof row.change1D === "number" ? row.change1D * 100 : null })) }, meta.dataAsOf);

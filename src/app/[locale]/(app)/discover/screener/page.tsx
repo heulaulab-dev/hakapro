@@ -1,8 +1,8 @@
-import { getTranslations, setRequestLocale } from "next-intl/server";
-import { PagePlaceholder } from "@/components/layout/page-placeholder";
+import { setRequestLocale } from "next-intl/server";
+import { getViewer } from "@/server/viewer";
+import { ScreenerView } from "./screener-view";
 
-export default async function Page({ params }: PageProps<"/[locale]/discover/screener">) {
+export default async function ScreenerPage({ params }: PageProps<"/[locale]/discover/screener">) {
   setRequestLocale((await params).locale);
-  const t = await getTranslations("nav");
-  return <PagePlaceholder title={t("screener")} />;
+  return <ScreenerView viewer={await getViewer()} />;
 }

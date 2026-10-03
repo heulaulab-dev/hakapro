@@ -425,5 +425,53 @@
     "pickRow": "Pick a line item to chart it.",
     "note": "Values are full rupiah from the provider. Filing date not available yet; fetched by the provider {fetched}.",
     "labelsNote": "Line item names follow the provider's labels (Indonesian)."
+  },
+  "screener": {
+    "title": "Screener",
+    "intro": "Filter stocks on the latest close and the most recent financial ratios.",
+    "fields": {
+      "price": "Price (Rp)",
+      "volume": "Volume (shares)",
+      "value": "Traded value (Rp)",
+      "frequency": "Frequency",
+      "foreignNetShares": "Net foreign (shares)",
+      "marketCap": "Market cap (Rp)",
+      "per": "P/E (x)",
+      "pbv": "P/B (x)",
+      "roe": "ROE",
+      "roa": "ROA",
+      "eps": "EPS (Rp)",
+      "der": "D/E (x)",
+      "dividendYield": "Dividend yield",
+      "change1D": "1-day change (%)"
+    },
+    "operators": {
+      "GT": ">",
+      "GTE": "≥",
+      "LT": "<",
+      "LTE": "≤",
+      "EQ": "="
+    },
+    "field": "Field",
+    "operator": "Operator",
+    "value": "Value",
+    "and": "AND",
+    "or": "OR",
+    "addCondition": "Add condition",
+    "remove": "Remove condition",
+    "run": "Run",
+    "results": "Screen results",
+    "resultCount": "{shown} of {total} stocks",
+    "noConditions": "Add at least one condition.",
+    "invalid": "Fill in a value for every condition.",
+    "saved": "Saved screens",
+    "saveName": "Screen name",
+    "save": "Save",
+    "load": "Load",
+    "delete": "Delete",
+    "savedSignIn": "Sign in to save and load screens.",
+    "savedEmpty": "No saved screens yet.",
+    "ratioNote": "ROE, ROA and dividend yield units follow the provider (unverified), so they're shown as-is.",
+    "saveFailed": "The screen wasn't saved."
   }
 }

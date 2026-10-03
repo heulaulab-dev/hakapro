@@ -50,3 +50,32 @@ test.describe("slice 3: Financials tab", () => {
     await expect(page.getByTestId("financials-view").getByTestId("data-state-code")).toHaveText("NOT_RECORDED");
   });
 });
+
+test.describe("slice 4: Screener", () => {
+  test("builder writes conditions to the URL; fixture mode states the source can't screen", async ({ page }) => {
+    await page.goto("/en/discover/screener");
+    await page.getByTestId("field-0").selectOption("per");
+    await page.getByTestId("value-0").fill("15");
+    await page.getByTestId("screen-run").click();
+    await expect(page).toHaveURL(/c=/);
+    await expect(page.getByTestId("screener-view").getByTestId("data-state-code")).toHaveText("UNSUPPORTED");
+    await expect(page.getByTestId("saved-screens")).toContainText("Sign in to save and load screens.");
+  });
+
+  test("results table renders and formats an idx-bei-shaped response (intercepted, test-only)", async ({ page }) => {
+    await page.route("**/api/screener", (route) => route.fulfill({
+      json: { data: { rows: [
+        { symbol: "BBCA", name: "Bank Central Asia Tbk.", price: 6300, change1D: -0.79, value: 1_110_000_000_000, volume: 176_750_000, per: 18.2 },
+        { symbol: "BBRI", name: "Bank Rakyat Indonesia (Persero) Tbk.", price: 3310, change1D: 1.25, value: 900_000_000_000, volume: 270_000_000, per: 10.4 },
+      ], total: 2, supportedFields: ["price"] }, freshness: "EOD", asOf: "2026-09-18", source: "test-intercept" },
+    }));
+    await page.goto(`/id/discover/screener?c=${encodeURIComponent(JSON.stringify([{ field: "per", operator: "LT", value: 20, connective: "AND" }]))}`);
+    const results = page.getByTestId("screen-results");
+    await expect(results.getByTestId("row-count")).toHaveText("2 baris");
+    await expect(results.locator("tbody tr").first()).toContainText("BBCA");
+    await expect(results).toContainText("Rp1,11 T");
+    await expect(results).toContainText("+1,25%");
+    await expect(results).toContainText("18,2");
+    await expect(results.locator('[data-freshness="EOD"]')).toBeVisible();
+  });
+});

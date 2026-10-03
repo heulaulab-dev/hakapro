@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query/keys";
-import { accumulationApi, financialsApi, marketApi, overviewApi, quotesApi, type ReportType } from "./market";
+import { accumulationApi, financialsApi, marketApi, overviewApi, quotesApi, screenerApi, type ReportType, type ScreenCondition } from "./market";
 
 export const useHistory = (symbol: string, query: { frame?: string; limit?: number } = {}) =>
   useQuery({ queryKey: queryKeys.history(symbol, query.frame, query.limit), queryFn: ({ signal }) => marketApi.history(symbol, query, signal) });
@@ -23,3 +23,5 @@ export const useBrokerAccumulation = (symbol: string, query: { startDate?: strin
   useQuery({ queryKey: queryKeys.brokerAccumulation(symbol, query.startDate, query.top), queryFn: ({ signal }) => accumulationApi.get(symbol, query, signal) });
 export const useFinancials = (symbol: string, reportType: ReportType, period: "quarterly" | "annual") =>
   useQuery({ queryKey: queryKeys.financials(symbol, reportType, period), queryFn: ({ signal }) => financialsApi.get(symbol, reportType, period, signal) });
+export const useScreen = (conditions: ScreenCondition[], enabled: boolean) =>
+  useQuery({ queryKey: queryKeys.screen(conditions), queryFn: ({ signal }) => screenerApi.run(conditions, signal), enabled });
