@@ -1,6 +1,6 @@
 "use client";
 
-import { CandlestickChart } from "lucide-react";
+import { CandlestickChart, Info } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Link, usePathname } from "@/i18n/navigation";
@@ -59,6 +59,17 @@ export function AppSidebar() {
           ),
         )}
       </nav>
+      <div className="shrink-0 border-t border-sidebar-border p-2 xl:p-3">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Link href="/about" data-testid="nav-about" className={itemClass}>
+              <Info className={iconClass} />
+              <span className="sr-only xl:not-sr-only xl:min-w-0 xl:flex-1 xl:truncate xl:text-left">{t("nav.about")}</span>
+            </Link>
+          </TooltipTrigger>
+          <TooltipContent side="right" className="xl:hidden">{t("nav.about")}</TooltipContent>
+        </Tooltip>
+      </div>
     </aside>
   );
 }

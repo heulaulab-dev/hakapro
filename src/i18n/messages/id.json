@@ -102,7 +102,8 @@
     "news": "Berita & Kalender",
     "more": "Lainnya",
     "search": "Cari",
-    "alerts": "Peringatan"
+    "alerts": "Peringatan",
+    "about": "Tentang HAKAPRO"
   },
   "stockTabs": {
     "label": "Bagian saham",
@@ -888,6 +889,192 @@
       "run": "{count, plural, =0 {Bandingkan} other {Bandingkan #}}",
       "pick": "Saham yang dibandingkan",
       "partial": "Belum lengkap: {list}."
+    }
+  },
+  "landing": {
+    "meta": {
+      "title": "Tentang HAKAPRO",
+      "description": "HAKAPRO adalah ruang riset saham Bursa Efek Indonesia (BEI): harga, aliran dana asing dan broker, laporan keuangan, keterbukaan insider, dan analisis terstruktur, dengan tanggal di setiap angka."
+    },
+    "nav": {
+      "label": "Tentang HAKAPRO",
+      "features": "Fitur",
+      "freshness": "Kesegaran data",
+      "how": "Cara kerja",
+      "faq": "Tanya jawab"
+    },
+    "cta": {
+      "signup": "Buat akun",
+      "signin": "Masuk",
+      "open": "Buka HAKAPRO"
+    },
+    "hero": {
+      "eyebrow": "Riset saham Bursa Efek Indonesia",
+      "title": "Riset saham BEI, tiap angka jelas tanggalnya.",
+      "subtitle": "HAKAPRO menyatukan harga, aliran dana asing dan broker, laporan keuangan, keterbukaan insider, dan analisis terstruktur untuk setiap emiten dalam satu ruang kerja yang tenang, lengkap dengan seberapa segar setiap datanya.",
+      "noteSignedOut": "Data pasar tersedia untuk pengguna yang sudah masuk. Hanya untuk riset: HAKAPRO tidak pernah menyuruh Anda membeli apa pun.",
+      "noteSignedIn": "Hanya untuk riset: HAKAPRO tidak pernah menyuruh Anda membeli apa pun."
+    },
+    "preview": {
+      "label": "Ilustrasi halaman saham",
+      "badge": "Ilustrasi",
+      "company": "Contoh emiten",
+      "flow": "Asing bersih, 20 sesi terakhir",
+      "brokers": "Pembeli bersih teratas",
+      "score": "Skor analisis",
+      "of": "dari 75",
+      "tone": "Campuran",
+      "tabs": [
+        "Ringkasan",
+        "Aliran",
+        "Analisis",
+        "Keuangan",
+        "Insider"
+      ]
+    },
+    "facts": {
+      "title": "HAKAPRO dalam angka",
+      "items": [
+        {
+          "value": "900+",
+          "label": "Emiten Bursa Efek Indonesia"
+        },
+        {
+          "value": "2020",
+          "label": "Riwayat harian sejak Januari 2020"
+        },
+        {
+          "value": "8",
+          "label": "Bagian riset per saham"
+        },
+        {
+          "value": "2",
+          "label": "Bahasa: Indonesia dan Inggris"
+        }
+      ]
+    },
+    "features": {
+      "eyebrow": "Fitur",
+      "title": "Semua yang Anda periksa sebelum memutuskan, di satu tempat",
+      "intro": "Tak perlu lagi berpindah antara aplikasi broker, PDF bursa, dan spreadsheet.",
+      "items": {
+        "flow": {
+          "title": "Ikuti aliran dana",
+          "body": "Beli dan jual bersih asing harian, ringkasan broker untuk sesi atau rentang tanggal mana pun, pembeli teratas berhadapan dengan penjual teratas beserta harga rata-ratanya, dan siapa yang sedang mengakumulasi."
+        },
+        "financials": {
+          "title": "Baca fundamentalnya",
+          "body": "Laba rugi, neraca, dan arus kas, kuartalan atau tahunan, per tahun, dengan peringatan saat laporan terbaru emiten terlambat."
+        },
+        "insiders": {
+          "title": "Lihat siapa yang bertransaksi",
+          "body": "Keterbukaan direksi, komisaris, dan pemegang saham utama dikelompokkan per pemegang. Rekening kustodian ditandai agar tidak dikira pemilik."
+        },
+        "analysis": {
+          "title": "Pahami teknikalnya",
+          "body": "Skor beserta faktor penyusunnya, rata-rata bergerak, RSI, MACD, level pivot, dan bagaimana situasi serupa berakhir dalam sejarah saham itu sendiri, dengan bahasa yang mudah."
+        },
+        "history": {
+          "title": "Grafik dan riwayat",
+          "body": "Candle dengan indikator, tabel harga harian yang bisa disaring per tanggal, musiman bulanan, dan rincian transaksi untuk sesi mana pun."
+        },
+        "discover": {
+          "title": "Temukan ide",
+          "body": "Hasil strategi yang menjelaskan mengapa sebuah saham muncul, penyaring saham, pergerakan pasar, emiten terbesar menurut kapitalisasi, dan perubahan kepemilikan terbaru."
+        }
+      }
+    },
+    "freshness": {
+      "eyebrow": "Kesegaran data",
+      "title": "Setiap angka memberi tahu umurnya",
+      "intro": "Harga Jumat lalu tidak boleh terlihat seperti harga menit ini. HAKAPRO memberi label status dan tanggal pada setiap data, dan tidak pernah menyebut data langsung bila memang tidak.",
+      "states": {
+        "DELAYED": "Sesi hari ini selama perdagangan berjalan, sedikit tertinggal dari bursa.",
+        "EOD": "Sesi perdagangan terakhir yang sudah selesai.",
+        "HISTORICAL": "Periode lampau atau rentang tanggal yang lebih panjang.",
+        "STALE": "Lebih lama dari data yang seharusnya sudah terbit, misalnya laporan keuangan yang terlambat.",
+        "UNAVAILABLE": "Tanggalnya tidak bisa dipastikan, jadi kami mengatakannya alih-alih menebak."
+      },
+      "hover": "Arahkan kursor atau ketuk label mana pun di aplikasi untuk melihat tanggal, periode, dan sumber tepatnya."
+    },
+    "how": {
+      "eyebrow": "Cara kerja",
+      "title": "Dari kode saham ke pemahaman dalam tiga langkah",
+      "steps": [
+        {
+          "title": "Cari",
+          "body": "Tekan Ctrl K (⌘K di Mac) lalu ketik kode saham atau nama emiten."
+        },
+        {
+          "title": "Lihat ringkasannya",
+          "body": "Metrik utama, valuasi, dan pengamatan singkat tentang harga, aliran dana, kepemilikan, dan keuangan."
+        },
+        {
+          "title": "Dalami, lalu pantau",
+          "body": "Buka tab Aliran, Analisis, Keuangan, Insider, atau Riwayat, lalu tambahkan saham ke daftar pantau dan pasang peringatan."
+        }
+      ]
+    },
+    "principles": {
+      "eyebrow": "Prinsip",
+      "title": "Dibangun di atas fakta, bukan sensasi",
+      "items": {
+        "observed": {
+          "title": "Diamati, bukan diramal",
+          "body": "Kami menjelaskan apa yang terjadi di data. Pandangan analisis diberi label sebagai hasil hitungan, bukan saran kami."
+        },
+        "neutral": {
+          "title": "Bahasa netral",
+          "body": "Tanpa roket, tanpa wajib beli. Broker adalah perusahaan perantara, bukan pemilik, dan aplikasi menyebutkannya."
+        },
+        "privacy": {
+          "title": "Akun Anda, daftar Anda",
+          "body": "Daftar pantau dan peringatan milik akun Anda. Nomor identitas dalam dokumen publik dihapus sebelum ditampilkan."
+        },
+        "local": {
+          "title": "Dibuat untuk Indonesia",
+          "body": "Bahasa Indonesia lebih dulu, Inggris bila perlu, format rupiah, dan kalender perdagangan BEI sudah terpasang."
+        }
+      }
+    },
+    "faq": {
+      "eyebrow": "Tanya jawab",
+      "title": "Pertanyaan yang sering diajukan",
+      "items": [
+        {
+          "q": "Apakah datanya real-time?",
+          "a": "Tidak. Selama sesi perdagangan harga tertunda, dan setelah penutupan Anda melihat data akhir hari. Setiap angka menunjukkan tanggalnya, serta jam transaksi terakhir bila ada."
+        },
+        {
+          "q": "Apakah HAKAPRO merekomendasikan saham?",
+          "a": "Tidak. HAKAPRO untuk riset dan edukasi. Bila analisis memuat pandangan atau level harga, itu ditampilkan sebagai hasil hitungan dari data, bukan rekomendasi. Keputusan ada di tangan Anda."
+        },
+        {
+          "q": "Saham apa saja yang tercakup?",
+          "a": "Emiten yang tercatat di Bursa Efek Indonesia, lebih dari 900. Riwayat harian dimulai Januari 2020 untuk sebagian besar; emiten baru dimulai sejak tanggal pencatatannya."
+        },
+        {
+          "q": "Apakah saya perlu akun?",
+          "a": "Ya, untuk melihat data pasar. Akun Anda juga menyimpan daftar pantau dan peringatan."
+        },
+        {
+          "q": "Apakah bisa dipakai di ponsel?",
+          "a": "Bisa. HAKAPRO berjalan di ponsel, tablet, dan desktop, dengan tema terang atau gelap."
+        },
+        {
+          "q": "Dari mana datanya berasal?",
+          "a": "Dari sumber data pasar Indonesia yang mencakup harga, aktivitas broker, laporan keuangan, dan keterbukaan informasi. Setiap data menunjukkan tanggalnya agar Anda bisa menilainya sendiri."
+        }
+      ]
+    },
+    "final": {
+      "title": "Mulai sesi riset BEI Anda berikutnya dengan fakta.",
+      "body": "Buka emiten mana pun dan lihat harga, aliran dana, fundamental, dan keterbukaannya berdampingan."
+    },
+    "footer": {
+      "tagline": "Riset saham Indonesia oleh Heulau Lab.",
+      "disclaimer": "Hanya untuk riset dan edukasi, bukan saran investasi. Hasil masa lalu tidak menjamin hasil mendatang.",
+      "app": "Buka aplikasi"
     }
   }
 }

@@ -17,6 +17,7 @@
 | S6 | Chart, Insiders, History, Ownership tabs | ✅ | 54e2fae |
 | S7 | Production readiness | ✅ | 1de1e69 |
 | S8 | Alerts page (create/toggle/delete, triggered events) | ✅ | see git log |
+| S10 | Public landing page `/{locale}/about` (what HAKAPRO is) | ✅ | see git log |
 | S9 | Full arjum coverage: price, analysis, every documented parameter (MIGRATION §11) | ✅ | see git log |
 
 ## Checkpoint 2 notes
@@ -229,3 +230,8 @@ The user kept the layout and asked for heulaulab-dashboard's design system:
 - New: Analysis tab (structured, HAKAPRO wording; decision in MIGRATION §9.5), watchlist Compare analysis (≤5, on demand), today's price in the stock header, broker-summary controls and paired levels, history date range, trade-tape session picker and pages, Financials year/period count, Movers market-cap paging and date, Overview valuation, watchlist market caps.
 - Quota care: quotes request today's price only while a trading day is running or just closed; compare runs only on click; market caps for a whole watchlist are one request.
 - Fixture mode: price/analysis recorded for BBCA, SAPX, ARCI, DSSA in `fixtures/arjum`; the baseline has the 2026-09-18 BBCA analysis and no price (the header falls back to the daily close).
+
+## S10: landing page (2026-10-04, user request)
+- `/{locale}/about` (route group `(marketing)`, no app shell, own scroll container), Indonesian default and English; server-rendered, linked from the sidebar footer, Cmd+K and the mobile More menu.
+- Sections: hero with an illustrated stock page (fixed values, labelled "Illustration"), facts, features, data freshness (real FreshnessBadge states, never LIVE), how it works, principles, FAQ, final call to action, footer disclaimer.
+- Copy rules: no data vendor is named; no invented testimonials or figures (facts are product facts: 900+ listed companies, daily history from 2020, 8 sections, 2 languages); CTAs follow the auth model (market data needs an account; signed-in users get "Open HAKAPRO").

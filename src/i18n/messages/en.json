@@ -102,7 +102,8 @@
     "news": "News & Calendar",
     "more": "More",
     "search": "Search",
-    "alerts": "Alerts"
+    "alerts": "Alerts",
+    "about": "About HAKAPRO"
   },
   "stockTabs": {
     "label": "Stock sections",
@@ -888,6 +889,192 @@
       "run": "{count, plural, =0 {Compare} other {Compare #}}",
       "pick": "Stocks to compare",
       "partial": "Not complete: {list}."
+    }
+  },
+  "landing": {
+    "meta": {
+      "title": "About HAKAPRO",
+      "description": "HAKAPRO is a research workspace for Indonesia Stock Exchange (IDX) stocks: prices, foreign and broker flow, financial statements, insider disclosures and structured analysis, with every number dated."
+    },
+    "nav": {
+      "label": "About HAKAPRO",
+      "features": "Features",
+      "freshness": "Data freshness",
+      "how": "How it works",
+      "faq": "FAQ"
+    },
+    "cta": {
+      "signup": "Create an account",
+      "signin": "Sign in",
+      "open": "Open HAKAPRO"
+    },
+    "hero": {
+      "eyebrow": "Research for Indonesia Stock Exchange stocks",
+      "title": "IDX stock research, with every number dated.",
+      "subtitle": "HAKAPRO puts prices, foreign and broker flow, financial statements, insider disclosures and structured analysis for every listed company into one calm workspace, and tells you how fresh each figure is.",
+      "noteSignedOut": "Market data is for signed-in users. Research only: HAKAPRO never tells you what to buy.",
+      "noteSignedIn": "Research only: HAKAPRO never tells you what to buy."
+    },
+    "preview": {
+      "label": "Illustration of a stock page",
+      "badge": "Illustration",
+      "company": "Example company",
+      "flow": "Net foreign, last 20 sessions",
+      "brokers": "Top net buyers",
+      "score": "Analysis score",
+      "of": "of 75",
+      "tone": "Mixed",
+      "tabs": [
+        "Overview",
+        "Flow",
+        "Analysis",
+        "Financials",
+        "Insiders"
+      ]
+    },
+    "facts": {
+      "title": "HAKAPRO in numbers",
+      "items": [
+        {
+          "value": "900+",
+          "label": "Indonesia Stock Exchange companies"
+        },
+        {
+          "value": "2020",
+          "label": "Daily history from January 2020"
+        },
+        {
+          "value": "8",
+          "label": "Research sections per stock"
+        },
+        {
+          "value": "2",
+          "label": "Languages: Bahasa Indonesia and English"
+        }
+      ]
+    },
+    "features": {
+      "eyebrow": "Features",
+      "title": "Everything you check before a decision, in one place",
+      "intro": "No more jumping between broker apps, exchange PDFs and spreadsheets.",
+      "items": {
+        "flow": {
+          "title": "Follow the money",
+          "body": "Daily foreign net buying and selling, broker summaries for any session or date range, top buyers against top sellers with their average prices, and who has been accumulating."
+        },
+        "financials": {
+          "title": "Read the fundamentals",
+          "body": "Income statements, balance sheets and cash flows, quarterly or annual, by year, with a warning when a company's latest report is overdue."
+        },
+        "insiders": {
+          "title": "See who traded",
+          "body": "Director, commissioner and major-holder disclosures grouped by holder. Custodian accounts are flagged so they aren't mistaken for owners."
+        },
+        "analysis": {
+          "title": "Understand the technicals",
+          "body": "A score with its contributing factors, moving averages, RSI, MACD, pivot levels, and how similar situations played out in the stock's own history, in plain language."
+        },
+        "history": {
+          "title": "Charts and history",
+          "body": "Candles with indicators, a daily price table you can filter by date, monthly seasonality and the trade-by-trade tape for any session."
+        },
+        "discover": {
+          "title": "Find ideas",
+          "body": "Strategy matches that explain why a stock appeared, a screener, market movers, the largest companies by market cap and recent ownership changes."
+        }
+      }
+    },
+    "freshness": {
+      "eyebrow": "Data freshness",
+      "title": "Every number tells you how old it is",
+      "intro": "A price from last Friday shouldn't look like a price from this minute. HAKAPRO labels every dataset with its state and as-of date, and never calls data live when it isn't.",
+      "states": {
+        "DELAYED": "Today's session while trading is running, a little behind the exchange.",
+        "EOD": "The last completed trading session.",
+        "HISTORICAL": "A past period or a longer date range.",
+        "STALE": "Older than data that should already be out, such as an overdue financial report.",
+        "UNAVAILABLE": "The date can't be confirmed, so we say so instead of guessing."
+      },
+      "hover": "Hover or tap any badge in the app to see the exact date, period and source."
+    },
+    "how": {
+      "eyebrow": "How it works",
+      "title": "From ticker to understanding in three steps",
+      "steps": [
+        {
+          "title": "Search",
+          "body": "Press Ctrl K (⌘K on Mac) and type a ticker or company name."
+        },
+        {
+          "title": "Get the overview",
+          "body": "Key metrics, valuation and short observations on price, flow, ownership and financials."
+        },
+        {
+          "title": "Go deeper, then keep watch",
+          "body": "Open the Flow, Analysis, Financials, Insiders or History tabs, then add the stock to your watchlist and set alerts."
+        }
+      ]
+    },
+    "principles": {
+      "eyebrow": "Principles",
+      "title": "Built on facts, not hype",
+      "items": {
+        "observed": {
+          "title": "Observed, not predicted",
+          "body": "We describe what happened in the data. Analysis outlooks are labelled as calculations, never as our advice."
+        },
+        "neutral": {
+          "title": "Neutral language",
+          "body": "No rockets, no must-buys. Brokers are trading firms, not owners, and the app says so."
+        },
+        "privacy": {
+          "title": "Your account, your lists",
+          "body": "Watchlists and alerts belong to your account. Identity numbers found in public filings are removed before anything is shown."
+        },
+        "local": {
+          "title": "Made for Indonesia",
+          "body": "Bahasa Indonesia first, English when you need it, rupiah formatting and the IDX trading calendar built in."
+        }
+      }
+    },
+    "faq": {
+      "eyebrow": "FAQ",
+      "title": "Questions, answered",
+      "items": [
+        {
+          "q": "Is the data real-time?",
+          "a": "No. During a trading session prices are delayed, and after the close you see end-of-day data. Every figure shows its as-of date, and the time of the last trade when there is one."
+        },
+        {
+          "q": "Does HAKAPRO recommend stocks?",
+          "a": "No. HAKAPRO is for research and education. Where an analysis includes an outlook or price levels, it is shown as a calculation from the data, not a recommendation. Decisions are yours."
+        },
+        {
+          "q": "Which stocks are covered?",
+          "a": "Companies listed on the Indonesia Stock Exchange, more than 900 of them. Daily history starts in January 2020 for most; newer listings start from their listing date."
+        },
+        {
+          "q": "Do I need an account?",
+          "a": "Yes, to see market data. Your account also keeps your watchlist and alerts."
+        },
+        {
+          "q": "Does it work on my phone?",
+          "a": "Yes. HAKAPRO works on phones, tablets and desktops, in a light or dark theme."
+        },
+        {
+          "q": "Where does the data come from?",
+          "a": "From Indonesian market data sources covering prices, broker activity, financial reports and disclosures. Each dataset shows its date so you can judge it yourself."
+        }
+      ]
+    },
+    "final": {
+      "title": "Start your next IDX research session with the facts.",
+      "body": "Open any listed company and see its prices, flows, fundamentals and disclosures side by side."
+    },
+    "footer": {
+      "tagline": "Indonesian equity research by Heulau Lab.",
+      "disclaimer": "For research and education only, not investment advice. Past results don't predict future ones.",
+      "app": "Open the app"
     }
   }
 }
