@@ -4,7 +4,7 @@ Market intelligence and stock research for Indonesian equities (IDX). HAKAPRO is
 
 **Flow:** Discover → understand why → research the stock → the user decides.
 
-It replaces the HeulaTrade terminal UI with a dashboard (Next.js 16, App Router), reusing HeulaTrade's ported API layer and its existing Supabase Auth. See `docs/MIGRATION.md` for what was ported and `docs/PROGRESS.md` for the build log.
+It replaces the HeulaTrade terminal UI with a dashboard (Next.js 16, App Router), reusing HeulaTrade's ported API layer and its Supabase schema, on its own Supabase project (see `supabase/README.md`). See `docs/MIGRATION.md` for what was ported and `docs/PROGRESS.md` for the build log.
 
 ## Quick start (local, fixture data)
 
@@ -78,6 +78,7 @@ src/
 - [ ] Verify the IDX trading schedule and the 2026+ holiday calendar (`src/server/config/idx-calendar.ts`).
 - [ ] Verify the OJK/IDX reporting deadlines (`src/server/config/reporting.ts`).
 - [ ] Confirm the criteria wording with the screener provider (`docs/GLOSSARY.md`).
-- [ ] Run `supabase/tests/rls.sql` on a test database; manually test sign-up, sign-in and a two-user watchlist.
+- [x] Run `supabase/tests/rls.sql` against the project (passed 2026-10-04).
+- [ ] Manually test sign-up, sign-in and a two-user watchlist.
 - [ ] Market-data display rights for the provider data.
 - [ ] Optional hardening: CSP nonces instead of `'unsafe-inline'` scripts; a shared rate limiter (the current one is per instance).
