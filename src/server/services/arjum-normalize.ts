@@ -8,7 +8,7 @@
  */
 import type {
   BrokerAccumulationResponse, BrokerSummaryResponse, DoneDetailsResponse, FinancialStatementsResponse,
-  HistoryResponse, InsidersResponse, MarketCapResponse, SearchResponse, SeasonalityResponse,
+  HistoryResponse, InsidersResponse, MarketCapResponse, PriceResponse, SearchResponse, SeasonalityResponse,
 } from "@/server/schemas/arjum";
 import { expectedLatestPeriodEnd, periodEnd } from "@/server/config/reporting";
 import { parseProviderNumber, type ParseOptions } from "./parse-number";
@@ -26,10 +26,30 @@ export type BrokerRow = {
   buyVolumeShares: number; sellVolumeShares: number; netVolumeShares: number;
   buyFrequency: number; sellFrequency: number; netFrequency: number;
 };
-export type BrokerSummary = { symbol: string; startDate: string; endDate: string; brokers: BrokerRow[] };
+export type BrokerLevelSide = { code: string; name: string; valueIdr: number; volumeShares: number; frequency: number | null; averagePriceIdr: number };
+/** Rank-paired top buyer and top seller (rank 1 = largest on each side), with their average prices. */
+export type BrokerLevel = { rank: number; buy: BrokerLevelSide | null; sell: BrokerLevelSide | null };
+export type BrokerFlow = "all" | "foreign" | "domestic";
+export type BrokerSummary = {
+  symbol: string; startDate: string; endDate: string;
+  /** Range the provider holds broker data for; requested dates outside it come back clamped. */
+  availableFrom: string; availableTo: string;
+  /** Which investors the figures cover, and whether buy/sell were netted per broker before ranking. */
+  flow: BrokerFlow; net: boolean;
+  brokers: BrokerRow[];
+  levels: BrokerLevel[];
+};
+const FLOWS: Record<string, BrokerFlow> = { all: "all", F: "foreign", D: "domestic" };
 export function normalizeBrokerSummary(value: BrokerSummaryResponse): BrokerSummary {
   return {
     symbol: value.stock_code, startDate: value.broker_start_date, endDate: value.broker_end_date,
+    availableFrom: value.broker_date_min, availableTo: value.broker_date_max,
+    flow: FLOWS[value.flow] ?? "all", net: value.broker_net,
+    levels: value.broker_levels.map((level, index) => ({
+      rank: index + 1,
+      buy: level.buy ? { code: level.buy.broker_code, name: level.buy.broker_name, valueIdr: level.buy.bval, volumeShares: level.buy.bvol, frequency: level.buy.bfrq ?? null, averagePriceIdr: level.buy.bavg } : null,
+      sell: level.sell ? { code: level.sell.broker_code, name: level.sell.broker_name, valueIdr: level.sell.sval, volumeShares: level.sell.svol, frequency: level.sell.sfrq ?? null, averagePriceIdr: level.sell.savg } : null,
+    })),
     brokers: value.brokers.map((row) => ({
       code: row.broker_code, name: row.broker_name,
       buyValueIdr: row.bval, sellValueIdr: row.sval, netValueIdr: row.nval,
@@ -63,11 +83,16 @@ export type HistoryRow = {
   change: number; changePercent: number; valueIdr: number; volumeShares: number; frequency: number;
   foreignBuyShares: number; foreignSellShares: number; foreignNetShares: number;
 };
-export type History = { symbol: string; frame: string; rows: HistoryRow[] };
+export type History = {
+  symbol: string; frame: string; rows: HistoryRow[];
+  /** Full range the provider holds for this stock (null in older recordings). Newly listed stocks start later than 2020. */
+  available: { from: string; to: string } | null;
+};
 /** Rows are returned newest first by the provider; output is sorted ascending for charts. */
 export function normalizeHistory(value: HistoryResponse): History {
   return {
     symbol: value.stock_code, frame: value.frame,
+    available: value.data_available ? { from: value.data_available.start, to: value.data_available.end } : null,
     rows: value.rows.map((row) => ({
       date: row.date, open: row.open, high: row.high, low: row.low, close: row.close, averageIdr: row.avg,
       change: row.change, changePercent: row.change_pct, valueIdr: row.value, volumeShares: row.volume, frequency: row.freq,
@@ -97,11 +122,16 @@ export function normalizeSeasonality(value: SeasonalityResponse): Seasonality {
 }
 
 export type MarketCapRow = { symbol: string; name: string; closeIdr: number; marketCapIdr: number; listedShares: number; turnoverRatio: number };
-export type MarketCap = { date: string; total: number; page: number; perPage: number; totalPages: number; rows: MarketCapRow[] };
+export type MarketCap = {
+  date: string; total: number; page: number; perPage: number; totalPages: number; rows: MarketCapRow[];
+  /** Requested symbols the provider has no data for (only when specific symbols were requested). */
+  notFound: string[];
+};
 /** Uses the numeric fields only; `*_label` strings are ignored (see parse-number tests for why). */
 export function normalizeMarketCap(value: MarketCapResponse): MarketCap {
   return {
     date: value.date, total: value.total, page: value.page, perPage: value.per_page, totalPages: value.total_pages,
+    notFound: value.not_found ?? [],
     rows: value.data.map((row) => ({ symbol: row.code, name: row.name, closeIdr: row.close, marketCapIdr: row.market_cap, listedShares: row.listed_shares, turnoverRatio: row.turnover_ratio })),
   };
 }
@@ -147,15 +177,18 @@ export function buildFinancialRows(items: FinancialStatementsResponse["items"]):
     }),
   }));
 }
+/** Provider period names → ours (arjum calls the yearly report "annually"). */
+const PERIOD_NAMES: Record<string, string> = { annually: "annual" };
 export function normalizeFinancialStatements(value: FinancialStatementsResponse, today: string): FinancialStatements {
+  const period = PERIOD_NAMES[value.period] ?? value.period;
   const periods = value.items.map((item) => ({
     year: item.year, quarter: item.quarter, label: item.label,
-    periodEnd: periodEnd(item.year, item.quarter, value.period), filingDate: null, fetchedAt: item.fetched_at,
+    periodEnd: periodEnd(item.year, item.quarter, period), filingDate: null, fetchedAt: item.fetched_at,
   }));
   const latestPeriodEnd = periods.map((period) => period.periodEnd).filter((end): end is string => end !== null).sort().at(-1) ?? null;
-  const expectedPeriodEnd = expectedLatestPeriodEnd(today, value.period);
+  const expectedPeriodEnd = expectedLatestPeriodEnd(today, period);
   return {
-    symbol: value.stock_code, reportType: value.report_type, period: value.period, periods,
+    symbol: value.stock_code, reportType: value.report_type, period, periods,
     rows: buildFinancialRows(value.items),
     reportingLag: { latestPeriodEnd, expectedPeriodEnd, behind: latestPeriodEnd === null || latestPeriodEnd < expectedPeriodEnd },
   };
@@ -212,6 +245,41 @@ export function normalizeDoneDetails(value: DoneDetailsResponse): DoneDetails {
   return {
     symbol: value.code, date: value.date, total: value.total, page: value.page, perPage: value.per_page, totalPages: value.total_pages,
     rows: value.data.map((row) => ({ time: row.time, board: row.market_board, priceIdr: row.price_num, lots: row.qty_num, valueIdr: row.value_raw, buyer: row.buyer, seller: row.seller, buyerType: row.buyer_type, sellerType: row.seller_type, aggressor: row.action })),
+  };
+}
+
+export type MarketState = "open" | "break" | "closed" | "holiday" | "weekend" | "unknown";
+export type LastPrice = {
+  symbol: string;
+  /** Last trade today, or the last close when there was no trade today. */
+  lastPriceIdr: number;
+  /** Today's running totals; all zero when there was no trade today. */
+  frequency: number; lots: number; valueIdr: number;
+  /** Session the price belongs to (YYYY-MM-DD); null when the provider leaves it undetermined. */
+  sessionDate: string | null;
+  tradedToday: boolean;
+  /** Time of the last trade today (HH:MM:SS WIB), null without a trade today. */
+  lastTradeTime: string | null;
+  /** Provider clock when the request was served (HH:MM:SS WIB). */
+  servedTime: string;
+  marketState: MarketState;
+  quoteAgeMs: number | null;
+};
+const MARKET_STATES: Record<string, MarketState> = { open: "open", break: "break", closed: "closed", weekend: "weekend" };
+/**
+ * `today` is the Jakarta calendar date of the request. The provider gives no date for today's trades,
+ * only `source_date` for a carried-over close. A closed market whose label mentions "libur" is an
+ * exchange holiday (documented provider behaviour); the label text itself is not kept.
+ */
+export function normalizePrice(value: PriceResponse, today: string): LastPrice {
+  const tradedToday = value.data_ts !== null && !value.no_trade_today;
+  const state = MARKET_STATES[value.market_state] ?? "unknown";
+  return {
+    symbol: value.code, lastPriceIdr: value.last_price, frequency: value.freq, lots: value.lot, valueIdr: value.value,
+    sessionDate: tradedToday ? today : (value.source_date ?? null),
+    tradedToday, lastTradeTime: value.data_ts, servedTime: value.served_ts,
+    marketState: state === "closed" && /libur/i.test(value.market_label) ? "holiday" : state,
+    quoteAgeMs: value.quote_age_ms,
   };
 }
 

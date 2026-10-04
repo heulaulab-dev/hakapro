@@ -1,12 +1,12 @@
 import { describe, expect, test } from "vitest";
-import { fixture } from "../../../tests/support/fixtures";
+import { fixture, sample } from "../../../tests/support/fixtures";
 import {
   brokerSummaryResponseSchema, doneDetailsResponseSchema, financialStatementsResponseSchema, historyResponseSchema,
-  insidersResponseSchema, marketCapResponseSchema, seasonalityResponseSchema,
+  insidersResponseSchema, marketCapResponseSchema, priceResponseSchema, seasonalityResponseSchema,
 } from "@/server/schemas/arjum";
 import {
-  buildFinancialRows, normalizeBrokerSummary, normalizeDoneDetails, normalizeHistory, normalizeInsiders,
-  normalizeMarketCap, normalizeSeasonality, rankBrokers,
+  buildFinancialRows, normalizeBrokerSummary, normalizeDoneDetails, normalizeFinancialStatements, normalizeHistory, normalizeInsiders,
+  normalizeMarketCap, normalizePrice, normalizeSeasonality, rankBrokers,
 } from "./arjum-normalize";
 
 describe("units verified against recorded data", () => {
@@ -86,5 +86,52 @@ describe("Checkpoint 3 freshness corrections", () => {
   test("seasonality coverage is derived from the data", () => {
     const matrix = normalizeSeasonality(seasonalityResponseSchema.parse(fixture("seasonal")));
     expect(matrix.coverage).toEqual({ from: "2020-01", to: "2026-09" });
+  });
+});
+
+describe("2026-10-04 additions (live samples)", () => {
+  test("broker summary: range, available span and rank-paired levels", () => {
+    const data = normalizeBrokerSummary(brokerSummaryResponseSchema.parse(sample("broker-summary-BBCA-range.json")));
+    expect(data).toMatchObject({ startDate: "2026-09-01", endDate: "2026-10-02", availableFrom: "2020-01-02", availableTo: "2026-10-02", flow: "all", net: false });
+    expect(data.levels).toHaveLength(25);
+    expect(data.levels[0]).toMatchObject({ rank: 1, buy: { code: "YU", frequency: 61014 }, sell: { code: "ZP" } });
+  });
+
+  test("broker summary with net=true: level sides have no frequency", () => {
+    const data = normalizeBrokerSummary(brokerSummaryResponseSchema.parse(sample("broker-summary-BBCA-net.json")));
+    expect(data.net).toBe(true);
+    expect(data.levels[0].buy?.frequency).toBeNull();
+    expect(data.levels[0].buy?.averagePriceIdr).toBeGreaterThan(0);
+  });
+
+  test("history keeps the provider's available range; older recordings have none", () => {
+    expect(normalizeHistory(historyResponseSchema.parse(sample("history-BBCA-range.json"))).available).toEqual({ from: "2020-01-02", to: "2026-10-02" });
+    expect(normalizeHistory(historyResponseSchema.parse(fixture("history"))).available).toBeNull();
+  });
+
+  test("market cap by symbols reports symbols without data", () => {
+    const data = normalizeMarketCap(marketCapResponseSchema.parse(sample("market-cap-codes.json")));
+    expect(data.rows.map((row) => row.symbol)).toEqual(["BBCA", "TLKM"]);
+    expect(data.notFound).toEqual(["ZZZZ"]);
+  });
+
+  test("annual statements: provider 'annually' becomes 'annual' with year-end period ends", () => {
+    const data = normalizeFinancialStatements(financialStatementsResponseSchema.parse(sample("financial-statements-BBCA-annually.json")), "2026-10-04");
+    expect(data.period).toBe("annual");
+    expect(data.periods[0]).toMatchObject({ label: "FY 2025", periodEnd: "2025-12-31" });
+    expect(data.reportingLag).toEqual({ latestPeriodEnd: "2025-12-31", expectedPeriodEnd: "2025-12-31", behind: false });
+  });
+
+  test("price on a weekend: last close carried over, session from source_date", () => {
+    expect(normalizePrice(priceResponseSchema.parse(sample("price-BBCA-weekend.json")), "2026-10-04")).toEqual({
+      symbol: "BBCA", lastPriceIdr: 6100, frequency: 0, lots: 0, valueIdr: 0, sessionDate: "2026-10-02", tradedToday: false,
+      lastTradeTime: null, servedTime: "07:54:48", marketState: "weekend", quoteAgeMs: null,
+    });
+  });
+
+  test("price traded today belongs to today; a closed market labelled libur is a holiday", () => {
+    const traded = { code: "BBCA", last_price: 6225, freq: 14203, lot: 275e3, value: 226875e6, data_ts: "14:32:07", served_ts: "15:50:13", market_state: "open", market_label: "Sesi 2", no_trade_today: false, quote_age_ms: 4686e3 };
+    expect(normalizePrice(traded, "2026-10-05")).toMatchObject({ sessionDate: "2026-10-05", tradedToday: true, lastTradeTime: "14:32:07", marketState: "open" });
+    expect(normalizePrice({ ...traded, data_ts: null, no_trade_today: true, source_date: "2026-12-24", market_state: "closed", market_label: "Bursa libur" }, "2026-12-25").marketState).toBe("holiday");
   });
 });

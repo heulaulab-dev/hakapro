@@ -1,7 +1,7 @@
 {
   "provider": "arjum",
   "recordedAt": "2026-09-18",
-  "note": "Migrated from heulatrade tests/fixtures/arjum. recordedAt is approximate (the data date, not a capture timestamp); search params are inferred. Exchange order numbers redacted.",
+  "note": "Migrated from heulatrade tests/fixtures/arjum. recordedAt is approximate (the data date, not a capture timestamp); search params are inferred. Exchange order numbers redacted. Since 2026-10-04 the BBCA analysis entry points at legacy/analysis.json (same 2026-09-18 session). No price sample exists for this session.",
   "screenerDate": "2026-09-18",
   "symbols": [
     "BBCA"
@@ -75,6 +75,12 @@
         "report_type": "INCOME_STATEMENT",
         "period": "quarterly"
       }
+    },
+    {
+      "path": "legacy/analysis.json",
+      "endpoint": "analysis",
+      "symbol": "BBCA",
+      "params": {}
     }
   ],
   "failures": []

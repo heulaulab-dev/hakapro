@@ -1,0 +1,34 @@
+{
+  "date": "2026-10-02",
+  "total": 2,
+  "page": 1,
+  "per_page": 2,
+  "total_pages": 1,
+  "data": [
+    {
+      "code": "BBCA",
+      "name": "Bank Central Asia Tbk.",
+      "close": 6100,
+      "listed_shares": 122042299500,
+      "listed_shares_label": "122.04M",
+      "market_cap": 744458026950000,
+      "market_cap_label": "744.46T",
+      "turnover_ratio": 0.001081,
+      "turnover_ratio_label": "0.108%"
+    },
+    {
+      "code": "TLKM",
+      "name": "Telkom Indonesia (Persero) Tbk.",
+      "close": 2250,
+      "listed_shares": 99062216600,
+      "listed_shares_label": "99.06M",
+      "market_cap": 222889987350000,
+      "market_cap_label": "222.89T",
+      "turnover_ratio": 0.00147,
+      "turnover_ratio_label": "0.147%"
+    }
+  ],
+  "not_found": [
+    "ZZZZ"
+  ]
+}

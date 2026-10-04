@@ -609,7 +609,44 @@
         "page": 1,
         "per_page": 100
       }
+    },
+    {
+      "path": "symbols/BBCA/price.json",
+      "endpoint": "price",
+      "symbol": "BBCA",
+      "params": {}
+    },
+    {
+      "path": "symbols/SAPX/price.json",
+      "endpoint": "price",
+      "symbol": "SAPX",
+      "params": {}
+    },
+    {
+      "path": "symbols/BBCA/analysis.json",
+      "endpoint": "analysis",
+      "symbol": "BBCA",
+      "params": {}
+    },
+    {
+      "path": "symbols/ARCI/analysis.json",
+      "endpoint": "analysis",
+      "symbol": "ARCI",
+      "params": {}
+    },
+    {
+      "path": "symbols/SAPX/analysis.json",
+      "endpoint": "analysis",
+      "symbol": "SAPX",
+      "params": {}
+    },
+    {
+      "path": "symbols/DSSA/analysis.json",
+      "endpoint": "analysis",
+      "symbol": "DSSA",
+      "params": {}
     }
   ],
-  "failures": []
+  "failures": [],
+  "note": "price and analysis files for BBCA/SAPX/ARCI/DSSA added 2026-10-04 from a paced live verification run (Sunday; price shows the 2026-10-02 close)."
 }

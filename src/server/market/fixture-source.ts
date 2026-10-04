@@ -110,6 +110,6 @@ export class FixtureSource extends ArjumSource {
 
   // Health of a recorded file says nothing about the provider; keep it explicit.
   override async providerHealth() {
-    return this.wrap({ ok: false, status: "fixture" }, "UNAVAILABLE", null);
+    return this.wrap({ ok: false, status: "fixture", quota: null }, "UNAVAILABLE", null);
   }
 }

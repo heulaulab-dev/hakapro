@@ -38,7 +38,7 @@ export async function getStockOverview(source: MarketDataSource, symbol: string,
   const [price, foreignFlow, brokers, ownership, financials] = await Promise.all([
     section(() => history, (data) => summarizePrice(data)),
     section(() => history, (data) => summarizeForeignFlow(data)),
-    section(() => source.brokerSummary(symbol, signal), (data) => summarizeBrokers(data)),
+    section(() => source.brokerSummary(symbol, {}, signal), (data) => summarizeBrokers(data)),
     section(() => source.insiders(symbol, { limit: ARJUM_LIMITS.insiders }, signal), (data) => summarizeInsiders(data)),
     section(() => source.financialStatements(symbol, { reportType: "INCOME_STATEMENT", period: "quarterly", limit: 12 }, signal), (data) => summarizeFinancials(data)),
   ]);

@@ -124,6 +124,8 @@ export async function recordFixtures(options: RecordOptions): Promise<RecordResu
       }
       await record("insiders", `/api/insiders/${symbol}`, { page: 1, limit: ARJUM_LIMITS.insiders }, at);
       await record("done-details", "/api/done-details", { code: symbol, page: 1, per_page: ARJUM_LIMITS.doneDetailsPerPage }, at);
+      await record("price", `/api/price/${symbol}`, {}, at);
+      await record("analysis", `/api/analysis/${symbol}`, {}, at);
     }
 
     const manifest = manifestSchema.parse({

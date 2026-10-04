@@ -4,8 +4,9 @@
  */
 import type { NewsItem, AnnouncementItem, ScreenRequest } from "@/server/schemas/idx-bei";
 export type {
-  BrokerAccumulation, BrokerSummary, DoneDetails, FinancialStatements, History, Insiders, MarketCap, SearchResult, Seasonality,
+  BrokerAccumulation, BrokerFlow, BrokerSummary, DoneDetails, FinancialStatements, History, Insiders, LastPrice, MarketCap, SearchResult, Seasonality,
 } from "@/server/services/arjum-normalize";
+export type { StockAnalysis } from "@/server/services/analysis-parse";
 export type { StrategyScreen } from "@/server/services/why-matched";
 export type { NewsItem, AnnouncementItem, ScreenRequest };
 

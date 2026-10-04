@@ -23,7 +23,7 @@ export const screenerResponseSchema = z.object({
   raw: z.string(), cached_for_seconds: finite,
 });
 
-// Kept for contract tests only. Analysis text is not displayed in Phase 1 (MIGRATION §9.5).
+// Free text; parsed into structured fields by services/analysis-parse.ts and never shown verbatim (MIGRATION §9.5).
 export const analysisResponseSchema = z.object({ stock_code: z.string(), output: z.string() });
 
 const brokerBase = z.object({ broker_code: z.string(), broker_name: z.string() });
@@ -35,9 +35,10 @@ export const brokerSummaryResponseSchema = z.object({
     nval: finite, nvol: finite,
   })),
   // A side is null when fewer brokers traded on it (seen live for WOOD on 2026-10-02).
+  // With `net=true` the level sides carry no frequency (seen live for BBCA on 2026-10-04).
   broker_levels: z.array(z.object({
-    buy: brokerBase.extend({ bval: finite, bvol: finite, bfrq: finite, bavg: finite }).nullable(),
-    sell: brokerBase.extend({ sval: finite, svol: finite, sfrq: finite, savg: finite }).nullable(),
+    buy: brokerBase.extend({ bval: finite, bvol: finite, bfrq: finite.optional(), bavg: finite }).nullable(),
+    sell: brokerBase.extend({ sval: finite, svol: finite, sfrq: finite.optional(), savg: finite }).nullable(),
   })),
   broker_start_date: z.string(), broker_end_date: z.string(), broker_date_min: z.string(), broker_date_max: z.string(),
   broker_net: z.boolean(), flow: z.string(),
@@ -57,6 +58,8 @@ export const brokerAccumulationResponseSchema = z.object({
 
 export const historyResponseSchema = z.object({
   stock_code: z.string(), frame: z.string(),
+  // Range the provider actually holds for the stock (newer responses only; absent in 2026-09 recordings).
+  data_available: z.object({ start: z.string(), end: z.string() }).optional(),
   rows: z.array(z.object({
     date: z.string(), close: finite, change: finite, change_pct: finite,
     value: finite, volume: finite, freq: finite, f_buy: finite,
@@ -81,6 +84,8 @@ export const marketCapResponseSchema = z.object({
     listed_shares_label: z.string(), market_cap: finite, market_cap_label: z.string(),
     turnover_ratio: finite, turnover_ratio_label: z.string(),
   })),
+  // Only present when `codes` was requested: requested codes without data.
+  not_found: z.array(z.string()).optional(),
 });
 
 export type FinancialNode = number | { [key: string]: FinancialNode };
@@ -118,6 +123,18 @@ export const doneDetailsResponseSchema = z.object({
 
 export const healthResponseSchema = z.object({ ok: z.boolean(), status: z.string() });
 
+/**
+ * `/api/price/{code}`: today's running aggregate, not a realtime tick. Without a trade today,
+ * `last_price` is the last close and `source_date` says which session it came from.
+ */
+export const priceResponseSchema = z.object({
+  code: z.string(), last_price: finite, freq: finite, lot: finite, value: finite,
+  source_date: z.string().optional(),
+  data_ts: z.string().nullable(), served_ts: z.string(),
+  market_state: z.string(), market_label: z.string(),
+  no_trade_today: z.boolean(), quote_age_ms: nullableFinite,
+});
+
 export type SearchResponse = z.infer<typeof searchResponseSchema>;
 export type ScreenerResponse = z.infer<typeof screenerResponseSchema>;
 export type BrokerSummaryResponse = z.infer<typeof brokerSummaryResponseSchema>;
@@ -129,3 +146,5 @@ export type FinancialStatementsResponse = z.infer<typeof financialStatementsResp
 export type InsidersResponse = z.infer<typeof insidersResponseSchema>;
 export type DoneDetailsResponse = z.infer<typeof doneDetailsResponseSchema>;
 export type HealthResponse = z.infer<typeof healthResponseSchema>;
+export type PriceResponse = z.infer<typeof priceResponseSchema>;
+export type AnalysisResponse = z.infer<typeof analysisResponseSchema>;

@@ -1,0 +1,14 @@
+{
+  "code": "SAPX",
+  "last_price": 398,
+  "freq": 0,
+  "lot": 0,
+  "value": 0,
+  "source_date": "2026-10-02",
+  "data_ts": null,
+  "served_ts": "07:54:50",
+  "market_state": "weekend",
+  "market_label": "Market tutup (weekend)",
+  "no_trade_today": true,
+  "quote_age_ms": null
+}

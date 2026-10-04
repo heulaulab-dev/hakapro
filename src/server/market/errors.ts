@@ -6,6 +6,7 @@ export type MarketDataErrorCode =
   | "INVALID_REQUEST"
   | "NOT_CONFIGURED"
   | "UNSUPPORTED"
+  | "NOT_FOUND"
   | "NOT_RECORDED";
 
 export class MarketDataError extends Error {

@@ -20,6 +20,11 @@ const PATHS: Record<string, string> = {
   "financial-statements": "symbols/BBCA/financial-statements.INCOME_STATEMENT.json",
 };
 
+/** Frozen live samples of the 2026-10-02 session (see fixtures/arjum-baseline/samples-2026-10-02/README.md). */
+export function sample<T = unknown>(file: string): T {
+  return JSON.parse(readFileSync(`${BASELINE_DIR}/samples-2026-10-02/${file}`, "utf8")) as T;
+}
+
 /** Reads a baseline recording by its logical endpoint name. */
 export function fixture<T = unknown>(name: string): T {
   const path = PATHS[name];

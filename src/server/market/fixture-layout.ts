@@ -2,7 +2,7 @@
 // Pure: no fs, no network, no env access.
 import { z } from "zod";
 import {
-  brokerAccumulationResponseSchema, brokerSummaryResponseSchema, doneDetailsResponseSchema, financialStatementsResponseSchema,
+  analysisResponseSchema, priceResponseSchema, brokerAccumulationResponseSchema, brokerSummaryResponseSchema, doneDetailsResponseSchema, financialStatementsResponseSchema,
   healthResponseSchema, historyResponseSchema, insidersResponseSchema, marketCapResponseSchema, screenerResponseSchema,
   searchResponseSchema, seasonalityResponseSchema,
 } from "@/server/schemas/arjum";
@@ -16,6 +16,8 @@ export const SYMBOL_ENDPOINTS = {
   "financial-statements": financialStatementsResponseSchema,
   insiders: insidersResponseSchema,
   "done-details": doneDetailsResponseSchema,
+  price: priceResponseSchema,
+  analysis: analysisResponseSchema,
 } as const;
 /** Provider report_type values (arjum calls cash flow "CASH_FLOW_REPORT"). */
 export const REPORT_TYPES = ["INCOME_STATEMENT", "BALANCE_SHEET", "CASH_FLOW_REPORT"] as const;

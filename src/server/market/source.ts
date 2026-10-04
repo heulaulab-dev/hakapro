@@ -1,18 +1,25 @@
 import type { WithFreshness } from "@/lib/freshness";
 import { unsupported } from "./errors";
 import type {
-  AnnouncementItem, BrokerAccumulation, BrokerSummary, CompanyProfile, CorporateAction, DoneDetails, FinancialStatements,
-  ForeignFlow, FundamentalPeriod, History, Insiders, MarketCap, MarketOverview, NewsItem, ScreenRequest, ScreenResult,
-  SearchResult, Seasonality, Security, StockSnapshot, StrategyScreen,
+  AnnouncementItem, BrokerAccumulation, BrokerFlow, BrokerSummary, CompanyProfile, CorporateAction, DoneDetails, FinancialStatements,
+  ForeignFlow, FundamentalPeriod, History, Insiders, LastPrice, MarketCap, MarketOverview, NewsItem, ScreenRequest, ScreenResult,
+  SearchResult, Seasonality, Security, StockAnalysis, StockSnapshot, StrategyScreen,
 } from "./types";
 
-export type HistoryQuery = { limit?: number; frame?: "daily" | "weekly" | "monthly" };
+export type HistoryQuery = { limit?: number; frame?: "daily" | "weekly" | "monthly"; startDate?: string; endDate?: string };
+/** Without dates the provider returns its latest session. Limits cap the broker list and the paired buy/sell levels. */
+export type BrokerSummaryQuery = { startDate?: string; endDate?: string; flow?: BrokerFlow; net?: boolean; brokerLimit?: number; levelLimit?: number };
+/** With `symbols`, only those stocks are returned and paging is ignored by the provider. */
+export type MarketCapQuery = { page?: number; perPage?: number; date?: string; symbols?: string[] };
 export type BrokerAccumulationQuery = { startDate?: string; endDate?: string; top?: number; brokers?: string[] };
 export type PageQuery = { page?: number; perPage?: number };
 export type FinancialsQuery = { reportType?: "INCOME_STATEMENT" | "BALANCE_SHEET" | "CASH_FLOW"; period?: "quarterly" | "annual"; limit?: number; year?: string };
 export type InsidersQuery = { page?: number; limit?: number; actionType?: "buy" | "sell" | "cross" };
 
 type R<T> = Promise<WithFreshness<T>>;
+
+/** Provider status plus its daily request quota as last reported in response headers (null until seen). */
+export type ProviderHealth = { ok: boolean; status: string; quota: { limit: number; remaining: number; observedAt: string } | null };
 
 /**
  * The only way UI-facing code reaches market data. Implementations: arjum, idx-bei, fixture
@@ -23,15 +30,19 @@ export interface MarketDataSource {
   // arjum lane
   search(q: string, signal?: AbortSignal): R<SearchResult[]>;
   strategies(signal?: AbortSignal): R<StrategyScreen>;
-  brokerSummary(symbol: string, signal?: AbortSignal): R<BrokerSummary>;
+  brokerSummary(symbol: string, query?: BrokerSummaryQuery, signal?: AbortSignal): R<BrokerSummary>;
   brokerAccumulation(symbol: string, query: BrokerAccumulationQuery, signal?: AbortSignal): R<BrokerAccumulation>;
   history(symbol: string, query: HistoryQuery, signal?: AbortSignal): R<History>;
   seasonality(symbol: string, signal?: AbortSignal): R<Seasonality>;
-  marketCap(query: PageQuery & { date?: string }, signal?: AbortSignal): R<MarketCap>;
+  marketCap(query: MarketCapQuery, signal?: AbortSignal): R<MarketCap>;
   financialStatements(symbol: string, query: FinancialsQuery, signal?: AbortSignal): R<FinancialStatements>;
   insiders(symbol: string, query: InsidersQuery, signal?: AbortSignal): R<Insiders>;
   doneDetails(symbol: string, query: PageQuery & { date?: string }, signal?: AbortSignal): R<DoneDetails>;
-  providerHealth(signal?: AbortSignal): R<{ ok: boolean; status: string }>;
+  providerHealth(signal?: AbortSignal): R<ProviderHealth>;
+  /** Today's last price and running totals (not a realtime tick). */
+  price(symbol: string, signal?: AbortSignal): R<LastPrice>;
+  /** Structured technical/flow analysis (numbers and categories only, never provider wording). */
+  analysis(symbol: string, signal?: AbortSignal): R<StockAnalysis>;
   // idx-bei lane
   marketOverview(): R<MarketOverview>;
   stock(symbol: string): R<StockSnapshot>;
@@ -63,7 +74,9 @@ export abstract class BaseMarketDataSource implements MarketDataSource {
   async financialStatements(..._args: unknown[]): R<FinancialStatements> { return this.fail("financialStatements"); }
   async insiders(..._args: unknown[]): R<Insiders> { return this.fail("insiders"); }
   async doneDetails(..._args: unknown[]): R<DoneDetails> { return this.fail("doneDetails"); }
-  async providerHealth(..._args: unknown[]): R<{ ok: boolean; status: string }> { return this.fail("providerHealth"); }
+  async providerHealth(..._args: unknown[]): R<ProviderHealth> { return this.fail("providerHealth"); }
+  async price(..._args: unknown[]): R<LastPrice> { return this.fail("price"); }
+  async analysis(..._args: unknown[]): R<StockAnalysis> { return this.fail("analysis"); }
   async marketOverview(..._args: unknown[]): R<MarketOverview> { return this.fail("marketOverview"); }
   async stock(..._args: unknown[]): R<StockSnapshot> { return this.fail("stock"); }
   async fundamentals(..._args: unknown[]): R<FundamentalPeriod[]> { return this.fail("fundamentals"); }

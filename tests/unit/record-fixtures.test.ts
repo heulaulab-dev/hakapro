@@ -27,6 +27,8 @@ function fakeProvider(overrides: Record<string, () => Response> = {}) {
       const [, endpoint, symbol] = symbolMatch;
       if (endpoint === "broker-accumulation") return as(endpoint, symbol, "code");
       if (endpoint === "seasonal") return as("seasonal", symbol, "stock_code");
+      // Documented sample shape (stock.arjum.com docs); the baseline session has no recorded price.
+      if (endpoint === "price") return Response.json({ code: symbol, last_price: 6300, freq: 0, lot: 0, value: 0, source_date: "2026-09-18", data_ts: null, served_ts: "08:00:00", market_state: "weekend", market_label: "Market tutup (weekend)", no_trade_today: true, quote_age_ms: null });
       return as(endpoint, symbol, "stock_code");
     }
     return new Response("{}", { status: 404 });
@@ -48,9 +50,9 @@ describe("recordFixtures (fake provider, no network)", () => {
     for (const symbol of ["SOCI", "HRTA", "BBCA"]) {
       const files = readdirSync(join(root, "fixtures/arjum/symbols", symbol)).sort();
       expect(files).toEqual([
-        "broker-accumulation.json", "broker-summary.json", "done-details.json",
+        "analysis.json", "broker-accumulation.json", "broker-summary.json", "done-details.json",
         "financial-statements.BALANCE_SHEET.json", "financial-statements.CASH_FLOW_REPORT.json", "financial-statements.INCOME_STATEMENT.json",
-        "history.json", "insiders.json", "seasonal.json",
+        "history.json", "insiders.json", "price.json", "seasonal.json",
       ]);
     }
     expect(existsSync(join(root, "fixtures/arjum/global/screener.json"))).toBe(true);

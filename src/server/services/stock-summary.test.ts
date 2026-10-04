@@ -45,9 +45,9 @@ describe("summaries from recorded BBCA data", () => {
 
 describe("edge cases", () => {
   test("empty inputs never produce zeros", () => {
-    expect(summarizePrice({ symbol: "X", frame: "daily", rows: [] })).toBeNull();
-    expect(summarizeForeignFlow({ symbol: "X", frame: "daily", rows: [] })).toBeNull();
-    expect(summarizeBrokers({ symbol: "X", startDate: "", endDate: "", brokers: [] })).toBeNull();
+    expect(summarizePrice({ symbol: "X", frame: "daily", rows: [], available: null })).toBeNull();
+    expect(summarizeForeignFlow({ symbol: "X", frame: "daily", rows: [], available: null })).toBeNull();
+    expect(summarizeBrokers({ symbol: "X", startDate: "", endDate: "", availableFrom: "", availableTo: "", flow: "all", net: false, brokers: [], levels: [] })).toBeNull();
   });
 
   test("sells count negative; an unparseable change makes the net unknown", () => {
