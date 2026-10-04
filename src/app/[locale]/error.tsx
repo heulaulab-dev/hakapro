@@ -16,7 +16,7 @@ export default function LocaleError({ error, reset }: { error: Error & { digest?
   return (
     <main className="flex flex-1 items-center justify-center p-6">
       <EmptyState icon={<AlertTriangle />} title={t("title")} description={<>{t("description")}{error.digest && <span className="ticker mt-1 block">{t("reference", { digest: error.digest })}</span>}</>}
-        action={<div className="flex gap-2"><Button size="sm" onClick={reset}>{t("retry")}</Button><Button size="sm" variant="outline" asChild><Link href="/">{t("home")}</Link></Button></div>} />
+        action={<div className="flex gap-2"><Button size="sm" onClick={reset}>{t("retry")}</Button><Button size="sm" variant="outline" asChild><Link href="/dashboard">{t("home")}</Link></Button></div>} />
     </main>
   );
 }

@@ -45,7 +45,7 @@ function Section({ id, eyebrow, title, intro, children, className }: { id: strin
   );
 }
 
-/** Public "About HAKAPRO" landing page. Server-rendered; only the locale and theme controls are client components. */
+/** Public landing page at the locale root ("/id", "/en"). Server-rendered; only the locale and theme controls are client components. */
 export async function LandingPage({ viewer, theme }: { viewer: Viewer; theme: Theme }) {
   const t = await getTranslations("landing");
   const tApp = await getTranslations("app");
@@ -57,11 +57,11 @@ export async function LandingPage({ viewer, theme }: { viewer: Viewer; theme: Th
   const ctas = (testId: string) => (
     <div className="flex flex-wrap items-center gap-3" data-testid={testId}>
       {signedIn ? (
-        <Button asChild variant="primary" size="lg"><Link href="/">{t("cta.open")}<ArrowRight /></Link></Button>
+        <Button asChild variant="primary" size="lg"><Link href="/dashboard">{t("cta.open")}<ArrowRight /></Link></Button>
       ) : (
         <>
-          <Button asChild variant="primary" size="lg"><Link href="/signup?next=%2F">{t("cta.signup")}<ArrowRight /></Link></Button>
-          <Button asChild variant="outline" size="lg"><Link href="/login?next=%2F">{t("cta.signin")}</Link></Button>
+          <Button asChild variant="primary" size="lg"><Link href="/signup?next=%2Fdashboard">{t("cta.signup")}<ArrowRight /></Link></Button>
+          <Button asChild variant="outline" size="lg"><Link href="/login?next=%2Fdashboard">{t("cta.signin")}</Link></Button>
         </>
       )}
     </div>
@@ -71,7 +71,7 @@ export async function LandingPage({ viewer, theme }: { viewer: Viewer; theme: Th
     <div className="relative" data-testid="landing">
       <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 md:px-6">
-          <Link href="/about" className="flex items-center gap-2" aria-label={tApp("name")}>
+          <Link href="/" className="flex items-center gap-2" aria-label={tApp("name")}>
             <span className="flex size-8 items-center justify-center rounded-[8px] bg-muted shadow-(--shadow-mark)"><CandlestickChart className="size-3.5 text-icon" /></span>
             <span className="text-[15px] font-semibold tracking-[-0.01em]">{tApp("name")}</span>
           </Link>
@@ -85,7 +85,7 @@ export async function LandingPage({ viewer, theme }: { viewer: Viewer; theme: Th
             <LocaleSwitch />
             <ThemeToggle initial={theme} />
             <Button asChild variant={signedIn ? "primary" : "secondary"} size="md" className="ml-1">
-              <Link href={signedIn ? "/" : "/login?next=%2F"}>{signedIn ? t("cta.open") : t("cta.signin")}</Link>
+              <Link href={signedIn ? "/dashboard" : "/login?next=%2Fdashboard"}>{signedIn ? t("cta.open") : t("cta.signin")}</Link>
             </Button>
           </div>
         </div>
@@ -213,10 +213,10 @@ export async function LandingPage({ viewer, theme }: { viewer: Viewer; theme: Th
             <span className="caption-style max-w-md leading-snug text-subtle">{t("footer.disclaimer")}</span>
           </div>
           <nav aria-label={t("nav.label")} className="flex flex-wrap gap-x-6 gap-y-2 text-soft">
-            <Link href="/" className="hover:text-foreground">{t("footer.app")}</Link>
-            {!signedIn && <Link href="/login?next=%2F" className="hover:text-foreground">{t("cta.signin")}</Link>}
-            <Link href="/about" locale="id" className="hover:text-foreground">Bahasa Indonesia</Link>
-            <Link href="/about" locale="en" className="hover:text-foreground">English</Link>
+            <Link href="/dashboard" className="hover:text-foreground">{t("footer.app")}</Link>
+            {!signedIn && <Link href="/login?next=%2Fdashboard" className="hover:text-foreground">{t("cta.signin")}</Link>}
+            <Link href="/" locale="id" className="hover:text-foreground">Bahasa Indonesia</Link>
+            <Link href="/" locale="en" className="hover:text-foreground">English</Link>
           </nav>
         </div>
       </footer>

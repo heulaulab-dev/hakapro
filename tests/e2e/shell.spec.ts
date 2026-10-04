@@ -13,7 +13,7 @@ test.describe("desktop", () => {
   only("desktop");
 
   test("sidebar shows the four destinations with Discover sub-pages, labelled", async ({ page }) => {
-    await page.goto("/id");
+    await page.goto("/id/dashboard");
     const sidebar = page.getByTestId("app-sidebar");
     await expect(sidebar).toBeVisible();
     for (const label of ["Beranda", "Screener", "Strategi", "Penggerak Pasar", "Perubahan Kepemilikan", "Daftar Pantau", "Berita & Kalender"]) {
@@ -23,7 +23,7 @@ test.describe("desktop", () => {
   });
 
   test("sidebar navigation marks the active page", async ({ page }) => {
-    await page.goto("/en");
+    await page.goto("/en/dashboard");
     await page.getByTestId("nav-strategies").click();
     await expect(page).toHaveURL(/\/en\/discover\/strategies$/);
     await expect(page.getByTestId("nav-strategies")).toHaveAttribute("aria-current", "page");
@@ -31,7 +31,7 @@ test.describe("desktop", () => {
   });
 
   test("Ctrl+K searches stocks and opens the stock page", async ({ page }) => {
-    await page.goto("/id");
+    await page.goto("/id/dashboard");
     await openPaletteWithKeyboard(page);
     await page.getByTestId("palette-input").fill("bbca");
     await page.getByTestId("palette-stock-BBCA").click();
@@ -52,7 +52,7 @@ test.describe("desktop", () => {
   });
 
   test("saved screens ask the viewer to sign in when there is no session", async ({ page }) => {
-    await page.goto("/en");
+    await page.goto("/en/dashboard");
     await openPaletteWithKeyboard(page);
     await expect(page.getByText("Sign in to see saved screens.")).toBeVisible();
   });
@@ -67,7 +67,7 @@ test.describe("desktop", () => {
   });
 
   test("theme and density switches apply immediately and persist", async ({ page }) => {
-    await page.goto("/en");
+    await page.goto("/en/dashboard");
     const html = page.locator("html");
     await expect(html).toHaveClass(/\bdark\b/);
     await expect(html).toHaveAttribute("data-density", "comfortable");
@@ -92,7 +92,7 @@ test.describe("tablet", () => {
   only("tablet");
 
   test("icon rail with hidden labels, header controls, no bottom nav", async ({ page }) => {
-    await page.goto("/en");
+    await page.goto("/en/dashboard");
     const sidebar = page.getByTestId("app-sidebar");
     await expect(sidebar).toBeVisible();
     expect((await sidebar.boundingBox())!.width).toBeLessThan(80);
@@ -107,7 +107,7 @@ test.describe("mobile", () => {
   only("mobile");
 
   test("own hierarchy: bottom nav, no sidebar, no desktop search box", async ({ page }) => {
-    await page.goto("/id");
+    await page.goto("/id/dashboard");
     await expect(page.getByTestId("mobile-nav")).toBeVisible();
     await expect(page.getByTestId("app-sidebar")).toBeHidden();
     await expect(page.getByTestId("header-search")).toBeHidden();
@@ -117,7 +117,7 @@ test.describe("mobile", () => {
   });
 
   test("Search opens the palette; More holds Discover, News and display settings", async ({ page }) => {
-    await page.goto("/en");
+    await page.goto("/en/dashboard");
     await page.getByTestId("mobile-search").click();
     await expect(page.getByTestId("palette-input")).toBeVisible();
     await page.keyboard.press("Escape");

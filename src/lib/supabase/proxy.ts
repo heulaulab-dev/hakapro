@@ -37,12 +37,13 @@ export async function updateSession(request: NextRequest, response: NextResponse
   // API routes answer 401 JSON themselves instead of being redirected to an HTML login page.
   if (pathname.startsWith("/api/") || pathname.startsWith("/auth/")) return response;
   const { locale, path } = stripLocale(pathname);
+  // "/" is the public landing page; everything else in the app needs a session.
   const isPublic = path === "/" || PUBLIC_PATHS.some((prefix) => path === prefix || path.startsWith(`${prefix}/`));
   if (!isAuthenticated && !isPublic) {
     const login = new URL(`/${locale}/login`, request.url);
     login.searchParams.set("next", `${pathname}${request.nextUrl.search}`);
     return NextResponse.redirect(login);
   }
-  if (isAuthenticated && (path === "/login" || path === "/signup")) return NextResponse.redirect(new URL(`/${locale}`, request.url));
+  if (isAuthenticated && (path === "/login" || path === "/signup")) return NextResponse.redirect(new URL(`/${locale}/dashboard`, request.url));
   return response;
 }

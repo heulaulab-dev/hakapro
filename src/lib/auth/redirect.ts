@@ -1,9 +1,9 @@
 /**
  * Post-auth destination. Only same-origin, locale-prefixed app paths are accepted; anything else
- * (absolute URLs, protocol-relative "//", backslash tricks, unknown locales) falls back to home.
+ * (absolute URLs, protocol-relative "//", backslash tricks, unknown locales) falls back to the dashboard.
  */
 export function safeNextPath(value: string | null | undefined, locale: string, locales: readonly string[]): string {
-  const home = `/${locale}`;
+  const home = `/${locale}/dashboard`;
   if (!value || !value.startsWith("/") || value.startsWith("//") || value.includes("\\") || /[\u0000-\u001f]/.test(value)) return home;
   let url: URL;
   try {

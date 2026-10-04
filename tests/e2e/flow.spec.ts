@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 // Step 7 vertical slice on fixture data: Home → Strategies → Akumulasi Senyap → Why matched → Stock Overview.
 test("desktop: Home → Strategies → why matched → stock research", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "desktop", "desktop flow");
-  await page.goto("/id");
+  await page.goto("/id/dashboard");
   await expect(page.getByTestId("home-condition")).toContainText("FLAT MARKET");
   await expect(page.getByTestId("home-movers").getByTestId("data-state-code")).toHaveText("UNSUPPORTED");
   await expect(page.getByTestId("home-strategies").getByTestId("research-disclaimer")).toBeVisible();
@@ -52,7 +52,7 @@ test("desktop: BBCA overview answers 'what should I know' before the tabs", asyn
 
 test("mobile: More → Strategies → why matched in a bottom sheet", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "mobile", "mobile flow");
-  await page.goto("/en");
+  await page.goto("/en/dashboard");
   await page.getByTestId("mobile-more").click();
   await page.getByRole("dialog").getByRole("link", { name: "Strategies" }).click();
   await page.getByTestId("strategy-akumulasi-senyap").click();

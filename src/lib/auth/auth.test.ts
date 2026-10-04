@@ -12,7 +12,7 @@ describe("safeNextPath", () => {
   ])("keeps %s", (input, expected) => expect(safeNextPath(input, "id", L)).toBe(expected));
 
   test.each([null, "", "https://evil.example/id", "//evil.example/id", "/\\evil.example", "/fr/stock/BBCA", "stock/BBCA", "/id/login", "/en/signup?x=1", "/id/\u0000"])("rejects %j", (input) => {
-    expect(safeNextPath(input, "id", L)).toBe("/id");
+    expect(safeNextPath(input, "id", L)).toBe("/id/dashboard");
   });
 });
 

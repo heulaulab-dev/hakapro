@@ -61,7 +61,7 @@ export function AuthForm({ kind, mode, next, callbackError }: { kind: AuthFormKi
         router.replace(destination);
         router.refresh();
       } else if (kind === "signup") {
-        const { error: failure } = await auth.signUp({ email, password, options: { emailRedirectTo: callback(`/${locale}`) } });
+        const { error: failure } = await auth.signUp({ email, password, options: { emailRedirectTo: callback(`/${locale}/dashboard`) } });
         if (failure) throw failure;
         setNotice(t("checkEmail"));
       } else if (kind === "forgot") {
@@ -73,7 +73,7 @@ export function AuthForm({ kind, mode, next, callbackError }: { kind: AuthFormKi
         const { error: failure } = await auth.updateUser({ password });
         if (failure) throw failure;
         setNotice(t("passwordSaved"));
-        router.replace(`/${locale}`);
+        router.replace(`/${locale}/dashboard`);
         router.refresh();
       }
     } catch (failure) {

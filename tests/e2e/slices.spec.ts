@@ -205,7 +205,7 @@ test.describe("alerts", () => {
     await page.goto("/en/alerts?symbol=BBCA");
     await expect(page.getByRole("heading", { level: 1, name: "Alerts" })).toBeVisible();
     await expect(page.getByText("Sign in to create alerts.")).toBeVisible();
-    await page.goto("/en");
+    await page.goto("/en/dashboard");
     await page.getByTestId("header-search").click();
     await page.getByTestId("palette-input").fill("alerts");
     await page.getByTestId("palette-page-alerts").click();

@@ -17,7 +17,7 @@
 | S6 | Chart, Insiders, History, Ownership tabs | ✅ | 54e2fae |
 | S7 | Production readiness | ✅ | 1de1e69 |
 | S8 | Alerts page (create/toggle/delete, triggered events) | ✅ | see git log |
-| S10 | Public landing page `/{locale}/about` (what HAKAPRO is) | ✅ | see git log |
+| S10 | Public landing page at `/{locale}`; research home moved to `/{locale}/dashboard` | ✅ | see git log |
 | S9 | Full arjum coverage: price, analysis, every documented parameter (MIGRATION §11) | ✅ | see git log |
 
 ## Checkpoint 2 notes
@@ -235,3 +235,4 @@ The user kept the layout and asked for heulaulab-dashboard's design system:
 - `/{locale}/about` (route group `(marketing)`, no app shell, own scroll container), Indonesian default and English; server-rendered, linked from the sidebar footer, Cmd+K and the mobile More menu.
 - Sections: hero with an illustrated stock page (fixed values, labelled "Illustration"), facts, features, data freshness (real FreshnessBadge states, never LIVE), how it works, principles, FAQ, final call to action, footer disclaimer.
 - Copy rules: no data vendor is named; no invented testimonials or figures (facts are product facts: 900+ listed companies, daily history from 2020, 8 sections, 2 languages); CTAs follow the auth model (market data needs an account; signed-in users get "Open HAKAPRO").
+- 2026-10-04 (user request): the landing page moved from `/{locale}/about` to the locale root `/{locale}`, and the research home moved from `/{locale}` to `/{locale}/dashboard`. Other app URLs are unchanged. Post-login, post-signup and password-reset destinations default to `/dashboard`; sign-out returns to the landing page. This also fixes `/about` being behind the login redirect in production (the proxy only treats `/` and auth pages as public).

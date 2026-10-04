@@ -3,9 +3,9 @@ import { ArrowUpDown, Bell, Bookmark, Compass, House, Info, Landmark, ListChecks
 export type NavKey = "home" | "discover" | "screener" | "strategies" | "movers" | "ownership" | "watchlist" | "news" | "alerts" | "about";
 export type NavItem = { key: NavKey; href: string; icon: LucideIcon; children?: NavItem[] };
 
-/** The four primary destinations. Stock pages are reached via search, Cmd+K or lists, never the nav. */
+/** The four primary destinations ("/" is the public landing page; the research home is /dashboard). Stock pages are reached via search, Cmd+K or lists, never the nav. */
 export const NAV: NavItem[] = [
-  { key: "home", href: "/", icon: House },
+  { key: "home", href: "/dashboard", icon: House },
   {
     key: "discover",
     href: "/discover/strategies",
@@ -22,7 +22,7 @@ export const NAV: NavItem[] = [
 ];
 
 /** Secondary destinations: not in the 4-item sidebar, reachable from Cmd+K, the account menu and mobile More. */
-export const SECONDARY: NavItem[] = [{ key: "alerts", href: "/alerts", icon: Bell }, { key: "about", href: "/about", icon: Info }];
+export const SECONDARY: NavItem[] = [{ key: "alerts", href: "/alerts", icon: Bell }, { key: "about", href: "/", icon: Info }];
 
 /** Every page reachable from Cmd+K. */
 export const ALL_PAGES: NavItem[] = [...NAV.flatMap((item) => (item.children ? item.children : [item])), ...SECONDARY];

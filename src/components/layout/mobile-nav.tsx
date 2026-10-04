@@ -25,7 +25,7 @@ export function MobileNav({ theme, density }: { theme: Theme; density: Density }
   return (
     <>
       <nav aria-label={t("nav.label")} data-testid="mobile-nav" className="flex h-14 shrink-0 border-t border-border bg-sidebar pb-[env(safe-area-inset-bottom)] md:hidden">
-        <Link href="/" className={cn(tab, isActive(pathname, "/") && "text-foreground")} aria-current={isActive(pathname, "/") ? "page" : undefined}>
+        <Link href="/dashboard" className={cn(tab, isActive(pathname, "/dashboard") && "text-foreground")} aria-current={isActive(pathname, "/dashboard") ? "page" : undefined}>
           <House className="size-4" />
           {t("nav.home")}
         </Link>

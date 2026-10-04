@@ -8,7 +8,7 @@ export default async function LocaleNotFound() {
   const t = await getTranslations("errors");
   return (
     <main className="flex flex-1 items-center justify-center p-6" data-testid="not-found">
-      <EmptyState icon={<SearchX />} title={t("notFoundTitle")} description={t("notFoundDescription")} action={<Button size="sm" variant="outline" asChild><Link href="/">{t("home")}</Link></Button>} />
+      <EmptyState icon={<SearchX />} title={t("notFoundTitle")} description={t("notFoundDescription")} action={<Button size="sm" variant="outline" asChild><Link href="/dashboard">{t("home")}</Link></Button>} />
     </main>
   );
 }

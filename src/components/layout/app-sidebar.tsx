@@ -38,7 +38,7 @@ export function AppSidebar() {
 
   return (
     <aside data-testid="app-sidebar" className="hidden w-14 shrink-0 flex-col border-r border-sidebar-border bg-sidebar md:flex xl:w-(--sidebar-width)">
-      <Link href="/" className="flex shrink-0 items-center justify-center gap-2 border-b border-sidebar-border bg-sidebar-accent p-3 xl:justify-start">
+      <Link href="/dashboard" className="flex shrink-0 items-center justify-center gap-2 border-b border-sidebar-border bg-sidebar-accent p-3 xl:justify-start">
         <span className="relative flex size-8 shrink-0 items-center justify-center rounded-[8px] bg-muted shadow-(--shadow-mark)">
           <CandlestickChart className="size-3.5 text-icon" />
         </span>
@@ -62,7 +62,7 @@ export function AppSidebar() {
       <div className="shrink-0 border-t border-sidebar-border p-2 xl:p-3">
         <Tooltip>
           <TooltipTrigger asChild>
-            <Link href="/about" data-testid="nav-about" className={itemClass}>
+            <Link href="/" data-testid="nav-about" className={itemClass}>
               <Info className={iconClass} />
               <span className="sr-only xl:not-sr-only xl:min-w-0 xl:flex-1 xl:truncate xl:text-left">{t("nav.about")}</span>
             </Link>
