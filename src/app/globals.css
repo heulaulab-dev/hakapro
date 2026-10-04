@@ -82,6 +82,15 @@
   --color-track: var(--track);
   --color-status: var(--status);
 
+  /* Brand identity (logo surfaces, marketing). Never a market color: see the brand block below. */
+  --color-brand-deep: var(--brand-deep);
+  --color-brand-teal: var(--brand-teal);
+  --color-brand-mint: var(--brand-mint);
+  --color-brand-teal-dark: var(--brand-teal-dark);
+  --color-brand-ink: var(--brand-ink);
+  --color-brand-night: var(--brand-night);
+  --color-brand-paper: var(--brand-paper);
+
   /* Density-driven spacing and type */
   --spacing-row: var(--density-row-height);
   --spacing-cell-x: var(--density-cell-x);
@@ -111,6 +120,22 @@
   --ease-power4-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-power4-in-out: cubic-bezier(0.83, 0, 0.17, 1);
   --ease-smooth-in-out: cubic-bezier(0.7, 0, 0, 1);
+}
+
+/*
+ * HAKA PRO brand colors (docs/brand/tokens.json is the source of truth). Theme-independent.
+ * Brand teal is identity, not meaning: never use these for price up/down, change or flow. Market
+ * semantics stay on --positive/--negative/--chart-up/--chart-down below.
+ */
+:root {
+  --brand-deep: #1e5f8c;
+  --brand-teal: #12ada6;
+  --brand-mint: #8fdccb;
+  --brand-teal-dark: #0b7f7b;
+  --brand-ink: #0b1c26;
+  --brand-night: #081720;
+  --brand-paper: #f3f7f7;
+  --brand-gradient: linear-gradient(135deg, var(--brand-deep) 0%, var(--brand-teal) 55%, var(--brand-mint) 100%);
 }
 
 /*
@@ -395,6 +420,8 @@
   scrollbar-width: none;
   &::-webkit-scrollbar { display: none; }
 }
+
+@utility bg-brand-gradient { background-image: var(--brand-gradient); }
 
 @layer utilities {
   /* Every numeric display: aligned digits. Geist Mono is reserved for tickers, prices and numeric tables. */
