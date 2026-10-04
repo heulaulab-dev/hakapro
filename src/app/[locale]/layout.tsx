@@ -25,9 +25,8 @@ export async function generateMetadata({ params }: LayoutProps<"/[locale]">): Pr
     title: { default: BRAND_NAME, template: `%s · ${BRAND_NAME}` },
     applicationName: BRAND_NAME,
     description: `${t("tagline")} ${t("summary")}`,
-    // Images come from src/app/opengraph-image.tsx and twitter-image.tsx.
-    openGraph: { siteName: BRAND_NAME, type: "website", locale: locale === "id" ? "id_ID" : "en_US" },
-    twitter: { card: "summary_large_image" },
+    // No openGraph/twitter objects here: they would replace the share images from
+    // src/app/opengraph-image.tsx and twitter-image.tsx (merged at the app root, above this layout).
     robots: { index: true, follow: true },
   };
 }
