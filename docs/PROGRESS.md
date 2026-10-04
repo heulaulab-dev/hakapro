@@ -236,3 +236,12 @@ The user kept the layout and asked for heulaulab-dashboard's design system:
 - Sections: hero with an illustrated stock page (fixed values, labelled "Illustration"), facts, features, data freshness (real FreshnessBadge states, never LIVE), how it works, principles, FAQ, final call to action, footer disclaimer.
 - Copy rules: no data vendor is named; no invented testimonials or figures (facts are product facts: 900+ listed companies, daily history from 2020, 8 sections, 2 languages); CTAs follow the auth model (market data needs an account; signed-in users get "Open HAKAPRO").
 - 2026-10-04 (user request): the landing page moved from `/{locale}/about` to the locale root `/{locale}`, and the research home moved from `/{locale}` to `/{locale}/dashboard`. Other app URLs are unchanged. Post-login, post-signup and password-reset destinations default to `/dashboard`; sign-out returns to the landing page. This also fixes `/about` being behind the login redirect in production (the proxy only treats `/` and auth pages as public).
+
+## S11: HAKA PRO brand identity (2026-10-04, branch `feat/hakapro-branding`)
+- Assets: runtime files in `public/brand/` (svg, png, favicon). Sources (`tokens.json`, guidelines page, generator) in `docs/brand/`, not served publicly.
+- Favicon/icons via App Router file conventions (`src/app/favicon.ico`, `icon.svg`, `apple-icon.png`); `src/app/manifest.ts`; `themeColor` follows the theme cookie (Night / Paper).
+- Tokens: `--brand-*` + `bg-brand-gradient` in `globals.css`; semantic UI and market tokens unchanged. `tests/unit/brand.test.ts` keeps brand colors out of market/chart/data code.
+- `<Logo />` (`src/components/brand/logo.tsx`) in sidebar, mobile header, auth, landing header/footer, 404, error, global-error. Plus Jakarta Sans (`font-brand`) on brand-surface headings only.
+- Copy: the brand is written "HAKA PRO" in all UI copy (code identifiers, cookies and the provider user agent stay `HAKAPRO`/`hakapro`). Tagline "Read the market. Follow the flow." in `app.tagline`.
+- TODO (user): Indonesian translation of the tagline. `id.json` `app.tagline` holds the English text until then.
+- Open: root `metadataBase` is unset (Vercel falls back to `VERCEL_PROJECT_PRODUCTION_URL`; elsewhere set it). Market greens close to brand teal are flagged, not changed (see the branch summary).

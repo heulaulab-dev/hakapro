@@ -13,7 +13,7 @@ test.describe("landing page at the locale root", () => {
     await expect(page.getByTestId("landing-hero-cta").getByRole("link")).toHaveAttribute("href", "/id/dashboard");
     await page.goto("/en");
     await expect(page.getByTestId("landing-title")).toHaveText("IDX stock research, with every number dated.");
-    await expect(page).toHaveTitle("HAKAPRO — IDX stock research");
+    await expect(page).toHaveTitle("HAKA PRO — IDX stock research");
   });
 
   test("names no data vendor", async ({ page }) => {

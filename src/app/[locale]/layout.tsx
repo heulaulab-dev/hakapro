@@ -9,6 +9,7 @@ import { getMessages, getTranslations, setRequestLocale } from "next-intl/server
 import { FixtureBanner } from "@/components/feedback/fixture-banner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { routing } from "@/i18n/routing";
+import { BRAND_NAME } from "@/lib/brand";
 import { DENSITY_COOKIE, parseDensity, parseTheme, THEME_COLOR, THEME_COOKIE } from "@/lib/preferences";
 import "../globals.css";
 
@@ -20,7 +21,15 @@ const CLIENT_NAMESPACES = ["app", "freshness", "locale", "theme", "density", "na
 export async function generateMetadata({ params }: LayoutProps<"/[locale]">): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "app" });
-  return { title: { default: t("name"), template: `%s · ${t("name")}` }, description: t("tagline"), robots: { index: true, follow: true } };
+  return {
+    title: { default: BRAND_NAME, template: `%s · ${BRAND_NAME}` },
+    applicationName: BRAND_NAME,
+    description: `${t("tagline")} ${t("summary")}`,
+    // Images come from src/app/opengraph-image.tsx and twitter-image.tsx.
+    openGraph: { siteName: BRAND_NAME, type: "website", locale: locale === "id" ? "id_ID" : "en_US" },
+    twitter: { card: "summary_large_image" },
+    robots: { index: true, follow: true },
+  };
 }
 
 /** Follows the cookie theme (the app ignores the OS scheme), so the browser bar matches the page. */

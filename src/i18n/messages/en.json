@@ -1,7 +1,8 @@
 {
   "app": {
-    "name": "HAKAPRO",
-    "tagline": "Indonesian equity research"
+    "name": "HAKA PRO",
+    "tagline": "Read the market. Follow the flow.",
+    "summary": "Research and market intelligence for Indonesian equities."
   },
   "locale": {
     "id": "Bahasa Indonesia",
@@ -103,7 +104,7 @@
     "more": "More",
     "search": "Search",
     "alerts": "Alerts",
-    "about": "About HAKAPRO"
+    "about": "About HAKA PRO"
   },
   "stockTabs": {
     "label": "Stock sections",
@@ -688,7 +689,7 @@
   },
   "analysis": {
     "title": "Analysis",
-    "intro": "Technical, flow and historical-pattern analysis of the latest session, computed by the data provider and shown here as numbers in HAKAPRO's labels. Not investment advice.",
+    "intro": "Technical, flow and historical-pattern analysis of the latest session, computed by the data provider and shown here as numbers in HAKA PRO's labels. Not investment advice.",
     "session": "Session analysed: {date}",
     "missing": "Not included in this analysis.",
     "tone": {
@@ -745,7 +746,7 @@
       "entry": "Entry zone",
       "stopLoss": "Stop level",
       "target": "Target {n}",
-      "note": "The analysis's computed outlook and price levels, not a HAKAPRO recommendation."
+      "note": "The analysis's computed outlook and price levels, not a HAKA PRO recommendation."
     },
     "levels": {
       "R1": "R1",
@@ -893,11 +894,11 @@
   },
   "landing": {
     "meta": {
-      "title": "HAKAPRO — IDX stock research",
-      "description": "HAKAPRO is a research workspace for Indonesia Stock Exchange (IDX) stocks: prices, foreign and broker flow, financial statements, insider disclosures and structured analysis, with every number dated."
+      "title": "HAKA PRO — IDX stock research",
+      "description": "HAKA PRO is a research workspace for Indonesia Stock Exchange (IDX) stocks: prices, foreign and broker flow, financial statements, insider disclosures and structured analysis, with every number dated."
     },
     "nav": {
-      "label": "About HAKAPRO",
+      "label": "About HAKA PRO",
       "features": "Features",
       "freshness": "Data freshness",
       "how": "How it works",
@@ -906,14 +907,14 @@
     "cta": {
       "signup": "Create an account",
       "signin": "Sign in",
-      "open": "Open HAKAPRO"
+      "open": "Open HAKA PRO"
     },
     "hero": {
       "eyebrow": "Research for Indonesia Stock Exchange stocks",
       "title": "IDX stock research, with every number dated.",
-      "subtitle": "HAKAPRO puts prices, foreign and broker flow, financial statements, insider disclosures and structured analysis for every listed company into one calm workspace, and tells you how fresh each figure is.",
-      "noteSignedOut": "Market data is for signed-in users. Research only: HAKAPRO never tells you what to buy.",
-      "noteSignedIn": "Research only: HAKAPRO never tells you what to buy."
+      "subtitle": "HAKA PRO puts prices, foreign and broker flow, financial statements, insider disclosures and structured analysis for every listed company into one calm workspace, and tells you how fresh each figure is.",
+      "noteSignedOut": "Market data is for signed-in users. Research only: HAKA PRO never tells you what to buy.",
+      "noteSignedIn": "Research only: HAKA PRO never tells you what to buy."
     },
     "preview": {
       "label": "Illustration of a stock page",
@@ -933,7 +934,7 @@
       ]
     },
     "facts": {
-      "title": "HAKAPRO in numbers",
+      "title": "HAKA PRO in numbers",
       "items": [
         {
           "value": "900+",
@@ -987,7 +988,7 @@
     "freshness": {
       "eyebrow": "Data freshness",
       "title": "Every number tells you how old it is",
-      "intro": "A price from last Friday shouldn't look like a price from this minute. HAKAPRO labels every dataset with its state and as-of date, and never calls data live when it isn't.",
+      "intro": "A price from last Friday shouldn't look like a price from this minute. HAKA PRO labels every dataset with its state and as-of date, and never calls data live when it isn't.",
       "states": {
         "DELAYED": "Today's session while trading is running, a little behind the exchange.",
         "EOD": "The last completed trading session.",
@@ -1046,8 +1047,8 @@
           "a": "No. During a trading session prices are delayed, and after the close you see end-of-day data. Every figure shows its as-of date, and the time of the last trade when there is one."
         },
         {
-          "q": "Does HAKAPRO recommend stocks?",
-          "a": "No. HAKAPRO is for research and education. Where an analysis includes an outlook or price levels, it is shown as a calculation from the data, not a recommendation. Decisions are yours."
+          "q": "Does HAKA PRO recommend stocks?",
+          "a": "No. HAKA PRO is for research and education. Where an analysis includes an outlook or price levels, it is shown as a calculation from the data, not a recommendation. Decisions are yours."
         },
         {
           "q": "Which stocks are covered?",
@@ -1059,7 +1060,7 @@
         },
         {
           "q": "Does it work on my phone?",
-          "a": "Yes. HAKAPRO works on phones, tablets and desktops, in a light or dark theme."
+          "a": "Yes. HAKA PRO works on phones, tablets and desktops, in a light or dark theme."
         },
         {
           "q": "Where does the data come from?",

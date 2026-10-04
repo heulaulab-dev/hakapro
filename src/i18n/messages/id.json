@@ -1,7 +1,8 @@
 {
   "app": {
-    "name": "HAKAPRO",
-    "tagline": "Riset saham Indonesia"
+    "name": "HAKA PRO",
+    "tagline": "Read the market. Follow the flow.",
+    "summary": "Riset dan intelijen pasar untuk saham Indonesia."
   },
   "locale": {
     "id": "Bahasa Indonesia",
@@ -103,7 +104,7 @@
     "more": "Lainnya",
     "search": "Cari",
     "alerts": "Peringatan",
-    "about": "Tentang HAKAPRO"
+    "about": "Tentang HAKA PRO"
   },
   "stockTabs": {
     "label": "Bagian saham",
@@ -688,7 +689,7 @@
   },
   "analysis": {
     "title": "Analisis",
-    "intro": "Analisis teknikal, aliran dana, dan pola historis untuk sesi terakhir, dihitung oleh penyedia data dan ditampilkan di sini sebagai angka dengan label HAKAPRO. Bukan saran investasi.",
+    "intro": "Analisis teknikal, aliran dana, dan pola historis untuk sesi terakhir, dihitung oleh penyedia data dan ditampilkan di sini sebagai angka dengan label HAKA PRO. Bukan saran investasi.",
     "session": "Sesi yang dianalisis: {date}",
     "missing": "Tidak termasuk dalam analisis ini.",
     "tone": {
@@ -745,7 +746,7 @@
       "entry": "Area masuk",
       "stopLoss": "Level stop",
       "target": "Target {n}",
-      "note": "Pandangan dan level harga hasil hitungan analisis, bukan rekomendasi HAKAPRO."
+      "note": "Pandangan dan level harga hasil hitungan analisis, bukan rekomendasi HAKA PRO."
     },
     "levels": {
       "R1": "R1",
@@ -893,11 +894,11 @@
   },
   "landing": {
     "meta": {
-      "title": "HAKAPRO — Riset saham BEI",
-      "description": "HAKAPRO adalah ruang riset saham Bursa Efek Indonesia (BEI): harga, aliran dana asing dan broker, laporan keuangan, keterbukaan insider, dan analisis terstruktur, dengan tanggal di setiap angka."
+      "title": "HAKA PRO — Riset saham BEI",
+      "description": "HAKA PRO adalah ruang riset saham Bursa Efek Indonesia (BEI): harga, aliran dana asing dan broker, laporan keuangan, keterbukaan insider, dan analisis terstruktur, dengan tanggal di setiap angka."
     },
     "nav": {
-      "label": "Tentang HAKAPRO",
+      "label": "Tentang HAKA PRO",
       "features": "Fitur",
       "freshness": "Kesegaran data",
       "how": "Cara kerja",
@@ -906,14 +907,14 @@
     "cta": {
       "signup": "Buat akun",
       "signin": "Masuk",
-      "open": "Buka HAKAPRO"
+      "open": "Buka HAKA PRO"
     },
     "hero": {
       "eyebrow": "Riset saham Bursa Efek Indonesia",
       "title": "Riset saham BEI, tiap angka jelas tanggalnya.",
-      "subtitle": "HAKAPRO menyatukan harga, aliran dana asing dan broker, laporan keuangan, keterbukaan insider, dan analisis terstruktur untuk setiap emiten dalam satu ruang kerja yang tenang, lengkap dengan seberapa segar setiap datanya.",
-      "noteSignedOut": "Data pasar tersedia untuk pengguna yang sudah masuk. Hanya untuk riset: HAKAPRO tidak pernah menyuruh Anda membeli apa pun.",
-      "noteSignedIn": "Hanya untuk riset: HAKAPRO tidak pernah menyuruh Anda membeli apa pun."
+      "subtitle": "HAKA PRO menyatukan harga, aliran dana asing dan broker, laporan keuangan, keterbukaan insider, dan analisis terstruktur untuk setiap emiten dalam satu ruang kerja yang tenang, lengkap dengan seberapa segar setiap datanya.",
+      "noteSignedOut": "Data pasar tersedia untuk pengguna yang sudah masuk. Hanya untuk riset: HAKA PRO tidak pernah menyuruh Anda membeli apa pun.",
+      "noteSignedIn": "Hanya untuk riset: HAKA PRO tidak pernah menyuruh Anda membeli apa pun."
     },
     "preview": {
       "label": "Ilustrasi halaman saham",
@@ -933,7 +934,7 @@
       ]
     },
     "facts": {
-      "title": "HAKAPRO dalam angka",
+      "title": "HAKA PRO dalam angka",
       "items": [
         {
           "value": "900+",
@@ -987,7 +988,7 @@
     "freshness": {
       "eyebrow": "Kesegaran data",
       "title": "Setiap angka memberi tahu umurnya",
-      "intro": "Harga Jumat lalu tidak boleh terlihat seperti harga menit ini. HAKAPRO memberi label status dan tanggal pada setiap data, dan tidak pernah menyebut data langsung bila memang tidak.",
+      "intro": "Harga Jumat lalu tidak boleh terlihat seperti harga menit ini. HAKA PRO memberi label status dan tanggal pada setiap data, dan tidak pernah menyebut data langsung bila memang tidak.",
       "states": {
         "DELAYED": "Sesi hari ini selama perdagangan berjalan, sedikit tertinggal dari bursa.",
         "EOD": "Sesi perdagangan terakhir yang sudah selesai.",
@@ -1046,8 +1047,8 @@
           "a": "Tidak. Selama sesi perdagangan harga tertunda, dan setelah penutupan Anda melihat data akhir hari. Setiap angka menunjukkan tanggalnya, serta jam transaksi terakhir bila ada."
         },
         {
-          "q": "Apakah HAKAPRO merekomendasikan saham?",
-          "a": "Tidak. HAKAPRO untuk riset dan edukasi. Bila analisis memuat pandangan atau level harga, itu ditampilkan sebagai hasil hitungan dari data, bukan rekomendasi. Keputusan ada di tangan Anda."
+          "q": "Apakah HAKA PRO merekomendasikan saham?",
+          "a": "Tidak. HAKA PRO untuk riset dan edukasi. Bila analisis memuat pandangan atau level harga, itu ditampilkan sebagai hasil hitungan dari data, bukan rekomendasi. Keputusan ada di tangan Anda."
         },
         {
           "q": "Saham apa saja yang tercakup?",
@@ -1059,7 +1060,7 @@
         },
         {
           "q": "Apakah bisa dipakai di ponsel?",
-          "a": "Bisa. HAKAPRO berjalan di ponsel, tablet, dan desktop, dengan tema terang atau gelap."
+          "a": "Bisa. HAKA PRO berjalan di ponsel, tablet, dan desktop, dengan tema terang atau gelap."
         },
         {
           "q": "Dari mana datanya berasal?",
