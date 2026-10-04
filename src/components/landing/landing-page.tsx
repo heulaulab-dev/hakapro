@@ -99,7 +99,7 @@ export async function LandingPage({ viewer, theme }: { viewer: Viewer; theme: Th
           <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 pt-16 pb-20 md:px-6 md:pt-24 lg:grid-cols-[1.05fr_1fr]">
             <div className="flex flex-col gap-6">
               <span className="eyebrow-style text-primary">{t("hero.eyebrow")}</span>
-              <h1 className="text-[40px] leading-[1.05] font-semibold tracking-[-0.03em] text-balance md:text-[56px]" data-testid="landing-title">{t("hero.title")}</h1>
+              <h1 className="font-brand text-[40px] leading-[1.05] font-semibold tracking-[-0.03em] text-balance md:text-[56px]" data-testid="landing-title">{t("hero.title")}</h1>
               <p className="max-w-xl text-lg leading-relaxed text-soft">{t("hero.subtitle")}</p>
               {ctas("landing-hero-cta")}
               <p className="caption-style leading-snug text-subtle">{signedIn ? t("hero.noteSignedIn") : t("hero.noteSignedOut")}</p>
@@ -125,7 +125,7 @@ export async function LandingPage({ viewer, theme }: { viewer: Viewer; theme: Th
             {FEATURES.map(({ key, icon: Icon }) => (
               <li key={key} className="flex flex-col gap-3 rounded-xl border border-border bg-card/60 p-5 transition-colors hover:border-line-strong">
                 <span className="flex size-9 items-center justify-center rounded-lg bg-primary/12 text-primary"><Icon className="size-4" /></span>
-                <h3 className="text-base font-semibold">{t(`features.items.${key}.title`)}</h3>
+                <h3 className="font-brand text-base font-semibold">{t(`features.items.${key}.title`)}</h3>
                 <p className="text-sm leading-relaxed text-soft">{t(`features.items.${key}.body`)}</p>
               </li>
             ))}
@@ -156,7 +156,7 @@ export async function LandingPage({ viewer, theme }: { viewer: Viewer; theme: Th
                     <span className="ticker flex size-7 items-center justify-center rounded-full border border-line-strong text-xs">{index + 1}</span>
                     <Icon className="size-4 text-subtle" />
                   </div>
-                  <h3 className="text-base font-semibold">{step.title}</h3>
+                  <h3 className="font-brand text-base font-semibold">{step.title}</h3>
                   <p className="text-sm leading-relaxed text-soft">{step.body}</p>
                 </li>
               );
@@ -170,7 +170,7 @@ export async function LandingPage({ viewer, theme }: { viewer: Viewer; theme: Th
               <li key={key} className="flex gap-4">
                 <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-border bg-background"><Icon className="size-4 text-soft" /></span>
                 <div className="flex flex-col gap-1.5">
-                  <h3 className="text-base font-semibold">{t(`principles.items.${key}.title`)}</h3>
+                  <h3 className="font-brand text-base font-semibold">{t(`principles.items.${key}.title`)}</h3>
                   <p className="text-sm leading-relaxed text-soft">{t(`principles.items.${key}.body`)}</p>
                 </div>
               </li>
@@ -197,7 +197,7 @@ export async function LandingPage({ viewer, theme }: { viewer: Viewer; theme: Th
           <div className="mx-auto max-w-6xl px-4 py-16 md:px-6 md:py-24">
             <div className="relative flex flex-col items-start gap-6 overflow-hidden rounded-2xl border border-line-strong bg-card p-8 md:p-12">
               <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(50%_80%_at_100%_0%,color-mix(in_oklab,var(--primary)_18%,transparent),transparent_70%)]" />
-              <h2 className="relative max-w-2xl text-[28px] leading-tight font-semibold tracking-[-0.02em] md:text-[36px]">{t("final.title")}</h2>
+              <h2 className="font-brand relative max-w-2xl text-[28px] leading-tight font-semibold tracking-[-0.02em] md:text-[36px]">{t("final.title")}</h2>
               <p className="relative max-w-xl text-base leading-relaxed text-soft">{t("final.body")}</p>
               <div className="relative">{ctas("landing-final-cta")}</div>
             </div>

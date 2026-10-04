@@ -95,7 +95,7 @@ export function AuthForm({ kind, mode, next, callbackError }: { kind: AuthFormKi
 
   return (
     <div className="flex flex-col gap-4" data-testid={`auth-${kind}`}>
-      <h1 className="text-lg font-semibold">{title}</h1>
+      <h1 className="font-brand text-lg font-semibold">{title}</h1>
       {mode !== "supabase" && (
         <p role="alert" data-testid="auth-disabled" className="rounded-md border border-warning/40 bg-warning-muted px-3 py-2 text-xs text-warning">
           {mode === "bypass" ? t("bypassNotice") : t("notConfigured")}

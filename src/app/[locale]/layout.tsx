@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { GeistMono } from "geist/font/mono";
 import { GeistSans } from "geist/font/sans";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
@@ -10,6 +11,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { routing } from "@/i18n/routing";
 import { DENSITY_COOKIE, parseDensity, parseTheme, THEME_COLOR, THEME_COOKIE } from "@/lib/preferences";
 import "../globals.css";
+
+// Brand typeface (logo guidelines §06): headings and brand surfaces only. Body and data stay on Geist.
+const brandFont = Plus_Jakarta_Sans({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], display: "swap", variable: "--font-plus-jakarta-sans" });
 
 const CLIENT_NAMESPACES = ["app", "freshness", "locale", "theme", "density", "nav", "stockTabs", "header", "palette", "account", "dataState", "table", "chart", "metrics", "criteria", "strategy", "insiders", "broker", "filters", "drawer", "dev", "disclaimer", "home", "strategies", "overview", "auth", "watchlist", "flow", "financials", "screener", "movers", "news", "ownershipChanges", "stockChart", "stockInsiders", "insiderHolders", "stockHistory", "stockOwnership", "errors", "alerts", "analysis", "lastPrice"] as const;
 
@@ -37,7 +41,7 @@ export default async function LocaleLayout({ children, params }: LayoutProps<"/[
   const clientMessages = Object.fromEntries(CLIENT_NAMESPACES.map((namespace) => [namespace, messages[namespace]]));
 
   return (
-    <html lang={locale} className={`${GeistSans.variable} ${GeistMono.variable} ${theme} h-full antialiased`} data-density={density}>
+    <html lang={locale} className={`${GeistSans.variable} ${GeistMono.variable} ${brandFont.variable} ${theme} h-full antialiased`} data-density={density}>
       <body className="flex h-dvh flex-col overflow-hidden">
         <NextIntlClientProvider messages={clientMessages}>
           <TooltipProvider delayDuration={150}>
