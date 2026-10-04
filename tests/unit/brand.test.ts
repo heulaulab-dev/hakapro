@@ -31,3 +31,20 @@ describe("brand tokens", () => {
     }
   });
 });
+
+describe("<Logo /> asset map", () => {
+  const variants = ["horizontal", "stacked", "symbol", "wordmark"] as const;
+  const tones = ["color-on-dark", "color-on-light", "mono-white", "mono-black", "mono-teal"] as const;
+
+  test("every variant × tone resolves to a served file with the hardcoded viewBox", async () => {
+    const { LOGO_VIEWBOX, logoSrc } = await import("@/components/brand/logo");
+    for (const variant of variants) {
+      for (const tone of tones) {
+        const svg = readFileSync(join("public", logoSrc(variant, tone)), "utf8");
+        const { width, height } = LOGO_VIEWBOX[variant];
+        expect(svg, `${variant}/${tone}`).toContain(`viewBox="0 0 ${width} ${height}"`);
+      }
+    }
+    expect(logoSrc("symbol", "color-on-light")).toBe("/brand/svg/symbol/hakapro-symbol-color.svg");
+  });
+});

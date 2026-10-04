@@ -191,6 +191,9 @@
   --track: #3a3a3a;
   --status: #16c89e;
   --sidebar-width: 254px;
+  /* <Logo tone="auto"> renders both variants; these pick one per scope (no hydration flash). */
+  --logo-on-dark-display: block;
+  --logo-on-light-display: none;
 
   /* Surface effects (dashboard values). Components use these instead of literal rgba/hex. */
   --shadow-raised: 0px 0px 0px 1px rgba(0, 0, 0, 0.4), inset 0px 1px 0px 0px rgba(255, 255, 255, 0.1), inset 0px 0px 0px 1px rgba(255, 255, 255, 0.06);
@@ -275,6 +278,8 @@
 /* Companion light theme (same roles, light surfaces). */
 .light {
   color-scheme: light;
+  --logo-on-dark-display: none;
+  --logo-on-light-display: block;
   --shadow-raised: 0px 0px 0px 1px rgba(0, 0, 0, 0.08), 0px 1px 2px 0px rgba(0, 0, 0, 0.06), inset 0px 1px 0px 0px rgba(255, 255, 255, 0.9);
   --shadow-primary: 0px 2px 4px 0px rgba(65, 36, 251, 0.22), 0px 0px 0px 1px #3a1fe0, inset 0px 4px 6px 0px rgba(255, 255, 255, 0.2), inset 0px 0px 0px 1px rgba(255, 255, 255, 0.15), inset 0px -8px 14px 0px rgba(0, 0, 0, 0.12);
   --shadow-active: 0px 0px 0px 1px rgba(0, 0, 0, 0.06), 0px 1px 2px 0px rgba(0, 0, 0, 0.08);
@@ -423,6 +428,8 @@
 }
 
 @utility bg-brand-gradient { background-image: var(--brand-gradient); }
+@utility logo-on-dark { display: var(--logo-on-dark-display); }
+@utility logo-on-light { display: var(--logo-on-light-display); }
 
 @layer utilities {
   /* Every numeric display: aligned digits. Geist Mono is reserved for tickers, prices and numeric tables. */
