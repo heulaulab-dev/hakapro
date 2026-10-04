@@ -8,7 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { routing, type AppLocale } from "@/i18n/routing";
-import { DENSITY_COOKIE, THEME_COOKIE, type Density, type Theme } from "@/lib/preferences";
+import { DENSITY_COOKIE, THEME_COLOR, THEME_COOKIE, type Density, type Theme } from "@/lib/preferences";
 
 function writeCookie(name: string, value: string) {
   document.cookie = `${name}=${value}; path=/; max-age=31536000; samesite=lax`;
@@ -31,6 +31,7 @@ export function ThemeToggle({ initial }: { initial: Theme }) {
           onClick={() => {
             document.documentElement.classList.remove("dark", "light");
             document.documentElement.classList.add(next);
+            document.querySelector('meta[name="theme-color"]')?.setAttribute("content", THEME_COLOR[next]);
             writeCookie(THEME_COOKIE, next);
             setTheme(next);
           }}

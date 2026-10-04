@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { GeistMono } from "geist/font/mono";
 import { GeistSans } from "geist/font/sans";
 import { cookies } from "next/headers";
@@ -8,7 +8,7 @@ import { getMessages, getTranslations, setRequestLocale } from "next-intl/server
 import { FixtureBanner } from "@/components/feedback/fixture-banner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { routing } from "@/i18n/routing";
-import { DENSITY_COOKIE, parseDensity, parseTheme, THEME_COOKIE } from "@/lib/preferences";
+import { DENSITY_COOKIE, parseDensity, parseTheme, THEME_COLOR, THEME_COOKIE } from "@/lib/preferences";
 import "../globals.css";
 
 const CLIENT_NAMESPACES = ["app", "freshness", "locale", "theme", "density", "nav", "stockTabs", "header", "palette", "account", "dataState", "table", "chart", "metrics", "criteria", "strategy", "insiders", "broker", "filters", "drawer", "dev", "disclaimer", "home", "strategies", "overview", "auth", "watchlist", "flow", "financials", "screener", "movers", "news", "ownershipChanges", "stockChart", "stockInsiders", "insiderHolders", "stockHistory", "stockOwnership", "errors", "alerts", "analysis", "lastPrice"] as const;
@@ -17,6 +17,12 @@ export async function generateMetadata({ params }: LayoutProps<"/[locale]">): Pr
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "app" });
   return { title: { default: t("name"), template: `%s · ${t("name")}` }, description: t("tagline"), robots: { index: true, follow: true } };
+}
+
+/** Follows the cookie theme (the app ignores the OS scheme), so the browser bar matches the page. */
+export async function generateViewport(): Promise<Viewport> {
+  const store = await cookies();
+  return { themeColor: THEME_COLOR[parseTheme(store.get(THEME_COOKIE)?.value)] };
 }
 
 export default async function LocaleLayout({ children, params }: LayoutProps<"/[locale]">) {
