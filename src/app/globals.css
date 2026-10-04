@@ -137,6 +137,9 @@
   --brand-night: #081720;
   --brand-paper: #f3f7f7;
   --brand-gradient: linear-gradient(135deg, var(--brand-deep) 0%, var(--brand-teal) 55%, var(--brand-mint) 100%);
+  /* Plus Jakarta Sans (next/font in the locale layout). Headings/brand surfaces only: its digits are not
+     fully tabular (0 is narrower under tabular-nums), so prices and tables stay on Geist. */
+  --font-brand: var(--font-plus-jakarta-sans), var(--font-geist-sans), ui-sans-serif, sans-serif;
 }
 
 /*

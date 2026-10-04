@@ -48,7 +48,8 @@ export function logoSrc(variant: LogoVariant, tone: Exclude<LogoTone, "auto">) {
 export function Logo({ variant = "horizontal", tone = "auto", height, className, priority = false, alt = "HAKA PRO" }: LogoProps) {
   const box = LOGO_VIEWBOX[variant];
   const h = height ?? DEFAULT_HEIGHT[variant];
-  const w = Math.round((h * box.width) / box.height * 100) / 100;
+  // Whole pixels: a fractional width attribute makes next/image report the size as CSS-modified.
+  const w = Math.round((h * box.width) / box.height);
 
   const min = MIN_SIZE[variant];
   if (process.env.NODE_ENV !== "production" && min && w < min.width) {
