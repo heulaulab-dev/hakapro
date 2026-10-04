@@ -213,9 +213,34 @@ Visual direction comes **only** from the HAKAPRO init prompt §6 (dark-first + l
 3. **"Why matched" parsing.** An explicit mapping table for known flags (legend in §4.1), snapshot tests from real samples, and unknown flags rendered as "unrecognized criterion" and logged, never dropped.
 4. **Freshness: no `SNAPSHOT`.** A Lane B `SNAPSHOT` is mapped from the parsed data date: current session → `DELAYED`, previous session → `EOD`, older → `STALE`, unparseable → `UNAVAILABLE`. Never `LIVE`.
 5. **Analysis text is not displayed in Phase 1.** No raw analysis, scores, or labels such as "NETRAL" or "Heavy buyer". Only structured, descriptive, observed facts.
+   **Revised 2026-10-04 (user decision):** the analysis *is* shown, as a stock tab labelled "Analysis", but never in the provider's wording. `src/server/services/analysis-parse.ts` reduces the text to numbers and enums; HAKAPRO words every label itself (en/id), recomputes labels derivable from numbers (RSI zone, MACD direction, position vs SMA, volume level), and drops advice prose, notes and the provider disclaimer. Unrecognized lines are logged (`analysis_unparsed`), never passed through. The outlook (stance, entry, targets, stop) is shown with "the analysis's computed outlook, not a HAKAPRO recommendation" next to it, plus the research disclaimer.
 6. **Market data.** `MarketDataSource` interface with a fixture-backed implementation built from `tests/fixtures/arjum/*.json` (copied in). All tests run against fixtures. The user adds real arjum credentials to `.env.local` for a manual check. Env values are never printed, logged or committed.
 7. **Versions.** Schemas ported to Zod 4. `@tanstack/react-table` pinned to v8 to match shadcn.
 8. **Tracking.** `docs/PROGRESS.md`; no Plane.
+
+## 11. arjum coverage (completed 2026-10-04)
+
+Source of truth: the public docs registry on stock.arjum.com (13 REST endpoints; MCP server `https://stock.arjum.com/mcp` with 15 tools = the 13 + `harga_batch` and `analisa_batch`). Every documented parameter was verified with one paced live run (15 requests, 2026-10-04); real samples are frozen in `fixtures/arjum-baseline/samples-2026-10-02/`.
+
+| Endpoint | Parameters used | Where in HAKAPRO |
+| --- | --- | --- |
+| `/api/screener/latest` | — | Discover › Strategies |
+| `/api/analysis/{code}` | code | Stock › Analysis; Watchlist › Compare analysis (`/api/analysis?symbols=`, ≤5, sequential = `analisa_batch`) |
+| `/api/broker-summary/{code}` | start_date, end_date, flow (all/F/D), net, broker_limit, level_limit (≤200) | Stock › Flow (latest session or chart range, investor type, net, count; paired buyer/seller levels with average prices) |
+| `/api/broker-accumulation/{code}` | start_date, end_date, top, brokers | Stock › Flow (range follows chart; broker-code filter) |
+| `/api/history/{code}` | limit, frame, start_date, end_date (+ `data_available`) | Header, Overview, Chart, Flow, History (date range, available span), quotes |
+| `/api/seasonal/{code}` | — | Stock › History |
+| `/api/market-cap` | page, per_page, date, codes (≤50, `not_found`) | Movers (paged, by date), Overview valuation, Watchlist market caps |
+| `/api/financial-statements/{code}` | report_type, period (`quarterly`/`annually`), limit (≤40), year | Stock › Financials (report, period, year, period count). Fixed: HAKAPRO sent `annual`. |
+| `/api/insiders/{code}` | page, limit (≤15), action_type | Stock › Insiders (holders + paged transactions), Ownership changes |
+| `/api/done-details` | code, date, page, per_page | Stock › History trade tape (session picker, pages) |
+| `/api/price/{code}` | code | Stock header (today's price, market state); watchlist quotes during sessions (= `harga_batch`) |
+| `/api/search` | q | Search, company names |
+| `/api/health` | — | `/api/provider-health`, `/api/ready` (with daily quota from `x-ratelimit-*` headers) |
+
+Not used, deliberately: `all_data` (broker_limit=200 already covers every IDX broker), the MCP-only `fields` projection (REST docs don't list it). The site's own internal paths (`/api/realtime`, `/api/done-details/dates`, `/api/stock`) are undocumented for API keys and are not called (§10).
+
+Freshness: today's price is DELAYED during a session (as-of = last trade time, WIB) and EOD after it, never LIVE; a multi-session broker summary is HISTORICAL with its range as period.
 
 ## 10. Provider conduct (permanent rule, decided at Connection Network N1, 2026-10-03)
 

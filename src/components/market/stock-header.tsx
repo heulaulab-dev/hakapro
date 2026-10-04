@@ -6,7 +6,7 @@ import { formatIdr, type Locale } from "@/lib/format";
 import { ChangeValue } from "./change-value";
 
 /** Ticker, company, last price with change and freshness. The price is never shown without its freshness. */
-export function StockHeader({ symbol, name, price, change, changePercent, meta, actions }: {
+export function StockHeader({ symbol, name, price, change, changePercent, meta, actions, note }: {
   symbol: string;
   name?: string | null;
   price: number | null | undefined;
@@ -14,6 +14,8 @@ export function StockHeader({ symbol, name, price, change, changePercent, meta, 
   changePercent: number | null | undefined;
   meta: FreshnessMeta;
   actions?: ReactNode;
+  /** Short context next to the price, e.g. the last trade time or that the market is closed. */
+  note?: ReactNode;
 }) {
   const locale = useLocale() as Locale;
   return (
@@ -27,6 +29,7 @@ export function StockHeader({ symbol, name, price, change, changePercent, meta, 
           <span className="ticker text-[22px] leading-none font-semibold tracking-[-0.01em]">{formatIdr(price, locale)}</span>
           <ChangeValue percent={changePercent} absolute={change ?? undefined} className="text-sm" />
           <FreshnessBadge {...meta} />
+          {note && <span className="text-xs text-muted-foreground">{note}</span>}
         </div>
       </div>
       {actions && <div className="flex items-center gap-2">{actions}</div>}

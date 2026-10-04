@@ -3,6 +3,7 @@
 import { Bookmark, LogIn } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState, type FormEvent } from "react";
+import { AnalysisCompare } from "@/components/analysis/analysis-compare";
 import { QuoteList } from "@/components/data/quote-list";
 import { EmptyState } from "@/components/feedback/empty-state";
 import { SectionHeader } from "@/components/layout/section-header";
@@ -10,7 +11,8 @@ import type { ViewerSummary } from "@/components/layout/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "@/i18n/navigation";
-import { useQuotes } from "@/lib/api/hooks";
+import { useMarketCap, useQuotes } from "@/lib/api/hooks";
+import { ARJUM_LIMITS } from "@/lib/api/provider-limits";
 import { freshnessMeta } from "@/lib/freshness";
 import { useWatchlist, useWatchlistMutations } from "@/lib/watchlist";
 
@@ -22,7 +24,12 @@ export function WatchlistView({ viewer }: { viewer: ViewerSummary }) {
   const watchlist = useWatchlist(userId);
   const { add, remove } = useWatchlistMutations(userId, t("defaultName"));
   const items = watchlist.data?.items ?? [];
-  const quotes = useQuotes(items.map((item) => item.symbol));
+  const symbols = items.map((item) => item.symbol);
+  const quotes = useQuotes(symbols);
+  // One request for the whole list (the provider accepts up to 50 symbols).
+  const capSymbols = [...new Set(symbols)].slice(0, ARJUM_LIMITS.marketCapCodes);
+  const caps = useMarketCap({ symbols: capSymbols }, { enabled: capSymbols.length > 0 });
+  const marketCaps = caps.data ? new Map(caps.data.data.rows.map((row) => [row.symbol, row.marketCapIdr])) : undefined;
   const [input, setInput] = useState("");
   const [message, setMessage] = useState<string | null>(null);
 
@@ -59,9 +66,10 @@ export function WatchlistView({ viewer }: { viewer: ViewerSummary }) {
         <EmptyState icon={<Bookmark />} title={t("empty")} />
       ) : (
         <div className="rounded-xl border border-border p-2">
-          <QuoteList symbols={items.map((item) => ({ key: item.id, symbol: item.symbol }))} quotes={quotes.data?.data} onRemove={(key) => remove.mutate(key, { onError: () => setMessage(t("failed")) })} />
+          <QuoteList symbols={items.map((item) => ({ key: item.id, symbol: item.symbol }))} quotes={quotes.data?.data} marketCaps={marketCaps} onRemove={(key) => remove.mutate(key, { onError: () => setMessage(t("failed")) })} />
         </div>
       )}
+      {items.length > 0 && <AnalysisCompare symbols={symbols} />}
     </div>
   );
 }

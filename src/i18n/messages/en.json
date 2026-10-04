@@ -112,7 +112,8 @@
     "financials": "Financials",
     "ownership": "Ownership",
     "insiders": "Insiders",
-    "history": "History"
+    "history": "History",
+    "analysis": "Analysis"
   },
   "header": {
     "search": "Search stocks or pages…",
@@ -203,7 +204,8 @@
     "foreignNet": "Net foreign",
     "marketCap": "Market cap",
     "frequency": "Frequency",
-    "listedShares": "Listed shares"
+    "listedShares": "Listed shares",
+    "turnover": "Turnover (of listed shares)"
   },
   "criteria": {
     "accumulation": "Accumulation pattern observed",
@@ -296,7 +298,8 @@
       "financials": "Income statement, balance sheet, cash flow",
       "ownership": "Shareholder structure",
       "insiders": "Director, commissioner and major-holder transactions",
-      "history": "Daily price table"
+      "history": "Daily price table",
+      "analysis": "Technicals, flows and historical patterns"
     },
     "price": {
       "range": "Over the last {sessions} sessions the price changed {change}, ranging {low}–{high}.",
@@ -324,7 +327,9 @@
       "behind": "The {expected} report should already be available; this data is behind.",
       "onTime": "In line with the expected reporting schedule.",
       "periods": "{count} quarterly periods available."
-    }
+    },
+    "valuation": "Valuation",
+    "valuationAsOf": "Market capitalization as of {date}."
   },
   "auth": {
     "signInTitle": "Sign in",
@@ -394,7 +399,7 @@
     "sell": "Foreign sell",
     "net": "Net",
     "brokerTitle": "Broker Summary",
-    "brokerDesc": "Net value by broker for {start} – {end}.",
+    "brokerDesc": "Net value by broker for {start} – {end} ({scope}).",
     "accumulationTitle": "Broker accumulation",
     "accumulationDesc": "Cumulative net value by broker ({start} – {end}).",
     "topBuyers": "Largest net buyers",
@@ -402,7 +407,36 @@
     "none": "None",
     "total": "Total net",
     "broker": "Broker",
-    "rangeNote": "The range is sent to the provider; fixture data doesn't follow it."
+    "rangeNote": "The range is sent to the provider; fixture data doesn't follow it.",
+    "brokerIntro": "Value bought and sold per broker code. Brokers execute trades; they are not the owners.",
+    "periods": {
+      "session": "Latest session",
+      "range": "Chart range"
+    },
+    "flowLabel": "Investor type",
+    "flows": {
+      "all": "All investors",
+      "foreign": "Foreign",
+      "domestic": "Domestic"
+    },
+    "netOnly": "Net only",
+    "countLabel": "Brokers shown",
+    "count": "Top {count}",
+    "countAll": "All brokers",
+    "available": "Broker data available {from} – {to}.",
+    "levels": {
+      "title": "Top buyers vs top sellers",
+      "desc": "Brokers ranked by value on each side, with their average price.",
+      "descNet": "Ranked by net value on each side, with average price; frequency isn't reported in net mode.",
+      "buyer": "Buyer",
+      "seller": "Seller",
+      "value": "Value",
+      "average": "Avg price",
+      "empty": "No paired data for this selection."
+    },
+    "brokerFilter": "Broker codes",
+    "brokerFilterPlaceholder": "e.g. BK, ZP",
+    "apply": "Apply"
   },
   "financials": {
     "title": "Financial statements",
@@ -423,7 +457,11 @@
     "rowChart": "{label} by period",
     "pickRow": "Pick a line item to chart it.",
     "note": "Values are full rupiah from the provider. Filing date not available yet; fetched by the provider {fetched}.",
-    "labelsNote": "Line item names follow the provider's labels (Indonesian)."
+    "labelsNote": "Line item names follow the provider's labels (Indonesian).",
+    "yearLabel": "Year",
+    "allYears": "All years",
+    "periodsLabel": "Number of periods",
+    "periodsCount": "{count} periods"
   },
   "screener": {
     "title": "Screener",
@@ -481,7 +519,9 @@
     "active": "Most active",
     "liquidityNote": "Gainers/losers include only stocks with traded value of at least {min}.",
     "largest": "Largest market caps",
-    "viewLabel": "View"
+    "viewLabel": "View",
+    "capDate": "Market cap date",
+    "capsAsOf": "As of {date} · {total} stocks"
   },
   "news": {
     "title": "News & Calendar",
@@ -531,7 +571,16 @@
     "buyer": "Buyer",
     "seller": "Seller",
     "aggressor": "Aggressor",
-    "tapeNote": "First page of {total} trades; quantity in lots (100 shares). Odd lots show as 0 lots."
+    "tapeNote": "First page of {total} trades; quantity in lots (100 shares). Odd lots show as 0 lots.",
+    "available": "Data available {from} – {to}.",
+    "from": "From",
+    "to": "To",
+    "apply": "Apply",
+    "reset": "Reset",
+    "rangeCapped": "Showing the latest {count} sessions of the range; narrow the dates to see earlier ones.",
+    "tapeDate": "Trade date",
+    "latestSession": "Latest session",
+    "page": "Page {page} of {total}"
   },
   "stockOwnership": {
     "title": "Ownership",
@@ -626,5 +675,219 @@
     "ambiguousNote": "Several disclosures on {date} report different resulting holdings. None is picked.",
     "source": "Source: {source} insider disclosures, {first} – {last}.",
     "note": "Built only from disclosed transactions: a holder appears here only after reporting a transaction. This is not the full shareholder register. Roles are shown as disclosed."
+  },
+  "lastPrice": {
+    "lastTrade": "Last trade {time} WIB",
+    "state": {
+      "break": "Lunch break",
+      "closed": "Market closed",
+      "holiday": "Exchange holiday",
+      "weekend": "Market closed (weekend)"
+    }
+  },
+  "analysis": {
+    "title": "Analysis",
+    "intro": "Technical, flow and historical-pattern analysis of the latest session, computed by the data provider and shown here as numbers in HAKAPRO's labels. Not investment advice.",
+    "session": "Session analysed: {date}",
+    "missing": "Not included in this analysis.",
+    "tone": {
+      "positive": "Positive",
+      "negative": "Negative",
+      "neutral": "Neutral",
+      "mixed": "Mixed",
+      "unknown": "Unclassified"
+    },
+    "score": {
+      "title": "Score",
+      "of": "of {max}",
+      "note": "A composite of the factors next to it; higher means more of them were positive."
+    },
+    "factors": {
+      "title": "Factors",
+      "priceVsSma": {
+        "above": "Price above its {period}-day average",
+        "below": "Price below its {period}-day average"
+      },
+      "volume": {
+        "low": "Volume quieter than usual",
+        "normal": "Volume around usual",
+        "high": "Volume busier than usual"
+      },
+      "foreign": {
+        "buy": "Foreign investors net buying",
+        "sell": "Foreign investors net selling"
+      },
+      "brokers": {
+        "accumulation": "Large brokers accumulating",
+        "distribution": "Large brokers distributing"
+      },
+      "rsiZone": {
+        "oversold": "RSI in oversold territory",
+        "overbought": "RSI in overbought territory"
+      },
+      "other": "Unclassified factor"
+    },
+    "outlook": {
+      "title": "Outlook",
+      "stances": {
+        "avoid": "Avoid for now",
+        "reduce": "Reduce",
+        "accumulate": "Accumulate",
+        "watch": "Watch",
+        "hold": "Hold",
+        "wait": "Wait",
+        "other": "Unclassified"
+      },
+      "small": "Small position",
+      "conditional": "Conditional",
+      "historicalEdge": "Historical edge",
+      "entry": "Entry zone",
+      "stopLoss": "Stop level",
+      "target": "Target {n}",
+      "note": "The analysis's computed outlook and price levels, not a HAKAPRO recommendation."
+    },
+    "levels": {
+      "R1": "R1",
+      "R2": "R2",
+      "P": "Pivot",
+      "S1": "S1",
+      "S2": "S2",
+      "weeklyPivot": "Weekly pivot"
+    },
+    "price": {
+      "title": "Price",
+      "close": "Close",
+      "previous": "Previous close",
+      "open": "Open",
+      "highLow": "High / low",
+      "range": "Day range",
+      "pivots": "Daily pivot levels (support S, resistance R)"
+    },
+    "technical": {
+      "title": "Technicals",
+      "sma": "SMA {period}",
+      "rsi": "RSI (14)",
+      "macd": "MACD histogram",
+      "bollinger": "Bollinger band (20, 2)",
+      "bollingerMiddle": "Bollinger middle",
+      "atr": "ATR (14)",
+      "note": "Positions compare the close with each level (SMA 20: {sma20}). RSI zones: 30 and below oversold, 70 and above overbought.",
+      "position": {
+        "above": "close above",
+        "below": "close below",
+        "at": "close at"
+      },
+      "rsiZone": {
+        "oversold": "oversold",
+        "overbought": "overbought",
+        "neutral": "neutral"
+      },
+      "macdDirection": {
+        "positive": "positive",
+        "negative": "negative",
+        "flat": "flat"
+      }
+    },
+    "volume": {
+      "title": "Volume",
+      "shares": "Volume",
+      "lots": "Lots",
+      "value": "Traded value",
+      "frequency": "Trades",
+      "average20": "20-day average",
+      "ratio": "Vs 20-day average",
+      "trend": "Trend",
+      "levels": {
+        "below": "below usual",
+        "near": "near usual",
+        "above": "above usual"
+      },
+      "trends": {
+        "rising": "Rising",
+        "falling": "Falling",
+        "stable": "Stable"
+      }
+    },
+    "foreign": {
+      "title": "Foreign flow",
+      "net": "Net foreign",
+      "share": "Share of volume",
+      "recent": "Last {sessions} sessions",
+      "recentValue": "{buy} net-buy, {sell} net-sell",
+      "recentAverage": "Average, last {sessions}",
+      "sides": {
+        "buy": "net buy",
+        "sell": "net sell"
+      }
+    },
+    "brokers": {
+      "title": "Broker flow",
+      "total": "{count} brokers traded in the session.",
+      "topBuyers": "Largest net buyers",
+      "topSellers": "Largest net sellers",
+      "heavyBuyers": "Heavy buyers",
+      "heavySellers": "Heavy sellers",
+      "consistency": "Same side in recent sessions",
+      "consistent": {
+        "buy": "{code} bought {days}/{sessions}",
+        "sell": "{code} sold {days}/{sessions}"
+      },
+      "more": "+{count} more",
+      "heavy": "Heavy brokers",
+      "heavyCounts": "{buyers} buying · {sellers} selling"
+    },
+    "patterns": {
+      "title": "Historical patterns",
+      "intro": "Situations like today's in the stock's own history since 2020, and how prices moved afterwards. Past results don't predict future ones.",
+      "pattern": "Pattern",
+      "quality": "Evidence",
+      "qualities": {
+        "historicalEdge": "Strong history",
+        "validSample": "Enough samples",
+        "other": "Unclassified"
+      },
+      "winRate": "Win rate",
+      "averageReturn": "Avg return",
+      "day3": "After 3 days",
+      "potential": "Upside",
+      "drawdown": "Drawdown",
+      "exits": "Target / stop / timeout",
+      "samples": "Samples",
+      "profitFactor": "Profit factor",
+      "exitDays": "Avg days held",
+      "best": "Best historical pattern",
+      "bestValue": "{rate} win rate ({samples} samples)"
+    },
+    "pattern": {
+      "combination": "Combined signal ({parts})",
+      "priceVsMa": {
+        "above": "Price above {period}-day average",
+        "below": "Price below {period}-day average"
+      },
+      "foreignStrong": {
+        "buy": "Strong foreign buying",
+        "sell": "Strong foreign selling"
+      },
+      "rsiRebound": "RSI in a rebound zone",
+      "rsiZone": {
+        "oversold": "RSI oversold",
+        "overbought": "RSI overbought"
+      },
+      "brokerConcentratedAccumulation": "Concentrated top-broker accumulation",
+      "volumeClimax": "Volume climax",
+      "other": "Unclassified pattern"
+    },
+    "patternParts": {
+      "broker": "brokers",
+      "foreign": "foreign",
+      "technical": "technicals"
+    },
+    "compare": {
+      "title": "Compare analysis",
+      "intro": "Pick up to {max} stocks and compare their latest analysis side by side. Each stock is one request to the data provider.",
+      "run": "{count, plural, =0 {Compare} other {Compare #}}",
+      "pick": "Stocks to compare",
+      "partial": "Not complete: {list}."
+    }
   }
 }

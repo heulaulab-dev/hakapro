@@ -13,7 +13,7 @@ import { MetricCard } from "@/components/market/metric-card";
 import { SectionInsight } from "@/components/market/section-insight";
 import { OVERVIEW_HISTORY } from "@/components/market/stock-header-live";
 import { Link } from "@/i18n/navigation";
-import { useHistory, useStockOverview } from "@/lib/api/hooks";
+import { useHistory, useMarketCap, useStockOverview } from "@/lib/api/hooks";
 import { sliceByRange } from "@/lib/charts/range";
 import { freshnessMeta } from "@/lib/freshness";
 import { formatDate, formatIdr, formatPercent, formatVolume, type Locale } from "@/lib/format";
@@ -24,6 +24,7 @@ export function OverviewView({ symbol }: { symbol: string }) {
   const locale = useLocale() as Locale;
   const history = useHistory(symbol, OVERVIEW_HISTORY);
   const overview = useStockOverview(symbol);
+  const valuation = useMarketCap({ symbols: [symbol] });
   const [range, setRange] = useChartRange();
   const idr = (value: number | null) => formatIdr(value, locale);
   const shares = (value: number | null) => formatVolume(value, locale, { compact: true });
@@ -58,6 +59,24 @@ export function OverviewView({ symbol }: { symbol: string }) {
                 <PriceChart rows={sliced.rows} height={280} />
               </ChartCard>
             </>
+          );
+        }}
+      </DataState>
+
+      <DataState query={valuation} compact isEmpty={(envelope) => !envelope.data.rows.some((item) => item.symbol === symbol.toUpperCase())}>
+        {(envelope) => {
+          const meta = freshnessMeta(envelope);
+          const row = envelope.data.rows.find((item) => item.symbol === symbol.toUpperCase())!;
+          return (
+            <section className="flex flex-col gap-3" data-testid="overview-valuation">
+              <SectionHeader title={t("overview.valuation")} description={t("overview.valuationAsOf", { date: formatDate(envelope.data.date, locale) })} />
+              <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+                <MetricCard label={t("metrics.marketCap")} value={row.marketCapIdr} format="idrCompact" meta={meta} />
+                <MetricCard label={t("metrics.listedShares")} value={row.listedShares} format="sharesCompact" meta={meta} />
+                {/* Provider turnover ratio is a fraction of listed shares; shown in percent units. */}
+                <MetricCard label={t("metrics.turnover")} value={row.turnoverRatio * 100} format="percentPlain" meta={meta} />
+              </div>
+            </section>
           );
         }}
       </DataState>

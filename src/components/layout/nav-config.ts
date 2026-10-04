@@ -27,7 +27,7 @@ export const SECONDARY: NavItem[] = [{ key: "alerts", href: "/alerts", icon: Bel
 /** Every page reachable from Cmd+K. */
 export const ALL_PAGES: NavItem[] = [...NAV.flatMap((item) => (item.children ? item.children : [item])), ...SECONDARY];
 
-export const STOCK_TABS = ["overview", "chart", "flow", "financials", "ownership", "insiders", "history"] as const;
+export const STOCK_TABS = ["overview", "chart", "flow", "analysis", "financials", "ownership", "insiders", "history"] as const;
 export type StockTab = (typeof STOCK_TABS)[number];
 
 export function stockHref(symbol: string, tab: StockTab = "overview"): string {

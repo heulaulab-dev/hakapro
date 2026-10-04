@@ -112,7 +112,8 @@
     "financials": "Keuangan",
     "ownership": "Kepemilikan",
     "insiders": "Insider",
-    "history": "Riwayat"
+    "history": "Riwayat",
+    "analysis": "Analisis"
   },
   "header": {
     "search": "Cari saham atau halaman…",
@@ -203,7 +204,8 @@
     "foreignNet": "Asing bersih",
     "marketCap": "Kapitalisasi pasar",
     "frequency": "Frekuensi",
-    "listedShares": "Saham tercatat"
+    "listedShares": "Saham tercatat",
+    "turnover": "Perputaran (dari saham tercatat)"
   },
   "criteria": {
     "accumulation": "Pola akumulasi teramati",
@@ -296,7 +298,8 @@
       "financials": "Laporan laba rugi, neraca, arus kas",
       "ownership": "Struktur pemegang saham",
       "insiders": "Transaksi direksi, komisaris, dan pemegang besar",
-      "history": "Tabel harga harian"
+      "history": "Tabel harga harian",
+      "analysis": "Teknikal, aliran dana, dan pola historis"
     },
     "price": {
       "range": "Dalam {sessions} sesi terakhir harga berubah {change}, dengan rentang {low}–{high}.",
@@ -324,7 +327,9 @@
       "behind": "Laporan periode {expected} seharusnya sudah tersedia; data ini tertinggal.",
       "onTime": "Sesuai jadwal pelaporan yang diharapkan.",
       "periods": "{count} periode kuartalan tersedia."
-    }
+    },
+    "valuation": "Valuasi",
+    "valuationAsOf": "Kapitalisasi pasar per {date}."
   },
   "auth": {
     "signInTitle": "Masuk",
@@ -394,7 +399,7 @@
     "sell": "Jual asing",
     "net": "Bersih",
     "brokerTitle": "Broker Summary",
-    "brokerDesc": "Nilai bersih per broker untuk {start} – {end}.",
+    "brokerDesc": "Nilai bersih per broker untuk {start} – {end} ({scope}).",
     "accumulationTitle": "Akumulasi broker",
     "accumulationDesc": "Nilai bersih kumulatif per broker ({start} – {end}).",
     "topBuyers": "Pembeli bersih terbesar",
@@ -402,7 +407,36 @@
     "none": "Tidak ada",
     "total": "Total bersih",
     "broker": "Broker",
-    "rangeNote": "Rentang dikirim ke penyedia; data fixture tidak mengikuti rentang."
+    "rangeNote": "Rentang dikirim ke penyedia; data fixture tidak mengikuti rentang.",
+    "brokerIntro": "Nilai beli dan jual per kode broker. Broker mengeksekusi transaksi; broker bukan pemilik saham.",
+    "periods": {
+      "session": "Sesi terakhir",
+      "range": "Rentang grafik"
+    },
+    "flowLabel": "Jenis investor",
+    "flows": {
+      "all": "Semua investor",
+      "foreign": "Asing",
+      "domestic": "Domestik"
+    },
+    "netOnly": "Hanya bersih",
+    "countLabel": "Broker ditampilkan",
+    "count": "Top {count}",
+    "countAll": "Semua broker",
+    "available": "Data broker tersedia {from} – {to}.",
+    "levels": {
+      "title": "Pembeli teratas vs penjual teratas",
+      "desc": "Broker diurutkan menurut nilai di tiap sisi, dengan harga rata-ratanya.",
+      "descNet": "Diurutkan menurut nilai bersih di tiap sisi, dengan harga rata-rata; frekuensi tidak dilaporkan pada mode bersih.",
+      "buyer": "Pembeli",
+      "seller": "Penjual",
+      "value": "Nilai",
+      "average": "Harga rata-rata",
+      "empty": "Tidak ada data berpasangan untuk pilihan ini."
+    },
+    "brokerFilter": "Kode broker",
+    "brokerFilterPlaceholder": "mis. BK, ZP",
+    "apply": "Terapkan"
   },
   "financials": {
     "title": "Laporan keuangan",
@@ -423,7 +457,11 @@
     "rowChart": "{label} per periode",
     "pickRow": "Pilih baris untuk melihat grafiknya.",
     "note": "Nilai dalam rupiah penuh dari penyedia. Tanggal publikasi belum tersedia; data diambil penyedia {fetched}.",
-    "labelsNote": "Nama pos mengikuti label penyedia (bahasa Indonesia)."
+    "labelsNote": "Nama pos mengikuti label penyedia (bahasa Indonesia).",
+    "yearLabel": "Tahun",
+    "allYears": "Semua tahun",
+    "periodsLabel": "Jumlah periode",
+    "periodsCount": "{count} periode"
   },
   "screener": {
     "title": "Screener",
@@ -481,7 +519,9 @@
     "active": "Teraktif",
     "liquidityNote": "Naik/turun terbesar hanya untuk saham dengan nilai transaksi minimal {min}.",
     "largest": "Kapitalisasi pasar terbesar",
-    "viewLabel": "Tampilan"
+    "viewLabel": "Tampilan",
+    "capDate": "Tanggal kapitalisasi pasar",
+    "capsAsOf": "Per {date} · {total} saham"
   },
   "news": {
     "title": "Berita & Kalender",
@@ -531,7 +571,16 @@
     "buyer": "Pembeli",
     "seller": "Penjual",
     "aggressor": "Inisiator",
-    "tapeNote": "Halaman pertama dari {total} transaksi; jumlah dalam lot (100 lembar). Odd lot tercatat 0 lot."
+    "tapeNote": "Halaman pertama dari {total} transaksi; jumlah dalam lot (100 lembar). Odd lot tercatat 0 lot.",
+    "available": "Data tersedia {from} – {to}.",
+    "from": "Dari",
+    "to": "Sampai",
+    "apply": "Terapkan",
+    "reset": "Atur ulang",
+    "rangeCapped": "Menampilkan {count} sesi terakhir dari rentang; persempit tanggal untuk melihat yang lebih lama.",
+    "tapeDate": "Tanggal transaksi",
+    "latestSession": "Sesi terakhir",
+    "page": "Halaman {page} dari {total}"
   },
   "stockOwnership": {
     "title": "Kepemilikan",
@@ -626,5 +675,219 @@
     "ambiguousNote": "Beberapa keterbukaan pada {date} melaporkan kepemilikan akhir yang berbeda. Tidak ada yang dipilih.",
     "source": "Sumber: keterbukaan insider {source}, {first} – {last}.",
     "note": "Hanya dari transaksi yang diungkapkan: pemegang muncul di sini setelah melaporkan transaksi. Ini bukan daftar pemegang saham lengkap. Jabatan ditampilkan sesuai keterbukaan."
+  },
+  "lastPrice": {
+    "lastTrade": "Transaksi terakhir {time} WIB",
+    "state": {
+      "break": "Istirahat siang",
+      "closed": "Pasar tutup",
+      "holiday": "Libur bursa",
+      "weekend": "Pasar tutup (akhir pekan)"
+    }
+  },
+  "analysis": {
+    "title": "Analisis",
+    "intro": "Analisis teknikal, aliran dana, dan pola historis untuk sesi terakhir, dihitung oleh penyedia data dan ditampilkan di sini sebagai angka dengan label HAKAPRO. Bukan saran investasi.",
+    "session": "Sesi yang dianalisis: {date}",
+    "missing": "Tidak termasuk dalam analisis ini.",
+    "tone": {
+      "positive": "Positif",
+      "negative": "Negatif",
+      "neutral": "Netral",
+      "mixed": "Campuran",
+      "unknown": "Tidak terklasifikasi"
+    },
+    "score": {
+      "title": "Skor",
+      "of": "dari {max}",
+      "note": "Gabungan dari faktor di sebelahnya; makin tinggi berarti makin banyak faktor yang positif."
+    },
+    "factors": {
+      "title": "Faktor",
+      "priceVsSma": {
+        "above": "Harga di atas rata-rata {period} hari",
+        "below": "Harga di bawah rata-rata {period} hari"
+      },
+      "volume": {
+        "low": "Volume lebih sepi dari biasanya",
+        "normal": "Volume sekitar biasanya",
+        "high": "Volume lebih ramai dari biasanya"
+      },
+      "foreign": {
+        "buy": "Investor asing beli bersih",
+        "sell": "Investor asing jual bersih"
+      },
+      "brokers": {
+        "accumulation": "Broker besar mengakumulasi",
+        "distribution": "Broker besar mendistribusi"
+      },
+      "rsiZone": {
+        "oversold": "RSI di area jenuh jual",
+        "overbought": "RSI di area jenuh beli"
+      },
+      "other": "Faktor tidak terklasifikasi"
+    },
+    "outlook": {
+      "title": "Pandangan",
+      "stances": {
+        "avoid": "Hindari dulu",
+        "reduce": "Kurangi",
+        "accumulate": "Akumulasi",
+        "watch": "Pantau",
+        "hold": "Tahan",
+        "wait": "Tunggu",
+        "other": "Tidak terklasifikasi"
+      },
+      "small": "Posisi kecil",
+      "conditional": "Bersyarat",
+      "historicalEdge": "Keunggulan historis",
+      "entry": "Area masuk",
+      "stopLoss": "Level stop",
+      "target": "Target {n}",
+      "note": "Pandangan dan level harga hasil hitungan analisis, bukan rekomendasi HAKAPRO."
+    },
+    "levels": {
+      "R1": "R1",
+      "R2": "R2",
+      "P": "Pivot",
+      "S1": "S1",
+      "S2": "S2",
+      "weeklyPivot": "Pivot mingguan"
+    },
+    "price": {
+      "title": "Harga",
+      "close": "Penutupan",
+      "previous": "Penutupan sebelumnya",
+      "open": "Pembukaan",
+      "highLow": "Tertinggi / terendah",
+      "range": "Rentang harian",
+      "pivots": "Level pivot harian (support S, resistance R)"
+    },
+    "technical": {
+      "title": "Teknikal",
+      "sma": "SMA {period}",
+      "rsi": "RSI (14)",
+      "macd": "Histogram MACD",
+      "bollinger": "Bollinger band (20, 2)",
+      "bollingerMiddle": "Tengah Bollinger",
+      "atr": "ATR (14)",
+      "note": "Posisi membandingkan harga penutupan dengan tiap level (SMA 20: {sma20}). Zona RSI: 30 ke bawah jenuh jual, 70 ke atas jenuh beli.",
+      "position": {
+        "above": "penutupan di atas",
+        "below": "penutupan di bawah",
+        "at": "penutupan sama"
+      },
+      "rsiZone": {
+        "oversold": "jenuh jual",
+        "overbought": "jenuh beli",
+        "neutral": "netral"
+      },
+      "macdDirection": {
+        "positive": "positif",
+        "negative": "negatif",
+        "flat": "datar"
+      }
+    },
+    "volume": {
+      "title": "Volume",
+      "shares": "Volume",
+      "lots": "Lot",
+      "value": "Nilai transaksi",
+      "frequency": "Frekuensi",
+      "average20": "Rata-rata 20 hari",
+      "ratio": "Dibanding rata-rata 20 hari",
+      "trend": "Tren",
+      "levels": {
+        "below": "di bawah biasanya",
+        "near": "sekitar biasanya",
+        "above": "di atas biasanya"
+      },
+      "trends": {
+        "rising": "Naik",
+        "falling": "Turun",
+        "stable": "Stabil"
+      }
+    },
+    "foreign": {
+      "title": "Aliran asing",
+      "net": "Asing bersih",
+      "share": "Porsi dari volume",
+      "recent": "{sessions} sesi terakhir",
+      "recentValue": "{buy} beli bersih, {sell} jual bersih",
+      "recentAverage": "Rata-rata, {sessions} sesi terakhir",
+      "sides": {
+        "buy": "beli bersih",
+        "sell": "jual bersih"
+      }
+    },
+    "brokers": {
+      "title": "Aliran broker",
+      "total": "{count} broker bertransaksi pada sesi ini.",
+      "topBuyers": "Pembeli bersih terbesar",
+      "topSellers": "Penjual bersih terbesar",
+      "heavyBuyers": "Pembeli besar",
+      "heavySellers": "Penjual besar",
+      "consistency": "Sisi yang sama di sesi terakhir",
+      "consistent": {
+        "buy": "{code} beli {days}/{sessions}",
+        "sell": "{code} jual {days}/{sessions}"
+      },
+      "more": "+{count} lainnya",
+      "heavy": "Broker besar",
+      "heavyCounts": "{buyers} beli · {sellers} jual"
+    },
+    "patterns": {
+      "title": "Pola historis",
+      "intro": "Situasi serupa hari ini dalam sejarah saham ini sejak 2020, dan pergerakan harga sesudahnya. Hasil masa lalu tidak menjamin hasil mendatang.",
+      "pattern": "Pola",
+      "quality": "Bukti",
+      "qualities": {
+        "historicalEdge": "Riwayat kuat",
+        "validSample": "Sampel cukup",
+        "other": "Tidak terklasifikasi"
+      },
+      "winRate": "Tingkat menang",
+      "averageReturn": "Rata-rata imbal hasil",
+      "day3": "Setelah 3 hari",
+      "potential": "Potensi naik",
+      "drawdown": "Penurunan",
+      "exits": "Target / stop / waktu habis",
+      "samples": "Sampel",
+      "profitFactor": "Profit factor",
+      "exitDays": "Rata-rata hari",
+      "best": "Pola historis terbaik",
+      "bestValue": "Tingkat menang {rate} ({samples} sampel)"
+    },
+    "pattern": {
+      "combination": "Sinyal gabungan ({parts})",
+      "priceVsMa": {
+        "above": "Harga di atas rata-rata {period} hari",
+        "below": "Harga di bawah rata-rata {period} hari"
+      },
+      "foreignStrong": {
+        "buy": "Beli asing kuat",
+        "sell": "Jual asing kuat"
+      },
+      "rsiRebound": "RSI di zona pantulan",
+      "rsiZone": {
+        "oversold": "RSI jenuh jual",
+        "overbought": "RSI jenuh beli"
+      },
+      "brokerConcentratedAccumulation": "Akumulasi terpusat broker teratas",
+      "volumeClimax": "Klimaks volume",
+      "other": "Pola tidak terklasifikasi"
+    },
+    "patternParts": {
+      "broker": "broker",
+      "foreign": "asing",
+      "technical": "teknikal"
+    },
+    "compare": {
+      "title": "Bandingkan analisis",
+      "intro": "Pilih hingga {max} saham dan bandingkan analisis terakhirnya berdampingan. Tiap saham memakai satu permintaan ke penyedia data.",
+      "run": "{count, plural, =0 {Bandingkan} other {Bandingkan #}}",
+      "pick": "Saham yang dibandingkan",
+      "partial": "Belum lengkap: {list}."
+    }
   }
 }

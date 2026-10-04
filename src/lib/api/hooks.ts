@@ -2,15 +2,24 @@
 
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query/keys";
-import { accumulationApi, financialsApi, marketApi, overviewApi, quotesApi, screenerApi, stockApi, type ReportType, type ScreenCondition } from "./market";
+import {
+  accumulationApi, analysisApi, financialsApi, marketApi, overviewApi, priceApi, quotesApi, screenerApi, stockApi,
+  type BrokerSummaryQuery, type FinancialsQuery, type HistoryQuery, type MarketCapQuery, type ScreenCondition,
+} from "./market";
 
-export const useHistory = (symbol: string, query: { frame?: string; limit?: number } = {}) =>
-  useQuery({ queryKey: queryKeys.history(symbol, query.frame, query.limit), queryFn: ({ signal }) => marketApi.history(symbol, query, signal) });
-export const useBrokerSummary = (symbol: string) =>
-  useQuery({ queryKey: queryKeys.brokerSummary(symbol), queryFn: ({ signal }) => marketApi.brokerSummary(symbol, signal) });
+/** Keeps the previous result on screen while a filter changes, but never across symbols. */
+function keepSameSymbol<E extends { data: { symbol: string } }>(previous: E | undefined, symbol: string): E | undefined {
+  return previous?.data.symbol === symbol.toUpperCase() ? previous : undefined;
+}
+
+export const useHistory = (symbol: string, query: HistoryQuery = {}, options: { enabled?: boolean } = {}) =>
+  useQuery({ queryKey: queryKeys.history(symbol, query.frame, query.limit, query.startDate, query.endDate), queryFn: ({ signal }) => marketApi.history(symbol, query, signal), enabled: options.enabled ?? true, placeholderData: (previous) => keepSameSymbol(previous, symbol) });
+export const useBrokerSummary = (symbol: string, query: BrokerSummaryQuery = {}, options: { enabled?: boolean } = {}) =>
+  useQuery({ queryKey: queryKeys.brokerSummary(symbol, query), queryFn: ({ signal }) => marketApi.brokerSummary(symbol, query, signal), enabled: options.enabled ?? true, placeholderData: (previous) => keepSameSymbol(previous, symbol) });
 export const useStrategies = () => useQuery({ queryKey: queryKeys.strategies(), queryFn: ({ signal }) => marketApi.strategies(signal) });
 export const useInsiders = (symbol: string) => useQuery({ queryKey: queryKeys.insiders(symbol), queryFn: ({ signal }) => marketApi.insiders(symbol, signal) });
-export const useMarketCap = () => useQuery({ queryKey: queryKeys.marketCap(), queryFn: ({ signal }) => marketApi.marketCap(signal) });
+export const useMarketCap = (query: MarketCapQuery = {}, options: { enabled?: boolean } = {}) =>
+  useQuery({ queryKey: queryKeys.marketCap(query), queryFn: ({ signal }) => marketApi.marketCap(query, signal), enabled: options.enabled ?? true, placeholderData: (previous) => previous });
 export const useStockOverview = (symbol: string) => useQuery({ queryKey: queryKeys.stockOverview(symbol), queryFn: ({ signal }) => overviewApi.stock(symbol, signal) });
 export const useMarketOverview = () => useQuery({ queryKey: queryKeys.marketOverview(), queryFn: ({ signal }) => overviewApi.market(signal) });
 export const useNews = (perPage = 8) => useQuery({ queryKey: queryKeys.news(perPage), queryFn: ({ signal }) => overviewApi.news(signal, perPage) });
@@ -20,13 +29,19 @@ export const useCompanyName = (symbol: string) =>
   useQuery({ queryKey: queryKeys.search(symbol), queryFn: ({ signal }) => marketApi.search(symbol, signal), select: (envelope) => envelope.data.find((row) => row.symbol === symbol.toUpperCase())?.companyName ?? null });
 export const useQuotes = (symbols: string[]) =>
   useQuery({ queryKey: queryKeys.quotes(symbols), queryFn: ({ signal }) => quotesApi.get(symbols, signal), enabled: symbols.length > 0 });
-export const useBrokerAccumulation = (symbol: string, query: { startDate?: string; top?: number }) =>
-  useQuery({ queryKey: queryKeys.brokerAccumulation(symbol, query.startDate, query.top), queryFn: ({ signal }) => accumulationApi.get(symbol, query, signal) });
-export const useFinancials = (symbol: string, reportType: ReportType, period: "quarterly" | "annual") =>
-  useQuery({ queryKey: queryKeys.financials(symbol, reportType, period), queryFn: ({ signal }) => financialsApi.get(symbol, reportType, period, signal) });
+export const useBrokerAccumulation = (symbol: string, query: { startDate?: string; top?: number; brokers?: string[] }) =>
+  useQuery({ queryKey: queryKeys.brokerAccumulation(symbol, query.startDate, query.top, query.brokers?.join(",")), queryFn: ({ signal }) => accumulationApi.get(symbol, query, signal) });
+export const useFinancials = (symbol: string, query: FinancialsQuery) =>
+  useQuery({ queryKey: queryKeys.financials(symbol, query.reportType, query.period, query.limit, query.year ?? null), queryFn: ({ signal }) => financialsApi.get(symbol, query, signal), placeholderData: (previous) => keepSameSymbol(previous, symbol) });
 export const useScreen = (conditions: ScreenCondition[], enabled: boolean) =>
   useQuery({ queryKey: queryKeys.screen(conditions), queryFn: ({ signal }) => screenerApi.run(conditions, signal), enabled });
-export const useDoneDetails = (symbol: string) => useQuery({ queryKey: queryKeys.doneDetails(symbol), queryFn: ({ signal }) => stockApi.doneDetails(symbol, signal) });
+export const useDoneDetails = (symbol: string, date: string | null = null, page = 1) =>
+  useQuery({ queryKey: queryKeys.doneDetails(symbol, date, page), queryFn: ({ signal }) => stockApi.doneDetails(symbol, { date, page }, signal), placeholderData: (previous) => keepSameSymbol(previous, symbol) });
+export const usePrice = (symbol: string) => useQuery({ queryKey: queryKeys.price(symbol), queryFn: ({ signal }) => priceApi.get(symbol, signal) });
+export const useAnalysis = (symbol: string) => useQuery({ queryKey: queryKeys.analysis(symbol), queryFn: ({ signal }) => analysisApi.get(symbol, signal) });
+/** One provider request per symbol; only runs when asked (a user action), never in the background. */
+export const useAnalysisCompare = (symbols: string[]) =>
+  useQuery({ queryKey: queryKeys.analysisCompare(symbols), queryFn: ({ signal }) => analysisApi.compare(symbols, signal), enabled: symbols.length > 0 });
 export const useSeasonality = (symbol: string) => useQuery({ queryKey: queryKeys.seasonality(symbol), queryFn: ({ signal }) => stockApi.seasonality(symbol, signal) });
 export const useProfile = (symbol: string) => useQuery({ queryKey: queryKeys.profile(symbol), queryFn: ({ signal }) => stockApi.profile(symbol, signal) });
 export const useCorporateActions = (symbol: string) => useQuery({ queryKey: queryKeys.actions(symbol), queryFn: ({ signal }) => stockApi.actions(symbol, signal) });
@@ -42,4 +57,4 @@ export const useInsiderDisclosures = (symbol: string, limit: number) =>
     getNextPageParam: (last, all) => (last.data.page === all.length && last.data.page < last.data.totalPages ? last.data.page + 1 : undefined),
   });
 export const useInsidersPage = (symbol: string, page: number, limit: number, action: string | null) =>
-  useQuery({ queryKey: queryKeys.insidersPage(symbol, page, limit, action), queryFn: ({ signal }) => stockApi.insiders(symbol, { page, limit, action }, signal), placeholderData: (previous) => previous });
+  useQuery({ queryKey: queryKeys.insidersPage(symbol, page, limit, action), queryFn: ({ signal }) => stockApi.insiders(symbol, { page, limit, action }, signal), placeholderData: (previous) => keepSameSymbol(previous, symbol) });

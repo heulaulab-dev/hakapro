@@ -17,6 +17,7 @@
 | S6 | Chart, Insiders, History, Ownership tabs | ✅ | 54e2fae |
 | S7 | Production readiness | ✅ | 1de1e69 |
 | S8 | Alerts page (create/toggle/delete, triggered events) | ✅ | see git log |
+| S9 | Full arjum coverage: price, analysis, every documented parameter (MIGRATION §11) | ✅ | see git log |
 
 ## Checkpoint 2 notes
 - Scaffold: create-next-app 16.3.8 (TS, App Router, Tailwind v4, ESLint, `src/`, `@/*`, Turbopack), shadcn 4.21.1 `radix-nova` preset, Radix base.
@@ -43,7 +44,7 @@
 - **Manual real-data check (dev):** in `.env.local` set `MARKET_DATA_SOURCE=arjum`, `HEULATRADE_MARKET_API_BASE_URL`, `HEULATRADE_MARKET_API_KEY` and `DEV_AUTH_BYPASS=1`. Run `bun run dev --port 3200` and open `/api/strategies`. The AUTH BYPASS notice stays visible.
 
 ## Fixture recording (Checkpoint 3 follow-up, item 3)
-- **Run it yourself:** `bun run record:fixtures` (optionally `-- --limit 10`). It needs `HEULATRADE_MARKET_API_BASE_URL` and `HEULATRADE_MARKET_API_KEY` in `.env.local`. It records the strategy screener, every matched symbol (25 at most by default) plus BBCA, and for each symbol: broker summary and accumulation, history (daily, 120 rows), seasonality, three quarterly financial statements, insiders and trade details. It also records market cap, health and per-symbol search. Analysis text is skipped.
+- **Run it yourself:** `bun run record:fixtures` (optionally `-- --limit 10`). It needs `HEULATRADE_MARKET_API_BASE_URL` and `HEULATRADE_MARKET_API_KEY` in `.env.local`. It records the strategy screener, every matched symbol (25 at most by default) plus BBCA, and for each symbol: broker summary and accumulation, history (daily, 120 rows), seasonality, three quarterly financial statements, insiders and trade details. It also records market cap, health and per-symbol search, and since 2026-10-04 today's price and the analysis text per symbol (the analysis is parsed, never shown verbatim).
 - **Stripped:** request headers are never written. Keys that look like credentials or user identifiers are dropped. The API key value and the provider host are replaced with `[REDACTED]`. Trade-detail order numbers become `REDACTED`. Every file is re-validated after sanitizing, and a file that fails is not written. Public disclosure data (insider names, broker codes) is kept. Logs show API paths only.
 - **Atomic writes:** output is staged in `fixtures/.arjum-recording-*` and swapped into `fixtures/arjum/`. Per-request failures are listed in `manifest.json` and the run continues. If the screener fails, nothing is written and the command exits 1.
 - **Two datasets:** `fixtures/arjum-baseline/` holds the frozen heulatrade samples from 2026-09-18 (order numbers redacted, with a manifest). Unit tests pin to it, so re-recording can't break value-pinned tests or snapshots. `FixtureSource` reads `fixtures/arjum/` whenever that directory has a manifest, and falls back to the baseline otherwise.
@@ -221,3 +222,10 @@ The user kept the layout and asked for heulaulab-dashboard's design system:
   - No probing or crawling.
 - **Profile data:** NPWP/NPKP and other ID numbers are stripped in `profileSchema`, with a route-level test. The Ownership tab shows "Retrieved {date} · source {dataset}"; asOf stays null.
 - **≥1% list research** is in `CONNECTION-NETWORK.md` → Data Engine inputs: KSEI via monthly IDX announcement PDFs, OJK KDK 1/KDK.04/2026. Commercial reuse needs written permission. Scratch copies of the datasets were deleted; nothing was committed.
+
+## S9: full arjum coverage (2026-10-04, user request "fix all the gaps")
+- Every documented arjum REST endpoint and parameter is wired end to end; table in MIGRATION §11. Verified live (15 paced requests for parameters, ~12 through the BFF); quota 1000/day, reported by the provider in `x-ratelimit-*` headers and now surfaced in `/api/ready`.
+- Bug fixed: Financials › Annual sent `period=annual`; the provider expects `annually`.
+- New: Analysis tab (structured, HAKAPRO wording; decision in MIGRATION §9.5), watchlist Compare analysis (≤5, on demand), today's price in the stock header, broker-summary controls and paired levels, history date range, trade-tape session picker and pages, Financials year/period count, Movers market-cap paging and date, Overview valuation, watchlist market caps.
+- Quota care: quotes request today's price only while a trading day is running or just closed; compare runs only on click; market caps for a whole watchlist are one request.
+- Fixture mode: price/analysis recorded for BBCA, SAPX, ARCI, DSSA in `fixtures/arjum`; the baseline has the 2026-09-18 BBCA analysis and no price (the header falls back to the daily close).

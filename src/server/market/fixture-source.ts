@@ -47,7 +47,8 @@ function bodySymbol(body: unknown): string | undefined {
 /**
  * Serves recorded responses through the same schemas and normalizers as the live provider.
  * Data for one symbol is never relabelled as another; unrecorded requests return NOT_RECORDED.
- * Query parameters are not applied, except the symbol, the search text and the financial report type.
+ * Query parameters are not applied, except the symbol, the search text, the financial report type and
+ * market-cap `codes` (filtered here so one stock's figures are never shown for another).
  */
 export function createFixtureFetcher(dir: string = defaultFixtureDir()): RawFetcher {
   return async <T extends z.ZodType>(path: string, schema: T, query: Record<string, unknown> = {}) => {
@@ -70,6 +71,12 @@ export function createFixtureFetcher(dir: string = defaultFixtureDir()): RawFetc
         const file = find(globalEndpoint);
         if (!file) throw notRecorded(globalEndpoint);
         body = read(file.path);
+        if (globalEndpoint === "market-cap" && typeof query.codes === "string") {
+          const codes = query.codes.split(",");
+          const page = body as { data: Array<{ code: string }> };
+          const data = page.data.filter((row) => codes.includes(row.code));
+          body = { ...page, data, total: data.length, page: 1, per_page: data.length, total_pages: 1, not_found: codes.filter((code) => !data.some((row) => row.code === code)) };
+        }
       } else {
         const match = path === "/api/done-details" ? ["", "done-details", String(query.code ?? "")] : /^\/api\/([a-z-]+)\/([A-Z0-9]+)$/.exec(path);
         const endpoint = match?.[1];

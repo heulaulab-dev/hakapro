@@ -15,7 +15,7 @@ export const historyRowSchema = z.object({
   date: z.string(), open: n, high: n, low: n, close: n, averageIdr: nn, change: n, changePercent: n,
   valueIdr: n, volumeShares: n, frequency: n, foreignBuyShares: n, foreignSellShares: n, foreignNetShares: n,
 });
-export const historySchema = z.object({ symbol: z.string(), frame: z.string(), rows: z.array(historyRowSchema) });
+export const historySchema = z.object({ symbol: z.string(), frame: z.string(), rows: z.array(historyRowSchema), available: z.object({ from: z.string(), to: z.string() }).nullable() });
 export type HistoryRow = z.infer<typeof historyRowSchema>;
 export type History = z.infer<typeof historySchema>;
 
@@ -23,8 +23,19 @@ export const brokerRowSchema = z.object({
   code: z.string(), name: z.string(), buyValueIdr: n, sellValueIdr: n, netValueIdr: n,
   buyVolumeShares: n, sellVolumeShares: n, netVolumeShares: n, buyFrequency: n, sellFrequency: n, netFrequency: n,
 });
-export const brokerSummarySchema = z.object({ symbol: z.string(), startDate: z.string(), endDate: z.string(), brokers: z.array(brokerRowSchema) });
+const brokerLevelSide = z.object({ code: z.string(), name: z.string(), valueIdr: n, volumeShares: n, frequency: nn, averagePriceIdr: n });
+export const BROKER_FLOWS = ["all", "foreign", "domestic"] as const;
+export type BrokerFlow = (typeof BROKER_FLOWS)[number];
+export const brokerSummarySchema = z.object({
+  symbol: z.string(), startDate: z.string(), endDate: z.string(), availableFrom: z.string(), availableTo: z.string(),
+  flow: z.enum(BROKER_FLOWS), net: z.boolean(),
+  brokers: z.array(brokerRowSchema),
+  levels: z.array(z.object({ rank: n, buy: brokerLevelSide.nullable(), sell: brokerLevelSide.nullable() })),
+});
 export type BrokerRow = z.infer<typeof brokerRowSchema>;
+export type BrokerSummary = z.infer<typeof brokerSummarySchema>;
+export type BrokerLevel = BrokerSummary["levels"][number];
+export type BrokerSummaryQuery = { startDate?: string; endDate?: string; flow?: BrokerFlow; net?: boolean; brokerLimit?: number; levelLimit?: number };
 
 export const criterionSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("recognized"), key: z.string(), flag: z.string() }),
@@ -52,23 +63,31 @@ export const insidersSchema = z.object({ symbol: z.string(), total: n, page: n, 
 export type InsiderRow = z.infer<typeof insiderRowSchema>;
 
 export const marketCapRowSchema = z.object({ symbol: z.string(), name: z.string(), closeIdr: n, marketCapIdr: n, listedShares: n, turnoverRatio: n });
-export const marketCapSchema = z.object({ date: z.string(), total: n, page: n, perPage: n, totalPages: n, rows: z.array(marketCapRowSchema) });
+export const marketCapSchema = z.object({ date: z.string(), total: n, page: n, perPage: n, totalPages: n, rows: z.array(marketCapRowSchema), notFound: z.array(z.string()) });
 export type MarketCapRow = z.infer<typeof marketCapRowSchema>;
+export type MarketCapQuery = { page?: number; perPage?: number; date?: string; symbols?: string[] };
 
 const sym = (symbol: string) => encodeURIComponent(symbol.toUpperCase());
 
+export type HistoryQuery = { frame?: string; limit?: number; startDate?: string; endDate?: string };
+
+/** Query string from defined values only. */
+function qs(values: Record<string, string | number | boolean | undefined | null>): string {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(values)) if (value !== undefined && value !== null && value !== "" && value !== false) params.set(key, String(value));
+  return params.size ? `?${params}` : "";
+}
+
 export const marketApi = {
   search: (q: string, signal?: AbortSignal) => fetchEnvelope(`/api/search?q=${encodeURIComponent(q)}`, z.array(searchResultSchema), { signal }),
-  history: (symbol: string, query: { frame?: string; limit?: number } = {}, signal?: AbortSignal) => {
-    const params = new URLSearchParams();
-    if (query.frame) params.set("frame", query.frame);
-    if (query.limit) params.set("limit", String(query.limit));
-    return fetchEnvelope(`/api/history/${sym(symbol)}${params.size ? `?${params}` : ""}`, historySchema, { signal });
-  },
-  brokerSummary: (symbol: string, signal?: AbortSignal) => fetchEnvelope(`/api/broker-summary/${sym(symbol)}`, brokerSummarySchema, { signal }),
+  history: (symbol: string, query: HistoryQuery = {}, signal?: AbortSignal) =>
+    fetchEnvelope(`/api/history/${sym(symbol)}${qs({ frame: query.frame, limit: query.limit, start_date: query.startDate, end_date: query.endDate })}`, historySchema, { signal }),
+  brokerSummary: (symbol: string, query: BrokerSummaryQuery = {}, signal?: AbortSignal) =>
+    fetchEnvelope(`/api/broker-summary/${sym(symbol)}${qs({ start_date: query.startDate, end_date: query.endDate, flow: query.flow === "all" ? undefined : query.flow, net: query.net, broker_limit: query.brokerLimit, level_limit: query.levelLimit })}`, brokerSummarySchema, { signal }),
   strategies: (signal?: AbortSignal) => fetchEnvelope("/api/strategies", strategyScreenSchema, { signal }),
   insiders: (symbol: string, signal?: AbortSignal) => fetchEnvelope(`/api/insiders/${sym(symbol)}`, insidersSchema, { signal }),
-  marketCap: (signal?: AbortSignal) => fetchEnvelope("/api/market-cap", marketCapSchema, { signal }),
+  marketCap: (query: MarketCapQuery = {}, signal?: AbortSignal) =>
+    fetchEnvelope(`/api/market-cap${qs({ page: query.page, per_page: query.perPage, date: query.date, symbols: query.symbols?.join(",") })}`, marketCapSchema, { signal }),
 };
 
 // --- Stock overview (/api/overview/[code]) -------------------------------------------------
@@ -105,8 +124,10 @@ export const overviewApi = {
 };
 
 // --- Quotes (/api/quotes) ------------------------------------------------------------------
+export const MARKET_STATES = ["open", "break", "closed", "holiday", "weekend", "unknown"] as const;
+export type MarketState = (typeof MARKET_STATES)[number];
 export const quoteSchema = z.discriminatedUnion("status", [
-  z.object({ symbol: z.string(), status: z.literal("ok"), date: z.string(), close: n, change: n, changePercent: n, ...freshnessFields }),
+  z.object({ symbol: z.string(), status: z.literal("ok"), date: z.string(), close: n, change: nn, changePercent: nn, lastTradeTime: z.string().nullable(), marketState: z.enum(MARKET_STATES).nullable(), ...freshnessFields }),
   z.object({ symbol: z.string(), status: z.literal("error"), error: z.string() }),
 ]);
 export type QuoteItem = z.infer<typeof quoteSchema>;
@@ -124,13 +145,8 @@ export const brokerAccumulationSchema = z.object({
 });
 export type BrokerAccumulation = z.infer<typeof brokerAccumulationSchema>;
 export const accumulationApi = {
-  get: (symbol: string, query: { startDate?: string; endDate?: string; top?: number }, signal?: AbortSignal) => {
-    const params = new URLSearchParams();
-    if (query.startDate) params.set("start_date", query.startDate);
-    if (query.endDate) params.set("end_date", query.endDate);
-    if (query.top) params.set("top", String(query.top));
-    return fetchEnvelope(`/api/broker-accumulation/${encodeURIComponent(symbol.toUpperCase())}${params.size ? `?${params}` : ""}`, brokerAccumulationSchema, { signal });
-  },
+  get: (symbol: string, query: { startDate?: string; endDate?: string; top?: number; brokers?: string[] }, signal?: AbortSignal) =>
+    fetchEnvelope(`/api/broker-accumulation/${sym(symbol)}${qs({ start_date: query.startDate, end_date: query.endDate, top: query.top, brokers: query.brokers?.join(",") })}`, brokerAccumulationSchema, { signal }),
 };
 
 // --- Financial statements (/api/financial-statements/[code]) ----------------------------------
@@ -143,9 +159,10 @@ export const financialStatementsSchema = z.object({
 export type FinancialStatements = z.infer<typeof financialStatementsSchema>;
 export const REPORT_TYPES = ["INCOME_STATEMENT", "BALANCE_SHEET", "CASH_FLOW"] as const;
 export type ReportType = (typeof REPORT_TYPES)[number];
+export type FinancialsQuery = { reportType: ReportType; period: "quarterly" | "annual"; limit: number; year?: string | null };
 export const financialsApi = {
-  get: (symbol: string, reportType: ReportType, period: "quarterly" | "annual", signal?: AbortSignal) =>
-    fetchEnvelope(`/api/financial-statements/${encodeURIComponent(symbol.toUpperCase())}?report_type=${reportType}&period=${period}&limit=12`, financialStatementsSchema, { signal }),
+  get: (symbol: string, query: FinancialsQuery, signal?: AbortSignal) =>
+    fetchEnvelope(`/api/financial-statements/${sym(symbol)}${qs({ report_type: query.reportType, period: query.period, limit: query.limit, year: query.year })}`, financialStatementsSchema, { signal }),
 };
 
 // --- Screener (POST /api/screener, idx-bei lane) ---------------------------------------------
@@ -194,10 +211,93 @@ export type CompanyProfile = z.infer<typeof profileSchema>;
 export const corporateActionSchema = z.object({ date: z.string().nullable(), type: z.string().nullable(), description: z.string().nullable(), documentUrl: z.string().nullable() });
 
 export const stockApi = {
-  doneDetails: (symbol: string, signal?: AbortSignal) => fetchEnvelope(`/api/done-details?code=${encodeURIComponent(symbol.toUpperCase())}&per_page=100`, doneDetailsSchema, { signal }),
+  doneDetails: (symbol: string, query: { date?: string | null; page?: number } = {}, signal?: AbortSignal) =>
+    fetchEnvelope(`/api/done-details${qs({ code: symbol.toUpperCase(), date: query.date, page: query.page, per_page: 100 })}`, doneDetailsSchema, { signal }),
   seasonality: (symbol: string, signal?: AbortSignal) => fetchEnvelope(`/api/seasonal/${encodeURIComponent(symbol.toUpperCase())}`, seasonalitySchema, { signal }),
   profile: (symbol: string, signal?: AbortSignal) => fetchEnvelope(`/api/stocks/${encodeURIComponent(symbol.toUpperCase())}/profile`, profileSchema, { signal }),
   actions: (symbol: string, signal?: AbortSignal) => fetchEnvelope(`/api/stocks/${encodeURIComponent(symbol.toUpperCase())}/actions`, z.array(corporateActionSchema), { signal }),
   insiders: (symbol: string, query: { page: number; limit: number; action?: string | null }, signal?: AbortSignal) =>
     fetchEnvelope(`/api/insiders/${encodeURIComponent(symbol.toUpperCase())}?page=${query.page}&limit=${query.limit}${query.action ? `&action_type=${query.action.toLowerCase()}` : ""}`, insidersSchema, { signal }),
+};
+
+// --- Today's price (/api/price/[code]) ---------------------------------------------------------
+export const lastPriceSchema = z.object({
+  symbol: z.string(), lastPriceIdr: n, frequency: n, lots: n, valueIdr: n,
+  sessionDate: z.string().nullable(), tradedToday: z.boolean(), lastTradeTime: z.string().nullable(), servedTime: z.string(),
+  marketState: z.enum(MARKET_STATES), quoteAgeMs: nn,
+});
+export type LastPrice = z.infer<typeof lastPriceSchema>;
+export const priceApi = {
+  get: (symbol: string, signal?: AbortSignal) => fetchEnvelope(`/api/price/${sym(symbol)}`, lastPriceSchema, { signal }),
+};
+
+// --- Analysis (/api/analysis/[code], /api/analysis?symbols=) -------------------------------------
+const tone = z.enum(["positive", "negative", "neutral", "mixed"]).nullable();
+const factorSchema = z.discriminatedUnion("key", [
+  z.object({ key: z.literal("priceVsSma"), tone, position: z.enum(["above", "below"]), period: n }),
+  z.object({ key: z.literal("volume"), tone, level: z.enum(["low", "normal", "high"]) }),
+  z.object({ key: z.literal("foreign"), tone, side: z.enum(["buy", "sell"]) }),
+  z.object({ key: z.literal("brokers"), tone, side: z.enum(["accumulation", "distribution"]) }),
+  z.object({ key: z.literal("rsiZone"), tone, zone: z.enum(["oversold", "overbought"]) }),
+  z.object({ key: z.literal("other"), tone }),
+]);
+const patternSchema = z.object({
+  pattern: z.discriminatedUnion("key", [
+    z.object({ key: z.literal("combination"), parts: z.array(z.enum(["broker", "foreign", "technical"])) }),
+    z.object({ key: z.literal("priceVsMa"), position: z.enum(["above", "below"]), period: n }),
+    z.object({ key: z.literal("foreignStrong"), side: z.enum(["buy", "sell"]) }),
+    z.object({ key: z.literal("rsiRebound") }),
+    z.object({ key: z.literal("rsiZone"), zone: z.enum(["oversold", "overbought"]) }),
+    z.object({ key: z.literal("brokerConcentratedAccumulation") }),
+    z.object({ key: z.literal("volumeClimax") }),
+    z.object({ key: z.literal("other") }),
+  ]),
+  quality: z.enum(["historicalEdge", "validSample", "other"]),
+  winRatePercent: nn, averageReturnPercent: nn, day3ReturnPercent: nn, potentialPercent: nn, drawdownPercent: nn,
+  takeProfitPercent: nn, cutLossPercent: nn, timeoutPercent: nn, samples: nn, profitFactor: nn, averageExitDays: nn,
+});
+const brokerNetValue = z.object({ code: z.string(), netValueIdr: n });
+export const ANALYSIS_STANCES = ["avoid", "reduce", "accumulate", "watch", "hold", "wait", "other"] as const;
+export const stockAnalysisSchema = z.object({
+  symbol: z.string(), companyName: z.string().nullable(), date: z.string().nullable(),
+  price: z.object({
+    closeIdr: nn, changeIdr: nn, changePercent: nn, previousCloseIdr: nn, openIdr: nn, highIdr: nn, lowIdr: nn, rangeIdr: nn, rangePercent: nn,
+    pivots: z.object({ r2: nn, r1: nn, p: nn, s1: nn, s2: nn }),
+  }),
+  technical: z.object({
+    sma: z.array(z.object({ period: n, valueIdr: n })), rsi14: nn,
+    bollinger: z.object({ upperIdr: n, middleIdr: n, lowerIdr: n }).nullable(),
+    macd: z.object({ macd: n, signal: n, histogram: n }).nullable(),
+    atrIdr: nn, atrPercent: nn,
+  }),
+  volume: z.object({ shares: nn, lots: nn, valueIdr: nn, frequency: nn, average20Shares: nn, ratio: nn, trend: z.enum(["rising", "falling", "stable"]).nullable() }),
+  foreign: z.object({
+    side: z.enum(["buy", "sell"]).nullable(), netShares: nn, percentOfVolume: nn,
+    recent: z.object({ buyDays: n, sellDays: n, sessions: n, averageNetShares: nn }).nullable(),
+  }),
+  brokers: z.object({
+    total: nn, topBuyers: z.array(brokerNetValue), topSellers: z.array(brokerNetValue), heavyBuyers: z.array(z.string()), heavySellers: z.array(z.string()),
+    consistency: z.array(z.object({ code: z.string(), side: z.enum(["buy", "sell"]), days: n, sessions: n })), moreConsistent: n,
+  }),
+  score: z.object({ value: n, max: n, tone }).nullable(),
+  factors: z.array(factorSchema),
+  patterns: z.array(patternSchema),
+  outlook: z.object({
+    stance: z.enum(ANALYSIS_STANCES), small: z.boolean(), conditional: z.boolean(), historicalEdge: z.boolean(),
+    entry: z.object({ lowIdr: n, highIdr: n }).nullable(),
+    targets: z.array(z.object({ priceIdr: n, basis: z.enum(["R1", "R2", "P", "S1", "S2", "weeklyPivot"]).nullable() })),
+    stopLoss: z.object({ priceIdr: n, percent: nn }).nullable(),
+  }).nullable(),
+});
+export type StockAnalysis = z.infer<typeof stockAnalysisSchema>;
+export type AnalysisFactor = StockAnalysis["factors"][number];
+export type AnalysisPattern = StockAnalysis["patterns"][number];
+export const comparedAnalysisSchema = z.discriminatedUnion("status", [
+  z.object({ symbol: z.string(), status: z.literal("ok"), data: stockAnalysisSchema, ...freshnessFields }),
+  z.object({ symbol: z.string(), status: z.literal("error"), error: z.string() }),
+]);
+export type ComparedAnalysis = z.infer<typeof comparedAnalysisSchema>;
+export const analysisApi = {
+  get: (symbol: string, signal?: AbortSignal) => fetchEnvelope(`/api/analysis/${sym(symbol)}`, stockAnalysisSchema, { signal }),
+  compare: (symbols: string[], signal?: AbortSignal) => fetchEnvelope(`/api/analysis?symbols=${symbols.map(encodeURIComponent).join(",")}`, z.array(comparedAnalysisSchema), { signal }),
 };

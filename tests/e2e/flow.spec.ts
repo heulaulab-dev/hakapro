@@ -46,7 +46,7 @@ test("desktop: BBCA overview answers 'what should I know' before the tabs", asyn
   await expect(page.getByTestId("insight-financials")).toContainText("Laporan periode 30 Jun 2026 seharusnya sudah tersedia");
   await expect(insights.locator('[data-freshness="LIVE"], [data-freshness="DELAYED"]')).toHaveCount(0);
   await expect(page.getByTestId("overview-chart").locator("canvas").first()).toBeVisible();
-  await expect(page.getByTestId("deep-dive").getByRole("link")).toHaveCount(6);
+  await expect(page.getByTestId("deep-dive").getByRole("link")).toHaveCount(7);
   await expect(page.getByTestId("research-disclaimer")).toBeVisible();
 });
 

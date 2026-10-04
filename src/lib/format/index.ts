@@ -179,7 +179,7 @@ export function direction(value: number | null | undefined): "positive" | "negat
   return !isNumber(value) || value === 0 ? "neutral" : value > 0 ? "positive" : "negative";
 }
 
-export type ValueFormat = "idr" | "idrCompact" | "percent" | "number" | "compact" | "shares" | "sharesCompact" | "netSharesCompact" | "lots";
+export type ValueFormat = "idr" | "idrCompact" | "percent" | "percentPlain" | "number" | "compact" | "shares" | "sharesCompact" | "netSharesCompact" | "lots";
 
 /** One entry point for components that receive a raw number plus a declared format. */
 export function formatValue(value: number | null | undefined, format: ValueFormat, locale: Locale): string {
@@ -187,6 +187,7 @@ export function formatValue(value: number | null | undefined, format: ValueForma
     case "idr": return formatIdr(value, locale);
     case "idrCompact": return formatIdr(value, locale, { compact: true });
     case "percent": return formatPercent(value, locale);
+    case "percentPlain": return formatPercent(value, locale, { signed: false });
     case "number": return formatNumber(value, locale);
     case "compact": return formatCompact(value, locale);
     case "shares": return formatVolume(value, locale);
