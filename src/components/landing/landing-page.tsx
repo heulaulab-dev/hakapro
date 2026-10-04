@@ -4,6 +4,7 @@ import {
 } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import type { ReactNode } from "react";
+import { Logo } from "@/components/brand/logo";
 import { FreshnessBadge } from "@/components/feedback/freshness-badge";
 import { LocaleSwitch, ThemeToggle } from "@/components/layout/preference-controls";
 import { Button } from "@/components/ui/button";
@@ -71,9 +72,8 @@ export async function LandingPage({ viewer, theme }: { viewer: Viewer; theme: Th
     <div className="relative" data-testid="landing">
       <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 md:px-6">
-          <Link href="/" className="flex items-center gap-2" aria-label={tApp("name")}>
-            <span className="flex size-8 items-center justify-center rounded-[8px] bg-muted shadow-(--shadow-mark)"><CandlestickChart className="size-3.5 text-icon" /></span>
-            <span className="text-[15px] font-semibold tracking-[-0.01em]">{tApp("name")}</span>
+          <Link href="/" className="shrink-0">
+            <Logo variant="horizontal" height={30} alt={tApp("name")} priority />
           </Link>
           <nav aria-label={t("nav.label")} className="hidden items-center gap-6 text-sm text-soft md:flex">
             <a href="#features" className="hover:text-foreground">{t("nav.features")}</a>
@@ -208,7 +208,7 @@ export async function LandingPage({ viewer, theme }: { viewer: Viewer; theme: Th
       <footer className="border-t border-border">
         <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-10 text-sm md:flex-row md:items-start md:justify-between md:px-6">
           <div className="flex flex-col gap-1.5">
-            <span className="font-semibold">{tApp("name")}</span>
+            <Logo variant="horizontal" height={30} alt={tApp("name")} className="mb-3" />
             <span className="text-soft">{t("footer.tagline")}</span>
             <span className="caption-style max-w-md leading-snug text-subtle">{t("footer.disclaimer")}</span>
           </div>

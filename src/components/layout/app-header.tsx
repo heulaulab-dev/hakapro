@@ -2,6 +2,7 @@
 
 import { Search } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { Logo } from "@/components/brand/logo";
 import { Kbd } from "@/components/ui/kbd";
 import { Link } from "@/i18n/navigation";
 import { useUiStore } from "@/lib/stores/ui";
@@ -15,8 +16,8 @@ export function AppHeader({ viewer, theme, density }: { viewer: ViewerSummary; t
   const openPalette = useUiStore((state) => state.setPaletteOpen);
   return (
     <header data-testid="app-header" className="flex h-[58px] shrink-0 items-center gap-2 border-b border-border bg-background px-4">
-      <Link href="/dashboard" className="lead-style font-medium tracking-[-0.01em] md:hidden">
-        HAKAPRO
+      <Link href="/dashboard" data-testid="header-brand" className="shrink-0 md:hidden">
+        <Logo variant="symbol" height={28} priority />
       </Link>
       {/* Global stock search lives in the command palette; this is its desktop entry point. */}
       <button

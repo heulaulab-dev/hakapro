@@ -1,7 +1,8 @@
 "use client";
 
-import { CandlestickChart, Info } from "lucide-react";
+import { Info } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { Logo } from "@/components/brand/logo";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Link, usePathname } from "@/i18n/navigation";
 import { isActive, NAV, type NavItem } from "./nav-config";
@@ -38,14 +39,10 @@ export function AppSidebar() {
 
   return (
     <aside data-testid="app-sidebar" className="hidden w-14 shrink-0 flex-col border-r border-sidebar-border bg-sidebar md:flex xl:w-(--sidebar-width)">
-      <Link href="/dashboard" className="flex shrink-0 items-center justify-center gap-2 border-b border-sidebar-border bg-sidebar-accent p-3 xl:justify-start">
-        <span className="relative flex size-8 shrink-0 items-center justify-center rounded-[8px] bg-muted shadow-(--shadow-mark)">
-          <CandlestickChart className="size-3.5 text-icon" />
-        </span>
-        <span className="hidden min-w-0 flex-col gap-1 xl:flex">
-          <span className="lead-style block truncate font-medium tracking-[-0.01em]">{t("app.name")}</span>
-          <span className="caption-style block truncate text-subtle">{t("app.tagline")}</span>
-        </span>
+      {/* Brand: symbol on the icon rail, horizontal logo on the full sidebar. p-3 is the clear space (≥0.25× in headers). */}
+      <Link href="/dashboard" data-testid="sidebar-brand" className="flex h-[57px] shrink-0 items-center justify-center border-b border-sidebar-border bg-sidebar-accent p-3 xl:justify-start">
+        <span className="xl:hidden"><Logo variant="symbol" height={28} alt={t("app.name")} priority /></span>
+        <span className="hidden xl:block"><Logo variant="horizontal" height={30} alt={t("app.name")} priority /></span>
       </Link>
       <nav aria-label={t("nav.label")} className="no-scrollbar min-h-0 flex-1 overflow-y-auto">
         {NAV.map((item) =>
