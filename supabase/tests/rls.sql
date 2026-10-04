@@ -59,10 +59,14 @@ end $$;
 reset role;
 set local role anon;
 do $$
+declare t text;
 begin
-  if (select count(*) from public.watchlists) <> 0 then raise exception 'anonymous watchlist read'; end if;
-  if (select count(*) from public.portfolios) <> 0 then raise exception 'anonymous portfolio read'; end if;
-  if (select count(*) from public.saved_screeners) <> 0 then raise exception 'anonymous screener read'; end if;
-  if (select count(*) from public.notifications) <> 0 then raise exception 'anonymous notification read'; end if;
+  -- anon holds no table grants (20261004054238_tighten_table_grants), so reads fail outright.
+  foreach t in array array['watchlists','portfolios','saved_screeners','notifications','alerts','securities'] loop
+    begin
+      execute format('select count(*) from public.%I', t);
+      raise exception 'anonymous % read allowed', t;
+    exception when insufficient_privilege then null; end;
+  end loop;
 end $$;
 rollback;
