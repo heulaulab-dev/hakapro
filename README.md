@@ -25,9 +25,9 @@ To use real data, set `MARKET_DATA_SOURCE=arjum` plus `HEULATRADE_MARKET_API_BAS
 | `MARKET_DATA_SOURCE` | server | yes: `arjum` or `idx-bei` (`fixture` is rejected) |
 | `HEULATRADE_MARKET_API_BASE_URL`, `HEULATRADE_MARKET_API_KEY` | server (secret) | yes for `arjum`; https only |
 | `MARKET_API_URL` | server | yes for `idx-bei`; optional with `arjum` (fills movers, news, profile, screener); https only |
-| `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | public | yes |
+| `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | public; available at build and runtime | yes; Next.js embeds these in browser bundles during build |
 | `SUPABASE_SERVICE_ROLE_KEY` | server (secret) | for the alert job |
-| `ALERT_JOB_SECRET` / `CRON_SECRET` | server (secret) | for the alert job (manual / Vercel Cron) |
+| `ALERT_JOB_SECRET` | server (secret) | for the alert job |
 | `DEV_AUTH_BYPASS` | dev only | must be unset (`1` is rejected) |
 | `E2E_RATE_LIMIT_SCALE` | e2e only | ignored in production |
 
@@ -67,12 +67,21 @@ src/
 - **Auth fails closed:** market routes require a Supabase session; a missing env var never opens access.
 - **Charts:** TradingView Lightweight Charts for prices (attribution in `THIRD_PARTY_NOTICES.md`); Recharts for the rest. Colors were validated for colorblind separation and contrast.
 
-## Deploying (Vercel)
+## Deploying (Coolify)
 
-1. Set the production environment variables above, on the server side only, except the two `NEXT_PUBLIC_SUPABASE_*`.
-2. In Supabase Auth settings, allow `https://<domain>/auth/callback` as a redirect URL, and enable the Google provider if you use it.
-3. `vercel.json` schedules the EOD alert job weekdays at 09:45 UTC (16:45 WIB). Set `CRON_SECRET` and `SUPABASE_SERVICE_ROLE_KEY`.
-4. Point uptime checks at `/api/ready`: 200 when auth and the market provider are healthy, 503 with state codes otherwise. `/api/health` is liveness only.
+Hakapro uses the repository `Dockerfile` and Next.js standalone output. In Coolify, create a Dockerfile application from `heulaulab-dev/hakapro`, use the `main` branch, set the Dockerfile path to `/Dockerfile`, and expose container port `3000`. Set a domain on the application and point its DNS to the Coolify server before enabling HTTPS.
+
+Set the environment variables above on the application. Keep provider credentials and Supabase service-role credentials runtime-only. Mark `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` available during both build and runtime; their public values are embedded into browser assets during `next build`. The Dockerfile supplies non-secret placeholder provider values only while building so the production guards pass without baking provider credentials into the image.
+
+In Supabase Auth settings, allow `https://<domain>/auth/callback` as a redirect URL, and enable the Google provider if you use it.
+
+The Coolify server is configured for UTC. Add a Coolify scheduled task named `evaluate-alerts` with frequency `45 9 * * 1-5`, timeout `300` seconds, and this command:
+
+```sh
+node -e 'fetch("http://127.0.0.1:3000/api/jobs/evaluate-alerts", { method: "POST", headers: { authorization: "Bearer " + process.env.ALERT_JOB_SECRET } }).then(async (response) => { console.log(await response.text()); if (!response.ok) process.exitCode = 1; }).catch((error) => { console.error(error); process.exitCode = 1; })'
+```
+
+The task runs inside the application container, so it uses the runtime `ALERT_JOB_SECRET` and does not need a public-domain request. Configure `SUPABASE_SERVICE_ROLE_KEY` only as a server-side runtime variable. Point uptime checks at `/api/ready`: 200 when auth and the market provider are healthy, 503 with state codes otherwise. `/api/health` is liveness only.
 
 ### Production checklist (open items)
 - [ ] Verify the IDX trading schedule and the 2026+ holiday calendar (`src/server/config/idx-calendar.ts`).

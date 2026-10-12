@@ -11,7 +11,7 @@ export const maxDuration = 60;
 
 function authorized(request: Request): boolean {
   const header = request.headers.get("authorization") ?? "";
-  // ALERT_JOB_SECRET for manual/scheduler calls; CRON_SECRET is what Vercel Cron sends.
+  // ALERT_JOB_SECRET is the scheduler secret; CRON_SECRET remains accepted for manual callers.
   return [process.env.ALERT_JOB_SECRET, process.env.CRON_SECRET].some((secret) => {
     if (!secret) return false;
     const expected = Buffer.from(`Bearer ${secret}`);
