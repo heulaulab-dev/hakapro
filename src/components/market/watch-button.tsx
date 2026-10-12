@@ -22,13 +22,17 @@ export function WatchButton({ symbol, viewer }: { symbol: string; viewer: Viewer
   }
   if (viewer.kind !== "user") return null; // bypass/unconfigured: no user to own a watchlist
   const item = watchlist.data?.items.find((candidate) => candidate.symbol === symbol);
-  const busy = watchlist.isPending || add.isPending || remove.isPending;
+  const busy = watchlist.isPending || watchlist.isError || add.isPending || remove.isPending;
   return (
-    <Button variant={item ? "secondary" : "outline"} size="sm" disabled={busy} aria-pressed={Boolean(item)} data-testid="watch-button"
-      onClick={() => (item ? remove.mutate(item.id) : add.mutate(symbol))}>
-      {item ? <BookmarkCheck /> : <Bookmark />}
-      {item ? t("watching") : t("watch")}
-    </Button>
+    <>
+      <Button variant={item ? "secondary" : "outline"} size="sm" disabled={busy} aria-pressed={Boolean(item)} data-testid="watch-button"
+        onClick={() => (item ? remove.mutate(item.id) : add.mutate(symbol))}>
+        {item ? <BookmarkCheck /> : <Bookmark />}
+        {item ? t("watching") : t("watch")}
+      </Button>
+      {watchlist.isError && <span role="alert" className="text-xs text-negative">{t("loadFailed")}</span>}
+      {(add.isError || remove.isError) && <span role="alert" className="text-xs text-negative">{t("failed")}</span>}
+    </>
   );
 }
 

@@ -118,6 +118,9 @@ export function ScreenerView({ viewer }: { viewer: ViewerSummary }) {
                 <Input aria-label={t("saveName")} placeholder={t("saveName")} value={name} onChange={(event) => setName(event.target.value)} className="h-8" maxLength={80} />
                 <Button type="submit" size="sm" variant="outline" disabled={save.isPending}>{t("save")}</Button>
               </form>
+              {saved.isPending && <p role="status" className="text-xs text-muted-foreground">{t("loading")}</p>}
+              {saved.isError && <p role="alert" className="text-xs text-negative">{t("loadFailed")}</p>}
+              {remove.isError && <p role="alert" className="text-xs text-negative">{t("saveFailed")}</p>}
               {saved.data?.length === 0 && <p className="text-xs text-muted-foreground">{t("savedEmpty")}</p>}
               <ul className="flex flex-col">
                 {saved.data?.map((screen) => (

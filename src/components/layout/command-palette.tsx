@@ -10,7 +10,7 @@ import { usePathname, useRouter } from "@/i18n/navigation";
 import { marketApi } from "@/lib/api/market";
 import { queryKeys } from "@/lib/query/keys";
 import { useUiStore } from "@/lib/stores/ui";
-import { createClient } from "@/lib/supabase/client";
+import { useSavedScreens } from "@/lib/saved-screens";
 import type { ViewerSummary } from "./types";
 import { ALL_PAGES, STOCK_TABS, stockHref } from "./nav-config";
 
@@ -54,15 +54,7 @@ export function CommandPalette({ viewer }: { viewer: ViewerSummary }) {
     enabled: open && debounced.length > 0,
   });
 
-  const savedScreens = useQuery({
-    queryKey: queryKeys.savedScreens(viewer.kind === "user" ? viewer.id : "none"),
-    enabled: open && viewer.kind === "user",
-    queryFn: async () => {
-      const { data, error } = await createClient().from("saved_screeners").select("id,name").order("updated_at", { ascending: false }).limit(10);
-      if (error) throw error;
-      return data;
-    },
-  });
+  const savedScreens = useSavedScreens(viewer.kind === "user" ? viewer.id : null, open);
 
   const currentSymbol = /^\/stock\/([A-Z0-9]{1,12})(?:\/|$)/.exec(pathname)?.[1];
   const topResult = search.data?.data[0]?.symbol;
@@ -134,13 +126,17 @@ export function CommandPalette({ viewer }: { viewer: ViewerSummary }) {
                 <Filter />
                 {t("palette.savedScreensSignIn")}
               </CommandItem>
+            ) : savedScreens.isError ? (
+              <CommandItem disabled value="saved screens error">{t("palette.savedScreensError")}</CommandItem>
+            ) : savedScreens.isPending ? (
+              <CommandItem disabled value="saved screens loading">{t("palette.savedScreensLoading")}</CommandItem>
             ) : savedScreens.data?.length === 0 ? (
               <CommandItem disabled value="saved screens empty">
                 <Filter />
                 {t("palette.savedScreensEmpty")}
               </CommandItem>
             ) : (
-              savedScreens.data?.map((screen) => (
+              savedScreens.data?.slice(0, 10).map((screen) => (
                 <CommandItem key={screen.id} value={`screen ${screen.name}`} onSelect={() => go(`/discover/screener?screen=${screen.id}`)}>
                   <FileText />
                   {screen.name}

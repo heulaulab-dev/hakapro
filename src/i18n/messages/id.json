@@ -140,7 +140,9 @@
     "noResults": "Tidak ada hasil.",
     "searching": "Mencari…",
     "searchError": "Pencarian saham tidak tersedia saat ini.",
-    "typeToSearch": "Ketik untuk mencari saham."
+    "typeToSearch": "Ketik untuk mencari saham.",
+    "savedScreensLoading": "Memuat data…",
+    "savedScreensError": "Screener tersimpan gagal dimuat."
   },
   "account": {
     "menu": "Akun",
@@ -389,7 +391,9 @@
     "change": "Perubahan",
     "data": "Data",
     "symbol": "Kode",
-    "failed": "Perubahan tidak tersimpan. Coba lagi."
+    "failed": "Perubahan tidak tersimpan. Coba lagi.",
+    "loading": "Memuat data…",
+    "loadFailed": "Data gagal dimuat. Coba lagi."
   },
   "flow": {
     "foreignTitle": "Foreign Flow",
@@ -511,7 +515,9 @@
     "savedSignIn": "Masuk untuk menyimpan dan memuat screen.",
     "savedEmpty": "Belum ada screen tersimpan.",
     "ratioNote": "Satuan ROE, ROA, dan dividend yield mengikuti penyedia (belum diverifikasi), jadi ditampilkan apa adanya.",
-    "saveFailed": "Screen tidak tersimpan."
+    "saveFailed": "Screen tidak tersimpan.",
+    "loading": "Memuat data…",
+    "loadFailed": "Data gagal dimuat. Coba lagi."
   },
   "movers": {
     "title": "Penggerak Pasar",
@@ -639,7 +645,9 @@
     "observed": "Teramati {value} pada {date}",
     "invalid": "Periksa kode saham dan nilai.",
     "failed": "Perubahan tidak tersimpan.",
-    "setAlert": "Peringatan"
+    "setAlert": "Peringatan",
+    "loading": "Memuat data…",
+    "loadFailed": "Data gagal dimuat. Coba lagi."
   },
   "insiderHolders": {
     "title": "Pemegang",

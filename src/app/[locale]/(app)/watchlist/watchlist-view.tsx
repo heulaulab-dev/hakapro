@@ -62,7 +62,7 @@ export function WatchlistView({ viewer }: { viewer: ViewerSummary }) {
         </div>
         <Button type="submit" variant="primary" size="md" disabled={add.isPending}>{t("add")}</Button>
       </form>
-      {watchlist.isPending ? null : items.length === 0 ? (
+      {watchlist.isError ? <p role="alert" className="text-xs text-negative">{t("loadFailed")}</p> : watchlist.isPending ? <p role="status" className="text-xs text-muted-foreground">{t("loading")}</p> : items.length === 0 ? (
         <EmptyState icon={<Bookmark />} title={t("empty")} />
       ) : (
         <div className="rounded-xl border border-border p-2">
