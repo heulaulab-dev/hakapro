@@ -13,7 +13,7 @@ export async function readiness(): Promise<{ ready: boolean; checks: Check[] }> 
   const checks: Check[] = [];
   try {
     const auth = resolveAuthConfig(process.env);
-    checks.push({ name: "auth", status: auth.mode === "supabase" ? "ok" : auth.mode === "bypass" ? "degraded" : "fail", detail: auth.mode });
+    checks.push({ name: "auth", status: auth.mode === "better_auth" ? "ok" : auth.mode === "bypass" ? "degraded" : "fail", detail: auth.mode });
   } catch {
     checks.push({ name: "auth", status: "fail", detail: "INVALID_CONFIG" });
   }

@@ -1,24 +1,28 @@
 import { describe, expect, test, vi } from "vitest";
-import { AuthConfigError, decideAccess, resolveAuthConfig } from "./auth";
+import { AuthConfigError, decideAccess, PRODUCTION_AUTH_URL, resolveAuthConfig } from "./auth";
 
-const SUPABASE = { NEXT_PUBLIC_SUPABASE_URL: "https://project.supabase.test", NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "publishable" };
+const CORE = { DATABASE_URL: "postgresql://test.invalid/db", BETTER_AUTH_SECRET: "test-secret-with-at-least-32-characters", BETTER_AUTH_URL: PRODUCTION_AUTH_URL };
+const GOOGLE = { GOOGLE_CLIENT_ID: "test-client-id", GOOGLE_CLIENT_SECRET: "test-client-secret" };
+const SMTP = { SMTP_HOST: "mail.test.invalid", SMTP_PORT: "465", SMTP_USER: "test-user", SMTP_PASSWORD: "test-password", SMTP_FROM: "test@test.invalid" };
 const PROD = [{ NODE_ENV: "production" }, { VERCEL_ENV: "production" }, { NODE_ENV: "development", VERCEL_ENV: "production" }];
 
 describe("auth config fails closed in production", () => {
-  test.each(PROD)("%o without Supabase config is rejected", (env) => {
+  test.each(PROD)("%o requires Better Auth core and Google configuration", (env) => {
     expect(() => resolveAuthConfig(env)).toThrow(AuthConfigError);
-    expect(() => resolveAuthConfig({ ...env, NEXT_PUBLIC_SUPABASE_URL: SUPABASE.NEXT_PUBLIC_SUPABASE_URL })).toThrow(AuthConfigError);
-    expect(() => resolveAuthConfig({ ...env, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "publishable" })).toThrow(AuthConfigError);
-    expect(() => resolveAuthConfig({ ...env, NEXT_PUBLIC_SUPABASE_URL: " ", NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: " " })).toThrow(AuthConfigError);
+    expect(() => resolveAuthConfig({ ...env, ...CORE })).toThrow(/GOOGLE_CLIENT_ID/);
+    expect(resolveAuthConfig({ ...env, ...CORE, ...GOOGLE }).mode).toBe("better_auth");
   });
 
-  test.each(PROD)("%o rejects DEV_AUTH_BYPASS even with Supabase config", (env) => {
-    expect(() => resolveAuthConfig({ ...env, ...SUPABASE, DEV_AUTH_BYPASS: "1" })).toThrow(/not allowed in production/);
-    expect(() => resolveAuthConfig({ ...env, DEV_AUTH_BYPASS: "1" })).toThrow(AuthConfigError);
+  test.each(PROD)("%o rejects DEV_AUTH_BYPASS", (env) => {
+    expect(() => resolveAuthConfig({ ...env, ...CORE, ...GOOGLE, DEV_AUTH_BYPASS: "1" })).toThrow(/not allowed in production/);
   });
 
-  test.each(PROD)("%o with Supabase config uses Supabase", (env) => {
-    expect(resolveAuthConfig({ ...env, ...SUPABASE })).toEqual({ mode: "supabase", url: SUPABASE.NEXT_PUBLIC_SUPABASE_URL, key: "publishable" });
+  test("email/password is enabled only with complete SMTP configuration", () => {
+    const config = resolveAuthConfig({ NODE_ENV: "production", ...CORE, ...GOOGLE });
+    expect(config.mode === "better_auth" && config.smtp).toBeNull();
+    expect(() => resolveAuthConfig({ NODE_ENV: "production", ...CORE, ...GOOGLE, SMTP_HOST: SMTP.SMTP_HOST })).toThrow(AuthConfigError);
+    const enabled = resolveAuthConfig({ NODE_ENV: "production", ...CORE, ...GOOGLE, ...SMTP });
+    expect(enabled.mode === "better_auth" && enabled.smtp?.port).toBe(465);
   });
 });
 
@@ -30,14 +34,10 @@ describe("development", () => {
   });
   test("bypass only with DEV_AUTH_BYPASS=1", () => {
     expect(resolveAuthConfig({ ...DEV, DEV_AUTH_BYPASS: "1" })).toEqual({ mode: "bypass" });
-    expect(resolveAuthConfig({ ...DEV, ...SUPABASE, DEV_AUTH_BYPASS: "1" })).toEqual({ mode: "bypass" });
-    expect(resolveAuthConfig({ ...DEV, DEV_AUTH_BYPASS: "" })).toEqual({ mode: "unconfigured" });
+    expect(resolveAuthConfig({ ...DEV, ...CORE, DEV_AUTH_BYPASS: "1" })).toEqual({ mode: "bypass" });
   });
-  test.each(["true", "yes", "0", "on"])("DEV_AUTH_BYPASS=%s is rejected rather than guessed", (value) => {
+  test.each(["true", "yes", "0", "on"])("DEV_AUTH_BYPASS=%s is rejected", (value) => {
     expect(() => resolveAuthConfig({ ...DEV, DEV_AUTH_BYPASS: value })).toThrow(AuthConfigError);
-  });
-  test("Supabase config without bypass uses Supabase", () => {
-    expect(resolveAuthConfig({ ...DEV, ...SUPABASE }).mode).toBe("supabase");
   });
 });
 
@@ -47,11 +47,11 @@ describe("decideAccess", () => {
     expect(await decideAccess({ mode: "bypass" }, hasSession)).toBe("allow");
     expect(hasSession).not.toHaveBeenCalled();
   });
-  test("unconfigured is refused, never allowed", async () => {
+  test("unconfigured is refused", async () => {
     expect(await decideAccess({ mode: "unconfigured" }, async () => true)).toBe("not_configured");
   });
-  test("supabase mode requires a session", async () => {
-    const config = { mode: "supabase" as const, url: "u", key: "k" };
+  test("Better Auth mode requires a session", async () => {
+    const config = resolveAuthConfig({ NODE_ENV: "development", ...CORE });
     expect(await decideAccess(config, async () => true)).toBe("allow");
     expect(await decideAccess(config, async () => false)).toBe("unauthorized");
   });
