@@ -54,6 +54,9 @@ export const auth = betterAuth({
   account: { accountLinking: { enabled: true, trustedProviders: ["google"] } },
   emailVerification: {
     sendOnSignUp: Boolean(config.smtp),
+    // A correct password can recover an expired or undelivered signup email.
+    // The email sign-in endpoint's rate limit also covers these resends.
+    sendOnSignIn: Boolean(config.smtp),
     autoSignInAfterVerification: true,
     sendVerificationEmail: config.smtp ? async ({ user, url }) => {
       await sendAuthEmail(user.email, "Verify your HAKAPRO email", "Confirm your email address to finish creating your HAKAPRO account:", url);

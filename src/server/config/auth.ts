@@ -20,6 +20,22 @@ export class AuthConfigError extends Error {
 /** Missing credentials disable their provider; incomplete pairs fail closed. */
 export function resolveAuthConfig(env: Env): AuthConfig {
   const production = isProductionEnv(env);
+  const environment = env.BETTER_AUTH_ENVIRONMENT?.trim() || "production";
+  if (environment !== "production" && environment !== "rehearsal") {
+    throw new AuthConfigError('BETTER_AUTH_ENVIRONMENT accepts only "production" or "rehearsal"');
+  }
+  const rehearsalUrl = env.BETTER_AUTH_REHEARSAL_URL?.trim().replace(/\/$/, "");
+  if (environment === "rehearsal") {
+    let parsedRehearsalUrl: URL;
+    try { parsedRehearsalUrl = new URL(rehearsalUrl || ""); } catch {
+      throw new AuthConfigError("BETTER_AUTH_REHEARSAL_URL must be an HTTPS origin");
+    }
+    if (parsedRehearsalUrl.protocol !== "https:" || parsedRehearsalUrl.origin !== rehearsalUrl || rehearsalUrl === PRODUCTION_AUTH_URL) {
+      throw new AuthConfigError("BETTER_AUTH_REHEARSAL_URL must be an HTTPS origin different from the production origin");
+    }
+  } else if (rehearsalUrl) {
+    throw new AuthConfigError('BETTER_AUTH_REHEARSAL_URL requires BETTER_AUTH_ENVIRONMENT="rehearsal"');
+  }
   const bypass = env.DEV_AUTH_BYPASS?.trim();
   if (bypass && bypass !== "1") throw new AuthConfigError('DEV_AUTH_BYPASS accepts only "1"');
   if (production && bypass) throw new AuthConfigError("DEV_AUTH_BYPASS is not allowed in production");
@@ -35,8 +51,9 @@ export function resolveAuthConfig(env: Env): AuthConfig {
   if (secret.length < 32) throw new AuthConfigError("BETTER_AUTH_SECRET must be at least 32 characters");
   let parsedUrl: URL;
   try { parsedUrl = new URL(baseUrl); } catch { throw new AuthConfigError("BETTER_AUTH_URL must be a valid origin"); }
-  if (parsedUrl.origin !== baseUrl || (production && baseUrl !== PRODUCTION_AUTH_URL)) {
-    throw new AuthConfigError(`BETTER_AUTH_URL must be ${production ? PRODUCTION_AUTH_URL : "an origin without a path"}`);
+  const requiredOrigin = environment === "rehearsal" ? rehearsalUrl : production ? PRODUCTION_AUTH_URL : undefined;
+  if (parsedUrl.origin !== baseUrl || !["http:", "https:"].includes(parsedUrl.protocol) || (requiredOrigin && baseUrl !== requiredOrigin)) {
+    throw new AuthConfigError(`BETTER_AUTH_URL must be ${requiredOrigin || "an HTTP(S) origin without a path"}`);
   }
 
   const googleId = env.GOOGLE_CLIENT_ID?.trim();

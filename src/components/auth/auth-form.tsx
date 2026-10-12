@@ -63,7 +63,7 @@ export function AuthForm({ kind, mode, next, callbackError, googleEnabled, passw
     setBusy(true);
     try {
       if (kind === "login") {
-        const { error: failure } = await authClient.signIn.email({ email, password });
+        const { error: failure } = await authClient.signIn.email({ email, password, callbackURL: destination });
         if (failure) throw failure;
         router.replace(destination);
         router.refresh();

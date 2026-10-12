@@ -363,7 +363,7 @@
       "mismatch": "Kata sandi tidak sama.",
       "tooShort": "Kata sandi minimal 8 karakter.",
       "invalid_credentials": "Email atau kata sandi salah.",
-      "email_not_confirmed": "Email belum dikonfirmasi. Periksa kotak masuk Anda.",
+      "email_not_confirmed": "Email belum dikonfirmasi. Tautan verifikasi baru sudah dikirim. Periksa kotak masuk Anda.",
       "user_already_exists": "Email ini sudah terdaftar.",
       "weak_password": "Kata sandi terlalu lemah.",
       "over_email_send_rate_limit": "Terlalu banyak email dikirim. Coba lagi nanti.",
