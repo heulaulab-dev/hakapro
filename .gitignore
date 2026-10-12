@@ -49,6 +49,7 @@ next-env.d.ts
 
 # agent worktrees
 /.claude/worktrees/
+/.worktrees/
 
 # fixture recorder staging (scripts/record-fixtures.ts)
 /fixtures/.arjum-recording-*/
