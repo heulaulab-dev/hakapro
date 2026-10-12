@@ -54,3 +54,6 @@ next-env.d.ts
 # fixture recorder staging (scripts/record-fixtures.ts)
 /fixtures/.arjum-recording-*/
 /fixtures/.arjum-previous-*/
+
+# Private migration source snapshots and local database credentials
+/.superpowers/sdd/*/private-source-snapshot/
