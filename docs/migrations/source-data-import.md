@@ -17,8 +17,9 @@ The runtime environment supplies these variables privately; never paste connecti
 | `REHEARSAL_WRITES_PAUSED` | import | `yes`, after stopping rehearsal app/job writes |
 | `MIGRATION_BACKUP_DIR` | import | Existing private directory outside the repo for pre-import custom-format target backups |
 | `PRODUCTION_DATABASE_URL` | production-import/production-reconcile | Secret connection URL pinned to Coolify DB resource `luspjrb3ibvzma6yc1ilicum`, database `hakapro` |
+| `PRODUCTION_SCHEMA_MIGRATION_ENABLED` | production schema migration | Must be exactly `yes` to opt into applying committed Drizzle migrations to the production database |
 | `PRODUCTION_IMPORT_ENABLED` | production-import | Must be exactly `yes` to opt into the production data write path |
-| `PRODUCTION_WRITES_PAUSED` | production-import | Must be exactly `yes` after target writes are confirmed paused |
+| `PRODUCTION_WRITES_PAUSED` | production schema migration/import | Must be exactly `yes` after target writes are confirmed paused |
 | `SOURCE_DATABASE_URL` | export | Secret direct/session source database connection, supplied only to the export runner |
 | `SOURCE_WRITES_PAUSED` | export | `yes`, after freezing all source writers |
 
@@ -66,11 +67,11 @@ After accepted rehearsal, production data import is a separate database-only ope
 
 For this phase the target must be newly migrated and empty. If it contains data, only a target already identical to the frozen snapshot is accepted without writes; partial or divergent state fails reconciliation and rolls the transaction back. The importer never truncates, overwrites, or merges. Keep source/target writer pauses in force during snapshot, backup, import and reconciliation. Once counts-only reconciliation succeeds, the app can remain on Supabase pending the separately scheduled auth/SMTP and app cutover. Do not treat this data-only import as cutover readiness by itself. At the later cutover, existing sessions are intentionally invalidated, so users sign in again. If writes have reached the new target, rollback requires an explicitly reviewed data reconciliation; simply switching back would lose those writes.
 
-In the private migration runner, inject `PRODUCTION_DATABASE_URL` only as a hidden runtime secret for the pinned resource/database, `PRODUCTION_IMPORT_ENABLED=yes`, `PRODUCTION_WRITES_PAUSED=yes`, and the existing private `MIGRATION_BACKUP_DIR`. Transfer a fresh snapshot by the already documented encrypted file/secret mechanism. Then run these commands separately, in order:
+In the private migration runner, inject `PRODUCTION_DATABASE_URL` only as a hidden runtime secret for the pinned resource/database, `PRODUCTION_SCHEMA_MIGRATION_ENABLED=yes`, `PRODUCTION_IMPORT_ENABLED=yes`, `PRODUCTION_WRITES_PAUSED=yes`, and the existing private `MIGRATION_BACKUP_DIR`. The production migration launcher checks the hostname and database name, then passes that same URL to Drizzle as `DATABASE_URL`; it suppresses connection output and reports only a success status or fixed failure code. Do not use the generic `db:migrate` command for this production step. Transfer a fresh snapshot by the already documented encrypted file/secret mechanism. Then run these commands separately, in order:
 
 ```sh
 bun scripts/migrations/snapshot-transfer.ts inventory
-env -u MIGRATION_SNAPSHOT_GZIP_BASE64 bun run db:migrate
+bun run db:migrate:production
 bun scripts/migrations/snapshot-transfer.ts production-import
 bun scripts/migrations/snapshot-transfer.ts production-reconcile
 ```
