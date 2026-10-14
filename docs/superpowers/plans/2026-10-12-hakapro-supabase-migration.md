@@ -93,12 +93,12 @@
 - Consumes: Better Auth session and Drizzle database from Tasks 2–3.
 - Produces: Server-side operations that derive the user ID from the session, and client hooks/components that call server actions or route handlers without database credentials.
 
-- [ ] Implement server-side watchlist list/add/remove operations scoped by the authenticated user ID.
-- [ ] Implement saved screener list/create/update/delete operations with user ownership checks.
-- [ ] Implement alert list/create/update/delete and alert-event reads with user ownership checks.
-- [ ] Replace command palette's Supabase screener query with the new server operation.
-- [ ] Remove direct Supabase client imports and product table access from client components; preserve loading, empty, and error behavior.
-- [ ] Keep public/reference data reads server-side and restrict shared-table writes to trusted server jobs or administrative paths.
+- [x] Implement server-side watchlist list/add/remove operations scoped by the authenticated user ID.
+- [x] Implement saved screener list/create/update/delete operations with user ownership checks.
+- [x] Implement alert list/create/update/delete and alert-event reads with user ownership checks.
+- [x] Replace command palette's Supabase screener query with the new server operation.
+- [x] Remove direct Supabase client imports and product table access from client components; preserve loading, empty, and error behavior.
+- [x] Keep public/reference data reads server-side and restrict shared-table writes to trusted server jobs or administrative paths.
 
 ### Task 5: Port scheduled alert evaluation to PostgreSQL
 
@@ -109,8 +109,8 @@
 - Consumes: PostgreSQL alert repositories and existing `ALERT_JOB_SECRET` validation.
 - Produces: The existing scheduled endpoint contract using PostgreSQL only, with the same job authorization and alert evaluation semantics.
 
-- [ ] Replace Supabase service-role access with server-side PostgreSQL queries and writes.
-- [ ] Preserve secret validation before database writes and ensure the route does not require a browser session.
+- [x] Replace Supabase service-role access with server-side PostgreSQL queries and writes.
+- [x] Preserve secret validation before database writes and ensure the route does not require a browser session.
 - [ ] Run one controlled non-production evaluation and reconcile generated alert events against the source behavior.
 
 ### Task 6: Build and rehearse complete source-data import
@@ -123,12 +123,12 @@
 - Consumes: Source Supabase credentials supplied through a secure local/Coolify execution context, and the non-production Coolify PostgreSQL database.
 - Produces: Repeatable export/import procedure, preserved UUIDs and relationships, Google user/account mappings, and a reconciliation report without secrets or personal data.
 
-- [ ] Inventory every public table and the `user-exports` bucket, record counts only, and take recoverable source and target backups.
-- [ ] Export and import every application table, preserving IDs, timestamps, ownership, and foreign-key relationships.
-- [ ] Convert the two Google identities into Better Auth user/account records while retaining each original UUID and provider subject ID; do not migrate sessions or fabricate passwords.
-- [ ] Copy bucket objects and ownership metadata if present; record the bucket as empty if it has no objects.
-- [ ] Reconcile all table counts, auth user/account mappings, representative ownership references, and Storage object counts; fix discrepancies before production use.
-- [ ] Document the exact commands and the repeatable final-delta procedure without storing credentials in the repository.
+- [x] Inventory every public table and the `user-exports` bucket, record counts only, and take recoverable source and target backups.
+- [x] Export and import every application table, preserving IDs, timestamps, ownership, and foreign-key relationships.
+- [x] Convert the two Google identities into Better Auth user/account records while retaining each original UUID and provider subject ID; do not migrate sessions or fabricate passwords.
+- [x] Copy bucket objects and ownership metadata if present; record the bucket as empty if it has no objects.
+- [x] Reconcile all table counts, auth user/account mappings, representative ownership references, and Storage object counts; fix discrepancies before production use.
+- [x] Document the exact commands and the repeatable final-delta procedure without storing credentials in the repository.
 
 ### Task 7: Remove Supabase runtime usage and deployment configuration
 
@@ -140,10 +140,10 @@
 - Consumes: All product/auth flows on PostgreSQL and Better Auth from Tasks 3–6.
 - Produces: A production build and runtime with no Supabase SDK, URL, publishable key, service-role key, or Supabase auth dependency.
 
-- [ ] Remove Supabase environment requirements from build, health/readiness checks, proxy, security headers, and deployment configuration.
-- [ ] Remove `@supabase/ssr`, `@supabase/supabase-js`, Supabase client/types, and dead Supabase auth callback code after all imports are gone.
-- [ ] Update deployment and operational documentation with Coolify database setup, migrations, OAuth/SMTP prerequisites, backups, and rollback boundary.
-- [ ] Confirm server/client boundaries and production configuration do not expose database or auth secrets.
+- [x] Remove Supabase environment requirements from build, health/readiness checks, proxy, security headers, and deployment configuration.
+- [x] Remove `@supabase/ssr`, `@supabase/supabase-js`, Supabase client/types, and dead Supabase auth callback code after all imports are gone.
+- [x] Update deployment and operational documentation with Coolify database setup, migrations, OAuth/SMTP prerequisites, backups, and rollback boundary.
+- [x] Confirm server/client boundaries and production configuration do not expose database or auth secrets.
 
 ### Task 8: Production rehearsal, cutover, and stabilization
 
