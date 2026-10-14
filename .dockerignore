@@ -8,3 +8,6 @@ playwright-report
 .env*
 !.env.example
 *.tsbuildinfo
+.superpowers
+.worktrees
+*.dump
