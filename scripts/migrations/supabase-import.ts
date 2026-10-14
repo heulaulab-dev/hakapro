@@ -207,11 +207,12 @@ export async function runMigration() {
       }
       const finalTrigger = await sql`select tgenabled from pg_trigger where tgrelid = 'public.alert_events'::regclass and tgname = 'alert_event_notification'`;
       requireCondition(finalTrigger.length === 1 && finalTrigger[0].tgenabled === "O", "ALERT_TRIGGER_STATE_UNEXPECTED");
+      // Native typed columns keep SQL NULL distinct from JSONB literal null.
       // Bidirectional EXCEPT ALL catches missing IDs, duplicates, timestamps and all field changes.
       const reconciliation: Record<string, { source: number; target: number; mismatches: number }> = {};
       for (const table of importOrder) {
         const [count] = await sql`select count(*)::int as count from ${sql(`public.${table}`)}`;
-        const [difference] = await sql`select count(*)::int as count from ((select to_jsonb(t) from ${sql(`public.${table}`)} t except all select to_jsonb(s) from ${sql(`migration_${table}`)} s) union all (select to_jsonb(s) from ${sql(`migration_${table}`)} s except all select to_jsonb(t) from ${sql(`public.${table}`)} t)) differences`;
+        const [difference] = await sql`select count(*)::int as count from ((select t.* from ${sql(`public.${table}`)} t except all select s.* from ${sql(`migration_${table}`)} s) union all (select s.* from ${sql(`migration_${table}`)} s except all select t.* from ${sql(`public.${table}`)} t)) differences`;
         reconciliation[table] = { source: snapshot.rows.get(table)!.length, target: count.count, mismatches: difference.count };
         requireCondition(difference.count === 0, "TARGET_DATA_MISMATCH_TRANSACTION_ROLLED_BACK");
       }
