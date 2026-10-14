@@ -13,13 +13,16 @@ The runtime environment supplies these variables privately; never paste connecti
 | Variable | Required by | Value or purpose |
 | --- | --- | --- |
 | `MIGRATION_SNAPSHOT_DIR` | All modes | Absolute private snapshot directory containing `data.sql` and `manifest.json` |
-| `REHEARSAL_DATABASE_URL` | import/reconcile | Secret connection URL to resource `4djsh2ikffzhfbjlt0xzu0oq`, database `hakapro_rehearsal` |
+| `REHEARSAL_DATABASE_URL` | rehearsal import/reconcile | Secret connection URL to resource `4djsh2ikffzhfbjlt0xzu0oq`, database `hakapro_rehearsal` |
 | `REHEARSAL_WRITES_PAUSED` | import | `yes`, after stopping rehearsal app/job writes |
 | `MIGRATION_BACKUP_DIR` | import | Existing private directory outside the repo for pre-import custom-format target backups |
+| `PRODUCTION_DATABASE_URL` | production-import/production-reconcile | Secret connection URL pinned to Coolify DB resource `luspjrb3ibvzma6yc1ilicum`, database `hakapro` |
+| `PRODUCTION_IMPORT_ENABLED` | production-import | Must be exactly `yes` to opt into the production data write path |
+| `PRODUCTION_WRITES_PAUSED` | production-import | Must be exactly `yes` after target writes are confirmed paused |
 | `SOURCE_DATABASE_URL` | export | Secret direct/session source database connection, supplied only to the export runner |
 | `SOURCE_WRITES_PAUSED` | export | `yes`, after freezing all source writers |
 
-The script pins the target hostname and actual database name to the rehearsal resource. It rejects production and Dashboard database URLs. It also checks every committed Drizzle migration hash and the exact target table inventory before loading data. The tool deliberately has no production override. Production import needs a separately reviewed target-control change during task 8 after rehearsal is accepted.
+The script pins rehearsal modes to the rehearsal hostname and database, and production modes to Coolify resource `luspjrb3ibvzma6yc1ilicum` and database `hakapro`. The paths do not share an override flag. Both compare every installed migration hash with the committed Drizzle files and compare the exact public table and ordered column/type inventory with those migration files before loading data. Production writes additionally require both explicit `yes` gates. `production-reconcile` is read-only and prints counts/status only.
 
 ## Snapshot and source recovery backup
 
@@ -59,7 +62,20 @@ Every successful import or reconciliation requires the named `alert_event_notifi
 
 A full frozen snapshot replaces an incremental delta for this migration. Before production cutover, stop every writer: web mutations, auth signups/profile writes, market imports, and scheduled alert evaluation. Create a new source backup/snapshot with `export`, then inventory it again. Rehearse this final snapshot on an empty isolated target and require full reconciliation with zero differences. Check the final counts against the frozen source and verify Google login, ownership boundaries, and email delivery with the application's operational smoke checks.
 
-After accepted rehearsal, task 8 must add/review production target pinning, verify a fresh production recovery backup and the identical Drizzle migration hashes, then import the same frozen snapshot into the empty production database and reconcile it before enabling app writes. Keep source writes frozen until the routing/app switch is confirmed. Existing sessions are intentionally invalidated, so users sign in again. If writes have already reached the new target, rollback requires an explicitly reviewed data reconciliation; simply switching back would lose those writes.
+After accepted rehearsal, production data import is a separate database-only operation. It applies the committed Drizzle migration to the pinned production database, creates a fresh frozen Supabase snapshot, imports that snapshot into the production database, and reconciles it while the production application remains configured for Supabase. The importer never deploys or reconfigures the app. Before scheduling it, require a successful restore drill of the production target backup into an isolated database and retain evidence of that restore, then confirm backup retention and the reviewed exact migrations/schema inventory. A fresh source snapshot and its recovery backup must be made while every Supabase writer is paused; this is a future operational prerequisite, not part of this code change. The production write gates and Coolify access are injected only for the controlled import window. The importer also creates and retains a new custom-format backup of the production target immediately before beginning.
+
+For this phase the target must be newly migrated and empty. If it contains data, only a target already identical to the frozen snapshot is accepted without writes; partial or divergent state fails reconciliation and rolls the transaction back. The importer never truncates, overwrites, or merges. Keep source/target writer pauses in force during snapshot, backup, import and reconciliation. Once counts-only reconciliation succeeds, the app can remain on Supabase pending the separately scheduled auth/SMTP and app cutover. Do not treat this data-only import as cutover readiness by itself. At the later cutover, existing sessions are intentionally invalidated, so users sign in again. If writes have reached the new target, rollback requires an explicitly reviewed data reconciliation; simply switching back would lose those writes.
+
+In the private migration runner, inject `PRODUCTION_DATABASE_URL` only as a hidden runtime secret for the pinned resource/database, `PRODUCTION_IMPORT_ENABLED=yes`, `PRODUCTION_WRITES_PAUSED=yes`, and the existing private `MIGRATION_BACKUP_DIR`. Transfer a fresh snapshot by the already documented encrypted file/secret mechanism. Then run these commands separately, in order:
+
+```sh
+bun scripts/migrations/snapshot-transfer.ts inventory
+env -u MIGRATION_SNAPSHOT_GZIP_BASE64 bun run db:migrate
+bun scripts/migrations/snapshot-transfer.ts production-import
+bun scripts/migrations/snapshot-transfer.ts production-reconcile
+```
+
+Retain the target custom-format backup and counts-only reconciliation output in secure storage. Remove temporary runner tasks and snapshot transfer secret after success or failure. This procedure does not change the production app's Supabase configuration; the source may only resume writes after the frozen-import window is explicitly closed by the operator.
 
 ## Current operational status
 

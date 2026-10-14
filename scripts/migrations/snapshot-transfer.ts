@@ -21,7 +21,7 @@ async function main() {
     console.log(JSON.stringify({ mode: "pack", packedBytes: packed.length }));
     return;
   }
-  if (!["inventory", "import", "reconcile"].includes(mode)) throw new Error("Unsupported runner mode");
+  if (!["inventory", "import", "reconcile", "production-import", "production-reconcile"].includes(mode)) throw new Error("Unsupported runner mode");
   const secret = process.env.MIGRATION_SNAPSHOT_GZIP_BASE64;
   // Do not forward the transfer secret to pg_dump or any child process.
   delete process.env.MIGRATION_SNAPSHOT_GZIP_BASE64;

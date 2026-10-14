@@ -1,5 +1,5 @@
 /** Private COPY snapshot importer. Never execute source SQL or print source rows. */
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { readFile, lstat, mkdir, writeFile, access } from "node:fs/promises";
 import { resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -10,6 +10,8 @@ import postgres from "postgres";
 const tables = ["profiles", "watchlists", "watchlist_items", "workspaces", "workspace_panels", "portfolios", "portfolio_transactions", "alerts", "alert_events", "notifications", "saved_screeners", "notes", "user_preferences", "securities", "companies", "company_fundamentals", "corporate_actions", "ownership_snapshots", "market_indices", "market_snapshots"] as const;
 const authTables = ["users", "accounts", "sessions", "verifications", "rate_limits"];
 const importOrder = ["users", "accounts", ...tables];
+const rehearsalTarget = { hostname: "4djsh2ikffzhfbjlt0xzu0oq", database: "hakapro_rehearsal" };
+const productionTarget = { hostname: "luspjrb3ibvzma6yc1ilicum", database: "hakapro" };
 type Row = Record<string, unknown>;
 type Section = { columns: string[]; rows: Row[] };
 class MigrationError extends Error {}
@@ -69,6 +71,27 @@ function parseDump(data: string) {
 function section(sections: Map<string, Section>, name: string) { const found = sections.get(name); requireCondition(found, "MISSING_SOURCE_TABLE"); return found; }
 function jsonObject(value: unknown): Row { requireCondition(typeof value === "string", "INVALID_AUTH_METADATA"); const result = JSON.parse(value); requireCondition(result && typeof result === "object" && !Array.isArray(result), "INVALID_AUTH_METADATA"); return result; }
 function text(value: unknown, code: string): string { requireCondition(typeof value === "string" && value.length > 0, code); return value; }
+function committedSchemaInventory(migrations: string[]) {
+  const expected = new Map<string, { name: string; type: string }[]>();
+  const typeMap: Record<string, string> = { uuid: "uuid", text: "text", boolean: "bool", integer: "int4", bigint: "int8", date: "date", numeric: "numeric", jsonb: "jsonb", timestamp: "timestamptz" };
+  for (const migration of migrations) {
+    const tablePattern = /CREATE TABLE "([a-z_][a-z0-9_]*)" \(([\s\S]*?)\n\);/g;
+    for (const match of migration.matchAll(tablePattern)) {
+      const columns: { name: string; type: string }[] = [];
+      for (const line of match[2].split("\n")) {
+        const column = /^\s*"([a-z_][a-z0-9_]*)"\s+([a-z]+)(?:\([^)]*\))?(?:\s|$)/.exec(line);
+        if (!column) continue; // Constraints are not column definitions.
+        const type = typeMap[column[2]];
+        requireCondition(type, "UNSUPPORTED_COMMITTED_SCHEMA_TYPE");
+        columns.push({ name: column[1], type });
+      }
+      requireCondition(columns.length > 0 && !expected.has(match[1]), "INVALID_COMMITTED_SCHEMA_INVENTORY");
+      expected.set(match[1], columns);
+    }
+  }
+  requireCondition(expected.size === authTables.length + tables.length, "INCOMPLETE_COMMITTED_SCHEMA_INVENTORY");
+  return expected;
+}
 function transformAuth(sections: Map<string, Section>) {
   const sourceUsers = section(sections, "auth.users").rows;
   const identities = section(sections, "auth.identities").rows;
@@ -139,23 +162,31 @@ async function exportSnapshot(directory: string) {
 export async function runMigration() {
   process.umask(0o077);
   const mode = process.argv[2];
-  requireCondition(["export", "inventory", "import", "reconcile"].includes(mode), "USAGE_export_inventory_import_reconcile");
+  requireCondition(["export", "inventory", "import", "reconcile", "production-import", "production-reconcile"].includes(mode), "USAGE_export_inventory_import_reconcile_production-import_production-reconcile");
   const directory = resolve(required("MIGRATION_SNAPSHOT_DIR"));
   const snapshot = mode === "export" ? await exportSnapshot(directory) : await loadSnapshot(directory);
   if (mode === "export" || mode === "inventory") { console.log(JSON.stringify({ mode, snapshotSha256: snapshot.snapshotSha256, counts: snapshot.counts, storage: snapshot.storage })); return; }
-  const url = required("REHEARSAL_DATABASE_URL");
+  const productionMode = mode === "production-import" || mode === "production-reconcile";
+  if (mode === "production-import") {
+    requireCondition(required("PRODUCTION_IMPORT_ENABLED") === "yes", "PRODUCTION_IMPORT_NOT_ENABLED");
+    requireCondition(required("PRODUCTION_WRITES_PAUSED") === "yes", "PRODUCTION_WRITE_FREEZE_REQUIRED");
+  }
+  const url = required(productionMode ? "PRODUCTION_DATABASE_URL" : "REHEARSAL_DATABASE_URL");
   const parsed = new URL(url);
-  requireCondition(parsed.hostname === "4djsh2ikffzhfbjlt0xzu0oq" && parsed.pathname === "/hakapro_rehearsal", "REHEARSAL_TARGET_REQUIRED");
+  const target = productionMode ? productionTarget : rehearsalTarget;
+  requireCondition(parsed.hostname === target.hostname && parsed.pathname === `/${target.database}`, productionMode ? "PRODUCTION_TARGET_REQUIRED" : "REHEARSAL_TARGET_REQUIRED");
   const client = postgres(url, { max: 1, onnotice: () => {}, debug: false, connect_timeout: 10 });
   try {
     const [identity] = await client`select current_database() as name`;
-    requireCondition(identity.name === "hakapro_rehearsal", "REHEARSAL_TARGET_REQUIRED");
-    if (mode === "import") {
-      requireCondition(required("REHEARSAL_WRITES_PAUSED") === "yes", "TARGET_WRITE_FREEZE_REQUIRED");
+    requireCondition(identity.name === target.database, productionMode ? "PRODUCTION_TARGET_REQUIRED" : "REHEARSAL_TARGET_REQUIRED");
+    if (mode === "import" || mode === "production-import") {
+      if (!productionMode) requireCondition(required("REHEARSAL_WRITES_PAUSED") === "yes", "TARGET_WRITE_FREEZE_REQUIRED");
       const backups = resolve(required("MIGRATION_BACKUP_DIR"));
       await privateDirectory(backups);
       await access(backups, constants.R_OK | constants.W_OK | constants.X_OK);
-      const backupPath = join(backups, `rehearsal-before-import-${Date.now()}.dump`);
+      const backupPrefix = productionMode ? "production-before-import" : "rehearsal-before-import";
+      const backupSuffix = productionMode ? `${Date.now()}-${randomUUID()}` : `${Date.now()}`;
+      const backupPath = join(backups, `${backupPrefix}-${backupSuffix}.dump`);
       await pgDump(url, ["--format=custom"], backupPath);
     }
     const result = await client.begin(async (sql) => {
@@ -167,8 +198,18 @@ export async function runMigration() {
       const journal = JSON.parse(await readFile(resolve("src/server/db/migrations/meta/_journal.json"), "utf8"));
       const hashes = await Promise.all(journal.entries.map(async (entry: { tag: string }) => digest(await readFile(resolve("src/server/db/migrations", `${entry.tag}.sql`)))));
       requireCondition(installed.length === hashes.length && installed.every((r, index) => r.hash === hashes[index]), "TARGET_MIGRATION_VERSION_MISMATCH");
+      const migrationSQL = await Promise.all(journal.entries.map(async (entry: { tag: string }) => readFile(resolve("src/server/db/migrations", `${entry.tag}.sql`), "utf8")));
+      const expectedInventory = committedSchemaInventory(migrationSQL);
       const targetTables = await sql`select table_name from information_schema.tables where table_schema = 'public' and table_type = 'BASE TABLE'`;
-      requireCondition(targetTables.length === 25 && targetTables.every((r) => [...authTables, ...tables].includes(r.table_name)), "TARGET_TABLE_DRIFT");
+      requireCondition(targetTables.length === expectedInventory.size && targetTables.every((r) => expectedInventory.has(r.table_name)), "TARGET_TABLE_DRIFT");
+      const targetColumns = await sql`select table_name, column_name, udt_name from information_schema.columns where table_schema = 'public' order by table_name, ordinal_position`;
+      const actualInventory = new Map<string, { name: string; type: string }[]>();
+      for (const column of targetColumns) {
+        const entries = actualInventory.get(column.table_name) ?? [];
+        entries.push({ name: column.column_name, type: column.udt_name });
+        actualInventory.set(column.table_name, entries);
+      }
+      requireCondition(actualInventory.size === expectedInventory.size && [...expectedInventory].every(([table, columns]) => JSON.stringify(actualInventory.get(table)) === JSON.stringify(columns)), "TARGET_SCHEMA_INVENTORY_DRIFT");
       const trigger = await sql`select tgenabled from pg_trigger where tgrelid = 'public.alert_events'::regclass and tgname = 'alert_event_notification'`;
       requireCondition(trigger.length === 1 && trigger[0].tgenabled === "O", "ALERT_TRIGGER_STATE_UNEXPECTED");
       for (const table of importOrder) {
@@ -200,7 +241,7 @@ export async function runMigration() {
       const targetCounts: Record<string, number> = {};
       for (const table of [...authTables, ...tables]) { const [count] = await sql`select count(*)::int as count from ${sql(`public.${table}`)}`; targetCounts[table] = count.count; }
       const empty = Object.values(targetCounts).every((count) => count === 0);
-      if (mode === "import" && empty) {
+      if ((mode === "import" || mode === "production-import") && empty) {
         await sql`alter table public.alert_events disable trigger alert_event_notification`;
         for (const table of importOrder) await sql`insert into ${sql(`public.${table}`)} select * from ${sql(`migration_${table}`)}`;
         await sql`alter table public.alert_events enable trigger alert_event_notification`;
@@ -226,7 +267,7 @@ export async function runMigration() {
       requireCondition(violations[0].count === 0, "UNVALIDATED_TARGET_CONSTRAINTS");
       const [orphans] = await sql`select count(*)::int as count from public.accounts a left join public.users u on u.id = a.user_id where u.id is null or a.provider_id <> 'google' or a.password is not null or a.access_token is not null or a.refresh_token is not null or a.id_token is not null`;
       requireCondition(orphans.count === 0, "AUTH_MAPPING_RECONCILIATION_FAILED");
-      return { mode, imported: mode === "import" && empty, snapshotSha256: snapshot.snapshotSha256, reconciliation, ownership: { allForeignKeysValidated: true, authMappingViolations: orphans.count }, storage: snapshot.storage };
+      return { mode, imported: (mode === "import" || mode === "production-import") && empty, snapshotSha256: snapshot.snapshotSha256, reconciliation, ownership: { allForeignKeysValidated: true, authMappingViolations: orphans.count }, storage: snapshot.storage };
     });
     console.log(JSON.stringify(result));
   } finally { await client.end({ timeout: 5 }); }
