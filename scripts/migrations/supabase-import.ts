@@ -1,8 +1,9 @@
 /** Private COPY snapshot importer. Never execute source SQL or print source rows. */
 import { createHash } from "node:crypto";
-import { readFile, lstat, mkdir, writeFile } from "node:fs/promises";
+import { readFile, lstat, mkdir, writeFile, access } from "node:fs/promises";
 import { resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { constants } from "node:fs";
 import { spawn } from "node:child_process";
 import postgres from "postgres";
 
@@ -19,7 +20,7 @@ const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const digest = (data: string | Buffer) => createHash("sha256").update(data).digest("hex");
 async function privateDirectory(path: string) {
   const stat = await lstat(path);
-  requireCondition(stat.isDirectory() && !stat.isSymbolicLink() && (stat.mode & 0o077) === 0 && stat.uid === process.getuid?.(), "UNSAFE_PRIVATE_DIRECTORY");
+  requireCondition(stat.isDirectory() && !stat.isSymbolicLink() && (stat.mode & 0o777) === 0o700 && stat.uid === process.getuid?.(), "UNSAFE_PRIVATE_DIRECTORY");
 }
 async function privateRead(path: string) {
   const stat = await lstat(path);
@@ -153,6 +154,7 @@ export async function runMigration() {
       requireCondition(required("REHEARSAL_WRITES_PAUSED") === "yes", "TARGET_WRITE_FREEZE_REQUIRED");
       const backups = resolve(required("MIGRATION_BACKUP_DIR"));
       await privateDirectory(backups);
+      await access(backups, constants.R_OK | constants.W_OK | constants.X_OK);
       const backupPath = join(backups, `rehearsal-before-import-${Date.now()}.dump`);
       await pgDump(url, ["--format=custom"], backupPath);
     }
@@ -167,33 +169,44 @@ export async function runMigration() {
       requireCondition(installed.length === hashes.length && installed.every((r, index) => r.hash === hashes[index]), "TARGET_MIGRATION_VERSION_MISMATCH");
       const targetTables = await sql`select table_name from information_schema.tables where table_schema = 'public' and table_type = 'BASE TABLE'`;
       requireCondition(targetTables.length === 25 && targetTables.every((r) => [...authTables, ...tables].includes(r.table_name)), "TARGET_TABLE_DRIFT");
+      const trigger = await sql`select tgenabled from pg_trigger where tgrelid = 'public.alert_events'::regclass and tgname = 'alert_event_notification'`;
+      requireCondition(trigger.length === 1 && trigger[0].tgenabled === "O", "ALERT_TRIGGER_STATE_UNEXPECTED");
       for (const table of importOrder) {
         const stage = `migration_${table}`;
         await sql`create temporary table ${sql(stage)} (like ${sql(`public.${table}`)} including defaults) on commit drop`;
-        const columns = await sql`select column_name, data_type from information_schema.columns where table_schema = 'public' and table_name = ${table} order by ordinal_position`;
+        const columns = await sql`select column_name, udt_name from information_schema.columns where table_schema = 'public' and table_name = ${table} order by ordinal_position`;
         const source = snapshot.rows.get(table)!;
         if ((tables as readonly string[]).includes(table)) {
           const sourceColumns = section(snapshot.sections, `public.${table}`).columns;
           requireCondition(columns.length === sourceColumns.length && columns.every((c) => sourceColumns.includes(c.column_name)), "APPLICATION_COLUMN_DRIFT");
         }
-        const converted = source.map((row) => Object.fromEntries(columns.map((column) => {
-          const value = row[column.column_name];
-          return [column.column_name, column.data_type === "jsonb" && value !== null && value !== undefined ? JSON.parse(text(value, "INVALID_APPLICATION_JSON")) : value];
-        })));
-        for (let offset = 0; offset < converted.length; offset += 500) {
-          await sql`insert into ${sql(stage)} select * from jsonb_populate_recordset(null::${sql(stage)}, ${sql.json(converted.slice(offset, offset + 500))})`;
+        // PostgreSQL parses raw text directly; never round JSONB numbers through JS.
+        // Explicit text casts also distinguish SQL NULL from the JSON text "null".
+        const allowedTypes = new Set(["uuid", "text", "bool", "int4", "int8", "date", "timestamptz", "numeric", "jsonb"]);
+        requireCondition(columns.every((column) => identifier.test(column.column_name) && allowedTypes.has(column.udt_name)), "UNSUPPORTED_TARGET_COLUMN_TYPE");
+        const columnSQL = columns.map((column) => `"${column.column_name}"`).join(", ");
+        for (let offset = 0; offset < source.length; offset += 500) {
+          const values: (string | null)[] = [];
+          const tuples = source.slice(offset, offset + 500).map((row) => `(${columns.map((column) => {
+            const value = row[column.column_name];
+            requireCondition(value === null || typeof value === "string" || typeof value === "boolean", "UNSUPPORTED_SOURCE_VALUE");
+            values.push(value === null ? null : String(value));
+            return `$${values.length}::text::${column.udt_name}`;
+          }).join(", ")})`);
+          // All SQL identifiers/types are validated; all row values remain bind parameters.
+          await sql.unsafe(`insert into "${stage}" (${columnSQL}) values ${tuples.join(", ")}`, values);
         }
       }
       const targetCounts: Record<string, number> = {};
       for (const table of [...authTables, ...tables]) { const [count] = await sql`select count(*)::int as count from ${sql(`public.${table}`)}`; targetCounts[table] = count.count; }
       const empty = Object.values(targetCounts).every((count) => count === 0);
       if (mode === "import" && empty) {
-        const trigger = await sql`select tgenabled from pg_trigger where tgrelid = 'public.alert_events'::regclass and tgname = 'alert_event_notification'`;
-        requireCondition(trigger.length === 1 && trigger[0].tgenabled === "O", "ALERT_TRIGGER_STATE_UNEXPECTED");
         await sql`alter table public.alert_events disable trigger alert_event_notification`;
         for (const table of importOrder) await sql`insert into ${sql(`public.${table}`)} select * from ${sql(`migration_${table}`)}`;
         await sql`alter table public.alert_events enable trigger alert_event_notification`;
       }
+      const finalTrigger = await sql`select tgenabled from pg_trigger where tgrelid = 'public.alert_events'::regclass and tgname = 'alert_event_notification'`;
+      requireCondition(finalTrigger.length === 1 && finalTrigger[0].tgenabled === "O", "ALERT_TRIGGER_STATE_UNEXPECTED");
       // Bidirectional EXCEPT ALL catches missing IDs, duplicates, timestamps and all field changes.
       const reconciliation: Record<string, { source: number; target: number; mismatches: number }> = {};
       for (const table of importOrder) {

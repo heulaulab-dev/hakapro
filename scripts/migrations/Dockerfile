@@ -12,8 +12,11 @@ COPY package.json bun.lock drizzle.config.ts ./
 COPY scripts/migrations ./scripts/migrations
 COPY src/db ./src/db
 COPY src/server/db/migrations ./src/server/db/migrations
-RUN mkdir /backups && chown -R postgres:postgres /runner /backups && chmod 700 /backups
+RUN mkdir /backups && touch /backups/.volume-initialized && chown -R postgres:postgres /runner /backups && chmod 700 /backups && chmod 600 /backups/.volume-initialized
 USER postgres
 ENV MIGRATION_BACKUP_DIR=/backups
-ENTRYPOINT ["bun", "scripts/migrations/snapshot-transfer.ts"]
-CMD ["inventory"]
+# Named-volume first-use copy-up preserves this directory's postgres owner and 0700 mode.
+VOLUME ["/backups"]
+# Coolify application containers must remain running for immediate scheduled-task execution.
+ENTRYPOINT []
+CMD ["sleep", "infinity"]
