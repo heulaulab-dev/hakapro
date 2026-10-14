@@ -23,7 +23,7 @@ The runtime environment supplies these variables privately; never paste connecti
 | `SOURCE_DATABASE_URL` | export | Secret direct/session source database connection, supplied only to the export runner |
 | `SOURCE_WRITES_PAUSED` | export | `yes`, after freezing all source writers |
 
-The script pins rehearsal modes to the rehearsal hostname and database, and production modes to Coolify resource `luspjrb3ibvzma6yc1ilicum` and database `hakapro`. The paths do not share an override flag. Both compare every installed migration hash with the committed Drizzle files and compare the exact public table and ordered column/type inventory with those migration files before loading data. Production writes additionally require both explicit `yes` gates. `production-reconcile` is read-only and prints counts/status only.
+The script pins rehearsal modes to the rehearsal hostname and database, and production modes to Coolify resource `luspjrb3ibvzma6yc1ilicum` and database `hakapro`. The paths do not share an override flag. Both compare every installed migration hash with the committed Drizzle files and compare the exact public table and ordered column/type inventory with those migration files before loading data. Production writes additionally require both explicit `yes` gates. `production-reconcile` does not change persistent data or schema and prints counts/status only, but it creates temporary staging tables and holds `ACCESS EXCLUSIVE` locks on all 25 target tables for its transaction. Schedule it in a maintenance window: those locks can block database clients until reconciliation finishes or rolls back.
 
 ## Snapshot and source recovery backup
 

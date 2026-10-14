@@ -21,7 +21,8 @@ async function main() {
   requireCondition(
     ["postgres:", "postgresql:"].includes(target.protocol)
       && target.hostname === "luspjrb3ibvzma6yc1ilicum"
-      && target.pathname === "/hakapro",
+      && target.pathname === "/hakapro"
+      && !target.search,
     "PRODUCTION_TARGET_REQUIRED",
   );
 
