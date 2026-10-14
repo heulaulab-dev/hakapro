@@ -15,13 +15,11 @@
     "test:e2e": "playwright test",
     "check:server-boundary": "node scripts/check-server-boundary.mjs",
     "record:fixtures": "bun scripts/record-fixtures.ts",
-    "build:check": "MARKET_DATA_SOURCE=arjum HEULATRADE_MARKET_API_BASE_URL=https://build-check.invalid HEULATRADE_MARKET_API_KEY=build-check NEXT_PUBLIC_SUPABASE_URL=https://build-check.invalid NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=build-check DEV_AUTH_BYPASS= next build",
+    "build:check": "MARKET_DATA_SOURCE=arjum HEULATRADE_MARKET_API_BASE_URL=https://build-check.invalid HEULATRADE_MARKET_API_KEY=build-check DATABASE_URL=postgresql://build-check:build-check@127.0.0.1:5432/build_check BETTER_AUTH_URL=https://hakapro.heulaulab.xyz BETTER_AUTH_SECRET=compile-only-placeholder-at-least-32-characters GOOGLE_CLIENT_ID=compile-only GOOGLE_CLIENT_SECRET=compile-only BETTER_AUTH_ENVIRONMENT=production BETTER_AUTH_REHEARSAL_URL= SMTP_HOST= SMTP_PORT= SMTP_USER= SMTP_PASSWORD= SMTP_FROM= SMTP_SECURE= DEV_AUTH_BYPASS= next build",
     "check:prod-guards": "node scripts/check-prod-guards.mjs",
     "verify": "bun run typecheck && bun run lint && bun run test && bun run check:prod-guards && bun run check:server-boundary && bun run build:check"
   },
   "dependencies": {
-    "@supabase/ssr": "^0.12.7",
-    "@supabase/supabase-js": "^2.117.2",
     "@tanstack/react-query": "^5.104.1",
     "@tanstack/react-table": "^8",
     "@tanstack/react-virtual": "^3.14.13",

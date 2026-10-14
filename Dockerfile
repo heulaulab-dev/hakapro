@@ -8,19 +8,16 @@ WORKDIR /app
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY . .
 
-# Public Supabase values are embedded into browser bundles by Next.js at build time.
-ARG NEXT_PUBLIC_SUPABASE_URL
-ARG NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-ENV NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
-ENV NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY}
-
-# The app validates production configuration during the build. Real provider
-# credentials stay runtime-only in Coolify; these values are build placeholders.
-RUN test -n "$NEXT_PUBLIC_SUPABASE_URL" \
-    && test -n "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY" \
-    && MARKET_DATA_SOURCE=arjum \
+# Validate production configuration with compile-only placeholders. Real PG/auth/provider
+# credentials are runtime secrets in Coolify; no build ARG or browser-public secret is needed.
+RUN MARKET_DATA_SOURCE=arjum \
       HEULATRADE_MARKET_API_BASE_URL=https://build.invalid \
       HEULATRADE_MARKET_API_KEY=build-check \
+      DATABASE_URL=postgresql://build-check:build-check@127.0.0.1:5432/build_check \
+      BETTER_AUTH_URL=https://hakapro.heulaulab.xyz \
+      BETTER_AUTH_SECRET=compile-only-placeholder-at-least-32-characters \
+      GOOGLE_CLIENT_ID=compile-only \
+      GOOGLE_CLIENT_SECRET=compile-only \
       DEV_AUTH_BYPASS= \
       node ./node_modules/next/dist/bin/next build
 

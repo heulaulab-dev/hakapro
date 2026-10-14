@@ -3,10 +3,10 @@ import { securityHeaders } from "./security-headers";
 
 const get = (headers: ReturnType<typeof securityHeaders>, key: string) => headers.find((header) => header.key === key)?.value;
 
-test("production: strict CSP with Supabase origins only, HSTS on", () => {
-  const headers = securityHeaders({ NODE_ENV: "production", NEXT_PUBLIC_SUPABASE_URL: "https://abc.supabase.co" });
+test("production: strict same-origin CSP, HSTS on", () => {
+  const headers = securityHeaders({ NODE_ENV: "production" });
   const csp = get(headers, "Content-Security-Policy")!;
-  expect(csp).toContain("connect-src 'self' https://abc.supabase.co wss://abc.supabase.co");
+  expect(csp).toContain("connect-src 'self';");
   expect(csp).not.toContain("unsafe-eval");
   expect(csp).toContain("frame-ancestors 'none'");
   expect(get(headers, "Strict-Transport-Security")).toMatch(/max-age=/);

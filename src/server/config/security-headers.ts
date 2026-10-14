@@ -3,14 +3,12 @@
 type Env = Record<string, string | undefined>;
 
 /**
- * Response security headers. The CSP allows Supabase (auth/data, incl. realtime websockets) and
- * nothing else external; market data only ever comes from our own BFF.
+ * Response security headers. Auth and user data use same-origin routes;
+ * market data only ever comes from our own BFF.
  * TODO(hardening): move script-src from 'unsafe-inline' to per-request nonces via the proxy.
  */
 export function securityHeaders(env: Env): Array<{ key: string; value: string }> {
   const production = env.NODE_ENV === "production";
-  const supabase = env.NEXT_PUBLIC_SUPABASE_URL ? new URL(env.NEXT_PUBLIC_SUPABASE_URL).origin : null;
-  const connect = ["'self'", supabase, supabase?.replace(/^https:/, "wss:")].filter(Boolean).join(" ");
   const csp = [
     "default-src 'self'",
     // Dev needs eval for React refresh; production does not.
@@ -18,7 +16,7 @@ export function securityHeaders(env: Env): Array<{ key: string; value: string }>
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
     "font-src 'self' data:",
-    `connect-src ${connect}${production ? "" : " ws: http://localhost:*"}`,
+    `connect-src 'self'${production ? "" : " ws: http://localhost:*"}`,
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",

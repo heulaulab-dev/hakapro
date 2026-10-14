@@ -1,93 +1,74 @@
 # HAKAPRO
 
-Market intelligence and stock research for Indonesian equities (IDX). HAKAPRO is for research and decision support. It doesn't execute trades and never shows buy/sell signals.
+Market intelligence and stock research for Indonesian equities (IDX). HAKAPRO is for research and decision support. It does not execute trades.
 
 **Flow:** Discover → understand why → research the stock → the user decides.
 
-It replaces the HeulaTrade terminal UI with a dashboard (Next.js 16, App Router), reusing HeulaTrade's ported API layer and its Supabase schema, on its own Supabase project (see `supabase/README.md`). See `docs/MIGRATION.md` for what was ported and `docs/PROGRESS.md` for the build log.
+The application uses Next.js 16 App Router, private PostgreSQL with Drizzle, and Better Auth for Google plus email/password. Market providers stay behind the server BFF. The migration branch removes the former Supabase runtime; production cutover remains a separate operation. See [migration status](docs/MIGRATION.md), [progress](docs/PROGRESS.md), and [source import procedure](docs/migrations/source-data-import.md).
 
-## Quick start (local, fixture data)
+## Local development
 
-```bash
-bun install
-cp .env.example .env.local      # then set DEV_AUTH_BYPASS=1 for local browsing without Supabase
-bun run dev --port 3200         # open http://localhost:3200 (use localhost, not 127.0.0.1)
+```sh
+bun install --frozen-lockfile
+cp .env.example .env.local
+bun run dev --port 3200
 ```
 
-With no `MARKET_DATA_SOURCE`, the app serves recorded provider responses from `fixtures/` and shows a persistent **FIXTURE DATA** banner. `DEV_AUTH_BYPASS=1` shows **AUTH BYPASS**. Production refuses both.
+For local fixture browsing, set `DEV_AUTH_BYPASS=1`. The bypass opens market routes only; persistent user data still requires a real Better Auth session and a local PostgreSQL database. Fixtures show **FIXTURE DATA**; bypass shows **AUTH BYPASS**. Production rejects both. To develop auth/data flows, provide local `DATABASE_URL`, `BETTER_AUTH_SECRET` (at least 32 characters), and `BETTER_AUTH_URL=http://localhost:3200`, then apply migrations with `bun run db:migrate`.
 
-To use real data, set `MARKET_DATA_SOURCE=arjum` plus `HEULATRADE_MARKET_API_BASE_URL` and `HEULATRADE_MARKET_API_KEY` in `.env.local`. To refresh the fixtures from the real provider, run `bun run record:fixtures` (it strips keys, hosts and order numbers).
+Set `MARKET_DATA_SOURCE=arjum` and its server URL/key for real market data. `bun run record:fixtures` refreshes sanitized provider fixtures. Never commit `.env.local` or credential values.
 
 ## Environment
 
-| Variable | Scope | Required in production |
-| --- | --- | --- |
-| `MARKET_DATA_SOURCE` | server | yes: `arjum` or `idx-bei` (`fixture` is rejected) |
-| `HEULATRADE_MARKET_API_BASE_URL`, `HEULATRADE_MARKET_API_KEY` | server (secret) | yes for `arjum`; https only |
-| `MARKET_API_URL` | server | yes for `idx-bei`; optional with `arjum` (fills movers, news, profile, screener); https only |
-| `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | public; available at build and runtime | yes; Next.js embeds these in browser bundles during build |
-| `SUPABASE_SERVICE_ROLE_KEY` | server (secret) | for the alert job |
-| `ALERT_JOB_SECRET` | server (secret) | for the alert job |
-| `DEV_AUTH_BYPASS` | dev only | must be unset (`1` is rejected) |
-| `E2E_RATE_LIMIT_SCALE` | e2e only | ignored in production |
+All credentials below are server-only runtime settings in Coolify. No database/auth/provider secret belongs in a `NEXT_PUBLIC_*` variable or build argument.
 
-`next build` and `next start` **exit with an error** when production configuration is unsafe: fixture data, a missing source or credentials, non-https provider URLs, missing Supabase config, or the auth bypass. `bun run check:prod-guards` proves each case.
-
-## Scripts
-
-| Script | What it does |
+| Variables | Production requirement |
 | --- | --- |
-| `dev`, `build`, `start` | Next.js |
-| `typecheck`, `lint`, `test` | TypeScript, ESLint, Vitest (unit; fixtures only) |
-| `test:e2e` | Playwright on desktop/tablet/mobile against the dev server in fixture + bypass mode |
-| `check:prod-guards` | production builds are refused for each unsafe config |
-| `check:server-boundary` | importing `src/server/**` into a client component fails the build |
-| `build:check` | production build with placeholder config; **for verification only, never deploy its output** |
-| `verify` | all of the above except e2e |
-| `record:fixtures` | records provider responses into `fixtures/arjum/` (needs real credentials) |
+| `DATABASE_URL` | Private URL for Hakapro PostgreSQL; use its own resource, never Dashboard PostgreSQL |
+| `BETTER_AUTH_URL` | `https://hakapro.heulaulab.xyz` |
+| `BETTER_AUTH_SECRET` | Random secret of at least 32 characters |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Both required; register `https://hakapro.heulaulab.xyz/api/auth/callback/google` |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` | Complete set required for email/password, verification and password reset; `/api/ready` fails production readiness if absent |
+| `SMTP_SECURE` | Optional `1` or `0`; default follows port 465 |
+| `MARKET_DATA_SOURCE` | `arjum` or `idx-bei`; fixtures rejected |
+| `HEULATRADE_MARKET_API_BASE_URL`, `HEULATRADE_MARKET_API_KEY` | Required for arjum; HTTPS URL |
+| `MARKET_API_URL` | Required for idx-bei; optional supplemental lane for arjum; HTTPS URL |
+| `ALERT_JOB_SECRET` | Runtime bearer secret for the alert evaluator |
+| `DEV_AUTH_BYPASS` | Unset in production |
+| `E2E_RATE_LIMIT_SCALE` | Local e2e only; ignored in production |
 
-## Architecture
+A rehearsal deployment also runs with `NODE_ENV=production`. Set `BETTER_AUTH_ENVIRONMENT=rehearsal` and both `BETTER_AUTH_URL` and `BETTER_AUTH_REHEARSAL_URL` to the same distinct HTTPS rehearsal origin. Register its own Google callback and use only rehearsal DB credentials. Live production leaves the environment selector unset/default production.
 
-```
-src/
-  app/[locale]/(app)/      dashboard: Home, Discover (Screener, Strategies, Movers, Ownership Changes),
-                           Watchlist, News & Calendar, stock/[symbol]/{overview,chart,flow,financials,ownership,insiders,history}
-  app/[locale]/(auth)/     login, signup, forgot/reset password (Supabase Auth)
-  app/api/                 BFF route handlers. Every response is a freshness envelope:
-                           { data, freshness, asOf, period?, source }
-  server/                  server-only: providers (arjum, idx-bei, fixture) behind MarketDataSource,
-                           Zod schemas at every provider boundary, pure domain services (tested)
-  lib/                     format (locale-aware units), freshness, query keys, client API contracts
-  components/              ui (shadcn), data, market, charts, feedback, layout
-  i18n/                    next-intl: id (default), en
-```
+`next build` / `next start` reject unsafe market/auth config. The Dockerfile uses compile-only placeholders in the build process so real credentials stay runtime-only. It has no public auth build variables. Build placeholders are not a deployable runtime configuration.
 
-- **Freshness is never faked.** States are LIVE / DELAYED / EOD / HISTORICAL / STALE / UNAVAILABLE. The IDX session calendar (`src/server/config/idx-calendar.ts`) classifies data dates, choosing the less fresh label when uncertain. Fixtures are capped at HISTORICAL.
-- **Numbers:** one formatter (`src/lib/format`). Indonesian "M" = miliar, English "M" = million, so suffixes come from explicit tables. Volume always shows its unit (lembar/lot).
-- **Auth fails closed:** market routes require a Supabase session; a missing env var never opens access.
-- **Charts:** TradingView Lightweight Charts for prices (attribution in `THIRD_PARTY_NOTICES.md`); Recharts for the rest. Colors were validated for colorblind separation and contrast.
+## Commands and architecture
 
-## Deploying (Coolify)
+| Command | Purpose |
+| --- | --- |
+| `dev`, `build`, `start` | Next.js development, build, runtime |
+| `typecheck`, `lint` | Route types/TypeScript and ESLint |
+| `db:generate`, `db:migrate` | Generate/version and apply Drizzle migrations |
+| `test`, `test:e2e` | Existing unit and browser suites |
+| `build:check` | Compile-only production placeholders; never serve its output with those settings |
+| `check:prod-guards`, `check:server-boundary` | Existing build guard checks |
+| `verify` | Runs static checks, existing tests and build guards |
 
-Hakapro uses the repository `Dockerfile` and Next.js standalone output. In Coolify, create a Dockerfile application from `heulaulab-dev/hakapro`, use the `main` branch, set the Dockerfile path to `/Dockerfile`, and expose container port `3000`. Set a domain on the application and point its DNS to the Coolify server before enabling HTTPS.
+Auth handlers live under `/api/auth/[...all]`; session lookup is server-side. User-owned actions call `requireUser()` and PostgreSQL repositories scoped by the session UUID. Browser adapters call those actions without direct database access. Market API responses use `{data, freshness, asOf, period?, source}`. Providers, DB, auth and mail modules use `server-only`; the CSP limits browser connections to the application origin. Freshness is never fabricated, and locale-aware formatters retain explicit units.
 
-Set the environment variables above on the application. Keep provider credentials and Supabase service-role credentials runtime-only. Mark `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` available during both build and runtime; their public values are embedded into browser assets during `next build`. The Dockerfile supplies non-secret placeholder provider values only while building so the production guards pass without baking provider credentials into the image.
+## Coolify deployment and migration
 
-In Supabase Auth settings, allow `https://<domain>/auth/callback` as a redirect URL, and enable the Google provider if you use it.
+Use the reviewed migration commit from private repo `heulaulab-dev/hakapro`, `/Dockerfile`, container port `3000`, and HTTPS domain `hakapro.heulaulab.xyz`. Apply runtime settings above to the app; disable any legacy Supabase build/runtime variables during the coordinated cutover. Keep the known-good deployment available until cutover is accepted.
 
-The Coolify server is configured for UTC. Add a Coolify scheduled task named `evaluate-alerts` with frequency `45 9 * * 1-5`, timeout `300` seconds, and this command:
+[Resource inventory](docs/migrations/coolify-resources.md) records separate private PostgreSQL 17 databases: production `hakapro-postgres`, rehearsal `hakapro-rehearsal-postgres`. Each has its own persistent volume/password. Daily local backup schedules retain seven copies; offsite recovery and a restore drill remain required operational work. Never import into the existing Dashboard database.
+
+Apply [versioned schema migrations](docs/migrations/postgres-schema.md) with the controlled private runner. Then follow the [private snapshot import and native-column reconciliation procedure](docs/migrations/source-data-import.md). Rehearsal import of the retained snapshot succeeded with zero mismatches; it does not replace the final frozen-source snapshot. Before production writes move, freeze all source writers, make recoverable source/target backups, import the fresh snapshot into an empty production target through reviewed target controls, and require zero mismatches plus auth/data/job smoke checks. Retained Google UUIDs/subjects survive; old sessions are invalidated. Bucket objects were empty in the rehearsal snapshot; any new objects require reviewed private transfer before cutover.
+
+Rollback to the previous deployment is straightforward only before PostgreSQL accepts new writes. After new writes, review and reconcile those changes before changing routing back. Preserve the source project and recovery backups through stabilization.
+
+The server's scheduled-task timezone is UTC. Configure `evaluate-alerts` at `45 9 * * 1-5`, timeout 300 seconds, after the PostgreSQL job smoke check. It calls the same application's internal endpoint and uses only the runtime job secret:
 
 ```sh
-node -e 'fetch("http://127.0.0.1:3000/api/jobs/evaluate-alerts", { method: "POST", headers: { authorization: "Bearer " + process.env.ALERT_JOB_SECRET } }).then(async (response) => { console.log(await response.text()); if (!response.ok) process.exitCode = 1; }).catch((error) => { console.error(error); process.exitCode = 1; })'
+node -e 'fetch("http://127.0.0.1:3000/api/jobs/evaluate-alerts", { method: "POST", headers: { authorization: "Bearer " + process.env.ALERT_JOB_SECRET } }).then(async (response) => { console.log(await response.text()); if (!response.ok) process.exitCode = 1; }).catch(() => { console.error("ALERT_JOB_UNREACHABLE"); process.exitCode = 1; })'
 ```
 
-The task runs inside the application container, so it uses the runtime `ALERT_JOB_SECRET` and does not need a public-domain request. Configure `SUPABASE_SERVICE_ROLE_KEY` only as a server-side runtime variable. Point uptime checks at `/api/ready`: 200 when auth and the market provider are healthy, 503 with state codes otherwise. `/api/health` is liveness only.
-
-### Production checklist (open items)
-- [ ] Verify the IDX trading schedule and the 2026+ holiday calendar (`src/server/config/idx-calendar.ts`).
-- [ ] Verify the OJK/IDX reporting deadlines (`src/server/config/reporting.ts`).
-- [ ] Confirm the criteria wording with the screener provider (`docs/GLOSSARY.md`).
-- [x] Run `supabase/tests/rls.sql` against the project (passed 2026-10-04).
-- [ ] Manually test sign-up, sign-in and a two-user watchlist.
-- [ ] Market-data display rights for the provider data.
-- [ ] Optional hardening: CSP nonces instead of `'unsafe-inline'` scripts; a shared rate limiter (the current one is per instance).
+`/api/health` is process liveness and never checks credentials/database. `/api/ready` returns 200 only when required auth/provider/email configuration, PostgreSQL connectivity and market health are ready; otherwise 503 with state codes. Google/SMTP checks confirm configured settings; real OAuth and email delivery still require operational smoke checks.

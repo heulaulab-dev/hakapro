@@ -63,7 +63,7 @@ After accepted rehearsal, task 8 must add/review production target pinning, veri
 
 ## Current operational status
 
-The inventory mode has successfully processed the private task 1 snapshot without displaying row contents. No Coolify database schema or data has been modified by this tooling task. Live rehearsal is outstanding: a trusted in-network runner, secure snapshot transfer, rehearsal-only secret injection, migration application, target backup, import/reconciliation, and a restore drill are still needed. Typecheck/lint are static checks; they do not demonstrate a completed import.
+On 2026-10-14, the controlled private Coolify rehearsal applied the committed schema, created a private target backup, and imported/reconciled the retained task 1 snapshot. All 22 imported tables had zero mismatches; 2 users and 2 Google accounts mapped, all foreign keys validated, and Storage had one bucket with zero objects. A reconciliation rerun succeeded. The backup is retained mode 0600 in the dedicated rehearsal volume. Temporary runner secrets/tasks and local transfer file were removed; the runner is stopped. A restore drill, app/job smoke checks and the final frozen-source snapshot remain outstanding before production cutover. Typecheck/lint are static checks and do not replace these operational results.
 
 ## Transient Coolify runner and secret transfer
 

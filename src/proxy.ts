@@ -10,7 +10,7 @@ const LOCALE_PREFIX = new RegExp(`^/(${routing.locales.join("|")})(?=/|$)`);
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   // Route handlers answer with JSON or handle their own callback.
-  if (pathname.startsWith("/api/") || pathname.startsWith("/auth/")) return NextResponse.next();
+  if (pathname.startsWith("/api/")) return NextResponse.next();
   const response = handleI18n(request);
   // Follow locale redirects before inspecting a localized page.
   if (response.headers.has("location")) return response;

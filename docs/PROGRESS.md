@@ -1,5 +1,17 @@
 # HAKAPRO — Progress
 
+## PostgreSQL migration — current branch (2026-10-14)
+
+- Coolify production/rehearsal PostgreSQL 17 resources are private, persistent, and have daily local backups (seven copies). Dashboard PostgreSQL is a separate resource.
+- Drizzle schemas preserve all 20 public application tables plus Better Auth auth tables. Google identity import retains user UUIDs and provider subjects; existing sessions are invalidated. Email/password verification/reset use SMTP when fully configured.
+- Watchlists, saved screeners and alerts use server actions and session-scoped PostgreSQL repositories. Alert evaluation uses a PostgreSQL transaction, advisory lock and EOD idempotency with the existing bearer-secret endpoint.
+- Controlled Coolify rehearsal applied schema and imported the private retained snapshot: 2 users, 2 Google accounts, 1 watchlist, 5 items, other 18 public tables empty, Storage bucket empty. All 22 imported tables reconciled with zero mismatches. The rehearsal backup remains in its dedicated private volume; runner secrets/tasks were removed and it is stopped.
+- Runtime cleanup removes Supabase SDK/client/types/legacy callback, browser-public auth settings and CSP origin exceptions. Docker build uses compile-only server placeholders; real secrets stay runtime-only. Health is liveness; readiness checks PG connectivity and required auth/provider/email configuration.
+- Production has not switched. Google/SMTP credentials, real OAuth/email/ownership/job smoke checks, restore drill, final frozen snapshot/reconciliation and coordinated deployment remain pending. Track migration in Plane HEULAULAB / HAKAPRO (`HAKA`).
+- This task runs static typecheck/lint/diff checks only; no automated tests or deployment. Earlier dated entries below describe the initial Supabase implementation and are historical.
+
+## Historical build log
+
 | # | Checkpoint | Status | Commit |
 | --- | --- | --- | --- |
 | 1 | Inventory (`docs/MIGRATION.md`) | ✅ approved 2026-10-03 with corrections (MIGRATION §9) | — |

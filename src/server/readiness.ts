@@ -1,6 +1,6 @@
 import "server-only";
 import { resolveAuthConfig } from "@/server/config/auth";
-import { resolveMarketDataSource } from "@/server/config/market-source";
+import { isProductionEnv, resolveMarketDataSource } from "@/server/config/market-source";
 import { getMarketDataSource } from "@/server/market";
 
 export type Check = { name: string; status: "ok" | "degraded" | "fail"; detail?: string };
@@ -14,8 +14,23 @@ export async function readiness(): Promise<{ ready: boolean; checks: Check[] }> 
   try {
     const auth = resolveAuthConfig(process.env);
     checks.push({ name: "auth", status: auth.mode === "better_auth" ? "ok" : auth.mode === "bypass" ? "degraded" : "fail", detail: auth.mode });
+    if (auth.mode === "better_auth") {
+      checks.push({ name: "google_oauth", status: auth.google ? "ok" : isProductionEnv(process.env) ? "fail" : "degraded", detail: auth.google ? "CONFIGURED" : "NOT_CONFIGURED" });
+      checks.push({ name: "email_delivery", status: auth.smtp ? "ok" : isProductionEnv(process.env) ? "fail" : "degraded", detail: auth.smtp ? "CONFIGURED" : "NOT_CONFIGURED" });
+    }
   } catch {
     checks.push({ name: "auth", status: "fail", detail: "INVALID_CONFIG" });
+  }
+  try {
+    if (!process.env.DATABASE_URL && !isProductionEnv(process.env)) {
+      checks.push({ name: "database", status: "degraded", detail: "NOT_CONFIGURED" });
+    } else {
+      const { checkDatabaseConnection } = await import("@/server/db");
+      const connected = await checkDatabaseConnection();
+      checks.push({ name: "database", status: connected ? "ok" : "fail", detail: connected ? "CONNECTED" : "UNREACHABLE" });
+    }
+  } catch {
+    checks.push({ name: "database", status: "fail", detail: "UNREACHABLE" });
   }
   try {
     const mode = resolveMarketDataSource(process.env);
