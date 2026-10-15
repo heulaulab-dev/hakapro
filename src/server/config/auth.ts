@@ -6,8 +6,8 @@ type Env = Record<string, string | undefined>;
 /** Deployed origin per long-lived branch: develop, staging, main (production). */
 export const DEPLOYMENT_ORIGINS = {
   production: "https://hakapro.heulaulab.xyz",
-  staging: "https://staging.hakapro.heulaulab.xyz",
-  develop: "https://dev.hakapro.heulaulab.xyz",
+  staging: "https://staging-hakapro.heulaulab.xyz",
+  develop: "https://dev-hakapro.heulaulab.xyz",
 } as const;
 export const PRODUCTION_AUTH_URL = DEPLOYMENT_ORIGINS.production;
 /** "rehearsal" is the migration-only deployment; its origin comes from BETTER_AUTH_REHEARSAL_URL. */

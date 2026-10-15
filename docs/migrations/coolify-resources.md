@@ -50,7 +50,7 @@ Added 2026-10-15. Branches `develop` and `staging` deploy alongside production (
 | --- | --- | --- |
 | Coolify environment | `develop` (new) | `staging` (new) |
 | App branch | `develop` | `staging` |
-| Domain | `https://dev.hakapro.heulaulab.xyz` | `https://staging.hakapro.heulaulab.xyz` |
+| Domain | `https://dev-hakapro.heulaulab.xyz` | `https://staging-hakapro.heulaulab.xyz` |
 | PostgreSQL | new private PostgreSQL 17 resource, database `hakapro_develop` | new private PostgreSQL 17 resource, database `hakapro_staging` |
 | `BETTER_AUTH_ENVIRONMENT` | `develop` | `staging` |
 

@@ -43,8 +43,8 @@ Three long-lived branches each deploy to their own Coolify app, built from the s
 
 | Branch | Environment | `BETTER_AUTH_ENVIRONMENT` | Origin | Database |
 | --- | --- | --- | --- | --- |
-| `develop` | develop | `develop` | `https://dev.hakapro.heulaulab.xyz` | own PostgreSQL, test data only |
-| `staging` | staging | `staging` | `https://staging.hakapro.heulaulab.xyz` | own PostgreSQL, test data only |
+| `develop` | develop | `develop` | `https://dev-hakapro.heulaulab.xyz` | own PostgreSQL, test data only |
+| `staging` | staging | `staging` | `https://staging-hakapro.heulaulab.xyz` | own PostgreSQL, test data only |
 | `main` | production | unset (`production`) | `https://hakapro.heulaulab.xyz` | `hakapro-postgres` |
 
 - **Flow:** feature branches open PRs into `develop`; `develop` → `staging` for acceptance; `staging` → `main` releases to production. CI runs on pushes to all three and on every PR. Don't commit directly to `staging` or `main`.
