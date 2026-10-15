@@ -1,3 +1,19 @@
+# HAKAPRO — Current PostgreSQL migration status
+
+Updated 2026-10-14. The migration branch uses private Coolify PostgreSQL, Drizzle, and Better Auth for Google plus email/password. Product user-data and alert evaluation flows use server repositories; browser code has no database SDK. All original public tables and relationships have versioned schema/import tooling.
+
+The isolated Coolify rehearsal applied the schema and imported the retained snapshot: 2 users, 2 Google accounts, 1 watchlist, 5 watchlist items, zero rows in the other 18 public tables, and zero Storage objects. Native-column reconciliation reported zero mismatches for all 22 imported tables. This validates that snapshot in rehearsal; a fresh frozen-source snapshot and production cutover are still required.
+
+Supabase runtime clients/types/callback and SDK dependencies are removed from this branch. Build/auth settings use server-only `DATABASE_URL`, Better Auth, Google OAuth and SMTP variables listed in [README](../README.md) and `.env.example`. The application callback is `/api/auth/callback/google`. `/api/health` is liveness; `/api/ready` checks PG connectivity, auth/provider config and email prerequisites. CSP browser connections are same-origin.
+
+Follow [database resources](migrations/coolify-resources.md), [schema migrations](migrations/postgres-schema.md), and [source import/reconciliation](migrations/source-data-import.md) for backups, private runner setup and final snapshot procedure. Production requires Google/SMTP setup, a recovery drill, ownership/auth/job smoke checks, reviewed production target controls, final reconciliation and coordinated switch. Keep source/previous deployment for rollback. After new target writes begin, rollback requires data reconciliation.
+
+Tracking now uses Plane HEULAULAB project HAKAPRO (`HAKA`, renamed from HeulaTrade `HEULA` on 2026-10-15; ticket numbers kept) and the migration execution ledger. Migration items are HAKA-45…56. The HeulaTrade inventory below is historical; its original Supabase configuration, callback, RLS, deployment instructions and tracking decision have been superseded by this section.
+
+---
+
+## Historical HeulaTrade → HAKAPRO inventory
+
 # HAKAPRO — Migration inventory (HeulaTrade → HAKAPRO)
 
 Status: **Phase 1 complete through production readiness (slices S1–S7). Port status in §7; log in docs/PROGRESS.md.**

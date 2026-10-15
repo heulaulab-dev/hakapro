@@ -1,83 +1,89 @@
 # HAKAPRO
 
-Market intelligence and stock research for Indonesian equities (IDX). HAKAPRO is for research and decision support. It doesn't execute trades and never shows buy/sell signals.
+Market intelligence and stock research for Indonesian equities (IDX). HAKAPRO is for research and decision support. It does not execute trades.
 
 **Flow:** Discover → understand why → research the stock → the user decides.
 
-It replaces the HeulaTrade terminal UI with a dashboard (Next.js 16, App Router), reusing HeulaTrade's ported API layer and its existing Supabase Auth. See `docs/MIGRATION.md` for what was ported and `docs/PROGRESS.md` for the build log.
+The application uses Next.js 16 App Router, private PostgreSQL with Drizzle, and Better Auth for Google plus email/password. Market providers stay behind the server BFF. The migration branch removes the former Supabase runtime; production cutover remains a separate operation. See [migration status](docs/MIGRATION.md), [progress](docs/PROGRESS.md), and [source import procedure](docs/migrations/source-data-import.md).
 
-## Quick start (local, fixture data)
+## Local development
 
-```bash
-bun install
-cp .env.example .env.local      # then set DEV_AUTH_BYPASS=1 for local browsing without Supabase
-bun run dev --port 3200         # open http://localhost:3200 (use localhost, not 127.0.0.1)
+```sh
+bun install --frozen-lockfile
+cp .env.example .env.local
+bun run dev --port 3200
 ```
 
-With no `MARKET_DATA_SOURCE`, the app serves recorded provider responses from `fixtures/` and shows a persistent **FIXTURE DATA** banner. `DEV_AUTH_BYPASS=1` shows **AUTH BYPASS**. Production refuses both.
+For local fixture browsing, set `DEV_AUTH_BYPASS=1`. The bypass opens market routes only; persistent user data still requires a real Better Auth session and a local PostgreSQL database. Fixtures show **FIXTURE DATA**; bypass shows **AUTH BYPASS**. Production rejects both. To develop auth/data flows, provide local `DATABASE_URL`, `BETTER_AUTH_SECRET` (at least 32 characters), and `BETTER_AUTH_URL=http://localhost:3200`, then apply migrations with `bun run db:migrate`.
 
-To use real data, set `MARKET_DATA_SOURCE=arjum` plus `HEULATRADE_MARKET_API_BASE_URL` and `HEULATRADE_MARKET_API_KEY` in `.env.local`. To refresh the fixtures from the real provider, run `bun run record:fixtures` (it strips keys, hosts and order numbers).
+Set `MARKET_DATA_SOURCE=arjum` and its server URL/key for real market data. `bun run record:fixtures` refreshes sanitized provider fixtures. Never commit `.env.local` or credential values.
 
 ## Environment
 
-| Variable | Scope | Required in production |
-| --- | --- | --- |
-| `MARKET_DATA_SOURCE` | server | yes: `arjum` or `idx-bei` (`fixture` is rejected) |
-| `HEULATRADE_MARKET_API_BASE_URL`, `HEULATRADE_MARKET_API_KEY` | server (secret) | yes for `arjum`; https only |
-| `MARKET_API_URL` | server | yes for `idx-bei`; optional with `arjum` (fills movers, news, profile, screener); https only |
-| `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | public | yes |
-| `SUPABASE_SERVICE_ROLE_KEY` | server (secret) | for the alert job |
-| `ALERT_JOB_SECRET` / `CRON_SECRET` | server (secret) | for the alert job (manual / Vercel Cron) |
-| `DEV_AUTH_BYPASS` | dev only | must be unset (`1` is rejected) |
-| `E2E_RATE_LIMIT_SCALE` | e2e only | ignored in production |
+All credentials below are server-only runtime settings in Coolify. No database/auth/provider secret belongs in a `NEXT_PUBLIC_*` variable or build argument.
 
-`next build` and `next start` **exit with an error** when production configuration is unsafe: fixture data, a missing source or credentials, non-https provider URLs, missing Supabase config, or the auth bypass. `bun run check:prod-guards` proves each case.
-
-## Scripts
-
-| Script | What it does |
+| Variables | Production requirement |
 | --- | --- |
-| `dev`, `build`, `start` | Next.js |
-| `typecheck`, `lint`, `test` | TypeScript, ESLint, Vitest (unit; fixtures only) |
-| `test:e2e` | Playwright on desktop/tablet/mobile against the dev server in fixture + bypass mode |
-| `check:prod-guards` | production builds are refused for each unsafe config |
-| `check:server-boundary` | importing `src/server/**` into a client component fails the build |
-| `build:check` | production build with placeholder config; **for verification only, never deploy its output** |
-| `verify` | all of the above except e2e |
-| `record:fixtures` | records provider responses into `fixtures/arjum/` (needs real credentials) |
+| `DATABASE_URL` | Private URL for Hakapro PostgreSQL; use its own resource, never Dashboard PostgreSQL |
+| `BETTER_AUTH_URL` | `https://hakapro.heulaulab.xyz` |
+| `BETTER_AUTH_SECRET` | Random secret of at least 32 characters |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Both required; register `https://hakapro.heulaulab.xyz/api/auth/callback/google` |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` | Complete set required for email/password, verification and password reset; `/api/ready` fails production readiness if absent |
+| `SMTP_SECURE` | Optional `1` or `0`; default follows port 465 |
+| `MARKET_DATA_SOURCE` | `arjum` or `idx-bei`; fixtures rejected |
+| `HEULATRADE_MARKET_API_BASE_URL`, `HEULATRADE_MARKET_API_KEY` | Required for arjum; HTTPS URL |
+| `MARKET_API_URL` | Required for idx-bei; optional supplemental lane for arjum; HTTPS URL |
+| `ALERT_JOB_SECRET` | Runtime bearer secret for the alert evaluator |
+| `DEV_AUTH_BYPASS` | Unset in production |
+| `E2E_RATE_LIMIT_SCALE` | Local e2e only; ignored in production |
 
-## Architecture
+## Environments and branches
 
+Three long-lived branches each deploy to their own Coolify app, built from the same `/Dockerfile`. Every deployment runs `NODE_ENV=production`, so all production guards apply everywhere; `BETTER_AUTH_ENVIRONMENT` selects which origin `BETTER_AUTH_URL` must equal (`src/server/config/auth.ts`, `DEPLOYMENT_ORIGINS`).
+
+| Branch | Environment | `BETTER_AUTH_ENVIRONMENT` | Origin | Database |
+| --- | --- | --- | --- | --- |
+| `develop` | develop | `develop` | `https://dev-hakapro.heulaulab.xyz` | own PostgreSQL, test data only |
+| `staging` | staging | `staging` | `https://staging-hakapro.heulaulab.xyz` | own PostgreSQL, test data only |
+| `main` | production | unset (`production`) | `https://hakapro.heulaulab.xyz` | `hakapro-postgres` |
+
+- **Flow:** feature branches open PRs into `develop`; `develop` → `staging` for acceptance; `staging` → `main` releases to production. CI runs on pushes to all three and on every PR. Don't commit directly to `staging` or `main`.
+- **Isolation:** each environment has its own database, `BETTER_AUTH_SECRET` and `ALERT_JOB_SECRET`. Never point develop or staging at the production database or copy production user data into them.
+- **Google OAuth:** register `<origin>/api/auth/callback/google` for each environment (one OAuth client may list all three redirect URIs).
+- **Market data:** arjum allows 1000 requests per day per key, shared by every environment using that key. Schedule the `evaluate-alerts` job on production only; run it by hand elsewhere.
+- **Indexing:** `robots.txt` disallows everything outside production.
+- **Rehearsal:** the migration-only deployment (`hakapro-rehearsal`) sets `BETTER_AUTH_ENVIRONMENT=rehearsal` and both `BETTER_AUTH_URL` and `BETTER_AUTH_REHEARSAL_URL` to its own HTTPS origin, with rehearsal DB credentials only. It is removed after the production cutover.
+
+`next build` / `next start` reject unsafe market/auth config. The Dockerfile uses compile-only placeholders in the build process so real credentials stay runtime-only. It has no public auth build variables. Build placeholders are not a deployable runtime configuration.
+
+## Commands and architecture
+
+| Command | Purpose |
+| --- | --- |
+| `dev`, `build`, `start` | Next.js development, build, runtime |
+| `typecheck`, `lint` | Route types/TypeScript and ESLint |
+| `db:generate`, `db:migrate` | Generate/version and apply Drizzle migrations |
+| `test`, `test:e2e` | Existing unit and browser suites |
+| `build:check` | Compile-only production placeholders; never serve its output with those settings |
+| `check:prod-guards`, `check:server-boundary` | Existing build guard checks |
+| `verify` | Runs static checks, existing tests and build guards |
+
+Auth handlers live under `/api/auth/[...all]`; session lookup is server-side. User-owned actions call `requireUser()` and PostgreSQL repositories scoped by the session UUID. Browser adapters call those actions without direct database access. Market API responses use `{data, freshness, asOf, period?, source}`. Providers, DB, auth and mail modules use `server-only`; the CSP limits browser connections to the application origin. Freshness is never fabricated, and locale-aware formatters retain explicit units.
+
+## Coolify deployment and migration
+
+Production deploys branch `main` of `heulaulab-dev/hakapro` with `/Dockerfile`, container port `3000`, and HTTPS domain `hakapro.heulaulab.xyz`; staging and develop follow the table above. Apply runtime settings above to the app; disable any legacy Supabase build/runtime variables during the coordinated cutover. Keep the known-good deployment available until cutover is accepted.
+
+[Resource inventory](docs/migrations/coolify-resources.md) records separate private PostgreSQL 17 databases: production `hakapro-postgres`, rehearsal `hakapro-rehearsal-postgres`. Each has its own persistent volume/password. Daily local backup schedules retain seven copies; offsite recovery and a restore drill remain required operational work. Never import into the existing Dashboard database.
+
+Apply [versioned schema migrations](docs/migrations/postgres-schema.md) with the controlled private runner. Then follow the [private snapshot import and native-column reconciliation procedure](docs/migrations/source-data-import.md). Rehearsal import of the retained snapshot succeeded with zero mismatches; it does not replace the final frozen-source snapshot. Before production writes move, freeze all source writers, make recoverable source/target backups, import the fresh snapshot into an empty production target through reviewed target controls, and require zero mismatches plus auth/data/job smoke checks. Retained Google UUIDs/subjects survive; old sessions are invalidated. Bucket objects were empty in the rehearsal snapshot; any new objects require reviewed private transfer before cutover.
+
+Rollback to the previous deployment is straightforward only before PostgreSQL accepts new writes. After new writes, review and reconcile those changes before changing routing back. Preserve the source project and recovery backups through stabilization.
+
+The server's scheduled-task timezone is UTC. Configure `evaluate-alerts` at `45 9 * * 1-5`, timeout 300 seconds, after the PostgreSQL job smoke check. It calls the same application's internal endpoint and uses only the runtime job secret:
+
+```sh
+node -e 'fetch("http://127.0.0.1:3000/api/jobs/evaluate-alerts", { method: "POST", headers: { authorization: "Bearer " + process.env.ALERT_JOB_SECRET } }).then(async (response) => { console.log(await response.text()); if (!response.ok) process.exitCode = 1; }).catch(() => { console.error("ALERT_JOB_UNREACHABLE"); process.exitCode = 1; })'
 ```
-src/
-  app/[locale]/(app)/      dashboard: Home, Discover (Screener, Strategies, Movers, Ownership Changes),
-                           Watchlist, News & Calendar, stock/[symbol]/{overview,chart,flow,financials,ownership,insiders,history}
-  app/[locale]/(auth)/     login, signup, forgot/reset password (Supabase Auth)
-  app/api/                 BFF route handlers. Every response is a freshness envelope:
-                           { data, freshness, asOf, period?, source }
-  server/                  server-only: providers (arjum, idx-bei, fixture) behind MarketDataSource,
-                           Zod schemas at every provider boundary, pure domain services (tested)
-  lib/                     format (locale-aware units), freshness, query keys, client API contracts
-  components/              ui (shadcn), data, market, charts, feedback, layout
-  i18n/                    next-intl: id (default), en
-```
 
-- **Freshness is never faked.** States are LIVE / DELAYED / EOD / HISTORICAL / STALE / UNAVAILABLE. The IDX session calendar (`src/server/config/idx-calendar.ts`) classifies data dates, choosing the less fresh label when uncertain. Fixtures are capped at HISTORICAL.
-- **Numbers:** one formatter (`src/lib/format`). Indonesian "M" = miliar, English "M" = million, so suffixes come from explicit tables. Volume always shows its unit (lembar/lot).
-- **Auth fails closed:** market routes require a Supabase session; a missing env var never opens access.
-- **Charts:** TradingView Lightweight Charts for prices (attribution in `THIRD_PARTY_NOTICES.md`); Recharts for the rest. Colors were validated for colorblind separation and contrast.
-
-## Deploying (Vercel)
-
-1. Set the production environment variables above, on the server side only, except the two `NEXT_PUBLIC_SUPABASE_*`.
-2. In Supabase Auth settings, allow `https://<domain>/auth/callback` as a redirect URL, and enable the Google provider if you use it.
-3. `vercel.json` schedules the EOD alert job weekdays at 09:45 UTC (16:45 WIB). Set `CRON_SECRET` and `SUPABASE_SERVICE_ROLE_KEY`.
-4. Point uptime checks at `/api/ready`: 200 when auth and the market provider are healthy, 503 with state codes otherwise. `/api/health` is liveness only.
-
-### Production checklist (open items)
-- [ ] Verify the IDX trading schedule and the 2026+ holiday calendar (`src/server/config/idx-calendar.ts`).
-- [ ] Verify the OJK/IDX reporting deadlines (`src/server/config/reporting.ts`).
-- [ ] Confirm the criteria wording with the screener provider (`docs/GLOSSARY.md`).
-- [ ] Run `supabase/tests/rls.sql` on a test database; manually test sign-up, sign-in and a two-user watchlist.
-- [ ] Market-data display rights for the provider data.
-- [ ] Optional hardening: CSP nonces instead of `'unsafe-inline'` scripts; a shared rate limiter (the current one is per instance).
+`/api/health` is process liveness and never checks credentials/database. `/api/ready` returns 200 only when required auth/provider/email configuration, PostgreSQL connectivity and market health are ready; otherwise 503 with state codes. Google/SMTP checks confirm configured settings; real OAuth and email delivery still require operational smoke checks.

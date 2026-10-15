@@ -140,7 +140,9 @@
     "noResults": "No results.",
     "searching": "Searching…",
     "searchError": "Stock search is unavailable right now.",
-    "typeToSearch": "Type to search stocks."
+    "typeToSearch": "Type to search stocks.",
+    "savedScreensLoading": "Loading data…",
+    "savedScreensError": "Could not load saved screens."
   },
   "account": {
     "menu": "Account",
@@ -363,7 +365,7 @@
       "mismatch": "Passwords don't match.",
       "tooShort": "Password must be at least 8 characters.",
       "invalid_credentials": "Wrong email or password.",
-      "email_not_confirmed": "Email not confirmed yet. Check your inbox.",
+      "email_not_confirmed": "Email not confirmed yet. A new verification link has been sent. Check your inbox.",
       "user_already_exists": "This email is already registered.",
       "weak_password": "That password is too weak.",
       "over_email_send_rate_limit": "Too many emails sent. Try again later.",
@@ -389,7 +391,9 @@
     "change": "Change",
     "data": "Data",
     "symbol": "Ticker",
-    "failed": "The change wasn't saved. Try again."
+    "failed": "The change wasn't saved. Try again.",
+    "loading": "Loading data…",
+    "loadFailed": "Could not load watchlist. Try again."
   },
   "flow": {
     "foreignTitle": "Foreign Flow",
@@ -511,7 +515,9 @@
     "savedSignIn": "Sign in to save and load screens.",
     "savedEmpty": "No saved screens yet.",
     "ratioNote": "ROE, ROA and dividend yield units follow the provider (unverified), so they're shown as-is.",
-    "saveFailed": "The screen wasn't saved."
+    "saveFailed": "The screen wasn't saved.",
+    "loading": "Loading data…",
+    "loadFailed": "Could not load saved screens. Try again."
   },
   "movers": {
     "title": "Movers",
@@ -639,7 +645,9 @@
     "observed": "Observed {value} on {date}",
     "invalid": "Check the ticker and value.",
     "failed": "The change wasn't saved.",
-    "setAlert": "Alert"
+    "setAlert": "Alert",
+    "loading": "Loading data…",
+    "loadFailed": "Could not load alerts. Try again."
   },
   "insiderHolders": {
     "title": "Holders",

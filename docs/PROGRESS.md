@@ -1,5 +1,18 @@
 # HAKAPRO — Progress
 
+## PostgreSQL migration — current branch (2026-10-14)
+
+- Coolify production/rehearsal PostgreSQL 17 resources are private, persistent, and have daily local backups (seven copies). Dashboard PostgreSQL is a separate resource.
+- Drizzle schemas preserve all 20 public application tables plus Better Auth auth tables. Google identity import retains user UUIDs and provider subjects; existing sessions are invalidated. Email/password verification/reset use SMTP when fully configured.
+- Watchlists, saved screeners and alerts use server actions and session-scoped PostgreSQL repositories. Alert evaluation uses a PostgreSQL transaction, advisory lock and EOD idempotency with the existing bearer-secret endpoint.
+- Controlled Coolify rehearsal applied schema and imported the private retained snapshot: 2 users, 2 Google accounts, 1 watchlist, 5 items, other 18 public tables empty, Storage bucket empty. All 22 imported tables reconciled with zero mismatches. The rehearsal backup remains in its dedicated private volume; runner secrets/tasks were removed and it is stopped.
+- Runtime cleanup removes Supabase SDK/client/types/legacy callback, browser-public auth settings and CSP origin exceptions. Docker build uses compile-only server placeholders; real secrets stay runtime-only. Health is liveness; readiness checks PG connectivity and required auth/provider/email configuration.
+- The domainless Coolify rehearsal app (`hakapro-rehearsal-app`) is deployed from reviewed commit `902f074` and reports healthy. Its internal readiness probe confirmed PostgreSQL `CONNECTED`; overall readiness remains blocked by missing Google/SMTP and real market-data source settings. Coolify's extra healthcheck is disabled because it assumes `curl`/`wget`; the Dockerfile's Node healthcheck passes.
+- Production has not switched. Google/SMTP credentials, real OAuth/email/ownership/job smoke checks, restore drill, final frozen snapshot/reconciliation and coordinated deployment remain pending. Track migration in Plane HEULAULAB / HAKAPRO (`HAKA`), module "Postgres Migration & Cutover": HAKA-52 Google/SMTP credentials (blocked on owner), HAKA-49 alert-job rehearsal, HAKA-53 restore drill, HAKA-54 production import, HAKA-55 cutover and smoke checks, HAKA-56 stabilization. The Plane project was renamed from HeulaTrade (`HEULA`) on 2026-10-15; HeulaTrade terminal/workspace items HAKA-5…11 and 16 are cancelled (dropped per MIGRATION §3).
+- Task 7 passed typecheck, targeted lint, diff check, runtime-reference scan, independent review, and a Coolify build/deployment. No automated tests were run. Earlier dated entries below describe the initial Supabase implementation and are historical.
+
+## Historical build log
+
 | # | Checkpoint | Status | Commit |
 | --- | --- | --- | --- |
 | 1 | Inventory (`docs/MIGRATION.md`) | ✅ approved 2026-10-03 with corrections (MIGRATION §9) | — |

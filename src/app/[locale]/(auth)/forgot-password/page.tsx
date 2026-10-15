@@ -6,5 +6,6 @@ export default async function Page({ params, searchParams }: PageProps<"/[locale
   setRequestLocale((await params).locale);
   const query = await searchParams;
   const next = typeof query.next === "string" ? query.next : undefined;
-  return <AuthForm kind="forgot" mode={resolveAuthConfig(process.env).mode} next={next} callbackError={query.error === "auth"} />;
+  const config = resolveAuthConfig(process.env);
+  return <AuthForm kind="forgot" mode={config.mode} googleEnabled={config.mode === "better_auth" && Boolean(config.google)} passwordEnabled={config.mode === "better_auth" && Boolean(config.smtp)} next={next} callbackError={query.error === "auth"} />;
 }

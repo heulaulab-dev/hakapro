@@ -70,15 +70,15 @@ export function AlertsView({ viewer }: { viewer: ViewerSummary }) {
 
       <section className="flex flex-col gap-2">
         <SectionHeader title={t("title")} />
-        {alerts.data?.length === 0 ? <EmptyState compact title={t("empty")} /> : (
+        {alerts.isError ? <p role="alert" className="text-xs text-negative">{t("loadFailed")}</p> : alerts.isPending ? <p role="status" className="text-xs text-muted-foreground">{t("loading")}</p> : alerts.data?.length === 0 ? <EmptyState compact title={t("empty")} /> : (
           <ul className="flex flex-col divide-y divide-border rounded-xl border border-border px-4">
             {alerts.data?.map((alert) => (
               <li key={alert.id} className="flex flex-wrap items-center gap-3 py-2 text-sm">
                 <Link href={stockHref(alert.symbol)} className="ticker w-14 font-medium text-link hover:underline">{alert.symbol}</Link>
                 <span className="num flex-1">{describe(alert)}</span>
                 {alert.last_triggered_at && <span className="text-xs text-muted-foreground">{t("lastTriggered", { date: formatDate(alert.last_triggered_at, locale) })}</span>}
-                <Button variant="outline" size="sm" aria-pressed={alert.enabled} onClick={() => toggle.mutate({ id: alert.id, enabled: !alert.enabled })}>{alert.enabled ? t("enabled") : t("disabled")}</Button>
-                <Button variant="ghost" size="icon" aria-label={`${t("delete")} ${alert.symbol}`} onClick={() => remove.mutate(alert.id)}><Trash2 /></Button>
+                <Button variant="outline" size="sm" aria-pressed={alert.enabled} onClick={() => toggle.mutate({ id: alert.id, enabled: !alert.enabled }, { onError: () => setMessage(t("failed")) })}>{alert.enabled ? t("enabled") : t("disabled")}</Button>
+                <Button variant="ghost" size="icon" aria-label={`${t("delete")} ${alert.symbol}`} onClick={() => remove.mutate(alert.id, { onError: () => setMessage(t("failed")) })}><Trash2 /></Button>
               </li>
             ))}
           </ul>
@@ -87,7 +87,7 @@ export function AlertsView({ viewer }: { viewer: ViewerSummary }) {
 
       <section className="flex flex-col gap-2">
         <SectionHeader title={t("events")} />
-        {events.data?.length === 0 ? <EmptyState compact title={t("eventsEmpty")} /> : (
+        {events.isError ? <p role="alert" className="text-xs text-negative">{t("loadFailed")}</p> : events.isPending ? <p role="status" className="text-xs text-muted-foreground">{t("loading")}</p> : events.data?.length === 0 ? <EmptyState compact title={t("eventsEmpty")} /> : (
           <ul className="flex flex-col divide-y divide-border rounded-xl border border-border px-4">
             {events.data?.map((event) => event.alert && (
               <li key={event.id} className="flex flex-wrap items-center gap-3 py-2 text-sm">

@@ -1,7 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
-import { createClient } from "@supabase/supabase-js";
+import { asc, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import type { Database } from "@/lib/supabase/database.types";
+import { alerts, alertEvents } from "@/db/schema";
 import { logError } from "@/server/log";
 import { getMarketDataSource } from "@/server/market";
 import { runAlertJob } from "@/server/services/alert-job";
@@ -11,7 +11,7 @@ export const maxDuration = 60;
 
 function authorized(request: Request): boolean {
   const header = request.headers.get("authorization") ?? "";
-  // ALERT_JOB_SECRET for manual/scheduler calls; CRON_SECRET is what Vercel Cron sends.
+  // ALERT_JOB_SECRET is the scheduler secret; CRON_SECRET remains accepted for manual callers.
   return [process.env.ALERT_JOB_SECRET, process.env.CRON_SECRET].some((secret) => {
     if (!secret) return false;
     const expected = Buffer.from(`Bearer ${secret}`);
@@ -22,23 +22,22 @@ function authorized(request: Request): boolean {
 
 async function handle(request: Request) {
   if (!authorized(request)) return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !serviceKey) return NextResponse.json({ error: "NOT_CONFIGURED" }, { status: 503 });
-  const admin = createClient<Database>(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
-  const source = getMarketDataSource();
+  if (!process.env.DATABASE_URL) return NextResponse.json({ error: "NOT_CONFIGURED" }, { status: 503 });
   try {
+    // Database access is initialized only after the scheduler secret is accepted.
+    const { db } = await import("@/server/db");
+    const source = getMarketDataSource();
     const result = await runAlertJob({
-      fetchAlerts: async (offset, size) => {
-        const { data, error } = await admin.from("alerts").select("id,symbol,metric,operator,threshold").eq("enabled", true).order("id").range(offset, offset + size - 1);
-        if (error) throw error;
-        return data ?? [];
-      },
+      fetchAlerts: (offset, size) => db.select({ id: alerts.id, symbol: alerts.symbol,
+        metric: alerts.metric, operator: alerts.operator, threshold: alerts.threshold })
+        .from(alerts).where(eq(alerts.enabled, true)).orderBy(asc(alerts.id)).offset(offset).limit(size),
       getHistory: (symbol) => source.history(symbol, { frame: "daily", limit: 30 }),
       insertEvent: async ({ alertId, value, asOf }) => {
-        const { data, error } = await admin.from("alert_events").upsert({ alert_id: alertId, observed_value: value, observed_as_of: asOf }, { onConflict: "alert_id,observed_as_of", ignoreDuplicates: true }).select("id");
-        if (error) throw error;
-        return Boolean(data?.length);
+        const inserted = await db.insert(alertEvents)
+          .values({ alertId, observedValue: String(value), observedAsOf: asOf })
+          .onConflictDoNothing({ target: [alertEvents.alertId, alertEvents.observedAsOf] })
+          .returning({ id: alertEvents.id });
+        return inserted.length > 0;
       },
     });
     return NextResponse.json(result, { headers: { "cache-control": "no-store" } });

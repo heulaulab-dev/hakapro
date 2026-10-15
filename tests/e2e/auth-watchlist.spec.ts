@@ -1,21 +1,20 @@
 import { expect, test } from "@playwright/test";
 
-// The e2e server runs with DEV_AUTH_BYPASS=1, so forms render disabled with an explanation.
-// Real sign-in, sign-up and RLS-scoped watchlists need a configured Supabase project (see PROGRESS.md).
+// The e2e server runs with DEV_AUTH_BYPASS=1 and no Better Auth/SMTP settings, so every auth page
+// explains why sign-in is off and renders no email/password form (it needs SMTP, see README).
 test.beforeEach(({}, testInfo) => test.skip(testInfo.project.name === "tablet", "desktop + mobile"));
 
-test("auth pages are localized, linked, and disabled without Supabase auth", async ({ page }) => {
+test("auth pages are localized and explain that auth is off under the dev bypass", async ({ page }) => {
   await page.goto("/id/login");
   await expect(page.getByRole("heading", { level: 1, name: "Masuk" })).toBeVisible();
   await expect(page.getByTestId("auth-disabled")).toContainText("DEV_AUTH_BYPASS");
-  await expect(page.getByTestId("auth-submit")).toBeDisabled();
-  await page.getByRole("link", { name: "Daftar" }).click();
-  await expect(page).toHaveURL(/\/id\/signup$/);
-  await expect(page.getByTestId("auth-signup")).toBeVisible();
+  await expect(page.getByTestId("auth-submit")).toHaveCount(0);
+  await page.goto("/id/signup");
+  await expect(page.getByTestId("auth-signup").getByTestId("auth-disabled")).toBeVisible();
   await page.goto("/en/forgot-password");
   await expect(page.getByRole("heading", { level: 1, name: "Forgot password" })).toBeVisible();
   await page.goto("/en/reset-password");
-  await expect(page.getByTestId("auth-reset").getByLabel("Repeat password")).toBeVisible();
+  await expect(page.getByTestId("auth-reset").getByTestId("auth-disabled")).toBeVisible();
 });
 
 test("callback errors are shown in plain language", async ({ page }) => {
