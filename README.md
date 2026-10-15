@@ -37,7 +37,22 @@ All credentials below are server-only runtime settings in Coolify. No database/a
 | `DEV_AUTH_BYPASS` | Unset in production |
 | `E2E_RATE_LIMIT_SCALE` | Local e2e only; ignored in production |
 
-A rehearsal deployment also runs with `NODE_ENV=production`. Set `BETTER_AUTH_ENVIRONMENT=rehearsal` and both `BETTER_AUTH_URL` and `BETTER_AUTH_REHEARSAL_URL` to the same distinct HTTPS rehearsal origin. Register its own Google callback and use only rehearsal DB credentials. Live production leaves the environment selector unset/default production.
+## Environments and branches
+
+Three long-lived branches each deploy to their own Coolify app, built from the same `/Dockerfile`. Every deployment runs `NODE_ENV=production`, so all production guards apply everywhere; `BETTER_AUTH_ENVIRONMENT` selects which origin `BETTER_AUTH_URL` must equal (`src/server/config/auth.ts`, `DEPLOYMENT_ORIGINS`).
+
+| Branch | Environment | `BETTER_AUTH_ENVIRONMENT` | Origin | Database |
+| --- | --- | --- | --- | --- |
+| `develop` | develop | `develop` | `https://dev.hakapro.heulaulab.xyz` | own PostgreSQL, test data only |
+| `staging` | staging | `staging` | `https://staging.hakapro.heulaulab.xyz` | own PostgreSQL, test data only |
+| `main` | production | unset (`production`) | `https://hakapro.heulaulab.xyz` | `hakapro-postgres` |
+
+- **Flow:** feature branches open PRs into `develop`; `develop` → `staging` for acceptance; `staging` → `main` releases to production. CI runs on pushes to all three and on every PR. Don't commit directly to `staging` or `main`.
+- **Isolation:** each environment has its own database, `BETTER_AUTH_SECRET` and `ALERT_JOB_SECRET`. Never point develop or staging at the production database or copy production user data into them.
+- **Google OAuth:** register `<origin>/api/auth/callback/google` for each environment (one OAuth client may list all three redirect URIs).
+- **Market data:** arjum allows 1000 requests per day per key, shared by every environment using that key. Schedule the `evaluate-alerts` job on production only; run it by hand elsewhere.
+- **Indexing:** `robots.txt` disallows everything outside production.
+- **Rehearsal:** the migration-only deployment (`hakapro-rehearsal`) sets `BETTER_AUTH_ENVIRONMENT=rehearsal` and both `BETTER_AUTH_URL` and `BETTER_AUTH_REHEARSAL_URL` to its own HTTPS origin, with rehearsal DB credentials only. It is removed after the production cutover.
 
 `next build` / `next start` reject unsafe market/auth config. The Dockerfile uses compile-only placeholders in the build process so real credentials stay runtime-only. It has no public auth build variables. Build placeholders are not a deployable runtime configuration.
 
@@ -57,7 +72,7 @@ Auth handlers live under `/api/auth/[...all]`; session lookup is server-side. Us
 
 ## Coolify deployment and migration
 
-Use the reviewed migration commit from private repo `heulaulab-dev/hakapro`, `/Dockerfile`, container port `3000`, and HTTPS domain `hakapro.heulaulab.xyz`. Apply runtime settings above to the app; disable any legacy Supabase build/runtime variables during the coordinated cutover. Keep the known-good deployment available until cutover is accepted.
+Production deploys branch `main` of `heulaulab-dev/hakapro` with `/Dockerfile`, container port `3000`, and HTTPS domain `hakapro.heulaulab.xyz`; staging and develop follow the table above. Apply runtime settings above to the app; disable any legacy Supabase build/runtime variables during the coordinated cutover. Keep the known-good deployment available until cutover is accepted.
 
 [Resource inventory](docs/migrations/coolify-resources.md) records separate private PostgreSQL 17 databases: production `hakapro-postgres`, rehearsal `hakapro-rehearsal-postgres`. Each has its own persistent volume/password. Daily local backup schedules retain seven copies; offsite recovery and a restore drill remain required operational work. Never import into the existing Dashboard database.
 

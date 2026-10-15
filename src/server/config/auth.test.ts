@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from "vitest";
-import { AuthConfigError, decideAccess, PRODUCTION_AUTH_URL, resolveAuthConfig } from "./auth";
+import { AuthConfigError, decideAccess, DEPLOYMENT_ORIGINS, PRODUCTION_AUTH_URL, resolveAuthConfig, resolveDeploymentEnvironment } from "./auth";
 
 const CORE = { DATABASE_URL: "postgresql://test.invalid/db", BETTER_AUTH_SECRET: "test-secret-with-at-least-32-characters", BETTER_AUTH_URL: PRODUCTION_AUTH_URL };
 const GOOGLE = { GOOGLE_CLIENT_ID: "test-client-id", GOOGLE_CLIENT_SECRET: "test-client-secret" };
@@ -23,6 +23,38 @@ describe("auth config fails closed in production", () => {
     expect(() => resolveAuthConfig({ NODE_ENV: "production", ...CORE, ...GOOGLE, SMTP_HOST: SMTP.SMTP_HOST })).toThrow(AuthConfigError);
     const enabled = resolveAuthConfig({ NODE_ENV: "production", ...CORE, ...GOOGLE, ...SMTP });
     expect(enabled.mode === "better_auth" && enabled.smtp?.port).toBe(465);
+  });
+});
+
+describe("deployment environments", () => {
+  const deployed = (environment: string, url: string) => ({ NODE_ENV: "production", ...CORE, ...GOOGLE, BETTER_AUTH_ENVIRONMENT: environment, BETTER_AUTH_URL: url });
+
+  test.each(Object.entries(DEPLOYMENT_ORIGINS))("%s accepts only its own origin", (environment, origin) => {
+    const config = resolveAuthConfig(deployed(environment, origin));
+    expect(config.mode === "better_auth" && config.baseUrl).toBe(origin);
+    for (const other of Object.values(DEPLOYMENT_ORIGINS).filter((value) => value !== origin)) {
+      expect(() => resolveAuthConfig(deployed(environment, other))).toThrow(new RegExp(`BETTER_AUTH_URL must be ${origin}`));
+    }
+  });
+
+  test("unset selects production", () => {
+    expect(resolveDeploymentEnvironment({})).toBe("production");
+    expect(resolveDeploymentEnvironment({ BETTER_AUTH_ENVIRONMENT: " staging " })).toBe("staging");
+  });
+
+  test.each(["prod", "dev", "preview", "Staging"])("BETTER_AUTH_ENVIRONMENT=%s is rejected", (value) => {
+    expect(() => resolveDeploymentEnvironment({ BETTER_AUTH_ENVIRONMENT: value })).toThrow(AuthConfigError);
+  });
+
+  test("rehearsal may not reuse a branch origin", () => {
+    const rehearsal = (url: string) => ({ ...deployed("rehearsal", url), BETTER_AUTH_REHEARSAL_URL: url });
+    expect(resolveAuthConfig(rehearsal("https://rehearsal.test.invalid")).mode).toBe("better_auth");
+    expect(() => resolveAuthConfig(rehearsal(DEPLOYMENT_ORIGINS.staging))).toThrow(AuthConfigError);
+  });
+
+  test("local development keeps its own origin", () => {
+    const config = resolveAuthConfig({ NODE_ENV: "development", ...CORE, BETTER_AUTH_ENVIRONMENT: "develop", BETTER_AUTH_URL: "http://localhost:3200" });
+    expect(config.mode === "better_auth" && config.baseUrl).toBe("http://localhost:3200");
   });
 });
 

@@ -2,7 +2,17 @@
 import { isProductionEnv } from "./market-source";
 
 type Env = Record<string, string | undefined>;
-export const PRODUCTION_AUTH_URL = "https://hakapro.heulaulab.xyz";
+
+/** Deployed origin per long-lived branch: develop, staging, main (production). */
+export const DEPLOYMENT_ORIGINS = {
+  production: "https://hakapro.heulaulab.xyz",
+  staging: "https://staging.hakapro.heulaulab.xyz",
+  develop: "https://dev.hakapro.heulaulab.xyz",
+} as const;
+export const PRODUCTION_AUTH_URL = DEPLOYMENT_ORIGINS.production;
+/** "rehearsal" is the migration-only deployment; its origin comes from BETTER_AUTH_REHEARSAL_URL. */
+export type DeploymentEnvironment = keyof typeof DEPLOYMENT_ORIGINS | "rehearsal";
+const DEPLOYMENT_ENVIRONMENTS: readonly string[] = [...Object.keys(DEPLOYMENT_ORIGINS), "rehearsal"];
 
 type SmtpConfig = { host: string; port: number; secure: boolean; user: string; password: string; from: string };
 export type AuthConfig =
@@ -17,21 +27,27 @@ export class AuthConfigError extends Error {
   }
 }
 
+/** Unset means production; every deployment runs with NODE_ENV=production, so this selects the origin. */
+export function resolveDeploymentEnvironment(env: Env): DeploymentEnvironment {
+  const environment = env.BETTER_AUTH_ENVIRONMENT?.trim() || "production";
+  if (!DEPLOYMENT_ENVIRONMENTS.includes(environment)) {
+    throw new AuthConfigError(`BETTER_AUTH_ENVIRONMENT accepts only ${DEPLOYMENT_ENVIRONMENTS.map((name) => `"${name}"`).join(", ")}`);
+  }
+  return environment as DeploymentEnvironment;
+}
+
 /** Missing credentials disable their provider; incomplete pairs fail closed. */
 export function resolveAuthConfig(env: Env): AuthConfig {
   const production = isProductionEnv(env);
-  const environment = env.BETTER_AUTH_ENVIRONMENT?.trim() || "production";
-  if (environment !== "production" && environment !== "rehearsal") {
-    throw new AuthConfigError('BETTER_AUTH_ENVIRONMENT accepts only "production" or "rehearsal"');
-  }
+  const environment = resolveDeploymentEnvironment(env);
   const rehearsalUrl = env.BETTER_AUTH_REHEARSAL_URL?.trim().replace(/\/$/, "");
   if (environment === "rehearsal") {
     let parsedRehearsalUrl: URL;
     try { parsedRehearsalUrl = new URL(rehearsalUrl || ""); } catch {
       throw new AuthConfigError("BETTER_AUTH_REHEARSAL_URL must be an HTTPS origin");
     }
-    if (parsedRehearsalUrl.protocol !== "https:" || parsedRehearsalUrl.origin !== rehearsalUrl || rehearsalUrl === PRODUCTION_AUTH_URL) {
-      throw new AuthConfigError("BETTER_AUTH_REHEARSAL_URL must be an HTTPS origin different from the production origin");
+    if (parsedRehearsalUrl.protocol !== "https:" || parsedRehearsalUrl.origin !== rehearsalUrl || Object.values<string>(DEPLOYMENT_ORIGINS).includes(rehearsalUrl)) {
+      throw new AuthConfigError("BETTER_AUTH_REHEARSAL_URL must be an HTTPS origin different from the production, staging and develop origins");
     }
   } else if (rehearsalUrl) {
     throw new AuthConfigError('BETTER_AUTH_REHEARSAL_URL requires BETTER_AUTH_ENVIRONMENT="rehearsal"');
@@ -51,7 +67,7 @@ export function resolveAuthConfig(env: Env): AuthConfig {
   if (secret.length < 32) throw new AuthConfigError("BETTER_AUTH_SECRET must be at least 32 characters");
   let parsedUrl: URL;
   try { parsedUrl = new URL(baseUrl); } catch { throw new AuthConfigError("BETTER_AUTH_URL must be a valid origin"); }
-  const requiredOrigin = environment === "rehearsal" ? rehearsalUrl : production ? PRODUCTION_AUTH_URL : undefined;
+  const requiredOrigin = environment === "rehearsal" ? rehearsalUrl : production ? DEPLOYMENT_ORIGINS[environment] : undefined;
   if (parsedUrl.origin !== baseUrl || !["http:", "https:"].includes(parsedUrl.protocol) || (requiredOrigin && baseUrl !== requiredOrigin)) {
     throw new AuthConfigError(`BETTER_AUTH_URL must be ${requiredOrigin || "an HTTP(S) origin without a path"}`);
   }

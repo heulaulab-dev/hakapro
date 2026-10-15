@@ -33,6 +33,8 @@ const cases = [
   ["missing auth secret", { BETTER_AUTH_SECRET: "" }, "AuthConfigError"],
   ["short auth secret", { BETTER_AUTH_SECRET: "short" }, "AuthConfigError"],
   ["wrong auth origin", { BETTER_AUTH_URL: "https://wrong.invalid" }, "AuthConfigError"],
+  ["staging with the production origin", { BETTER_AUTH_ENVIRONMENT: "staging" }, "AuthConfigError"],
+  ["unknown deployment environment", { BETTER_AUTH_ENVIRONMENT: "preview" }, "AuthConfigError"],
   ["missing Google secret", { GOOGLE_CLIENT_SECRET: "" }, "AuthConfigError"],
   ["incomplete SMTP settings", { SMTP_HOST: "mail.invalid" }, "AuthConfigError"],
   ["dev auth bypass", { DEV_AUTH_BYPASS: "1" }, "AuthConfigError"],

@@ -41,3 +41,17 @@ Backups are local to the Coolify server; no offsite copy is configured. No resto
 ## Source snapshot
 
 The private Supabase source snapshot is located at `.superpowers/sdd/2026-10-12-hakapro-supabase-migration/private-source-snapshot/` in the migration worktree. The directory is ignored by git and must be retained securely before the worktree is removed. Refresh the snapshot at cutover after writes are paused.
+
+## Branch environments (to provision)
+
+Added 2026-10-15. Branches `develop` and `staging` deploy alongside production (`main`); see the README's environment table. These resources do not exist yet and are tracked in Plane HAKAPRO:
+
+| Setting | develop | staging |
+| --- | --- | --- |
+| Coolify environment | `develop` (new) | `staging` (new) |
+| App branch | `develop` | `staging` |
+| Domain | `https://dev.hakapro.heulaulab.xyz` | `https://staging.hakapro.heulaulab.xyz` |
+| PostgreSQL | new private PostgreSQL 17 resource, database `hakapro_develop` | new private PostgreSQL 17 resource, database `hakapro_staging` |
+| `BETTER_AUTH_ENVIRONMENT` | `develop` | `staging` |
+
+Use the same private destination and backup policy shape as production. Apply schema with `bun run db:migrate` against each environment's own `DATABASE_URL`. Never load the production snapshot into develop or staging. The rehearsal environment above stays dedicated to the migration until cutover.
