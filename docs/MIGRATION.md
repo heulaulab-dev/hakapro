@@ -8,7 +8,7 @@ Supabase runtime clients/types/callback and SDK dependencies are removed from th
 
 Follow [database resources](migrations/coolify-resources.md), [schema migrations](migrations/postgres-schema.md), and [source import/reconciliation](migrations/source-data-import.md) for backups, private runner setup and final snapshot procedure. Production requires Google/SMTP setup, a recovery drill, ownership/auth/job smoke checks, reviewed production target controls, final reconciliation and coordinated switch. Keep source/previous deployment for rollback. After new target writes begin, rollback requires data reconciliation.
 
-Tracking now uses Plane HEULAULAB project HAKAPRO (`HAKA`) and the migration execution ledger. The HeulaTrade inventory below is historical; its original Supabase configuration, callback, RLS, deployment instructions and tracking decision have been superseded by this section.
+Tracking now uses Plane HEULAULAB project HAKAPRO (`HAKA`, renamed from HeulaTrade `HEULA` on 2026-10-15; ticket numbers kept) and the migration execution ledger. Migration items are HAKA-45…56. The HeulaTrade inventory below is historical; its original Supabase configuration, callback, RLS, deployment instructions and tracking decision have been superseded by this section.
 
 ---
 

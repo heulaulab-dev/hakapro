@@ -10,6 +10,8 @@
 
 **Spec:** `docs/superpowers/specs/2026-10-12-hakapro-supabase-to-coolify-postgres-design.md`
 
+**Tracking:** Plane HEULAULAB → project HAKAPRO (`HAKA`), module "Postgres Migration & Cutover", items HAKA-45…56. Checkbox state below was reconciled with commits and `docs/migrations/` on 2026-10-15.
+
 ## Global Constraints
 
 - Hakapro uses a PostgreSQL resource separate from `heulaulab-dashboard-db`.
@@ -43,11 +45,11 @@
 - Consumes: Existing Coolify project, environment, app, and server resources.
 - Produces: A dedicated private production PostgreSQL resource for Hakapro, an isolated non-production rehearsal target, their internal database URLs, and a documented recurring backup policy. Neither target may reuse `heulaulab-dashboard-db`.
 
-- [ ] Record the current production app configuration and take a recoverable Supabase/source snapshot before any migration changes.
-- [ ] Create a dedicated PostgreSQL 17 resource named for Hakapro in the existing Coolify project/environment, with persistent storage, private network access, health checks, and generated credentials.
-- [ ] Create an isolated non-production database/resource for migration rehearsal; ensure rehearsal imports cannot reach or overwrite production data.
-- [ ] Configure recurring database backups with a retention period and confirm the Coolify resource reports healthy.
-- [ ] Store the internal URL and credentials in Coolify only; record non-secret resource identifiers and backup settings in the deployment notes.
+- [ ] Record the current production app configuration and take a recoverable Supabase/source snapshot before any migration changes. *(Source snapshot taken 2026-10-12, see `docs/migrations/coolify-resources.md`; no written record of the production app configuration was found.)*
+- [x] Create a dedicated PostgreSQL 17 resource named for Hakapro in the existing Coolify project/environment, with persistent storage, private network access, health checks, and generated credentials.
+- [x] Create an isolated non-production database/resource for migration rehearsal; ensure rehearsal imports cannot reach or overwrite production data.
+- [x] Configure recurring database backups with a retention period and confirm the Coolify resource reports healthy.
+- [x] Store the internal URL and credentials in Coolify only; record non-secret resource identifiers and backup settings in the deployment notes.
 
 ### Task 2: Add Drizzle schema, database module, and migration workflow
 
@@ -60,11 +62,11 @@
 - Consumes: Coolify PostgreSQL internal URL from Task 1.
 - Produces: Server-only `db` client and versioned schema/migrations for Better Auth tables and every application table listed in the spec.
 
-- [ ] Add PostgreSQL, Drizzle, and Better Auth dependencies and a Drizzle migration command compatible with Bun.
-- [ ] Define auth and application schemas with UUID user IDs, preserved timestamps, ownership keys, and constraints that match existing Supabase data semantics.
-- [ ] Create a server-only database module that reads `DATABASE_URL` and cannot enter client bundles.
-- [ ] Generate and apply the initial migration against the new non-production database; inspect the resulting tables and constraints.
-- [ ] Apply the same migration to the production Coolify database before data import; confirm schema versions match.
+- [x] Add PostgreSQL, Drizzle, and Better Auth dependencies and a Drizzle migration command compatible with Bun.
+- [x] Define auth and application schemas with UUID user IDs, preserved timestamps, ownership keys, and constraints that match existing Supabase data semantics.
+- [x] Create a server-only database module that reads `DATABASE_URL` and cannot enter client bundles.
+- [x] Generate and apply the initial migration against the new non-production database; inspect the resulting tables and constraints.
+- [ ] Apply the same migration to the production Coolify database before data import; confirm schema versions match. *(Pending: gated `bun run db:migrate:production`, HAKA-54.)*
 
 ### Task 3: Move authentication to Better Auth and retain Google identities
 
@@ -77,11 +79,11 @@
 - Consumes: Drizzle schema and server database client from Task 2.
 - Produces: Better Auth server/client configuration, authenticated server session lookup, Google OAuth, email/password auth, and password reset delivery.
 
-- [ ] Replace Supabase session lookup and callback logic with Better Auth server/client handlers while preserving current login, signup, forgot-password, reset-password, and redirect behavior.
-- [ ] Configure UUID generation and Drizzle adapter options to match the schema and preserve imported user IDs.
-- [ ] Configure Google provider callback for `https://hakapro.heulaulab.xyz/api/auth/callback/google`; keep credentials in Coolify.
-- [ ] Configure SMTP-backed password reset and auth email delivery; verify production settings are available before email/password is exposed.
-- [ ] Update proxy and server authorization to rely on the Better Auth session and remove Supabase auth cookie handling.
+- [x] Replace Supabase session lookup and callback logic with Better Auth server/client handlers while preserving current login, signup, forgot-password, reset-password, and redirect behavior.
+- [x] Configure UUID generation and Drizzle adapter options to match the schema and preserve imported user IDs.
+- [ ] Configure Google provider callback for `https://hakapro.heulaulab.xyz/api/auth/callback/google`; keep credentials in Coolify. *(Code done; credentials pending, HAKA-52.)*
+- [ ] Configure SMTP-backed password reset and auth email delivery; verify production settings are available before email/password is exposed. *(Code done; SMTP settings pending, HAKA-52.)*
+- [x] Update proxy and server authorization to rely on the Better Auth session and remove Supabase auth cookie handling.
 
 ### Task 4: Move user-owned reads and writes to server-side PostgreSQL
 
@@ -111,7 +113,7 @@
 
 - [x] Replace Supabase service-role access with server-side PostgreSQL queries and writes.
 - [x] Preserve secret validation before database writes and ensure the route does not require a browser session.
-- [ ] Run one controlled non-production evaluation and reconcile generated alert events against the source behavior.
+- [ ] Run one controlled non-production evaluation and reconcile generated alert events against the source behavior. *(HAKA-49.)*
 
 ### Task 6: Build and rehearse complete source-data import
 
@@ -155,11 +157,11 @@
 - Consumes: Reconciled production-sized rehearsal, working auth/data flows, backup policy, and final migration procedure.
 - Produces: Hakapro serving production traffic from Coolify PostgreSQL with rollback instructions and Plane status updated.
 
-- [ ] Confirm OAuth and SMTP credentials/callbacks, app/database connectivity, backups, and a known-good previous app deployment before scheduling cutover.
-- [ ] Take fresh source and target backups, pause Supabase writes, run the final data delta, reconcile, then point the production app at Coolify PostgreSQL and deploy.
-- [ ] Before reopening normal traffic, smoke-check Google sign-in for both existing account mappings, email/password signup/sign-in/password reset, watchlist and screener persistence, alert CRUD, and the protected scheduled alert job.
+- [ ] Confirm OAuth and SMTP credentials/callbacks, app/database connectivity, backups, and a known-good previous app deployment before scheduling cutover. *(HAKA-52, HAKA-53 restore drill.)*
+- [ ] Take fresh source and target backups, pause Supabase writes, run the final data delta, reconcile, then point the production app at Coolify PostgreSQL and deploy. *(HAKA-54 import, HAKA-55 cutover.)*
+- [ ] *(HAKA-55)* Before reopening normal traffic, smoke-check Google sign-in for both existing account mappings, email/password signup/sign-in/password reset, watchlist and screener persistence, alert CRUD, and the protected scheduled alert job.
 - [ ] Record the timestamp when the new database first accepts production writes; after that point, require write reconciliation before rollback to Supabase.
-- [ ] Monitor health, backup completion, and user-data paths through the stabilization window; remove Supabase runtime credentials/dependencies only after stability is confirmed.
+- [ ] *(HAKA-56)* Monitor health, backup completion, and user-data paths through the stabilization window; remove Supabase runtime credentials/dependencies only after stability is confirmed.
 - [ ] Update the HAKAPRO Plane project with completion state, final operational endpoints, and no secrets. Keep Supabase retirement as a separate reviewed cleanup action.
 
 ## Plan self-review
