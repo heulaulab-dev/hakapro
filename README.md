@@ -32,7 +32,7 @@ All credentials below are server-only runtime settings in Coolify. No database/a
 | `SMTP_SECURE` | Optional `1` or `0`; default follows port 465 |
 | `MARKET_DATA_SOURCE` | `arjum` or `idx-bei`; fixtures rejected |
 | `HEULATRADE_MARKET_API_BASE_URL`, `HEULATRADE_MARKET_API_KEY` | Required for arjum; HTTPS URL |
-| `MARKET_API_URL` | Required for idx-bei; optional supplemental lane for arjum; HTTPS URL |
+| `MARKET_API_URL` | Required for idx-bei; optional supplemental lane for arjum (the Data Engine). HTTPS URL, or `http://<service-name>:<port>` to an internal Coolify service (no dots), e.g. `http://hp7pevthvpqki0eyqxkqpwu4:8080` for the shared `hakapro-engine` |
 | `ALERT_JOB_SECRET` | Runtime bearer secret for the alert evaluator |
 | `DEV_AUTH_BYPASS` | Unset in production |
 | `E2E_RATE_LIMIT_SCALE` | Local e2e only; ignored in production |
