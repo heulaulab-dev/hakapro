@@ -311,3 +311,66 @@ marked *unverified*. No PDF or dataset was downloaded.
    at ingestion.
 4. Open questions for the product owner: who requests the licence, and whether IDX's paid data services include a
    machine-readable feed of this list.
+
+---
+
+## Ownership snapshot type and change engine (HAKA-33, built 2026-10-16)
+
+Pure domain code only. Nothing is fetched or ingested, and the tests use synthetic tickers and holders (`TEST1`,
+`PT CONTOH DUMMY TBK`, …). The ≥1% data still needs the licence decision above before any real snapshot exists.
+
+**Type** (`src/lib/ownership/snapshot.ts`, Zod 4):
+
+- One row per disclosed holder line: `ticker, holderKey, holderName` (as disclosed), `holderKind`
+  (`person | organisation | custodian_nominee | government | public | unknown`), `shares` (integer string, `numeric(24,0)`),
+  `percent` (decimal string, ≤6 decimals, `numeric(9,6)`), `snapshotDate` (the position date, never the retrieval
+  date), and `source {dataset, reference, retrievedAt}`.
+- A snapshot is every row for one ticker and one position date. It also carries `thresholdPercent` (`"1"` for the ≥1%
+  list, `"0"` for a complete register) and `issuedShares` when a source states it.
+- `ownershipHolderKey` follows §3: `org:` plus the legal-form-normalised name (organisation, custodian/nominee,
+  government); `name:` plus the exact name (person, unknown); and `public:` for aggregates such as "Masyarakat".
+
+**Engine** (`compareOwnershipSnapshots` in `src/lib/ownership/changes.ts`): two snapshots of one ticker → one change per
+holder key. Shares are compared as BigInt and percentages as integer micro-percent, so `shareDelta` and `ppDelta` are
+exact strings.
+
+| Status | When | Before / after values |
+|---|---|---|
+| `INCREASE` / `DECREASE` / `UNCHANGED` | In both months. Decided on shares when both months state them, otherwise on percent (`COMPARED_BY_PERCENT`). | Both stated |
+| `NEW` | Missing earlier, present later | From a threshold list: before is **unknown** (`null`, flag `PRIOR_HOLDING_UNKNOWN`). From a complete register: before = 0. |
+| `EXIT` | A **stated** zero: a 0-share row, or absence from a complete register (threshold 0) | After = 0 |
+| `BELOW_THRESHOLD` | Present earlier, missing from a later threshold list | After unknown (`null`) |
+| `AMBIGUOUS` | Conflicting rows for one key in one month, or nothing comparable | `null`; every row kept |
+
+Why `BELOW_THRESHOLD` and not `EXIT`: the ≥1% list only shows holders at or above 1%. A holder that drops off may have
+sold everything, or may still hold 0.99%. The list can't tell these apart, so the engine doesn't claim an exit. Each
+side's absence is read against that snapshot's own threshold. Suggested UI wording: "No longer in the ≥1% list".
+
+Flags: `PERCENT_CHANGED_SHARES_UNCHANGED` (issued shares changed, i.e. a corporate action, or rounding);
+`ISSUED_SHARES_CHANGED` (both months state issued shares and they differ, so a split isn't read as buying);
+`SHARES_AND_PERCENT_DIVERGE`; `DUPLICATE_ROWS_COLLAPSED` (identical values); `CONFLICTING_DUPLICATE_ROWS`;
+`NO_COMPARABLE_VALUES`; `HOLDER_NAME_CHANGED`; `HOLDER_KIND_CHANGED`; and `AGGREGATE_ROW`. Conflicting duplicate lines
+are never summed: two same-name lines may be two different people (the §3 mononym problem).
+
+Refusals (`ok: false`): `TICKER_MISMATCH`, `NOT_CHRONOLOGICAL`, `SAME_MONTH`, and `NON_ADJACENT_MONTHS`. The last one is
+skipped only with `allowNonAdjacent`, and the result is then marked `adjacent: false, monthsApart: n`. Every change keeps
+the holder's verbatim rows (with `source`) from both months, and each side's summary lists all of its sources.
+
+Percentage precision is whatever the source published: the KSEI list uses 2 decimals, so a pp delta below 0.01 can't be
+seen, and a small trade can show as `UNCHANGED` in percent but not in shares.
+
+**Schema gap.** The existing `ownership_snapshots` table (`src/db/schema/app.ts`) does **not** fit as is. No
+migration has been added. A Data Engine slice would need:
+
+1. `holder_key text not null` and `holder_kind text not null` (check on the six kinds). An alias table would make the key
+   curated state.
+2. Source provenance: `source` is one text column today. It needs `source_dataset`, `source_reference` and
+   `retrieved_at timestamptz`. `updated_at` is the row-write time, not the retrieval time.
+3. Per-snapshot facts: `threshold_percent` and `issued_shares`. These are best kept in a parent table such as
+   `ownership_snapshot_sets (id, symbol, snapshot_date, dataset, threshold_percent, issued_shares, source_reference,
+   retrieved_at)`, with rows referencing it.
+4. The unique key `(symbol, snapshot_date, holder_name)` rejects lines the source really publishes twice under one name.
+   It would become unique on `(snapshot_set_id, source_reference)` (the line locator), so duplicates are kept and
+   flagged rather than lost.
+5. Optional source signals for the free-float methodology: `investor_type` (as stated) and `local_foreign`. ID numbers
+   are still stripped at ingestion (MIGRATION §10.5).
