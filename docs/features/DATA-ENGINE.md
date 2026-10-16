@@ -84,7 +84,7 @@ Responses use the `{data, meta}` envelope. The app's composite source already us
 
 Builds and crawls never overlap.
 
-**Freshness:** derived from `asOf` with the existing session clock; never LIVE. Intraday data is DELAYED with its timestamp.
+**Freshness:** derived from `asOf` with the existing session clock; never LIVE. Intraday snapshots are DELAYED with their timestamp (§8.3).
 
 ## 4. Running on the current server (owner's choice)
 
@@ -136,6 +136,7 @@ Every table has `source` and `as_of`; derived tables also record the derivation 
 | E0. Discovery | Confirm endpoints, formats, update times and block behaviour for sources 1–9 with single requests. Record findings here |
 | E1. Foundation | `services/engine` (Bun, Dockerfile, health), engine DB + Drizzle, fetcher framework (policy, cache, raw store, block detection), scheduler, `/v1/meta/health`. Coolify environment `data-engine` with app + DB |
 | E2. Universe + EOD prices | Sources 1–2, daily run + backfill since 2020-01-01, `/v1/securities`, `/v1/stocks/{s}`, `/v1/market` movers/breadth. Point develop's `MARKET_API_URL` at it first, then staging and production |
+| E2b. Intraday snapshots | Session-window polling (default 5 min) for quotes and indices, `intraday_snapshots` with 30-day retention, intraday movers/breadth served as DELAYED on `/v1/market` and `/v1/stocks/{s}` |
 | E3. Market info | Indices, announcements, news, corporate actions, macro → `/v1/market`, `/v1/news`, `/v1/announcements`, `/v1/stocks/{s}/actions` |
 | E4. Strategy scans | `HAKAPRO_EOD_ENGINE` running the approved HAKA-17 rules over the whole universe, exposed via the HAKA-18 contract |
 | E5. Fundamentals + screener | Financial statements → fundamentals and `POST /v1/screener` |
@@ -145,5 +146,5 @@ Every table has `source` and `as_of`; derived tables also record the derivation 
 
 1. **Raw store:** a new R2 bucket, `hakapro-engine-raw` (created 2026-10-16), with its own bucket-scoped token (Object Read & Write, owner creates it). It is not shared with `heulaulab-db-backups`.
 2. **EOD history:** backfill from **2020-01-01**, matching arjum's daily history. The backfill runs gradually at night and never competes with the daily run.
-3. **Intraday:** **EOD only** for now. Delayed intraday waits until after E3, or for Running Trade (HAKA-14/15).
+3. **Intraday: yes, alongside EOD** (corrected by the owner the same day). The engine polls intraday snapshots during IDX sessions: the default is every 5 minutes, configurable per source, with jobs only inside session windows from the IDX calendar. These snapshots are stored as `intraday_snapshots` (symbol, ts, last, change, volume, value, frequency, bid/offer if available, source, raw_ref), served as **DELAYED** with their timestamp and never LIVE, and kept for a limited window (default 30 days; EOD rows are the permanent record). Intraday polling counts against the server safeguards (§4): it pauses during builds and above the disk threshold, with concurrency 1 per host. Running Trade (HAKA-14/15) stays the path for true streaming.
 4. **Deployment:** **one shared engine** during the experiment. It runs in its own Coolify environment `data-engine` (app `hakapro-engine`, PostgreSQL `hakapro-engine-postgres`) and serves develop, staging and production over the private network (`MARKET_API_URL`). Per-environment engines can come later if needed.
