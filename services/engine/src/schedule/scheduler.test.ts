@@ -5,7 +5,7 @@ import { MemoryCursorStore, MemoryRunRecorder, MemorySourceStateStore } from "..
 import { cronMatches, parseCron, wibTime } from "./cron";
 import { PauseGuard } from "./pause";
 import { Scheduler, type JobContext, type JobDefinition } from "./scheduler";
-import { sessionPollDue } from "./windows";
+import { parseWindow, sessionPollDue, windowPollDue } from "./windows";
 
 // 2026-10-14 Wed, 2026-10-16 Fri, 2026-10-17 Sat, 2026-08-17 Mon (holiday in idx-calendar).
 
@@ -58,6 +58,29 @@ describe("session windows", () => {
   it("skips weekends and exchange holidays", () => {
     expect(due("2026-10-17", "09:00")).toBe(false);
     expect(due("2026-08-17", "09:00")).toBe(false);
+  });
+});
+
+describe("daily windows (news)", () => {
+  const news = { everyMinutes: 15, from: "06:00", to: "22:00" };
+  const due = (date: string, time: string, window = news) => windowPollDue(wibTime(wib(date, time)), window);
+
+  it("polls every N minutes from the start to the end, every calendar day", () => {
+    expect(due("2026-10-14", "05:45")).toBe(false);
+    expect(due("2026-10-14", "06:00")).toBe(true);
+    expect(due("2026-10-14", "06:15")).toBe(true);
+    expect(due("2026-10-14", "06:10")).toBe(false);
+    expect(due("2026-10-14", "12:00")).toBe(true); // lunch break is irrelevant for news
+    expect(due("2026-10-14", "22:00")).toBe(true);
+    expect(due("2026-10-14", "22:15")).toBe(false);
+    expect(due("2026-10-17", "09:00")).toBe(true); // Saturday
+    expect(due("2026-08-17", "09:00")).toBe(true); // exchange holiday
+    expect(due("2026-10-14", "21:56", { everyMinutes: 7, from: "06:00", to: "21:56" })).toBe(true); // end even off-step
+  });
+
+  it("rejects malformed windows", () => {
+    expect(parseWindow("06:00", "22:00")).toEqual({ start: 360, end: 1320 });
+    for (const [from, to] of [["6:00", "22:00"], ["22:00", "06:00"], ["06:00", "24:00"], ["06:00", "06:00"]]) expect(() => parseWindow(from, to)).toThrow();
   });
 });
 
@@ -194,6 +217,17 @@ describe("Scheduler", () => {
     expect([...runs.runs.values()].find((run) => run.jobId === "backfill")?.status).toBe("YIELDED");
     secondGate.resolve();
     await scheduler.waitFor("eod");
+  });
+
+  it("runs window jobs inside their daily window and validates them", async () => {
+    const job = counter("news", { kind: "window", everyMinutes: 15, from: "06:00", to: "22:00" });
+    const { scheduler } = make([job]);
+    expect(await scheduler.tick(wib("2026-10-17", "05:45"))).toEqual([]);
+    expect(await scheduler.tick(wib("2026-10-17", "06:00"))).toEqual(["news"]);
+    await scheduler.waitFor("news");
+    expect(await scheduler.tick(wib("2026-10-17", "06:05"))).toEqual([]);
+    expect(() => make([counter("bad", { kind: "window", everyMinutes: 0, from: "06:00", to: "22:00" })])).toThrow(/interval/);
+    expect(() => make([counter("bad", { kind: "window", everyMinutes: 5, from: "22:00", to: "06:00" })])).toThrow(/window/);
   });
 
   it("rejects duplicate job ids", () => {
