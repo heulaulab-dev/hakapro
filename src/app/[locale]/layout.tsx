@@ -6,6 +6,7 @@ import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
+import { SHARE_IMAGE_ALT, SHARE_IMAGE_SIZE } from "@/components/brand/share-image";
 import { FixtureBanner } from "@/components/feedback/fixture-banner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { routing } from "@/i18n/routing";
@@ -30,9 +31,18 @@ export async function generateMetadata({ params }: LayoutProps<"/[locale]">): Pr
     title: { default: BRAND_NAME, template: `%s · ${BRAND_NAME}` },
     applicationName: BRAND_NAME,
     description: `${t("tagline")} ${t("summary")}`,
-    // No openGraph/twitter objects here: they would replace the share images from
-    // src/app/opengraph-image.tsx and twitter-image.tsx (merged at the app root, above this layout).
+    // File-based share images resolve against the parent segment's metadataBase, and this is the root
+    // layout, so Next would fall back to localhost. Point at the same image routes with absolute URLs.
+    ...(origin ? shareImages(origin, locale) : {}),
     robots: { index: indexable, follow: indexable },
+  };
+}
+
+function shareImages(origin: string, locale: string): Pick<Metadata, "openGraph" | "twitter"> {
+  const image = (route: string) => ({ url: `${origin}/${locale}/${route}`, ...SHARE_IMAGE_SIZE, alt: SHARE_IMAGE_ALT, type: "image/png" });
+  return {
+    openGraph: { siteName: BRAND_NAME, type: "website", images: [image("opengraph-image")] },
+    twitter: { card: "summary_large_image", images: [image("twitter-image")] },
   };
 }
 

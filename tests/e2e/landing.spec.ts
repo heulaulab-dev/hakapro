@@ -16,14 +16,20 @@ test.describe("landing page at the locale root", () => {
     await expect(page).toHaveTitle("HAKA PRO — IDX stock research");
   });
 
-  test("share and alternate links are absolute and point at this origin", async ({ page, baseURL }) => {
+  test("share and alternate links are absolute and point at the site origin", async ({ page }) => {
     await page.goto("/en");
-    const origin = new URL(baseURL!).origin;
+    const origin = process.env.E2E_SITE_ORIGIN!;
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", `${origin}/en`);
     await expect(page.locator('link[rel="alternate"][hreflang="id"]')).toHaveAttribute("href", `${origin}/id`);
     await expect(page.locator('link[rel="alternate"][hreflang="x-default"]')).toHaveAttribute("href", `${origin}/id`);
-    const ogImage = await page.locator('meta[property="og:image"]').first().getAttribute("content");
-    expect(ogImage?.startsWith(`${origin}/`)).toBe(true);
+    for (const selector of ['meta[property="og:image"]', 'meta[name="twitter:image"]']) {
+      const image = await page.locator(selector).first().getAttribute("content");
+      expect(image, selector).toMatch(new RegExp(`^${origin.replaceAll(".", "\\.")}/en/`));
+      // Served as a public PNG at that path (fetched through the test server's own host).
+      const response = await page.request.get(new URL(image!).pathname + new URL(image!).search);
+      expect(response.status(), selector).toBe(200);
+      expect(response.headers()["content-type"]).toContain("image/png");
+    }
     // The e2e server runs as the default (production) environment, so the page may be indexed.
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", "index, follow");
   });

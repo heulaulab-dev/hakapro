@@ -6,11 +6,13 @@ import { resolveAuthConfig } from "@/server/config/auth";
 const handleI18n = createMiddleware(routing);
 const PUBLIC_PATHS = ["/login", "/signup", "/forgot-password", "/reset-password", "/dev"];
 const LOCALE_PREFIX = new RegExp(`^/(${routing.locales.join("|")})(?=/|$)`);
+// Share images live in the [locale] segment (so its metadataBase applies) and must stay public for crawlers.
+const SHARE_IMAGE = new RegExp(`^/(${routing.locales.join("|")})/(opengraph|twitter)-image(/|$)`);
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   // Route handlers answer with JSON or handle their own callback.
-  if (pathname.startsWith("/api/")) return NextResponse.next();
+  if (pathname.startsWith("/api/") || SHARE_IMAGE.test(pathname)) return NextResponse.next();
   const response = handleI18n(request);
   // Follow locale redirects before inspecting a localized page.
   if (response.headers.has("location")) return response;
@@ -34,6 +36,6 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Metadata routes (manifest, OG/Twitter images) are served at the root, outside the locale prefix.
-  matcher: ["/((?!_next|_vercel|favicon.ico|robots.txt|manifest.webmanifest|opengraph-image|twitter-image|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|txt)$).*)"],
+  // Root metadata routes (manifest, robots) are served outside the locale prefix.
+  matcher: ["/((?!_next|_vercel|favicon.ico|robots.txt|manifest.webmanifest|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|txt)$).*)"],
 };
