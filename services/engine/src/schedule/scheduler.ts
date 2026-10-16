@@ -33,8 +33,13 @@ export type JobDefinition = {
   id: string;
   sourceId?: string;
   trigger: JobTrigger;
-  /** Background jobs never start while another job runs, and see shouldYield() once one does. */
+  /** Background jobs never start while a foreground job runs, and see shouldYield() once one does. */
   background?: boolean;
+  /**
+   * Low-priority background jobs (the fundamentals refresh) also give way to other background jobs (the EOD
+   * backfill): they never start while any other job runs, and see shouldYield() as soon as one does.
+   */
+  lowPriority?: boolean;
   run(ctx: JobContext): Promise<JobResult>;
 };
 
@@ -117,7 +122,8 @@ export class Scheduler {
       return [];
     }
     // Foreground first, so a background job due in the same minute sees them as running.
-    const ordered = [...due.filter((job) => !job.background), ...due.filter((job) => job.background)];
+    const rank = (job: Compiled) => (!job.background ? 0 : job.lowPriority ? 2 : 1);
+    const ordered = [...due].sort((a, b) => rank(a) - rank(b));
     const launched: string[] = [];
     for (const job of ordered) {
       const outcome = await this.launch(job, "schedule");
@@ -139,9 +145,16 @@ export class Scheduler {
     return [...this.running.keys()].some((id) => !this.jobs.get(id)?.background);
   }
 
+  /** Whether `job` must give way: a foreground job runs, or (low priority) any other job runs. */
+  private outranked(job: Compiled): boolean {
+    if (!job.background) return false;
+    if (job.lowPriority) return [...this.running.keys()].some((id) => id !== job.id);
+    return this.foregroundRunning();
+  }
+
   private async launch(job: Compiled, trigger: "schedule" | "manual"): Promise<TriggerOutcome> {
     if (this.running.has(job.id)) return { status: "already_running" };
-    if (job.background && this.foregroundRunning()) return { status: "busy" };
+    if (this.outranked(job)) return { status: "busy" };
     if (job.sourceId && (await this.deps.sourceState.isBlocked(job.sourceId))) return { status: "blocked" };
 
     // Reserve the slot before the first await so a concurrent trigger sees it.
@@ -168,7 +181,7 @@ export class Scheduler {
     const totals: RunTotals = { documentsFetched: 0, documentsNew: 0, rowsIngested: 0 };
     const ctx: JobContext = {
       runId, jobId: job.id, trigger, startedAt,
-      shouldYield: () => this.deps.pause.last?.paused === true || (job.background === true && this.foregroundRunning()),
+      shouldYield: () => this.deps.pause.last?.paused === true || this.outranked(job),
       cursor: { get: () => this.deps.cursors.get(job.id), set: (value) => this.deps.cursors.set(job.id, value) },
       report: {
         document: (isNew) => { totals.documentsFetched += 1; if (isNew) totals.documentsNew += 1; },

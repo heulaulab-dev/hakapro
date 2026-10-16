@@ -16,6 +16,7 @@ import { DEFAULT_CANDLES, MAX_CANDLES, serveActions, serveMarket, serveSecuritie
 import {
   ACTIONS_MAX_RANGE_DAYS, defaultActionsRange, NEWS_DEFAULT_PAGE_SIZE, NEWS_MAX_PAGE, NEWS_MAX_PAGE_SIZE, serveActionsCalendar, serveMacro, serveNews,
 } from "../serve/market-info";
+import { serveFundamentals, serveScreener } from "../serve/fundamentals";
 import type { MarketStore } from "../serve/store";
 import { envelope, servedMeta, unavailableMeta } from "./envelope";
 
@@ -58,8 +59,6 @@ export const UNAVAILABLE_ROUTES = [
     route: "/v1/announcements", status: "SOURCE_BLOCKED",
     reason: "IDX disclosures (keterbukaan informasi) are published only on www.idx.co.id, which answers the engine's user agent with a Cloudflare HTTP 403 (DATA-ENGINE.md §5.0, §5.4). No fetcher is configured, and none will be until an IDX allowlist or data licence exists (§8.5).",
   },
-  { route: "/v1/stocks/{s}/fundamentals", status: "NOT_BUILT", reason: "Financial statements arrive with E5." },
-  { route: "POST /v1/screener", status: "NOT_BUILT", reason: "The screener arrives with E5." },
   { route: "/v1/stocks/{s}/profile", status: "SOURCE_BLOCKED", reason: "Company profiles come from IDX (blocked, §5.0); answered with 404 NO_DATA." },
 ] as const;
 
@@ -121,12 +120,14 @@ export function createApp(deps: AppDeps): (request: Request) => Promise<Response
       });
     }
 
-    // idx-bei contract stubs (E1): valid envelopes with empty data until E2/E3 sources land.
+    // The screener over the newest session (E5); the contract's empty form until a session is stored.
     if (path === "/v1/screener") {
       if (method !== "POST") return error(405, "METHOD_NOT_ALLOWED", "Use POST");
       const parsed = screenRequestSchema.safeParse(await request.json().catch(() => undefined));
       if (!parsed.success) return error(400, "BAD_REQUEST", "Invalid screener request");
-      return json(envelope(screenResultSchema, { rows: [], total: 0, supportedFields: [] }, unavailableMeta(at)));
+      const served = deps.market ? await serveScreener(deps.market, parsed.data, at) : null;
+      if (!served) return json(envelope(screenResultSchema, { rows: [], total: 0, supportedFields: [] }, unavailableMeta(at)));
+      return json(envelope(screenResultSchema, served.data, servedMeta(served, at)));
     }
     if (!get) return error(405, "METHOD_NOT_ALLOWED", "Use GET");
 
@@ -173,7 +174,7 @@ export function createApp(deps: AppDeps): (request: Request) => Promise<Response
     if (stock) {
       const symbol = symbolSchema.safeParse(decodeURIComponent(stock[1]));
       if (!symbol.success) return error(400, "BAD_REQUEST", "Invalid symbol");
-      if (stock[2] === "fundamentals") return json(envelope(fundamentalsSchema, [], unavailableMeta(at)));
+      if (stock[2] === "fundamentals") return respond(fundamentalsSchema, market ? await serveFundamentals(market, symbol.data) : null, []);
       if (stock[2] === "actions") return respond(actionsSchema, market ? await serveActions(market, symbol.data, at) : null, []);
       if (stock[2] === "profile") return error(404, "NO_DATA", `No profile data for ${symbol.data}`);
       const limit = Number(url.searchParams.get("limit") ?? DEFAULT_CANDLES);

@@ -19,7 +19,7 @@ const text = z.string().nullable().optional().transform((value) => value?.trim()
 const rowSchema = z.object({
   Code: z.string(), Name: text, SectorName: text, SubSectorName: text, NewSectorName: text, NewSubSectorName: text, NewIndustryName: text,
   Last: num, PrevClosingPrice: num, AdjustedOpenPrice: num, AdjustedHighPrice: num, AdjustedLowPrice: num, AdjustedClosingPrice: num,
-  Volume: num, Frequency: num, Value: num, Capitalization: num, FreeFloatPct: num,
+  Volume: num, Frequency: num, Value: num, Capitalization: num, FreeFloatPct: num, Per: num, Pbr: num, Roe: num,
   LastDate: z.string().nullable().optional(),
 });
 
@@ -30,9 +30,12 @@ export type PasardanaRow = {
   open: number | null; high: number | null; low: number | null; close: number | null; previousClose: number | null;
   volume: number | null; value: number | null; frequency: number | null;
   marketCap: number | null; sharesOutstanding: number | null; freeFloatPct: number | null;
+  /** Pasardana's own ratios as published: `Per`, `Pbr` (multiples) and `Roe` (a fraction: 0.24 = 24%). */
+  ratios: { per: number | null; pbv: number | null; roe: number | null };
 };
 
 const int = (value: number | null) => (value === null ? null : Math.round(value));
+const finite = (value: number | null) => (value !== null && Number.isFinite(value) ? value : null);
 
 /** Parses one GetAll page. Rows with a code that is not a plain IDX symbol are skipped. */
 export function parseGetAll(textBody: string): { rows: PasardanaRow[]; received: number; skipped: number } {
@@ -55,6 +58,7 @@ export function parseGetAll(textBody: string): { rows: PasardanaRow[]; received:
       marketCap: int(row.Capitalization),
       sharesOutstanding: row.Capitalization !== null && row.Last ? Math.round(row.Capitalization / row.Last) : null,
       freeFloatPct: row.FreeFloatPct,
+      ratios: { per: finite(row.Per), pbv: finite(row.Pbr), roe: finite(row.Roe) },
     });
   }
   return { rows, received: items.length, skipped };

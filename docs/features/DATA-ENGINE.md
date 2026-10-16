@@ -277,7 +277,8 @@ source for a public or paid HAKAPRO.
 - `announcements`: id, symbol, published_at, title, category, document_url, raw_ref.
 - `news_items`: id, published_at, title, url, outlet, symbols[].
 - `corporate_actions`: symbol, type, ex/record/payment dates, ratio/amount, source.
-- `financials`: symbol, period, statement, metric, value, unit, source.
+- `financials`: symbol, period_end, period_type (annual | quarterly), metric, value, unit, currency, source, as_of, raw_ref (built in E5).
+- `stock_ratios`: symbol, ratio, ratio_source (derived | pasardana), value, date, basis, inputs, derivation version (built in E5).
 - `ownership_snapshots`: per the HAKA-33 types, with a parent snapshot-set table.
 
 Every table has `source` and `as_of`; derived tables also record the derivation version.
@@ -292,7 +293,7 @@ Every table has `source` and `as_of`; derived tables also record the derivation 
 | E2b. Intraday snapshots | Session-window polling (default 5 min) for quotes and indices, `intraday_snapshots` with 30-day retention, intraday movers/breadth served as DELAYED on `/v1/market` and `/v1/stocks/{s}`. **Built 2026-10-16** (HAKA-67) |
 | E3. Market info | Indices, announcements, news, corporate actions, macro → `/v1/market`, `/v1/news`, `/v1/announcements`, `/v1/stocks/{s}/actions`. **Built 2026-10-16** (HAKA-63): news RSS from the four §5.7 outlets every 15 min (06:00–22:00 WIB) → `/v1/news`; BI-Rate + JISDOR daily → `/v1/macro`; the Yahoo-event calendar → `/v1/actions`; announcements stay `UNAVAILABLE` (IDX blocked), explained on `/v1/meta/health`. See `services/engine/README.md` |
 | E4. Strategy scans | `HAKAPRO_EOD_ENGINE` running the approved HAKA-17 rules over the whole universe, exposed via the HAKA-18 contract |
-| E5. Fundamentals + screener | Financial statements → fundamentals and `POST /v1/screener` |
+| E5. Fundamentals + screener | Financial statements → fundamentals and `POST /v1/screener`. **Built 2026-10-16** (HAKA-65): Yahoo fundamentals timeseries per symbol (annual + quarterly statement lines) → `financials`, a weekly night refresh as a low-priority background job plus an earnings-season catch-up; derived PER/PBV/ROE/ROA/EPS/DER/dividend yield (TTM, documented formulas) → `stock_ratios`, with Pasardana's own PER/PBV/ROE kept as a secondary source (never blended); `/v1/stocks/{s}/fundamentals` and `POST /v1/screener` over the newest session. See `services/engine/README.md` |
 | E6. Ownership | Monthly ≥1% lists → HAKA-33 change engine and HAKA-34 estimate (draft until approved) |
 
 ## 8. Decisions (owner, 2026-10-16)

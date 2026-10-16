@@ -3,6 +3,11 @@
 //   securities: upsert (board/notation stay unknown = null), `active` from the union of both lists.
 //   daily_prices: TradingView's final session row and Pasardana's previous-session row are fallback rows: they fill
 //   value (and frequency) and insert rows Yahoo has not written, but never overwrite Yahoo's OHLCV.
+//   stock_ratios: Pasardana's own PER/PBV/ROE as the `pasardana` ratio source (E5; no extra request), dated by
+//   its LastDate. The screener uses them only where no derived ratio exists.
+import { deleteRatios, upsertRatios, type RatioUpsert } from "../db/fundamentals";
+import type { Provenance } from "../db/ingest";
+import type { RatioKey } from "../derive/ratios";
 import { activeSymbols, deactivateMissing, upsertDaily, upsertSecurities, type DailyUpsert } from "../db/ingest";
 import { SourceBlockedError } from "../fetch/fetcher";
 import type { JobDefinition } from "../schedule/scheduler";
@@ -48,6 +53,32 @@ export function tvDailyRows(rows: TvStockRow[], date: string): DailyUpsert[] {
   }));
 }
 
+/**
+ * Pasardana's published ratios as `pasardana` stock_ratios rows. PER and PBV of zero or below (losses, negative
+ * equity) are stored as null with a note, matching the derived rule; a ratio Pasardana leaves empty is removed.
+ */
+export function pasardanaRatioRows(rows: PasardanaRow[], prov: Provenance): { upserts: RatioUpsert[]; removed: Array<{ symbol: string; ratio: RatioKey }> } {
+  const upserts: RatioUpsert[] = [];
+  const removed: Array<{ symbol: string; ratio: RatioKey }> = [];
+  const fields: Array<{ ratio: RatioKey; field: string; positive: boolean }> = [
+    { ratio: "per", field: "Per", positive: true }, { ratio: "pbv", field: "Pbr", positive: true }, { ratio: "roe", field: "Roe", positive: false },
+  ];
+  for (const row of rows) {
+    if (!row.date) continue;
+    for (const { ratio, field, positive } of fields) {
+      const value = row.ratios[ratio as keyof PasardanaRow["ratios"]];
+      if (value === null) { removed.push({ symbol: row.symbol, ratio }); continue; }
+      const meaningful = !positive || value > 0;
+      upserts.push({
+        symbol: row.symbol, ratio, value: meaningful ? value : null, date: row.date, basis: `pasardana:${field}`,
+        note: meaningful ? null : "NON_POSITIVE_SOURCE_VALUE", inputs: { [field]: value }, derivation: null,
+        source: prov.source, asOf: prov.asOf, rawRef: prov.rawRef,
+      });
+    }
+  }
+  return { upserts, removed };
+}
+
 export function pasardanaDailyRows(rows: PasardanaRow[]): DailyUpsert[] {
   return rows.filter((row) => row.date && row.close !== null).map((row) => ({
     symbol: row.symbol, date: row.date!, open: row.open, high: row.high, low: row.low, close: row.close!, previousClose: row.previousClose,
@@ -90,6 +121,9 @@ export function universeJob(services: JobServices, sources: { tradingview: Sourc
           })), prov);
           // Pasardana's value and frequency are the session's official totals: they replace TradingView's value.
           written += await upsertDaily(services.db, pasardanaDailyRows(parsed.rows), prov, { primary: false, value: "overwrite" });
+          const ratios = pasardanaRatioRows(parsed.rows, prov);
+          written += await upsertRatios(services.db, "pasardana", ratios.upserts, now);
+          if (ratios.removed.length) await deleteRatios(services.db, "pasardana", ratios.removed);
           symbols.push(...parsed.rows.map((row) => row.symbol));
           if (parsed.received < PASARDANA_PAGE_SIZE || ctx.shouldYield()) break;
         }

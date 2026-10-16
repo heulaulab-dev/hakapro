@@ -258,3 +258,58 @@ export const corporateActions = pgTable("corporate_actions", {
   unique("corporate_actions_natural").on(t.source, t.symbol, t.type, t.exDate),
   index("corporate_actions_symbol").on(t.symbol),
 ]);
+
+export const FINANCIAL_PERIOD_TYPES = ["annual", "quarterly"] as const;
+export const FINANCIAL_UNITS = ["amount", "per_share", "shares"] as const;
+
+/**
+ * Financial statement lines (E5, §5.5), one row per (symbol, period end, period type, metric, source). Values are as
+ * reported: `amount` in `currency` (the filing currency, IDR or USD), `per_share` in `currency` per share, `shares`
+ * as a share count (currency null). Quarterly rows are discrete quarters; balance-sheet lines are period-end values.
+ */
+export const financials = pgTable("financials", {
+  symbol: text("symbol").notNull(),
+  periodEnd: date("period_end").notNull(),
+  periodType: text("period_type", { enum: FINANCIAL_PERIOD_TYPES }).notNull(),
+  metric: text("metric").notNull(),
+  value: numeric("value", { precision: 30, scale: 6, mode: "number" }).notNull(),
+  unit: text("unit", { enum: FINANCIAL_UNITS }).notNull(),
+  currency: text("currency"),
+  ...provenance,
+}, (t) => [
+  primaryKey({ name: "financials_pk", columns: [t.symbol, t.periodEnd, t.periodType, t.metric, t.source] }),
+  index("financials_symbol_period").on(t.symbol, t.periodEnd),
+  check("financials_period_type_check", sql`${t.periodType} in ('annual', 'quarterly')`),
+  check("financials_unit_check", sql`${t.unit} in ('amount', 'per_share', 'shares')`),
+]);
+
+export const RATIO_KEYS = ["per", "pbv", "roe", "roa", "eps", "der", "dividendYield"] as const;
+export const RATIO_SOURCES = ["derived", "pasardana"] as const;
+
+/**
+ * Valuation ratios per symbol: the latest value per (ratio, ratio_source). `derived` rows come from the `ratios` job
+ * (financials + the latest close; formulas in src/derive/ratios.ts, version in `derivation`). `pasardana` rows are
+ * Pasardana's own published ratios, kept as a secondary source. The screener prefers `derived` and falls back to
+ * `pasardana` only when no derived row exists; it never blends the two, and reports which one it used.
+ * `value` is null when the ratio is not meaningful (e.g. PER on non-positive earnings); `note` says why.
+ * roe/roa/dividendYield are fractions (0.21 = 21%); eps is IDR per share; per/pbv/der are multiples.
+ */
+export const stockRatios = pgTable("stock_ratios", {
+  symbol: text("symbol").notNull(),
+  ratio: text("ratio", { enum: RATIO_KEYS }).notNull(),
+  ratioSource: text("ratio_source", { enum: RATIO_SOURCES }).notNull(),
+  value: numeric("value", { precision: 30, scale: 10, mode: "number" }),
+  /** Session date of the price used (derived), or the source's data date (Pasardana `LastDate`). */
+  date: date("date").notNull(),
+  /** What the value rests on, e.g. `ttm-4q:2026-06-30`, `balance:2026-06-30`, `dividends-365d`, `pasardana:Per`. */
+  basis: text("basis").notNull(),
+  note: text("note"),
+  inputs: jsonb("inputs").$type<Record<string, string | number | null>>().notNull().default(sql`'{}'::jsonb`),
+  /** Derivation version of derived rows (e.g. `ratios-v1`); null for a source's own ratios. */
+  derivation: text("derivation"),
+  computedAt: ts("computed_at").notNull().defaultNow(),
+  ...provenance,
+}, (t) => [
+  primaryKey({ name: "stock_ratios_pk", columns: [t.symbol, t.ratio, t.ratioSource] }),
+  check("stock_ratios_ratio_source_check", sql`${t.ratioSource} in ('derived', 'pasardana')`),
+]);

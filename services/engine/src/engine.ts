@@ -12,6 +12,8 @@ import { createRawStore, type RawStore } from "./fetch/raw-store";
 import { createApp } from "./http/app";
 import { eodBackfillJob, eodDailyJob } from "./jobs/eod";
 import { foreignFlowJob } from "./jobs/foreign";
+import { fundamentalsJob } from "./jobs/fundamentals";
+import { ratiosJob } from "./jobs/ratios";
 import { indicesEodJob } from "./jobs/indices";
 import { intradayJob } from "./jobs/intraday";
 import { biRateJob, jisdorJob } from "./jobs/macro";
@@ -48,12 +50,15 @@ export type EngineServices = {
  *   news-retention 02:45, background                                            prunes news_items past ENGINE_NEWS_RETENTION_DAYS
  *   macro-jisdor   17:00 daily                                                  BI JISDOR table (first page)
  *   macro-bi-rate  17:05 daily                                                  BI-Rate table (first page)
+ *   fundamentals   every 10 min at :05, 19:00–05:59, background, low priority  Yahoo fundamentals per symbol, weekly
+ *                                                                               cycle + earnings-season catch-up
+ *   ratios         06:15, 17:15, 21:15 daily (no network)                      derived ratios → stock_ratios
  */
 export function defaultRegistry(services: EngineServices): Registry {
   const sources = engineSources(services.config.arjum);
   const jobServices = { db: services.db, fetcher: services.fetcher, documents: services.documents, sourceState: services.sourceState, log: services.log, now: services.now };
   return {
-    sources: [sources.tradingview, sources.yahoo, sources.pasardana, ...(sources.arjum ? [sources.arjum] : []), ...sources.news, sources.bi],
+    sources: [sources.tradingview, sources.yahoo, sources.pasardana, ...(sources.arjum ? [sources.arjum] : []), ...sources.news, sources.bi, sources.yahooFundamentals],
     jobs: [
       universeJob(jobServices, { tradingview: sources.tradingview, pasardana: sources.pasardana }),
       indicesEodJob(jobServices, sources.tradingview),
@@ -76,6 +81,8 @@ export function defaultRegistry(services: EngineServices): Registry {
       }),
       jisdorJob(jobServices, sources.bi),
       biRateJob(jobServices, sources.bi),
+      fundamentalsJob(jobServices, sources.yahooFundamentals, { hostSources: [sources.yahoo.id] }),
+      ratiosJob(jobServices, { fundamentals: sources.yahooFundamentals.id, chart: sources.yahoo.id }),
     ],
   };
 }

@@ -4,7 +4,16 @@
 export type SecurityRecord = {
   symbol: string; name: string; sector: string | null; subsector: string | null; board: string | null;
   sharesOutstanding: number | null; freeFloatPct: number | null; asOf: Date;
+  /** Snapshot capitalisation from the universe sources (IDR), used only when shares are unknown. */
+  marketCap?: number | null;
 };
+
+export type FundamentalRecord = {
+  periodEnd: string; periodType: "annual" | "quarterly"; metric: string; value: number; unit: "amount" | "per_share" | "shares";
+  currency: string | null; source: string;
+};
+
+export type RatioRecord = { symbol: string; ratio: string; ratioSource: "derived" | "pasardana"; value: number | null; date: string };
 
 export type DailyRecord = {
   symbol: string; date: string; open: number | null; high: number | null; low: number | null; close: number; previousClose: number | null;
@@ -61,6 +70,10 @@ export interface MarketStore {
   latestNewsAt(): Promise<Date | null>;
   /** The newest `perSeries` observations of each macro series, newest first. */
   macro(perSeries: number): Promise<MacroRecord[]>;
+  /** Every stored statement line of a symbol (any source, any period). */
+  fundamentals(symbol: string): Promise<FundamentalRecord[]>;
+  /** Stored ratios (every ratio source) of `symbols`. */
+  ratios(symbols: string[]): Promise<RatioRecord[]>;
 }
 
 const contains = (haystack: string, needle: string) => haystack.toLowerCase().includes(needle.toLowerCase());
@@ -71,6 +84,7 @@ export class MemoryMarketStore implements MarketStore {
     securities?: SecurityRecord[]; daily?: DailyRecord[]; intraday?: IntradayRecord[];
     indexDaily?: IndexDailyRecord[]; indexIntraday?: IndexIntradayRecord[]; actions?: Array<ActionRecord & { symbol: string; amount?: number | null; ratio?: string | null }>;
     news?: NewsRecord[]; macro?: MacroRecord[];
+    fundamentals?: Array<FundamentalRecord & { symbol: string }>; ratios?: RatioRecord[];
   } = {}) {}
 
   private get daily() { return this.data.daily ?? []; }
@@ -127,6 +141,10 @@ export class MemoryMarketStore implements MarketStore {
       .sort((a, b) => b.publishedAt.getTime() - a.publishedAt.getTime()).slice(query.offset, query.offset + query.limit);
   }
   async latestNewsAt() { return (this.data.news ?? []).map((row) => row.publishedAt).sort((a, b) => b.getTime() - a.getTime())[0] ?? null; }
+  async fundamentals(symbol: string) {
+    return (this.data.fundamentals ?? []).filter((row) => row.symbol === symbol).map(({ symbol: _symbol, ...row }) => row);
+  }
+  async ratios(symbols: string[]) { return (this.data.ratios ?? []).filter((row) => symbols.includes(row.symbol)); }
   async macro(perSeries: number) {
     const rows = [...(this.data.macro ?? [])].sort((a, b) => a.series.localeCompare(b.series) || b.date.localeCompare(a.date));
     const counts = new Map<string, number>();

@@ -55,7 +55,14 @@ export const foreignSignalSchema = z.object({
 });
 export const signalsSchema = z.object({ tradingDate: z.string(), foreignFlow: z.array(foreignSignalSchema) });
 
-export const fundamentalsSchema = z.array(z.object({ periodDate: z.string().nullable(), periodType: z.string(), metrics: z.record(z.string(), num) }));
+/**
+ * The Data Engine (E5) also sends, per period: each metric's unit (`IDR`, `USD`, `IDR/share`, `shares`), the filing
+ * currency and the source (optional; app.py sent none). periodType is `ANNUAL` or `QUARTERLY` from the engine.
+ */
+export const fundamentalsSchema = z.array(z.object({
+  periodDate: z.string().nullable(), periodType: z.string(), metrics: z.record(z.string(), num),
+  units: z.record(z.string(), z.string()).optional(), currency: z.string().nullable().optional(), source: z.string().optional(),
+}));
 /**
  * IDX company-detail records (verified upstream keys: Direktur `Nama/Jabatan/Afiliasi`, Komisaris
  * `Nama/Jabatan/Independen`, PemegangSaham `Nama/Kategori/Jumlah/Persentase/Pengendali`). Tax and ID numbers
@@ -101,7 +108,12 @@ export const screenConditionSchema = z.object({
 });
 export const screenRequestSchema = z.object({ conditions: z.array(screenConditionSchema).max(20), limit: z.number().int().min(1).max(1000).default(500) });
 export const screenRowSchema = z.object({ symbol: symbolSchema, name: z.string().nullable() }).catchall(z.number().nullable());
-export const screenResultSchema = z.object({ rows: z.array(screenRowSchema), total: z.number().int().nonnegative(), supportedFields: z.array(screenFieldSchema) });
+/** Which source each returned ratio came from (Data Engine E5, optional): symbol → field → `derived` | `pasardana`. */
+export const ratioSourcesSchema = z.record(z.string(), z.record(z.string(), z.enum(["derived", "pasardana"])));
+export const screenResultSchema = z.object({
+  rows: z.array(screenRowSchema), total: z.number().int().nonnegative(), supportedFields: z.array(screenFieldSchema),
+  ratioSources: ratioSourcesSchema.optional(),
+});
 
 export type Security = z.infer<typeof securitySchema>;
 export type Quote = z.infer<typeof quoteSchema>;
