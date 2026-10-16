@@ -1,10 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   actionsSchema, announcementItemSchema, fundamentalsSchema, idxBeiEnvelope, marketOverviewSchema, newsItemSchema,
-  screenResultSchema, securitySchema,
+  screenResultSchema, securitySchema, signalsSchema, stockSchema,
 } from "@/server/schemas/idx-bei";
 import { tempDir } from "../../test/support";
 import { MemoryCursorStore, MemoryRunRecorder, MemorySourceStateStore } from "../fetch/stores";
+import { MemoryMarketStore } from "../serve/store";
 import { PauseGuard } from "../schedule/pause";
 import { Scheduler } from "../schedule/scheduler";
 import { createApp, type AppDeps } from "./app";
@@ -108,6 +109,67 @@ describe("engine HTTP app", () => {
     expect(await (await call("/v1/admin/jobs/demo-job/run", { method: "POST", headers: auth })).json()).toEqual({ data: { status: "paused", reason: "flag" } });
     expect(await (await call("/v1/admin/resume", { method: "POST", headers: auth })).json()).toMatchObject({ data: { paused: false } });
     expect((await call("/v1/admin/sources/fixture/unblock", { method: "POST", headers: auth })).status).toBe(200);
+  });
+});
+
+describe("engine HTTP app with stored data", () => {
+  let dir: Awaited<ReturnType<typeof tempDir>>;
+  beforeEach(async () => { dir = await tempDir(); });
+  afterEach(async () => { await dir.cleanup(); });
+
+  const asOf = new Date("2026-10-16T09:35:00Z");
+  const market = new MemoryMarketStore({
+    securities: [{ symbol: "BBCA", name: "PT Bank Central Asia Tbk", sector: "Finance", subsector: null, board: null, sharesOutstanding: 123_000_000_000, freeFloatPct: 40, asOf }],
+    daily: [
+      { symbol: "BBCA", date: "2026-10-15", open: 6075, high: 6125, low: 6025, close: 6075, previousClose: 6125, volume: 1, value: 2e12, frequency: 3, foreignBuy: 70, foreignSell: 90 },
+      { symbol: "BBCA", date: "2026-10-16", open: 5825, high: 5825, low: 5175, close: 5225, previousClose: 6075, volume: 1, value: 5e12, frequency: 3, foreignBuy: 310, foreignSell: 420 },
+    ],
+    indexDaily: [{ code: "COMPOSITE", name: "IDX Composite Index", date: "2026-10-16", close: 5227, previousClose: 5863.78, changePercent: -0.1086 }],
+    actions: [{ symbol: "BBCA", exDate: "2021-10-13", type: "SPLIT", description: "Stock split 5:1", asOf }],
+  });
+
+  function call(path: string) {
+    const pause = new PauseGuard(dir.path, 85, { cacheMs: 0, measure: async () => 10 });
+    const scheduler = new Scheduler({ jobs: [], pause, runs: new MemoryRunRecorder(), cursors: new MemoryCursorStore(), sourceState: new MemorySourceStateStore() });
+    const handler = createApp({
+      ping: async () => true, pause, scheduler, rawStoreKind: "local", sourceHealth: async () => [], unblockSource: async () => false, market,
+      eodSessions: async () => [{ date: "2026-10-16", status: "PARTIAL", expected: 900, present: 880, attempts: 1, finalizedAt: null }],
+      now: () => new Date("2026-10-16T10:00:00Z"),
+    });
+    return handler(new Request(`${BASE}${path}`));
+  }
+
+  it("serves every data route through the shared schemas with EOD freshness", async () => {
+    const cases: Array<[string, Parameters<typeof idxBeiEnvelope>[0]]> = [
+      ["/v1/market", marketOverviewSchema], ["/v1/securities?q=bb", securitySchema.array()], ["/v1/stocks/BBCA?limit=1", stockSchema],
+      ["/v1/stocks/bbca/actions", actionsSchema], ["/v1/signals", signalsSchema],
+    ];
+    for (const [path, schema] of cases) {
+      const response = await call(path);
+      expect(response.status, path).toBe(200);
+      const body = idxBeiEnvelope(schema).parse(await response.json());
+      expect(body.meta, path).toMatchObject({ source: "hakapro-engine", freshness: "EOD", dataAsOf: "2026-10-16" });
+    }
+    const stock = stockSchema.parse(((await (await call("/v1/stocks/BBCA?limit=1")).json()) as { data: unknown }).data);
+    expect(stock.candles).toHaveLength(1);
+    expect(stock.quote).toMatchObject({ close: 5225, foreignBuy: 310 });
+    const signals = signalsSchema.parse(((await (await call("/v1/signals")).json()) as { data: unknown }).data);
+    expect(signals.foreignFlow[0]).toMatchObject({ symbol: "BBCA", signal: "distribute", sessions: 2 });
+  });
+
+  it("keeps typed misses: unknown symbol, bad limit, profile, empty search", async () => {
+    expect((await call("/v1/stocks/ZZZZ")).status).toBe(404);
+    expect((await call("/v1/stocks/BBCA?limit=0")).status).toBe(400);
+    expect((await call("/v1/stocks/BBCA/profile")).status).toBe(404);
+    const empty = idxBeiEnvelope(securitySchema.array()).parse(await (await call("/v1/securities?q=zzz")).json());
+    expect(empty).toMatchObject({ data: [], meta: { freshness: "UNAVAILABLE" } });
+    const actions = idxBeiEnvelope(actionsSchema).parse(await (await call("/v1/stocks/TLKM/actions")).json());
+    expect(actions.data).toEqual([]);
+  });
+
+  it("reports EOD session completeness in /v1/meta/health", async () => {
+    const body = (await (await call("/v1/meta/health")).json()) as { data: { eodSessions: unknown[] } };
+    expect(body.data.eodSessions).toEqual([{ date: "2026-10-16", status: "PARTIAL", expected: 900, present: 880, attempts: 1, finalizedAt: null }]);
   });
 });
 
