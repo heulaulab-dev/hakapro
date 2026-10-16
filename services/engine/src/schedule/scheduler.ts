@@ -6,13 +6,15 @@ import type { CursorStore, RunRecorder, RunStatus, RunTotals, SourceStateStore }
 import { nullLogger, type Logger } from "../log";
 import { cronMatches, parseCron, wibTime, type CronSpec, type WibTime } from "./cron";
 import type { PauseGuard } from "./pause";
-import { sessionPollDue } from "./windows";
+import { parseWindow, sessionPollDue, windowPollDue } from "./windows";
 
 export type JobTrigger =
   /** Cron on the WIB clock; `tradingDaysOnly` skips weekends and IDX holidays (EOD jobs). */
   | { kind: "cron"; spec: string; tradingDaysOnly?: boolean }
   /** Every N minutes inside IDX session windows on trading days (intraday polling). */
-  | { kind: "session"; everyMinutes: number };
+  | { kind: "session"; everyMinutes: number }
+  /** Every N minutes from `from` to `to` (inclusive, HH:MM WIB) on every day, weekends included (news polling). */
+  | { kind: "window"; everyMinutes: number; from: string; to: string };
 
 export type JobContext = {
   runId: string;
@@ -70,7 +72,8 @@ export class Scheduler {
     this.log = deps.log ?? nullLogger;
     for (const job of deps.jobs) {
       if (this.jobs.has(job.id)) throw new Error(`Duplicate job id: ${job.id}`);
-      if (job.trigger.kind === "session" && (!Number.isInteger(job.trigger.everyMinutes) || job.trigger.everyMinutes < 1)) throw new Error(`Invalid session interval for ${job.id}`);
+      if (job.trigger.kind !== "cron" && (!Number.isInteger(job.trigger.everyMinutes) || job.trigger.everyMinutes < 1)) throw new Error(`Invalid ${job.trigger.kind} interval for ${job.id}`);
+      if (job.trigger.kind === "window") parseWindow(job.trigger.from, job.trigger.to);
       this.jobs.set(job.id, { ...job, cron: job.trigger.kind === "cron" ? parseCron(job.trigger.spec) : null });
     }
   }
@@ -95,6 +98,7 @@ export class Scheduler {
     const compiled = this.jobs.get(job.id);
     if (!compiled) return false;
     if (compiled.trigger.kind === "session") return sessionPollDue(time, compiled.trigger.everyMinutes);
+    if (compiled.trigger.kind === "window") return windowPollDue(time, compiled.trigger);
     if (compiled.trigger.tradingDaysOnly && !isTradingDay(time.date)) return false;
     return cronMatches(compiled.cron!, time);
   }

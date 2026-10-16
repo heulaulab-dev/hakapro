@@ -28,4 +28,10 @@ describe("loadConfig", () => {
     expect(loadConfig(BASE).intraday.intervalMinutes).toBe(5);
     expect(() => loadConfig({ ...BASE, ENGINE_INTRADAY_INTERVAL_MINUTES: "0" })).toThrow(/ENGINE_INTRADAY_INTERVAL_MINUTES/);
   });
+
+  it("polls news every 15 minutes (never under 5) and keeps it 180 days by default", () => {
+    expect(loadConfig(BASE).news).toEqual({ intervalMinutes: 15, retentionDays: 180 });
+    expect(loadConfig({ ...BASE, ENGINE_NEWS_INTERVAL_MINUTES: "30", ENGINE_NEWS_RETENTION_DAYS: "90" }).news).toEqual({ intervalMinutes: 30, retentionDays: 90 });
+    expect(() => loadConfig({ ...BASE, ENGINE_NEWS_INTERVAL_MINUTES: "2" })).toThrow(/ENGINE_NEWS_INTERVAL_MINUTES/);
+  });
 });

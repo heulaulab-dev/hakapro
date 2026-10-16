@@ -1,11 +1,13 @@
-// Local stand-in for the E2/E2b sources, serving the recorded fixtures in test/fixtures/ at the real paths.
+// Local stand-in for the E2/E2b/E3 sources, serving the recorded fixtures in test/fixtures/ at the real paths.
 // `world.fetch` rewrites the real origins to this server and refuses every other URL, so job and e2e tests never
 // touch the network. arjum is entirely fake (no credentials in tests): it serves the shape of fixtures/arjum.
+// The news feeds answer conditional requests like the real hosts: CNBC by ETag, Antara by Last-Modified.
+import { createHash } from "node:crypto";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
 import { fixture } from "./support";
 
-export type SourceName = "tradingview" | "yahoo" | "pasardana" | "arjum";
+export type SourceName = "tradingview" | "yahoo" | "pasardana" | "arjum" | "cnbc" | "detik" | "antara" | "investortrust" | "bi";
 export const ARJUM_TEST_ORIGIN = "https://arjum.example.test";
 export const ARJUM_TEST_KEY = "test-arjum-key";
 
@@ -14,9 +16,45 @@ const ORIGINS: Record<SourceName, string> = {
   yahoo: "https://query1.finance.yahoo.com",
   pasardana: "https://pasardana.id",
   arjum: ARJUM_TEST_ORIGIN,
+  cnbc: "https://www.cnbcindonesia.com",
+  detik: "https://finance.detik.com",
+  antara: "https://www.antaranews.com",
+  investortrust: "https://investortrust.id",
+  bi: "https://www.bi.go.id",
 };
 
-export type Hit = { source: SourceName; method: string; path: string; userAgent: string | undefined; apiKey: string | undefined; body: string };
+const FEEDS: Record<string, string> = {
+  "cnbc /market/rss": "news-cnbcindonesia-market.xml",
+  "detik /rss": "news-detik-finance.xml",
+  "antara /rss/ekonomi-bursa.xml": "news-antara-bursa.xml",
+  "investortrust /rss/market.rss": "news-investortrust-market.xml",
+  "investortrust /rss/macro.rss": "news-investortrust-macro.xml",
+};
+const BI_PAGES: Record<string, string> = {
+  "/id/statistik/indikator/bi-rate.aspx": "bi-rate.html",
+  "/id/statistik/informasi-kurs/jisdor/default.aspx": "bi-jisdor.html",
+};
+const ANTARA_LAST_MODIFIED = "Fri, 16 Oct 2026 07:27:02 GMT";
+/** Prepended to CNBC's feed when `newsUpdate` is on: one new story and a re-post of an Antara headline. */
+const CNBC_UPDATE = `<item>
+      <guid>https://www.cnbcindonesia.com/market/20261016150000-17-776900/asing-borong-bbca</guid>
+      <pubDate>Fri, 16 Oct 2026 14:20:00 +0700</pubDate>
+      <title><![CDATA[Asing Borong $BBCA Saat IHSG Ambruk]]></title>
+      <description><![CDATA[<p>Investor asing mencatat beli bersih di BBCA.</p>]]></description>
+      <link>https://www.cnbcindonesia.com/market/20261016150000-17-776900/asing-borong-bbca?utm_source=rss</link>
+    </item>
+    <item>
+      <guid>https://www.cnbcindonesia.com/market/20261016150500-17-776901/repost</guid>
+      <pubDate>Fri, 16 Oct 2026 14:25:00 +0700</pubDate>
+      <title><![CDATA[BEI Minta Investor Tetap Rasional dan Lihat Fundamental Bursa RI]]></title>
+      <link>https://www.cnbcindonesia.com/market/20261016150500-17-776901/repost</link>
+    </item>
+    `;
+
+export type Hit = {
+  source: SourceName; method: string; path: string; userAgent: string | undefined; apiKey: string | undefined; body: string;
+  ifNoneMatch: string | undefined; ifModifiedSince: string | undefined;
+};
 
 export type SourceWorld = {
   origin: string;
@@ -28,6 +66,8 @@ export type SourceWorld = {
     tvPriceFactor: number;
     /** x-ratelimit-remaining arjum reports before each call; decremented per call. */
     arjumRemaining: number;
+    /** CNBC's feed gains two items (new ETag): a new story naming $BBCA and a re-post of an Antara headline. */
+    newsUpdate: boolean;
   };
   fetch: typeof fetch;
   close(): Promise<void>;
@@ -48,7 +88,7 @@ function scaledScan(text: string, factor: number): string {
 
 export async function startSourceWorld(): Promise<SourceWorld> {
   const hits: Hit[] = [];
-  const state: SourceWorld["state"] = { blocked: new Set(), tvPriceFactor: 1, arjumRemaining: 1000 };
+  const state: SourceWorld["state"] = { blocked: new Set(), tvPriceFactor: 1, arjumRemaining: 1000, newsUpdate: false };
 
   const handle = async (req: IncomingMessage, res: ServerResponse) => {
     const chunks: Buffer[] = [];
@@ -58,12 +98,33 @@ export async function startSourceWorld(): Promise<SourceWorld> {
     const [, prefix, ...rest] = url.pathname.split("/");
     const source = prefix as SourceName;
     const path = `/${rest.join("/")}`;
-    hits.push({ source, method: req.method ?? "GET", path: `${path}${url.search}`, userAgent: req.headers["user-agent"], apiKey: req.headers["x-api-key"] as string | undefined, body });
+    hits.push({
+      source, method: req.method ?? "GET", path: `${path}${url.search}`, userAgent: req.headers["user-agent"], apiKey: req.headers["x-api-key"] as string | undefined, body,
+      ifNoneMatch: req.headers["if-none-match"] as string | undefined, ifModifiedSince: req.headers["if-modified-since"] as string | undefined,
+    });
 
     if (state.blocked.has(source)) {
       if (source === "arjum") return send(res, 429, '{"detail":"rate limited"}', { "retry-after": "3600" });
+      // CNBC sits behind Cloudflare: its block is a managed challenge.
+      if (source === "cnbc") return send(res, 403, "<html><head><title>Just a moment...</title></head><body></body></html>", { "content-type": "text/html", "cf-mitigated": "challenge", "cf-ray": "fixture-CGK", server: "cloudflare" });
       return send(res, 403, "<html><body>Request blocked.</body></html>", { "content-type": "text/html", "x-cache": "Error from cloudfront" });
     }
+    const feed = FEEDS[`${source} ${path}`];
+    if (feed && req.method === "GET") {
+      let xml = fixture(feed);
+      if (source === "cnbc" && state.newsUpdate) xml = xml.replace("<item>", CNBC_UPDATE + "<item>");
+      if (source === "cnbc") {
+        const etag = `"${createHash("sha256").update(xml).digest("hex").slice(0, 16)}"`;
+        if (req.headers["if-none-match"] === etag) { res.writeHead(304, { etag }); res.end(); return; }
+        return send(res, 200, xml, { "content-type": "text/xml;charset=UTF-8", etag, server: "cloudflare", "cf-ray": "fixture-CGK" });
+      }
+      if (source === "antara") {
+        if (req.headers["if-modified-since"] === ANTARA_LAST_MODIFIED) { res.writeHead(304, { "last-modified": ANTARA_LAST_MODIFIED }); res.end(); return; }
+        return send(res, 200, xml, { "content-type": "text/xml; charset=utf-8", "last-modified": ANTARA_LAST_MODIFIED });
+      }
+      return send(res, 200, xml, { "content-type": source === "investortrust" ? "application/rss+xml" : "text/xml" });
+    }
+    if (source === "bi" && BI_PAGES[path] && req.method === "GET") return send(res, 200, fixture(BI_PAGES[path]), { "content-type": "text/html; charset=utf-8" });
     if (source === "tradingview" && req.method === "POST") {
       if (path === "/indonesia/scan") return send(res, 200, scaledScan(fixture("tradingview-indonesia-scan.json"), state.tvPriceFactor));
       if (path === "/global/scan") return send(res, 200, fixture("tradingview-global-indices.json"));

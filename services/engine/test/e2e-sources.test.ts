@@ -1,9 +1,11 @@
-// E2/E2b jobs and the /v1 routes against a throwaway PostgreSQL (Docker) and the local source fixtures.
+// E2/E2b/E3 jobs and the /v1 routes against a throwaway PostgreSQL (Docker) and the local source fixtures.
 // Opt-in (`bun run engine:test:e2e`); skipped in `bun run test` and CI. No request leaves the machine: the fixture
 // world refuses any URL it does not serve, and arjum is a fake.
 import { and, asc, eq } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { actionsSchema, idxBeiEnvelope, marketOverviewSchema, securitySchema, signalsSchema, stockSchema } from "@/server/schemas/idx-bei";
+import {
+  actionsCalendarSchema, actionsSchema, announcementItemSchema, idxBeiEnvelope, macroSchema, marketOverviewSchema, newsItemSchema, securitySchema, signalsSchema, stockSchema,
+} from "@/server/schemas/idx-bei";
 import * as t from "../db/schema";
 import { loadConfig } from "../src/config";
 import { createEngine } from "../src/engine";
@@ -40,6 +42,7 @@ describe.skipIf(!enabled)("engine sources (docker postgres + fixtures)", () => {
     world.state.blocked.clear();
     world.state.tvPriceFactor = 1;
     world.state.arjumRemaining = 1000;
+    world.state.newsUpdate = false;
   });
 
   /** A fresh database and engine; the clock is controlled, rate limits run on a virtual clock. */
@@ -64,13 +67,18 @@ describe.skipIf(!enabled)("engine sources (docker postgres + fixtures)", () => {
     return { engine, db: engine.services.db, clock, run, call, setNow: (at: Date) => { now = at; } };
   }
 
-  it("registers the E2/E2b sources and jobs with their schedules", async () => {
+  it("registers the E2/E2b/E3 sources and jobs with their schedules", async () => {
     const h = await harness();
     expect(h.engine.registry.sources.map((source) => [source.id, source.host, source.policy])).toEqual([
       ["tradingview-scanner", "scanner.tradingview.com", { minIntervalMs: 2000, concurrency: 1 }],
       ["yahoo-chart", "query1.finance.yahoo.com", { minIntervalMs: 3000, concurrency: 1 }],
       ["pasardana", "pasardana.id", { minIntervalMs: 3000, concurrency: 1 }],
       ["arjum", "arjum.example.test", { minIntervalMs: 2000, concurrency: 1 }],
+      ["news-cnbcindonesia", "www.cnbcindonesia.com", { minIntervalMs: 5000, concurrency: 1 }],
+      ["news-detik", "finance.detik.com", { minIntervalMs: 5000, concurrency: 1 }],
+      ["news-antara", "www.antaranews.com", { minIntervalMs: 5000, concurrency: 1 }],
+      ["news-investortrust", "investortrust.id", { minIntervalMs: 5000, concurrency: 1 }],
+      ["bank-indonesia", "www.bi.go.id", { minIntervalMs: 5000, concurrency: 1 }],
     ]);
     expect(Object.fromEntries(h.engine.scheduler.status().map((job) => [job.id, job.trigger]))).toEqual({
       universe: { kind: "cron", spec: "35 16 * * *", tradingDaysOnly: true },
@@ -80,6 +88,10 @@ describe.skipIf(!enabled)("engine sources (docker postgres + fixtures)", () => {
       "foreign-flow": { kind: "cron", spec: "0 19,21 * * *", tradingDaysOnly: true },
       intraday: { kind: "session", everyMinutes: 5 },
       "intraday-retention": { kind: "cron", spec: "30 2 * * *" },
+      news: { kind: "window", everyMinutes: 15, from: "06:00", to: "22:00" },
+      "news-retention": { kind: "cron", spec: "45 2 * * *" },
+      "macro-jisdor": { kind: "cron", spec: "0 17 * * *" },
+      "macro-bi-rate": { kind: "cron", spec: "5 17 * * *" },
     });
   });
 
@@ -289,6 +301,132 @@ describe.skipIf(!enabled)("engine sources (docker postgres + fixtures)", () => {
     expect(await h.db.select().from(t.indexIntraday)).toEqual([]);
   });
 
+  it("news: five feeds with the honest UA and 5 s per host; headline/link/time/outlet/summary with provenance", async () => {
+    const h = await harness();
+    await h.run("universe");
+    world.hits.length = 0;
+    h.setNow(wib("2026-10-16", "14:30"));
+    expect((await h.run("news")).lastStatus).toBe("SUCCEEDED");
+    expect(world.hits.map((hit) => `${hit.source} ${hit.path}`)).toEqual([
+      "cnbc /market/rss", "detik /rss", "antara /rss/ekonomi-bursa.xml", "investortrust /rss/market.rss", "investortrust /rss/macro.rss",
+    ]);
+    expect(world.hits.every((hit) => hit.userAgent === ENGINE_USER_AGENT && hit.method === "GET")).toBe(true);
+    // The two InvestorTrust feeds share a host: the second waits out the 5 s spacing.
+    expect(h.clock.sleeps.some((ms) => ms >= 4900)).toBe(true);
+
+    const items = await h.db.select().from(t.newsItems).orderBy(asc(t.newsItems.publishedAt));
+    expect(items).toHaveLength(15);
+    expect(new Set(items.map((row) => row.outlet))).toEqual(new Set(["CNBC Indonesia", "detikFinance", "ANTARA", "Investortrust"]));
+    expect(items.every((row) => row.rawRef && row.asOf && row.source.startsWith("news-") && !row.publishedAtEstimated)).toBe(true);
+    expect(items.every((row) => row.summary === null || (row.summary.length <= 280 && !/[<>]/.test(row.summary)))).toBe(true);
+    expect(items.at(-1)).toMatchObject({
+      title: "Review MSCI Bikin IHSG Anjlok Hingga 11%, Dasco Ungkap Langkah OJK-BEI", outlet: "CNBC Indonesia", source: "news-cnbcindonesia",
+      url: "https://www.cnbcindonesia.com/market/20261016141345-17-776891/review-msci-bikin-ihsg-anjlok-hingga-11-dasco-ungkap-langkah-ojk-bei",
+      publishedAt: new Date("2026-10-16T07:16:31Z"), symbols: [],
+    });
+    const docs = await h.db.select().from(t.rawDocuments).where(eq(t.rawDocuments.parseStatus, "PARSED"));
+    expect(docs.filter((doc) => doc.source.startsWith("news-"))).toHaveLength(5);
+
+    // Next poll: CNBC answers 304 to If-None-Match, Antara to If-Modified-Since, the rest are byte-identical.
+    world.hits.length = 0;
+    h.setNow(wib("2026-10-16", "14:45"));
+    await h.run("news");
+    expect(world.hits.find((hit) => hit.source === "cnbc")!.ifNoneMatch).toMatch(/^"/);
+    expect(world.hits.find((hit) => hit.source === "antara")!.ifModifiedSince).toBe("Fri, 16 Oct 2026 07:27:02 GMT");
+    expect(await h.db.select().from(t.newsItems)).toHaveLength(15);
+    expect((await h.db.select().from(t.rawDocuments)).filter((doc) => doc.source.startsWith("news-"))).toHaveLength(5);
+
+    // CNBC updates: a new story naming $BBCA (a known symbol) and a re-post of Antara's headline (deduped by title).
+    world.state.newsUpdate = true;
+    h.setNow(wib("2026-10-16", "15:00"));
+    await h.run("news");
+    const after = await h.db.select().from(t.newsItems);
+    expect(after).toHaveLength(16);
+    expect(after.find((row) => row.title === "Asing Borong $BBCA Saat IHSG Ambruk")).toMatchObject({
+      url: "https://www.cnbcindonesia.com/market/20261016150000-17-776900/asing-borong-bbca", symbols: ["BBCA"], summary: "Investor asing mencatat beli bersih di BBCA.",
+    });
+    expect(after.filter((row) => row.titleKey === "bei minta investor tetap rasional dan lihat fundamental bursa ri").map((row) => row.outlet)).toEqual(["ANTARA"]);
+
+    const news = idxBeiEnvelope(newsItemSchema.array()).parse(await (await h.call("/v1/news?page=1&page_size=2")).json());
+    expect(news.meta).toMatchObject({ freshness: "DELAYED", dataAsOf: "2026-10-16T14:20:00+07:00" });
+    expect(news.data.map((row) => row.title)).toEqual(["Asing Borong $BBCA Saat IHSG Ambruk", "Review MSCI Bikin IHSG Anjlok Hingga 11%, Dasco Ungkap Langkah OJK-BEI"]);
+    const bbca = idxBeiEnvelope(newsItemSchema.array()).parse(await (await h.call("/v1/news?symbol=BBCA")).json());
+    expect(bbca.data.map((row) => row.symbols)).toEqual([["BBCA"]]);
+  });
+
+  it("news: a blocked outlet stops alone with evidence and is never retried; all blocked → BLOCKED", async () => {
+    const h = await harness();
+    world.state.blocked.add("cnbc");
+    h.setNow(wib("2026-10-16", "14:30"));
+    expect((await h.run("news")).lastStatus).toBe("SUCCEEDED");
+    const [cnbc] = await h.db.select().from(t.sources).where(eq(t.sources.id, "news-cnbcindonesia"));
+    expect(cnbc).toMatchObject({ status: "BLOCKED", blockEvidence: { reason: "CLOUDFLARE_CHALLENGE", status: 403, headers: { "cf-mitigated": "challenge" } } });
+    expect(await h.db.select().from(t.newsItems)).toHaveLength(12);
+
+    world.hits.length = 0;
+    await h.run("news");
+    expect(world.hits.some((hit) => hit.source === "cnbc")).toBe(false);
+
+    for (const source of ["detik", "antara", "investortrust"] as const) world.state.blocked.add(source);
+    const fresh = await harness();
+    world.hits.length = 0;
+    expect((await fresh.run("news")).lastStatus).toBe("BLOCKED");
+    // One request per host, then each source stops (InvestorTrust's second feed is not requested).
+    expect(world.hits.map((hit) => hit.source)).toEqual(["cnbc", "detik", "antara", "investortrust"]);
+  });
+
+  it("news retention: items past ENGINE_NEWS_RETENTION_DAYS are pruned, and never stored when already too old", async () => {
+    const h = await harness({ ENGINE_NEWS_RETENTION_DAYS: "30" });
+    h.setNow(wib("2026-10-16", "14:30"));
+    await h.run("news");
+    expect(await h.db.select().from(t.newsItems)).toHaveLength(15);
+    // 30 days after the 15th's items: those go, the 16th's stay.
+    h.setNow(wib("2026-11-15", "02:45"));
+    expect((await h.run("news-retention")).lastStatus).toBe("SUCCEEDED");
+    const kept = await h.db.select().from(t.newsItems);
+    expect(kept.length).toBeGreaterThan(0);
+    expect(kept.length).toBeLessThan(15);
+    expect(kept.every((row) => row.publishedAt >= new Date("2026-10-15T19:45:00Z"))).toBe(true);
+    h.setNow(wib("2026-12-31", "02:45"));
+    await h.run("news-retention");
+    expect(await h.db.select().from(t.newsItems)).toEqual([]);
+
+    const late = await harness({ ENGINE_NEWS_RETENTION_DAYS: "30" });
+    late.setNow(wib("2026-12-31", "10:00"));
+    expect((await late.run("news")).lastStatus).toBe("SUCCEEDED");
+    expect(await late.db.select().from(t.newsItems)).toEqual([]);
+  });
+
+  it("macro: BI JISDOR and BI-Rate tables → macro_observations with provenance and /v1/macro; a block stops BI", async () => {
+    const h = await harness();
+    h.setNow(wib("2026-10-16", "17:00"));
+    expect((await h.run("macro-jisdor")).lastStatus).toBe("SUCCEEDED");
+    expect((await h.run("macro-bi-rate")).lastStatus).toBe("SUCCEEDED");
+    const rows = await h.db.select().from(t.macroObservations).orderBy(asc(t.macroObservations.series), asc(t.macroObservations.date));
+    expect(rows.map((row) => [row.series, row.date, row.value])).toEqual([
+      ["BI_RATE", "2026-07-22", 5.75], ["BI_RATE", "2026-08-19", 5.75], ["BI_RATE", "2026-09-23", 5.75],
+      ["JISDOR", "2026-10-13", 17930], ["JISDOR", "2026-10-14", 17898], ["JISDOR", "2026-10-15", 17948],
+    ]);
+    expect(rows.every((row) => row.source === "bank-indonesia" && row.rawRef && row.asOf)).toBe(true);
+    expect(world.hits.map((hit) => `${hit.source} ${hit.path}`)).toEqual(["bi /id/statistik/informasi-kurs/jisdor/default.aspx", "bi /id/statistik/indikator/bi-rate.aspx"]);
+    expect(world.hits.every((hit) => hit.userAgent === ENGINE_USER_AGENT)).toBe(true);
+    expect(h.clock.sleeps.some((ms) => ms >= 4900)).toBe(true);
+
+    h.setNow(wib("2026-10-16", "12:00"));
+    const macro = idxBeiEnvelope(macroSchema).parse(await (await h.call("/v1/macro")).json());
+    expect(macro.meta).toMatchObject({ dataAsOf: "2026-10-15", freshness: "EOD" });
+    expect(macro.data.series.find((row) => row.id === "JISDOR")).toMatchObject({ value: 17948, previousValue: 17898, observations: [{ date: "2026-10-15" }, { date: "2026-10-14" }, { date: "2026-10-13" }] });
+    expect(macro.data.series.find((row) => row.id === "BI_RATE")).toMatchObject({ value: 5.75, link: "https://www.bi.go.id/id/publikasi/ruang-media/news-release/Pages/sp_2819326.aspx" });
+
+    world.state.blocked.add("bi");
+    world.hits.length = 0;
+    expect((await h.run("macro-jisdor")).lastStatus).toBe("BLOCKED");
+    await h.run("macro-bi-rate", "blocked");
+    expect(world.hits).toHaveLength(1);
+    const [bi] = await h.db.select().from(t.sources).where(eq(t.sources.id, "bank-indonesia"));
+    expect(bi).toMatchObject({ status: "BLOCKED", blockEvidence: { reason: "CDN_FORBIDDEN" } });
+  });
+
   it("end to end: universe → indices → EOD → backfill → foreign → intraday → /v1 responses", async () => {
     const h = await harness();
     await h.run("universe");
@@ -321,6 +459,12 @@ describe.skipIf(!enabled)("engine sources (docker postgres + fixtures)", () => {
     const signals = idxBeiEnvelope(signalsSchema).parse(await (await h.call("/v1/signals")).json());
     expect(signals.data.tradingDate).toBe("2026-10-16");
     expect(signals.data.foreignFlow.map((row) => row.signal)).toContain("distribute");
+    // Market-wide calendar from the stored Yahoo events (ex-dates only).
+    const calendar = idxBeiEnvelope(actionsCalendarSchema).parse(await (await h.call("/v1/actions?from=2021-10-01&to=2021-12-31")).json());
+    expect(calendar.data.map((row) => [row.symbol, row.date, row.type, row.ratio, row.amount])).toEqual([["BBCA", "2021-10-13", "SPLIT", "5:1", null], ["BBCA", "2021-11-17", "DIVIDEND", null, 25]]);
+    expect(idxBeiEnvelope(actionsCalendarSchema).parse(await (await h.call("/v1/actions")).json()).data).toEqual([]);
+    const announcements = idxBeiEnvelope(announcementItemSchema.array()).parse(await (await h.call("/v1/announcements")).json());
+    expect(announcements).toMatchObject({ data: [], meta: { freshness: "UNAVAILABLE" } });
 
     // Next session, in progress: intraday is newer, served DELAYED with its timestamp.
     h.setNow(wib("2026-10-19", "10:00"));
@@ -333,8 +477,14 @@ describe.skipIf(!enabled)("engine sources (docker postgres + fixtures)", () => {
     expect(intradayMarket.meta.freshness).toBe("DELAYED");
     expect(intradayMarket.data.indices.find((row) => row.code === "LQ45")).toBeDefined();
 
-    const health = (await (await h.call("/v1/meta/health")).json()) as { data: { sources: Array<{ id: string; status: string }>; eodSessions: Array<{ date: string; status: string }> } };
-    expect(Object.fromEntries(health.data.sources.map((row) => [row.id, row.status]))).toEqual({ arjum: "OK", pasardana: "OK", "tradingview-scanner": "OK", "yahoo-chart": "OK" });
+    const health = (await (await h.call("/v1/meta/health")).json()) as {
+      data: { sources: Array<{ id: string; status: string }>; eodSessions: Array<{ date: string; status: string }>; unavailable: Array<{ route: string; status: string }> };
+    };
+    expect(Object.fromEntries(health.data.sources.map((row) => [row.id, row.status]))).toEqual({
+      arjum: "OK", pasardana: "OK", "tradingview-scanner": "OK", "yahoo-chart": "OK",
+      "bank-indonesia": "NEVER_RUN", "news-antara": "NEVER_RUN", "news-cnbcindonesia": "NEVER_RUN", "news-detik": "NEVER_RUN", "news-investortrust": "NEVER_RUN",
+    });
+    expect(health.data.unavailable.find((row) => row.route === "/v1/announcements")?.status).toBe("SOURCE_BLOCKED");
     expect(health.data.eodSessions[0]).toMatchObject({ date: "2026-10-16", status: "PARTIAL" });
   });
 });

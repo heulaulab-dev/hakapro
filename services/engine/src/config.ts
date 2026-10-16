@@ -15,6 +15,9 @@ const envSchema = z.object({
   // Minimum 1 minute: TradingView's scanner is 10 min delayed and cached, so polling faster gains nothing (§5.11).
   ENGINE_INTRADAY_INTERVAL_MINUTES: z.coerce.number().int().min(1).max(60).default(5),
   ENGINE_INTRADAY_RETENTION_DAYS: z.coerce.number().int().min(1).max(365).default(30),
+  // News RSS polling inside 06:00–22:00 WIB (§5.11 item 4); at least 5 minutes, the feeds update in minutes at most.
+  ENGINE_NEWS_INTERVAL_MINUTES: z.coerce.number().int().min(5).max(240).default(15),
+  ENGINE_NEWS_RETENTION_DAYS: z.coerce.number().int().min(1).max(3650).default(180),
   ENGINE_SCHEDULER_ENABLED: flag(true),
   ENGINE_MIGRATE_ON_START: flag(true),
   ENGINE_RAW_S3_ENDPOINT: optionalSecret,
@@ -40,6 +43,7 @@ export type EngineConfig = {
   diskStopPercent: number;
   fetch: { minIntervalMs: number; concurrency: number };
   intraday: { intervalMinutes: number; retentionDays: number };
+  news: { intervalMinutes: number; retentionDays: number };
   schedulerEnabled: boolean;
   migrateOnStart: boolean;
   /** Null → local-directory fallback under `${dataDir}/raw`. */
@@ -75,6 +79,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     diskStopPercent: e.ENGINE_DISK_STOP_PERCENT,
     fetch: { minIntervalMs: e.ENGINE_FETCH_MIN_INTERVAL_MS, concurrency: e.ENGINE_FETCH_CONCURRENCY },
     intraday: { intervalMinutes: e.ENGINE_INTRADAY_INTERVAL_MINUTES, retentionDays: e.ENGINE_INTRADAY_RETENTION_DAYS },
+    news: { intervalMinutes: e.ENGINE_NEWS_INTERVAL_MINUTES, retentionDays: e.ENGINE_NEWS_RETENTION_DAYS },
     schedulerEnabled: e.ENGINE_SCHEDULER_ENABLED,
     migrateOnStart: e.ENGINE_MIGRATE_ON_START,
     rawS3: s3Set === s3Parts.length

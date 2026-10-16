@@ -3,16 +3,19 @@
 import { timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 import {
-  actionsSchema, announcementItemSchema, fundamentalsSchema, marketOverviewSchema, newsItemSchema, screenRequestSchema,
-  screenResultSchema, securitySchema, signalsSchema, stockSchema,
+  actionsCalendarSchema, actionsSchema, announcementItemSchema, fundamentalsSchema, macroSchema, marketOverviewSchema, newsItemSchema,
+  screenRequestSchema, screenResultSchema, securitySchema, signalsSchema, stockSchema,
 } from "@/server/schemas/idx-bei";
-import { symbolSchema } from "@/server/schemas/inputs";
+import { dateSchema, symbolSchema } from "@/server/schemas/inputs";
 import type { SourceHealth } from "../db/repos";
 import type { PauseGuard } from "../schedule/pause";
 import type { Scheduler } from "../schedule/scheduler";
 import type { Logger } from "../log";
 import { nullLogger } from "../log";
 import { DEFAULT_CANDLES, MAX_CANDLES, serveActions, serveMarket, serveSecurities, serveSignals, serveStock, type Served } from "../serve/market";
+import {
+  ACTIONS_MAX_RANGE_DAYS, defaultActionsRange, NEWS_DEFAULT_PAGE_SIZE, NEWS_MAX_PAGE, NEWS_MAX_PAGE_SIZE, serveActionsCalendar, serveMacro, serveNews,
+} from "../serve/market-info";
 import type { MarketStore } from "../serve/store";
 import { envelope, servedMeta, unavailableMeta } from "./envelope";
 
@@ -48,6 +51,29 @@ function tokenMatches(header: string | null, expected: string): boolean {
 }
 
 const jobIdSchema = z.string().regex(/^[a-z0-9][a-z0-9-]{0,63}$/);
+
+/** Contract routes answered with an empty `UNAVAILABLE` form (or a typed 404), and why; listed on /v1/meta/health. */
+export const UNAVAILABLE_ROUTES = [
+  {
+    route: "/v1/announcements", status: "SOURCE_BLOCKED",
+    reason: "IDX disclosures (keterbukaan informasi) are published only on www.idx.co.id, which answers the engine's user agent with a Cloudflare HTTP 403 (DATA-ENGINE.md §5.0, §5.4). No fetcher is configured, and none will be until an IDX allowlist or data licence exists (§8.5).",
+  },
+  { route: "/v1/stocks/{s}/fundamentals", status: "NOT_BUILT", reason: "Financial statements arrive with E5." },
+  { route: "POST /v1/screener", status: "NOT_BUILT", reason: "The screener arrives with E5." },
+  { route: "/v1/stocks/{s}/profile", status: "SOURCE_BLOCKED", reason: "Company profiles come from IDX (blocked, §5.0); answered with 404 NO_DATA." },
+] as const;
+
+const pageParam = (max: number, fallback: number) => z.string().regex(/^\d{1,6}$/).transform(Number).pipe(z.number().int().min(1).max(max)).optional().transform((value) => value ?? fallback);
+const newsQuerySchema = z.object({ page: pageParam(NEWS_MAX_PAGE, 1), page_size: pageParam(NEWS_MAX_PAGE_SIZE, NEWS_DEFAULT_PAGE_SIZE), symbol: symbolSchema.optional() });
+const DAY_MS = 86_400_000;
+/** A calendar date that exists (2026-02-31 does not). */
+const realDate = (value: string) => {
+  const date = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+};
+
+/** A query parameter, with an empty value treated as absent. */
+const param = (url: URL, name: string) => url.searchParams.get(name) || undefined;
 
 export function createApp(deps: AppDeps): (request: Request) => Promise<Response> {
   const now = deps.now ?? (() => new Date());
@@ -87,7 +113,10 @@ export function createApp(deps: AppDeps): (request: Request) => Promise<Response
       const [sources, pause, eodSessions] = await Promise.all([deps.sourceHealth(), deps.pause.check(), deps.eodSessions?.() ?? Promise.resolve([])]);
       // Operational status, not market data: meta.freshness stays UNAVAILABLE.
       return json({
-        data: { sources, scheduler: { paused: pause.paused, pauseReason: pause.reason, diskPercent: pause.diskPercent, diskStopPercent: pause.diskStopPercent, jobs: deps.scheduler.status() }, rawStore: deps.rawStoreKind, eodSessions },
+        data: {
+          sources, scheduler: { paused: pause.paused, pauseReason: pause.reason, diskPercent: pause.diskPercent, diskStopPercent: pause.diskStopPercent, jobs: deps.scheduler.status() },
+          rawStore: deps.rawStoreKind, eodSessions, unavailable: UNAVAILABLE_ROUTES,
+        },
         meta: unavailableMeta(at),
       });
     }
@@ -112,8 +141,27 @@ export function createApp(deps: AppDeps): (request: Request) => Promise<Response
     if (path === "/v1/securities") {
       return respond(securitySchema.array(), market ? await serveSecurities(market, (url.searchParams.get("q") ?? "").slice(0, 64), at) : null, []);
     }
-    if (path === "/v1/news") return json(envelope(newsItemSchema.array(), [], unavailableMeta(at)));
+    if (path === "/v1/news") {
+      const query = newsQuerySchema.safeParse({ page: param(url, "page"), page_size: param(url, "page_size"), symbol: param(url, "symbol") });
+      if (!query.success) return error(400, "BAD_REQUEST", "Invalid page, page_size or symbol");
+      const { page, page_size: pageSize, symbol } = query.data;
+      return respond(newsItemSchema.array(), market ? await serveNews(market, { page, pageSize, symbol }, at) : null, []);
+    }
+    // Blocked at the source (see UNAVAILABLE_ROUTES): always the contract's empty form, whatever the query.
     if (path === "/v1/announcements") return json(envelope(announcementItemSchema.array(), [], unavailableMeta(at)));
+    if (path === "/v1/macro") {
+      const served = market ? await serveMacro(market, at) : null;
+      return respond(macroSchema, served, { series: [] });
+    }
+    if (path === "/v1/actions") {
+      const fallback = defaultActionsRange(at);
+      const from = dateSchema.safeParse(param(url, "from") ?? fallback.from);
+      const to = dateSchema.safeParse(param(url, "to") ?? fallback.to);
+      if (!from.success || !to.success || !realDate(from.data) || !realDate(to.data)) return error(400, "BAD_REQUEST", "from and to must be YYYY-MM-DD dates");
+      const span = (Date.parse(to.data) - Date.parse(from.data)) / DAY_MS;
+      if (span < 0 || span > ACTIONS_MAX_RANGE_DAYS) return error(400, "BAD_REQUEST", `from must not be after to, and the range is at most ${ACTIONS_MAX_RANGE_DAYS} days`);
+      return respond(actionsCalendarSchema, market ? await serveActionsCalendar(market, { from: from.data, to: to.data }, at) : null, []);
+    }
     if (path === "/v1/signals") {
       const served = market ? await serveSignals(market, at) : null;
       // No trading date can be vouched for without foreign data; the schema has no empty form, so this is a typed miss.
