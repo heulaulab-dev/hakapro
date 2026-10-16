@@ -1,7 +1,16 @@
+import { readFileSync } from "node:fs";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import type { Clock } from "../src/fetch/rate-limit";
+
+const FIXTURES = fileURLToPath(new URL("./fixtures/", import.meta.url));
+
+/** A recorded (trimmed) source response from test/fixtures/. */
+export function fixture(name: string): string {
+  return readFileSync(join(FIXTURES, name), "utf8");
+}
 
 /** Virtual clock: sleep advances time instantly and records each wait. */
 export function fakeClock(start = 0): Clock & { sleeps: number[]; advance(ms: number): void } {
