@@ -12,6 +12,7 @@ import { WhyMatchedDrawer } from "@/components/market/why-matched-drawer";
 import { Link } from "@/i18n/navigation";
 import { useStrategies } from "@/lib/api/hooks";
 import { freshnessMeta } from "@/lib/freshness";
+import { candidatesFor } from "@/lib/strategies/contract";
 
 export function StrategyDetailView({ id }: { id: string }) {
   const t = useTranslations();
@@ -26,16 +27,17 @@ export function StrategyDetailView({ id }: { id: string }) {
       </Link>
       <DataState query={query}>
         {(envelope) => {
-          const strategy = envelope.data.strategies.find((candidate) => candidate.id === id);
+          const strategy = envelope.data.strategies.find((item) => item.id === id);
           if (!strategy) return <EmptyState title={t("strategies.notFound")} />;
           const meta = freshnessMeta(envelope);
-          const selected = strategy.matches.find((match) => match.symbol === why) ?? null;
+          const candidates = candidatesFor(envelope.data, strategy.id);
+          const selected = candidates.find((candidate) => candidate.symbol === why) ?? null;
           return (
             <>
-              <SectionHeader as="h1" title={strategy.name} description={strategy.description ?? undefined} meta={meta} />
+              <SectionHeader as="h1" title={strategy.label} description={strategy.description ?? undefined} meta={meta} />
               <ResearchDisclaimer />
-              <ScreenerTable matches={strategy.matches} meta={meta} caption={strategy.name} onWhy={(match) => void setWhy(match.symbol)} />
-              <WhyMatchedDrawer match={selected} strategy={strategy} meta={meta} onClose={() => void setWhy(null)} />
+              <ScreenerTable candidates={candidates} meta={meta} caption={strategy.label} onWhy={(candidate) => void setWhy(candidate.symbol)} />
+              <WhyMatchedDrawer candidate={selected} strategy={strategy} meta={meta} onClose={() => void setWhy(null)} />
             </>
           );
         }}

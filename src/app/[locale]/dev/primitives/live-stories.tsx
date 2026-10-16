@@ -20,13 +20,15 @@ import { UrlTabs } from "@/components/layout/url-tabs";
 import { ChartCard } from "@/components/market/chart-card";
 import { InsightCard } from "@/components/market/insight-card";
 import { MetricCard } from "@/components/market/metric-card";
+import { screenContextObservations, screenContextVersion } from "@/components/market/screen-context";
 import { StockHeader } from "@/components/market/stock-header";
 import { Button } from "@/components/ui/button";
 import { useBrokerSummary, useHistory, useInsiders, useMarketCap, useStrategies } from "@/lib/api/hooks";
 import type { BrokerRow, HistoryRow, InsiderRow, MarketCapRow } from "@/lib/api/market";
 import { sliceByRange } from "@/lib/charts/range";
 import { freshnessMeta } from "@/lib/freshness";
-import { formatDate, formatIdr, formatPercent, formatValue, formatVolume, type Locale } from "@/lib/format";
+import { formatDate, formatIdr, formatPercent, formatVolume, type Locale } from "@/lib/format";
+import { candidatesFor } from "@/lib/strategies/contract";
 
 const SYMBOL = "BBCA";
 
@@ -155,13 +157,12 @@ function StrategyInsight() {
   return (
     <DataState query={query}>
       {(envelope) => {
-        const screen = envelope.data;
+        const board = envelope.data;
         const observations = [
-          screen.marketCondition && { id: "condition", tone: "neutral" as const, text: t("strategy.marketCondition", { label: screen.marketCondition.label, avg: formatPercent(screen.marketCondition.averageChangePercent, locale) }) },
-          screen.universe && { id: "universe", tone: "neutral" as const, text: t("strategy.universe", { covered: formatValue(screen.universe.covered, "number", locale), liquid: formatValue(screen.universe.liquid, "number", locale), skipped: formatValue(screen.universe.skipped, "number", locale) }) },
-          ...screen.strategies.map((strategy) => ({ id: strategy.id, tone: "info" as const, text: `${strategy.name}: ${t("strategy.matches", { count: strategy.matches.length })}` })),
-        ].filter((observation): observation is NonNullable<typeof observation> => Boolean(observation));
-        return <InsightCard title={t("strategy.insightTitle")} description={screen.screenerVersion ?? undefined} observations={observations} meta={freshnessMeta(envelope)} />;
+          ...screenContextObservations(board.contexts, t, locale),
+          ...board.strategies.map((strategy) => ({ id: strategy.id, tone: "info" as const, text: `${strategy.label}: ${t("strategy.matches", { count: candidatesFor(board, strategy.id).length })}` })),
+        ];
+        return <InsightCard title={t("strategy.insightTitle")} description={screenContextVersion(board.contexts)} observations={observations} meta={freshnessMeta(envelope)} />;
       }}
     </DataState>
   );
@@ -176,8 +177,8 @@ function StrategyStory() {
         const strategy = envelope.data.strategies[0];
         return (
           <div className="flex flex-col gap-3">
-            <SectionHeader title={`${t("strategy.screenTitle")}: ${strategy.name}`} description={strategy.description ?? undefined} />
-            <ScreenerTable matches={strategy.matches} meta={freshnessMeta(envelope)} caption={strategy.name} />
+            <SectionHeader title={`${t("strategy.screenTitle")}: ${strategy.label}`} description={strategy.description ?? undefined} />
+            <ScreenerTable candidates={candidatesFor(envelope.data, strategy.id)} meta={freshnessMeta(envelope)} caption={strategy.label} />
           </div>
         );
       }}

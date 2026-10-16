@@ -12,13 +12,14 @@ import { Panel } from "@/components/layout/panel";
 import { SectionHeader } from "@/components/layout/section-header";
 import { ChangeValue } from "@/components/market/change-value";
 import { InsightCard } from "@/components/market/insight-card";
-import { screenContextObservations } from "@/components/market/screen-context";
+import { screenContextObservations, screenContextVersion } from "@/components/market/screen-context";
 import { Link } from "@/i18n/navigation";
 import { useMarketOverview, useNews, useQuotes, useStrategies } from "@/lib/api/hooks";
 import { useWatchlist } from "@/lib/watchlist";
 import { QuoteList } from "@/components/data/quote-list";
 import { freshnessMeta } from "@/lib/freshness";
 import { formatDate, formatValue, type Locale } from "@/lib/format";
+import { candidatesFor } from "@/lib/strategies/contract";
 
 /** Home answers "what matters now" — each block shows its own freshness or why it can't. */
 export function HomeView({ viewer }: { viewer: ViewerSummary }) {
@@ -34,7 +35,7 @@ export function HomeView({ viewer }: { viewer: ViewerSummary }) {
 
       <div className="grid gap-4 lg:grid-cols-2">
         <DataState query={strategies} compact>
-          {(envelope) => <div data-testid="home-condition"><InsightCard className="h-full" title={t("home.marketCondition")} description={envelope.data.screenerVersion ?? undefined} observations={screenContextObservations(envelope.data, t, locale)} meta={freshnessMeta(envelope)} /></div>}
+          {(envelope) => <div data-testid="home-condition"><InsightCard className="h-full" title={t("home.marketCondition")} description={screenContextVersion(envelope.data.contexts)} observations={screenContextObservations(envelope.data.contexts, t, locale)} meta={freshnessMeta(envelope)} /></div>}
         </DataState>
         <Panel testId="home-indices" title={t("home.indices")} meta={market.data ? freshnessMeta(market.data) : undefined}>
           <DataState query={market} compact>
@@ -61,17 +62,20 @@ export function HomeView({ viewer }: { viewer: ViewerSummary }) {
         <DataState query={strategies} compact isEmpty={(envelope) => envelope.data.strategies.length === 0}>
           {(envelope) => (
             <div className="flex flex-col gap-4">
-              {envelope.data.strategies.slice(0, 3).map((strategy) => (
-                <div key={strategy.id} className="flex flex-col gap-1">
-                  <Link href={`/discover/strategies/${strategy.id}`} className="lead-style flex items-center justify-between gap-2 font-medium hover:underline" data-testid={`home-strategy-${strategy.id}`}>
-                    {strategy.name}
-                    <span className="caption-style font-normal text-subtle">{t("strategy.matches", { count: strategy.matches.length })}</span>
-                  </Link>
-                  {strategy.matches.slice(0, 5).map((match) => (
-                    <StockRow key={match.symbol} symbol={match.symbol} name={match.name} trailing={<span className="hidden sm:block"><CriteriaList criteria={match.criteria} /></span>} />
-                  ))}
-                </div>
-              ))}
+              {envelope.data.strategies.slice(0, 3).map((strategy) => {
+                const candidates = candidatesFor(envelope.data, strategy.id);
+                return (
+                  <div key={strategy.id} className="flex flex-col gap-1">
+                    <Link href={`/discover/strategies/${strategy.id}`} className="lead-style flex items-center justify-between gap-2 font-medium hover:underline" data-testid={`home-strategy-${strategy.id}`}>
+                      {strategy.label}
+                      <span className="caption-style font-normal text-subtle">{t("strategy.matches", { count: candidates.length })}</span>
+                    </Link>
+                    {candidates.slice(0, 5).map((candidate) => (
+                      <StockRow key={candidate.symbol} symbol={candidate.symbol} name={candidate.name} trailing={<span className="hidden sm:block"><CriteriaList reasons={candidate.reasons} /></span>} />
+                    ))}
+                  </div>
+                );
+              })}
               <ResearchDisclaimer />
             </div>
           )}

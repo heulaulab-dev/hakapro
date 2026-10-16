@@ -8,24 +8,24 @@ import { StatusBadge } from "@/components/feedback/status-badge";
 import { Button } from "@/components/ui/button";
 import { stockHref } from "@/components/layout/nav-config";
 import { Link } from "@/i18n/navigation";
-import type { Criterion, StrategyMatch } from "@/lib/api/market";
 import type { FreshnessMeta } from "@/lib/freshness";
+import { criteriaOf, textsOf, type Reason, type ScreenerCandidate } from "@/lib/strategies/contract";
 import { DataTable } from "./data-table";
 
-/** "Why matched" as observed criteria. Unknown provider flags stay visible as "unrecognized". */
-export function CriteriaList({ criteria }: { criteria: Criterion[] }) {
+/** "Why matched" as observed criteria. Reasons a source emits but HAKAPRO can't word stay visible as "unrecognized". */
+export function CriteriaList({ reasons }: { reasons: Reason[] }) {
   const t = useTranslations("criteria");
   return (
     <span className="flex flex-wrap gap-1">
-      {criteria.map((criterion, index) =>
-        criterion.kind === "recognized" ? (
-          <StatusBadge key={`${criterion.key}-${index}`} tone="info" data-criterion={criterion.key}>
-            {t(criterion.key)}
+      {criteriaOf(reasons).map((reason, index) =>
+        reason.kind === "criterion" ? (
+          <StatusBadge key={`${reason.key}-${index}`} tone="info" data-criterion={reason.key}>
+            {t(reason.key)}
           </StatusBadge>
         ) : (
-          <StatusBadge key={`unknown-${index}`} tone="neutral" icon={<HelpCircle />} title={criterion.providerLabel ?? criterion.flag} data-criterion="unrecognized">
+          <StatusBadge key={`unknown-${index}`} tone="neutral" icon={<HelpCircle />} title={reason.label ?? reason.code} data-criterion="unrecognized">
             {t("unrecognized")}
-            {criterion.providerLabel ? `: ${criterion.providerLabel}` : ""}
+            {reason.label ? `: ${reason.label}` : ""}
           </StatusBadge>
         ),
       )}
@@ -33,11 +33,11 @@ export function CriteriaList({ criteria }: { criteria: Criterion[] }) {
   );
 }
 
-/** Strategy/screen results with the reasons each stock matched. */
-export function ScreenerTable({ matches, meta, caption, maxHeight, onWhy }: { matches: StrategyMatch[]; meta: FreshnessMeta; caption: string; maxHeight?: number; onWhy?: (match: StrategyMatch) => void }) {
+/** Strategy results with the reasons each stock matched. */
+export function ScreenerTable({ candidates, meta, caption, maxHeight, onWhy }: { candidates: ScreenerCandidate[]; meta: FreshnessMeta; caption: string; maxHeight?: number; onWhy?: (candidate: ScreenerCandidate) => void }) {
   const t = useTranslations("strategy");
   const tWhy = useTranslations("strategies");
-  const columns = useMemo<ColumnDef<StrategyMatch, unknown>[]>(() => [
+  const columns = useMemo<ColumnDef<ScreenerCandidate, unknown>[]>(() => [
     {
       id: "symbol",
       accessorKey: "symbol",
@@ -50,14 +50,14 @@ export function ScreenerTable({ matches, meta, caption, maxHeight, onWhy }: { ma
       ),
     },
     { id: "name", accessorKey: "name", header: t("company"), cell: ({ row }) => <span className="text-muted-foreground">{row.original.name}</span> },
-    { id: "criteria", header: t("whyMatched"), enableSorting: false, cell: ({ row }) => <CriteriaList criteria={row.original.criteria} /> },
+    { id: "criteria", header: t("whyMatched"), enableSorting: false, cell: ({ row }) => <CriteriaList reasons={row.original.reasons} /> },
     {
       id: "note", header: t("providerNote"), enableSorting: false,
       cell: ({ row }) => (
         <span className="flex flex-col gap-1">
-          {row.original.pattern && <span className="caption-style text-soft">{row.original.pattern}</span>}
+          {textsOf(row.original.reasons, "pattern").map((pattern) => <span key={pattern} className="caption-style text-soft">{pattern}</span>)}
           <span className="flex flex-wrap gap-1">
-            {row.original.notes.map((note) => <StatusBadge key={note} tone="neutral">{note}</StatusBadge>)}
+            {textsOf(row.original.reasons, "note").map((note) => <StatusBadge key={note} tone="neutral">{note}</StatusBadge>)}
           </span>
         </span>
       ),
@@ -67,8 +67,8 @@ export function ScreenerTable({ matches, meta, caption, maxHeight, onWhy }: { ma
           <Button variant="outline" size="sm" onClick={() => onWhy(row.original)} data-testid={`why-${row.original.symbol}`}>
             {tWhy("why")}
           </Button>
-        ) } satisfies ColumnDef<StrategyMatch, unknown>]
+        ) } satisfies ColumnDef<ScreenerCandidate, unknown>]
       : []),
   ], [t, tWhy, onWhy]);
-  return <DataTable testId="screener-table" columns={columns} data={matches} meta={meta} caption={caption} getRowId={(row) => row.symbol} maxHeight={maxHeight} />;
+  return <DataTable testId="screener-table" columns={columns} data={candidates} meta={meta} caption={caption} getRowId={(row) => row.symbol} maxHeight={maxHeight} />;
 }

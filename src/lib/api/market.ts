@@ -3,6 +3,7 @@
  * (src/server/market/types.ts); every response is validated again here.
  */
 import { z } from "zod";
+import { strategyBoardSchema } from "@/lib/strategies/contract";
 import { fetchEnvelope } from "./envelope";
 
 const n = z.number();
@@ -37,23 +38,6 @@ export type BrokerSummary = z.infer<typeof brokerSummarySchema>;
 export type BrokerLevel = BrokerSummary["levels"][number];
 export type BrokerSummaryQuery = { startDate?: string; endDate?: string; flow?: BrokerFlow; net?: boolean; brokerLimit?: number; levelLimit?: number };
 
-export const criterionSchema = z.discriminatedUnion("kind", [
-  z.object({ kind: z.literal("recognized"), key: z.string(), flag: z.string() }),
-  z.object({ kind: z.literal("unrecognized"), flag: z.string(), providerLabel: z.string().nullable() }),
-]);
-export const strategyMatchSchema = z.object({ symbol: z.string(), name: z.string(), criteria: z.array(criterionSchema), pattern: z.string().nullable(), notes: z.array(z.string()) });
-export const strategySchema = z.object({ id: z.string(), name: z.string(), description: z.string().nullable(), matches: z.array(strategyMatchSchema) });
-export const strategyScreenSchema = z.object({
-  date: z.string().nullable(),
-  screenerVersion: z.string().nullable(),
-  marketCondition: z.object({ label: z.string(), averageChangePercent: nn }).nullable(),
-  universe: z.object({ covered: n, liquid: n, skipped: n }).nullable(),
-  strategies: z.array(strategySchema),
-});
-export type Criterion = z.infer<typeof criterionSchema>;
-export type StrategyMatch = z.infer<typeof strategyMatchSchema>;
-export type Strategy = z.infer<typeof strategySchema>;
-export type StrategyScreen = z.infer<typeof strategyScreenSchema>;
 
 export const insiderRowSchema = z.object({
   person: z.string(), date: z.string(), action: z.enum(["BUY", "SELL", "CROSS", "OTHER"]), nationality: z.string(), roles: z.array(z.string()), broker: z.string().nullable(),
@@ -84,7 +68,8 @@ export const marketApi = {
     fetchEnvelope(`/api/history/${sym(symbol)}${qs({ frame: query.frame, limit: query.limit, start_date: query.startDate, end_date: query.endDate })}`, historySchema, { signal }),
   brokerSummary: (symbol: string, query: BrokerSummaryQuery = {}, signal?: AbortSignal) =>
     fetchEnvelope(`/api/broker-summary/${sym(symbol)}${qs({ start_date: query.startDate, end_date: query.endDate, flow: query.flow === "all" ? undefined : query.flow, net: query.net, broker_limit: query.brokerLimit, level_limit: query.levelLimit })}`, brokerSummarySchema, { signal }),
-  strategies: (signal?: AbortSignal) => fetchEnvelope("/api/strategies", strategyScreenSchema, { signal }),
+  /** Strategy Engine contract (src/lib/strategies/contract.ts), whichever engines are registered. */
+  strategies: (signal?: AbortSignal) => fetchEnvelope("/api/strategies", strategyBoardSchema, { signal }),
   insiders: (symbol: string, signal?: AbortSignal) => fetchEnvelope(`/api/insiders/${sym(symbol)}`, insidersSchema, { signal }),
   marketCap: (query: MarketCapQuery = {}, signal?: AbortSignal) =>
     fetchEnvelope(`/api/market-cap${qs({ page: query.page, per_page: query.perPage, date: query.date, symbols: query.symbols?.join(",") })}`, marketCapSchema, { signal }),

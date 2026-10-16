@@ -285,6 +285,22 @@ The user kept the layout and asked for heulaulab-dashboard's design system:
 - Acceptance (e2e, `tests/e2e/landing.spec.ts`): absolute canonical/hreflang/og:image on this origin, and no horizontal overflow on desktop, tablet (820 px) and mobile (Pixel 7) for both locales. The e2e server sets `BETTER_AUTH_URL` to its own origin.
 - Indonesian tagline set to "Baca pasarnya. Ikuti arusnya." (see S11).
 
+## S13: Strategy Engine contract (HAKA-18) (2026-10-16, branch `feat/strategy-engine-contract`)
+- Contract: `src/lib/strategies/contract.ts` defines Zod 4 schemas shared by the BFF and the UI.
+  - `ScreenerStrategy`: id, label, description, source, kind `EOD|REALTIME`, dataAsOf, freshness.
+  - `ScreenerCandidate`: symbol, name, strategyId, detectedAt, dataAsOf, freshness, score (nullable), reasons, metrics, source.
+  - `source` is one of `ARJUM_SCREENER | HAKAPRO_EOD_ENGINE | HAKAPRO_REALTIME_ENGINE`. The ticket's `HEULATRADE_*` names became `HAKAPRO_*`.
+  - Reasons: `criterion` (a key HAKAPRO words, `criteria.<key>`), `unrecognized` (shown, never dropped), and the source's `pattern`/`note` text.
+  - Metrics carry `{ key, value: number | null, unit }`. Units are the parse-number units, now `QUANTITY_UNITS` in `src/lib/format`. A missing value renders "—", never 0.
+- Engines: `StrategySource` (`context`, `list`, `candidates(strategyId)`) in `src/server/strategies`. The arjum screener adapter (`arjum-screener.ts`) is the only registered source. It maps the `parseStrategyScreen` output and reads the screener once per request.
+  - The arjum adapter sets no score and no metrics. The row's win rate, potensi and drawdown are never mapped (§9.5).
+  - `HAKAPRO_EOD_ENGINE` and `HAKAPRO_REALTIME_ENGINE` are enum values only, because their rules aren't defined yet (HAKA-17).
+- `/api/strategies` now serves `{ contexts, strategies, candidates }` in the usual `{data, freshness, asOf, period?, source}` envelope.
+  - The envelope is as fresh as the stalest source and as of the oldest data. With one source, it's the same as before.
+  - A strategy id already taken by an earlier source is skipped and logged (`strategy_id_collision`).
+- UI: Home, Strategies, Strategy detail, the why-matched drawer, ScreenerTable and the dev primitives read only the contract. Visible output is unchanged.
+  - The drawer lists metrics only when an engine sends some, so nothing new shows for arjum.
+  - The provider lane (`MarketDataSource.strategies()`, the why-matched parser and its snapshot) is unchanged.
 
 ## S14: Ownership change engine + free-float methodology draft (HAKA-33, HAKA-34) (2026-10-16, branch `feat/ownership-engine`)
 - Pure domain layer in `src/lib/ownership/`. No UI, no ingestion, and no network. Tests use synthetic fixtures only (`TEST1`, invented holders).
