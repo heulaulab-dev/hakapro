@@ -219,6 +219,42 @@ describe("Scheduler", () => {
     await scheduler.waitFor("eod");
   });
 
+  it("makes low-priority background jobs give way to other background jobs too", async () => {
+    const backfillGate = deferred();
+    const fundamentalsStarted = deferred();
+    let yielded = false;
+    let gate = backfillGate.promise;
+    const backfill: JobDefinition = { id: "backfill", background: true, trigger: { kind: "cron", spec: "*/10 * * * *" }, run: async () => { await gate; } };
+    const fundamentals: JobDefinition = {
+      id: "fundamentals", background: true, lowPriority: true, trigger: { kind: "cron", spec: "*/5 * * * *" },
+      async run(ctx: JobContext) {
+        fundamentalsStarted.resolve();
+        for (let i = 0; i < 1000; i += 1) {
+          if (ctx.shouldYield()) { yielded = true; return { status: "YIELDED" }; }
+          await new Promise((resolve) => setTimeout(resolve, 1));
+        }
+      },
+    };
+    const { scheduler, runs } = make([backfill, fundamentals]);
+    // Both due in the same minute: the ordinary background job goes first, the low-priority one is busy.
+    expect(await scheduler.tick(wib("2026-10-14", "20:00"))).toEqual(["backfill"]);
+    expect(await scheduler.trigger("fundamentals")).toEqual({ status: "busy" });
+    backfillGate.resolve();
+    await scheduler.waitFor("backfill");
+
+    // Running low-priority job: a background start (which is allowed) makes it yield.
+    const second = deferred();
+    gate = second.promise;
+    expect(await scheduler.tick(wib("2026-10-14", "20:05"))).toEqual(["fundamentals"]);
+    await fundamentalsStarted.promise;
+    expect((await scheduler.trigger("backfill")).status).toBe("started");
+    await scheduler.waitFor("fundamentals");
+    expect(yielded).toBe(true);
+    expect([...runs.runs.values()].find((run) => run.jobId === "fundamentals")?.status).toBe("YIELDED");
+    second.resolve();
+    await scheduler.waitFor("backfill");
+  });
+
   it("runs window jobs inside their daily window and validates them", async () => {
     const job = counter("news", { kind: "window", everyMinutes: 15, from: "06:00", to: "22:00" });
     const { scheduler } = make([job]);
