@@ -196,3 +196,14 @@ export function formatValue(value: number | null | undefined, format: ValueForma
     case "lots": return formatVolume(value, locale, { unit: "lots" });
   }
 }
+
+/** Units a parsed provider number carries (src/server/services/parse-number.ts) and a strategy metric declares. */
+export const QUANTITY_UNITS = ["shares", "lots", "idr", "percent", "count"] as const;
+export type QuantityUnit = (typeof QUANTITY_UNITS)[number];
+
+const QUANTITY_FORMAT: Record<QuantityUnit, ValueFormat> = { shares: "shares", lots: "lots", idr: "idr", percent: "percentPlain", count: "number" };
+
+/** A number with a declared unit. A missing value stays "—" (unavailable), never 0. */
+export function formatQuantity(value: number | null | undefined, unit: QuantityUnit, locale: Locale): string {
+  return formatValue(value, QUANTITY_FORMAT[unit], locale);
+}

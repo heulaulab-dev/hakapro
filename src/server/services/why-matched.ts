@@ -4,6 +4,7 @@
  *
  * Source: arjum `/api/screener/latest` (`bucket`, `summary` flags, `note`, and the legend in `raw`).
  */
+import type { CriterionKey } from "@/lib/strategies/contract";
 import type { ScreenerResponse } from "@/server/schemas/arjum";
 import { parseIndonesianDate } from "./screener-date";
 import { parseProviderNumber } from "./parse-number";
@@ -22,7 +23,7 @@ export const KNOWN_FLAGS = {
   "🚀⚠️": { key: "pumpRisk", providerLabel: "pompa" },
   "⏰": { key: "lateEntry", providerLabel: "telat" },
   "🔥": { key: "climax", providerLabel: "klimaks" },
-} as const;
+} as const satisfies Record<string, { key: CriterionKey; providerLabel: string }>;
 
 /**
  * Recognized but deliberately not shown: the direction arrow is the provider's forward-looking call
@@ -30,7 +31,7 @@ export const KNOWN_FLAGS = {
  */
 export const OMITTED_FLAGS = ["⬆️", "⬇️", "⬆", "⬇"] as const;
 
-export type CriterionKey = (typeof KNOWN_FLAGS)[keyof typeof KNOWN_FLAGS]["key"];
+export type { CriterionKey };
 export type Criterion =
   | { kind: "recognized"; key: CriterionKey; flag: string }
   | { kind: "unrecognized"; flag: string; providerLabel: string | null };

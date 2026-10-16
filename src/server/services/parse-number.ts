@@ -6,8 +6,9 @@
  * 122.04 *miliar* (10^9), while analysis text "-57M lembar" means 57 *million*. Callers must
  * therefore state the scale convention per field; an abbreviation without one is rejected.
  */
+import type { QuantityUnit } from "@/lib/format";
 
-export type QuantityUnit = "shares" | "lots" | "idr" | "percent" | "count";
+export type { QuantityUnit };
 export type Separators = "en" | "id";
 /** `id`: rb/K=10^3, jt=10^6, M=10^9 (miliar), T=10^12 (triliun). `en`: K=10^3, M=10^6, B=10^9, T=10^12. */
 export type ScaleConvention = "id" | "en";
