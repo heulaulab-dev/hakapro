@@ -6,6 +6,7 @@ Experimental internal collector and API for IDX data. Spec: [`docs/features/DATA
 - E2 (HAKA-62): universe, EOD prices, the 2020-01-01 backfill, index EOD and arjum foreign flow, served on the idx-bei `/v1` contract.
 - E2b (HAKA-67): session-window intraday snapshots, served as `DELAYED`.
 - E3 (HAKA-63): market info: news RSS headlines, BI-Rate and JISDOR, the market-wide corporate-action calendar; announcements stay unavailable (IDX blocked).
+- E5 (HAKA-65): financial statements from Yahoo fundamentals timeseries, derived valuation ratios (with Pasardana's own as a secondary source), `/v1/stocks/{s}/fundamentals` and `POST /v1/screener`.
 
 It is a separate Bun + TypeScript service with no Next.js. It shares code with the app through the `@/*` path: the idx-bei and arjum Zod contracts (`src/server/schemas/`), the arjum URL builder, the IDX calendar, the freshness clock, the arjum page limits and the movers ranking.
 
@@ -16,9 +17,10 @@ It is a separate Bun + TypeScript service with no Next.js. It shares code with t
 | `src/main.ts` | Entry: `Bun.serve` on `PORT`, scheduler start, graceful SIGTERM |
 | `src/engine.ts` | Wiring: DB, raw store, fetcher, the production registry (sources + jobs), scheduler, HTTP handler |
 | `src/sources/` | One module per source: URL/body builders and parsers (TradingView, Yahoo, Pasardana, arjum, the news feeds, Bank Indonesia), a small RSS/Atom reader, source policies, IDX session dates |
-| `src/jobs/` | Collection jobs: `universe`, `indices-eod`, `eod-daily`, `eod-backfill`, `foreign-flow`, `intraday`, `news`, `macro-jisdor`, `macro-bi-rate` |
-| `src/db/ingest.ts`, `src/db/market-info.ts`, `src/db/market-store.ts` | Idempotent upserts with source precedence (prices) and dedupe (news); the read store behind `/v1` |
-| `src/serve/` | Builds `/v1` payloads (quote, candles, breadth, movers, indices, foreign-flow signals, actions, news, macro, the actions calendar) from stored rows |
+| `src/jobs/` | Collection jobs: `universe`, `indices-eod`, `eod-daily`, `eod-backfill`, `foreign-flow`, `intraday`, `news`, `macro-jisdor`, `macro-bi-rate`, `fundamentals`; the `ratios` derivation |
+| `src/derive/` | Pure derivations: valuation ratios from statement lines (`ratios.ts`, formulas in its header) |
+| `src/db/ingest.ts`, `src/db/market-info.ts`, `src/db/fundamentals.ts`, `src/db/market-store.ts` | Idempotent upserts with source precedence (prices) and dedupe (news); statement lines and ratios; the read store behind `/v1` |
+| `src/serve/` | Builds `/v1` payloads (quote, candles, breadth, movers, indices, foreign-flow signals, actions, news, macro, the actions calendar, fundamentals, the screener) from stored rows |
 | `src/http/` | Routes (`/health`, `/ready`, `/v1/meta/health`, `/v1/admin/*`, idx-bei `/v1/*`) and the `{data, meta}` envelope |
 | `src/fetch/` | Polite fetcher: per-host token bucket and concurrency, honest UA, ETag/Last-Modified, URL+sha256 dedupe, raw store (R2/S3 or local), block detection |
 | `src/schedule/` | WIB cron, IDX session windows, disk/flag pause, single-flight scheduler, resumable backfill helpers (per day and per item) |
@@ -36,7 +38,7 @@ It is a separate Bun + TypeScript service with no Next.js. It shares code with t
 - Every new document is stored raw (`<source>/<YYYY-MM-DD>/<sha256>.<ext>`) and indexed in `raw_documents`. A 304 or identical bytes stores nothing new. A POST (TradingView's scanner) is indexed as its URL plus `#post-<body hash>`.
 - Every data row has `source`, `as_of` and `raw_ref`. On `daily_prices`, those describe the OHLCV; value/frequency (`value_source`, `value_raw_ref`) and foreign flow (`foreign_source`, `foreign_as_of`, `foreign_raw_ref`) keep their own provenance. Intraday data is served as `DELAYED` with its timestamp, never `LIVE`.
 
-## Sources and jobs (E2, E2b, E3)
+## Sources and jobs (E2, E2b, E3, E5)
 
 The four price sources are unofficial (§8.6): fine for the internal experiment, never for a public or paid HAKAPRO. The news feeds are public RSS (headline + link only, §2); Bank Indonesia publishes official statistics.
 
@@ -44,6 +46,7 @@ The four price sources are unofficial (§8.6): fine for the internal experiment,
 | --- | --- | --- | --- |
 | `tradingview-scanner` | `scanner.tradingview.com` | 1 request / 2 s, 1 in flight | Universe, session values, index EOD, intraday (10 min delayed) |
 | `yahoo-chart` | `query1.finance.yahoo.com` | 1 request / 3 s, 1 in flight | Daily OHLCV (`range=5d`), history from 2020-01-01, splits/dividends, IHSG `^JKSE` |
+| `yahoo-fundamentals` | `query1.finance.yahoo.com` (same limiter as the chart) | 1 request / 3 s, 1 in flight, shared with `yahoo-chart` | `/ws/fundamentals-timeseries/v1/finance/timeseries/<SYM>.JK`: 26 statement lines, annual + quarterly, one request per symbol |
 | `pasardana` | `pasardana.id` | 1 request / 3 s, 1 in flight | Sectors (IDX-IC), capitalisation, shares, free float, previous-session value/frequency |
 | `arjum` | from `ENGINE_ARJUM_BASE_URL` | 1 request / 2 s, 1 in flight | Foreign buy/sell (`/api/history/{code}?limit=20`); registered only when configured |
 | `news-cnbcindonesia` | `www.cnbcindonesia.com` | 1 request / 5 s, 1 in flight | `/market/rss` |
@@ -67,6 +70,8 @@ Schedules (WIB; "trading days" skips weekends and IDX holidays):
 | `news-retention` | 02:45, background | Prunes `news_items` published before `ENGINE_NEWS_RETENTION_DAYS` (default 180) |
 | `macro-jisdor` | 17:00 daily | BI JISDOR table, first page (latest 10 business days) → `macro_observations` |
 | `macro-bi-rate` | 17:05 daily | BI-Rate table, first page (latest 10 decisions, with the press-release link) → `macro_observations` |
+| `fundamentals` | Every 10 min at :05, 19:00–05:59, every day, background **low priority** | Yahoo fundamentals, 20 symbols per run, most liquid first → `financials`. Weekly full cycle (ISO week, Monday WIB; ~900 calls ≈ 45 min of spaced requests over one or two nights). From Thursday to Sunday inside the filing windows (15 Mar–10 May, 15 Jul–10 Aug, 15 Oct–10 Nov) a catch-up pass refetches only symbols whose newest stored quarter is older than the expected one (the newest quarter end ≥ 21 days ago). Cursor in `job_cursors`; gives way to every other job, including the EOD backfill |
+| `ratios` | 06:15, 17:15, 21:15 daily | No network: derived ratios for every symbol with statement lines → `stock_ratios` (`derived`); ratios whose inputs are now missing are removed |
 
 Precedence: Yahoo is the primary OHLC source for stocks and overwrites TradingView/Pasardana/arjum fallback rows, but never their value/frequency. Pasardana's value/frequency replace TradingView's value. TradingView is primary for `index_daily`; Yahoo `^JKSE` only fills gaps. A fallback source refreshes only rows it wrote itself.
 
@@ -74,14 +79,37 @@ News items (`news_items`) keep: the headline, the canonical link (lower-case hos
 
 Macro rows (`macro_observations`) are `(series, date)`: `BI_RATE` in percent and `JISDOR` in IDR per USD. Only the first table page is read: older rows need an ASP.NET `__VIEWSTATE` postback, which the engine does not do. A table that changes shape fails the parse (raw copy `FAILED`) instead of storing guesses. BPS is deferred until the owner registers a key (§8.7).
 
-Fallbacks when a source is `BLOCKED`: universe from Pasardana (or TradingView); session rows from TradingView/Pasardana (and arjum) when Yahoo is blocked; IHSG from Yahoo when TradingView is blocked. Intraday has no fallback: `/v1` then serves the latest EOD.
+### Fundamentals and ratios (E5)
+
+`financials` keeps one row per (symbol, period end, `annual`|`quarterly`, metric, source), as reported: `amount` lines in the filing `currency` (IDR, or USD for some coal/energy filers), `per_share` lines (EPS) in that currency per share, `shares` lines without a currency. Quarterly rows are discrete quarters; balance-sheet lines are period-end values. Metric keys: `revenue`, `grossProfit`, `operatingIncome`, `pretaxIncome`, `ebitda`, `netIncome` (owners of the parent), `netIncomeCommon`, `epsBasic`, `epsDiluted`, `averageSharesBasic`, `averageSharesDiluted`, `totalAssets`, `totalLiabilities` (net of minority interest), `equity` (parent), `totalEquity` (incl. NCI), `totalDebt`, `cash`, `currentAssets`, `currentLiabilities`, `sharesOutstanding`, `sharesIssued`, `operatingCashFlow`, `capitalExpenditure`, `freeCashFlow`, `dividendsPaid`, `commonDividendsPaid` (cash-flow signs as reported). A line Yahoo leaves empty (a bank's gross profit) is not stored; a later fetch replaces a period's value (restatements). Yahoo returns ~4 annual and ~5 quarterly periods and sometimes skips a quarter (BBCA has no Q3-2025); older periods stay stored as the window moves.
+
+The `ratios` job (`src/derive/ratios.ts`, `ratios-v1`) stores, per symbol, `per`, `pbv`, `roe`, `roa`, `eps`, `der` and `dividendYield` as `derived` rows in `stock_ratios`, with the price date, the basis (`ttm-4q:<end>`, `ttm-ytd:<end>`, `annual:<end>`, `balance:<end>`, `dividends-365d`), the inputs and the provenance of the newest statement row used:
+
+| Ratio | Formula | Null when |
+| --- | --- | --- |
+| `eps` | NI_TTM × fx / shares (IDR per share) | inputs missing |
+| `per` | price / eps | eps ≤ 0 (`NON_POSITIVE_EARNINGS`) |
+| `pbv` | price / (equity × fx / shares) | equity ≤ 0 (`NON_POSITIVE_EQUITY`) |
+| `roe` | NI_TTM / equity (fraction) | equity ≤ 0 |
+| `roa` | NI_TTM / totalAssets (fraction) | assets ≤ 0 |
+| `der` | totalLiabilities / totalEquity (multiple) | totalEquity ≤ 0 |
+| `dividendYield` | cash dividends per share with an ex-date in the 365 days to the price date / price (fraction) | — (0 when the stored Yahoo price history covers the window and nothing went ex); without that coverage: \|dividends paid TTM\| × fx / (price × shares) |
+
+- NI_TTM: the four consecutive quarters ending at the newest quarter; else last annual + this fiscal year's quarters − the same quarters a year earlier; else the newest annual. Balance-sheet lines: the newest period end. Inputs whose period ended more than 550 days before the price date count as missing.
+- price: the symbol's newest close at or before the newest session. shares: listed shares from the universe (Pasardana), else the statements' `sharesOutstanding`. fx: 1 for IDR; JISDOR on or before the price date for USD filers; any other currency has no price-based ratios. ROE/ROA/DER need no FX.
+- `missing` ratios are not stored (and an older derived row is removed); `not_meaningful` ones are stored as null with a note.
+
+Pasardana's own `Per`, `Pbr` and `Roe` (a fraction) are stored by the `universe` job as `pasardana` rows (date = its `LastDate`, provenance = the GetAll page), with PER/PBV ≤ 0 stored as null. The screener uses the `derived` row whenever one exists (even a null one) and Pasardana's only otherwise: one source per ratio, never blended, and the response says which (`ratioSources`).
+
+Fallbacks when a source is `BLOCKED`: universe from Pasardana (or TradingView); session rows from TradingView/Pasardana (and arjum) when Yahoo is blocked; IHSG from Yahoo when TradingView is blocked. Intraday has no fallback: `/v1` then serves the latest EOD. Fundamentals have no second statement source (IDX is blocked): while `yahoo-fundamentals` is blocked, stored statements and ratios keep serving, and the screener falls back to Pasardana's ratios only where no derived row exists. Yahoo's two sources share one host, so a 429 on the fundamentals path also blocks `yahoo-chart`, and `fundamentals` refuses to run while `yahoo-chart` is blocked.
 
 ## Scheduler
 
 - **Cron jobs** run on five-field cron in Asia/Jakarta. `tradingDaysOnly` skips weekends and IDX holidays (for EOD jobs).
 - **Session jobs** (`{ kind: "session", everyMinutes }`, default 5 via `ENGINE_INTRADAY_INTERVAL_MINUTES`) run only inside IDX session windows, including the Friday times. They run at each session start, every N minutes, and at each session end. They never run during the lunch break or on non-trading days.
 - Each job is **single-flight**. Manual runs skip the calendar check, but not the pause or a block.
-- **Background jobs** (`background: true`: the backfill and retention) never start while another job runs. Once one does, `ctx.shouldYield()` turns true and they stop at the next batch boundary. `backfillJob()` (per day) and `itemBackfillJob()` (per symbol, used by `eod-backfill`) run from 2020-01-01 in small batches in a night window (`*/10 19-23,0-5 * * *` WIB). Their cursor is stored in `job_cursors`, so runs resume where they stopped. They stop at the day the daily EOD job owns.
+- **Background jobs** (`background: true`: the backfill and retention) never start while another job runs. Once one does, `ctx.shouldYield()` turns true and they stop at the next batch boundary.
+- **Low-priority background jobs** (`lowPriority: true`: `fundamentals`) also give way to other background jobs: they never start while any other job runs, and yield as soon as one starts. `backfillJob()` (per day) and `itemBackfillJob()` (per symbol, used by `eod-backfill`) run from 2020-01-01 in small batches in a night window (`*/10 19-23,0-5 * * *` WIB). Their cursor is stored in `job_cursors`, so runs resume where they stopped. They stop at the day the daily EOD job owns.
 - **Global pause:**
   - when disk use on `ENGINE_DATA_DIR` (statfs) goes above `ENGINE_DISK_STOP_PERCENT`, or cannot be measured;
   - while the flag file `${ENGINE_DATA_DIR}/PAUSE` exists. `POST /v1/admin/pause` and `/resume` set and clear it; use them during Coolify builds or maintenance.
@@ -93,7 +121,7 @@ Fallbacks when a source is `BLOCKED`: universe from Pasardana (or TradingView); 
 | --- | --- | --- |
 | `GET /health` | none | Liveness |
 | `GET /ready` | none | 200 when the DB answers within 4 s and the disk is at or below the stop threshold, otherwise 503 |
-| `GET /v1/meta/health` | API token | Per source: status, blocked/reason, last success/error, rows ingested. Also scheduler pause, disk %, jobs, raw store kind, the last EOD sessions (`COMPLETE`/`PARTIAL`/`STALE`, expected/present) and `unavailable`: the routes served empty on purpose and why (`SOURCE_BLOCKED` announcements and profile, `NOT_BUILT` fundamentals and screener) |
+| `GET /v1/meta/health` | API token | Per source: status, blocked/reason, last success/error, rows ingested. Also scheduler pause, disk %, jobs, raw store kind, the last EOD sessions (`COMPLETE`/`PARTIAL`/`STALE`, expected/present) and `unavailable`: the routes served empty on purpose and why (`SOURCE_BLOCKED` announcements and profile) |
 | `GET /v1/securities?q=` | API token | Active securities by symbol prefix or name (all when `q` is empty) |
 | `GET /v1/stocks/{s}?limit=` | API token | Quote from the newest daily row (`EOD`/`STALE`), or from an intraday snapshot of a newer session (`DELAYED`, WIB timestamp). Daily candles, oldest first, up to `limit` (default 500, max 5000). `404 NO_DATA` without data |
 | `GET /v1/market` | API token | Indices (intraday when newer), breadth (advancers/decliners/unchanged, value, volume, frequency) and movers (top 50 gainers, losers and most active, same liquidity rule as the app) from the latest session or intraday snapshot |
@@ -103,7 +131,8 @@ Fallbacks when a source is `BLOCKED`: universe from Pasardana (or TradingView); 
 | `GET /v1/news?page=&page_size=&symbol=` | API token | Headlines newest first (`newsItemSchema`): `date` (WIB ISO), `title`, `summary`, `url`, plus `outlet`, `symbols`, `dateEstimated`. `page_size` 1–100 (default 20). `meta.freshness` is `DELAYED` while the newest headline is under a day old, then `STALE` |
 | `GET /v1/macro` | API token | BI-Rate and JISDOR (`macroSchema`): latest value and date, the previous one, the press-release link (BI-Rate), and up to 10 observations newest first. `meta.dataAsOf` is the newest date |
 | `GET /v1/announcements` | API token | Always the empty `UNAVAILABLE` form: IDX disclosures are only on `www.idx.co.id`, which blocks the engine (Cloudflare 403, §5.4). `/v1/meta/health` lists it under `unavailable` with the reason |
-| `GET /v1/stocks/{s}/fundamentals`, `POST /v1/screener` | API token | Stubs until E5: contract-valid empty data, `meta.freshness = UNAVAILABLE` |
+| `GET /v1/stocks/{s}/fundamentals` | API token | `fundamentalsSchema`: one entry per (period end, `ANNUAL`/`QUARTERLY`), newest first; `metrics` as stored, plus `units` per metric (`IDR`, `USD`, `IDR/share`, `shares`), `currency` and `source`. `meta.dataAsOf` = the newest period end, `HISTORICAL`. Empty `UNAVAILABLE` form without statements |
+| `POST /v1/screener` | API token | `screenRequestSchema` (≤ 20 conditions, `limit` 1–1000, default 500) over every stock with a row in the newest session: `price`, `volume`, `value`, `frequency`, `foreignNetShares` (buy − sell shares), `marketCap` (close × listed shares, else the universe snapshot), `per`, `pbv`, `roe`, `roa`, `eps`, `der`, `dividendYield`, `change1D` (fraction; the app converts its percent). AND binds tighter than OR; a null value never matches. Rows most traded first; `total` counts all matches; `supportedFields` lists only fields with a value in the session; `ratioSources` names `derived`/`pasardana` per symbol and ratio. Missing values are null, never 0. `400` on an invalid request |
 | `GET /v1/stocks/{s}/profile` | API token | `404 NO_DATA` (no source) |
 | `POST /v1/admin/jobs/{id}/run`, `/v1/admin/pause`, `/v1/admin/resume`, `/v1/admin/sources/{id}/unblock` | `ENGINE_ADMIN_TOKEN` | Return 404 when the admin token is unset |
 
@@ -154,7 +183,7 @@ curl localhost:8080/v1/meta/health
 curl -X POST -H 'authorization: Bearer dev-admin' localhost:8080/v1/admin/jobs/intraday-retention/run
 ```
 
-Running `universe`, `eod-daily`, `intraday`, `news` or the `macro-*` jobs locally calls the real sources (honest UA, rate-limited). Keep `ENGINE_SCHEDULER_ENABLED=false` unless you mean to crawl, and trigger single jobs by hand.
+Running `universe`, `eod-daily`, `intraday`, `news`, `fundamentals` or the `macro-*` jobs locally calls the real sources (honest UA, rate-limited). Keep `ENGINE_SCHEDULER_ENABLED=false` unless you mean to crawl, and trigger single jobs by hand.
 
 Scripts (repo root):
 
@@ -164,13 +193,13 @@ Scripts (repo root):
 | `engine:typecheck` | Also run by `bun run typecheck` |
 | `engine:db:generate` | `drizzle-kit generate` from `db/schema.ts` |
 | `engine:db:migrate` | Apply the migrations |
-| `engine:test:e2e` | Docker PostgreSQL + the fixture world: every job, block/fallback paths, news (conditional GET, dedupe, per-outlet blocks, retention), macro, and universe → EOD → foreign → intraday → `/v1`; not part of `bun run test` or CI |
+| `engine:test:e2e` | Docker PostgreSQL + the fixture world: every job, block/fallback paths, news (conditional GET, dedupe, per-outlet blocks, retention), macro, fundamentals (order, spacing, weekly and catch-up cycles, a 429 blocking both Yahoo sources) → ratios → `/v1` fundamentals and screener, and universe → EOD → foreign → intraday → `/v1`; not part of `bun run test` or CI |
 
 Unit tests run with the root `bun run test` (parsers, fetcher, scheduler, `/v1` derivations and routes).
 
 ### Fixtures
 
-`test/fixtures/` holds trimmed real responses for the parsers, recorded on 2026-10-16 between 11:29 and 11:40 WIB with 8 requests in total (honest UA, at least 2 s apart per host, no block seen): TradingView `indonesia/scan` (5 rows) and `global/scan` (two calls: the confirmed index list), Pasardana `GetAll` (3 rows, plus one call that confirmed 1-based paging), and Yahoo chart for `BBCA.JK` (5d, and 2021 events trimmed to 5 bars) and `^JKSE` (5d). The E3 fixtures were recorded on 2026-10-16 between 14:27 and 14:28 WIB with 7 requests (one per URL, honest UA, no retries, at least 6 s apart and never two in a row to one host, no block seen): the five news feeds trimmed to 3 items each (`news-*.xml`) and the BI-Rate and JISDOR pages trimmed to the table with 3 rows (`bi-rate.html`, `bi-jisdor.html`; the BI-Rate one keeps its commented-out `BI-7 Day` column). `arjum-history-BBCA.fake.json` is invented data in the shape of `fixtures/arjum`; arjum was not called. `test/source-fixtures.ts` serves them at the real paths and refuses every other URL, so no test touches the network.
+`test/fixtures/` holds trimmed real responses for the parsers, recorded on 2026-10-16 between 11:29 and 11:40 WIB with 8 requests in total (honest UA, at least 2 s apart per host, no block seen): TradingView `indonesia/scan` (5 rows) and `global/scan` (two calls: the confirmed index list), Pasardana `GetAll` (3 rows, plus one call that confirmed 1-based paging), and Yahoo chart for `BBCA.JK` (5d, and 2021 events trimmed to 5 bars) and `^JKSE` (5d). The E3 fixtures were recorded on 2026-10-16 between 14:27 and 14:28 WIB with 7 requests (one per URL, honest UA, no retries, at least 6 s apart and never two in a row to one host, no block seen): the five news feeds trimmed to 3 items each (`news-*.xml`) and the BI-Rate and JISDOR pages trimmed to the table with 3 rows (`bi-rate.html`, `bi-jisdor.html`; the BI-Rate one keeps its commented-out `BI-7 Day` column). The E5 fixtures were recorded on 2026-10-16 between 15:24 and 15:25 WIB with 3 requests (Yahoo fundamentals timeseries for BBCA, TLKM and GOTO, at least 15 s apart, honest UA, no retries, all 200, no block), trimmed to 13–15 of the 26 lines each (`yahoo-fundamentals-*.json`). `arjum-history-BBCA.fake.json` is invented data in the shape of `fixtures/arjum`; arjum was not called. `test/source-fixtures.ts` serves them at the real paths and refuses every other URL, so no test touches the network.
 
 The image build uses `services/engine/package.json` and `bun.lock` only. Local development uses the root install. After changing a runtime dependency version at the root, mirror it there and run `bun install --lockfile-only` in `services/engine`.
 
