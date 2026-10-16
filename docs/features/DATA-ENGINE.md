@@ -97,9 +97,21 @@ The Coolify server is shared and tight: disk was 64–85%, and builds have kille
 - Crawling stops automatically above 85% disk (from the engine's own volume and `/api/ready` check).
 - `/v1/meta/health` reports per-source last success, last error, rows ingested, and block status.
 
-## 5. Sources by priority
+## 5. Sources: discovery results (2026-10-16)
 
-Endpoints and formats are confirmed in a discovery task (one polite request per candidate) before any fetcher is written. "Blocked" means the fetcher stops; it is never bypassed.
+Phase E0 (HAKA-60). Each candidate URL got one request with the engine's user agent
+(`HAKAPRO-DataEngine/0.1 (+https://hakapro.heulaulab.xyz)`), at least 2 s apart per host. There were **31 requests in
+total**. No challenge was solved, no user agent was switched, no cookies were used, and no bulk data was downloaded or
+committed. Tested 10:40–10:55 WIB on Friday 2026-10-16, a live session with a market-wide sell-off. Sizes are measured
+from single responses and scaled to about 900 stocks.
+
+**Statuses:**
+- **OK:** reachable, with the needed fields confirmed.
+- **PARTIAL:** reachable, but some fields are missing or the source is unofficial.
+- **BLOCKED:** the fetcher must stop.
+- **NOT FOUND:** no public endpoint was confirmed.
+
+Planned sources (from the spec, before discovery):
 
 | # | Data | Candidate source | Notes |
 | --- | --- | --- | --- |
@@ -113,6 +125,147 @@ Endpoints and formats are confirmed in a discovery task (one polite request per 
 | 8 | Macro | BI (policy rate, FX), BPS API (needs a free key) | Market-info panels |
 | 9 | Ownership ≥1% | Monthly KSEI lists via IDX announcement PDFs | Feeds the HAKA-33 engine; parse PDFs; schema gap noted in CONNECTION-NETWORK.md |
 | — | Per-stock extras | arjum (existing) | Stays the primary source for broker summary, insiders and analysis; engine doesn't duplicate it |
+
+### 5.0 Headline
+
+- **idx.co.id is BLOCKED for the engine.** The first request (`GET https://www.idx.co.id/id`) got **HTTP 403** from
+  `server: cloudflare`, `cf-ray: a4b40c040d19d4f1-SIN`, on the page "Attention Required! | Cloudflare / Sorry, you have
+  been blocked". This is a firewall block, not a JS challenge. Per §2 the host was not touched again, so none of the
+  `/primary/*` or `/umbraco/*` JSON endpoints could be found or confirmed. Every source the spec planned to take from
+  IDX (1–6 and 9) therefore needs an alternative or an IDX-side arrangement.
+- **KSEI is unusable as well:**
+  - `www.ksei.co.id/` answers 200 with a **4-byte body `Test`**. The headers include `vary: User-Agent` and
+    `x-powered-by: Exabytes`, so the content is chosen by user agent and the honest user agent gets a placeholder.
+  - The old documented bulk path `/Download/BalanceposEfek<yyyymmdd>.zip` returns 404.
+  - `web.ksei.co.id` **times out on TCP connect** (10 s, then 25 s), which looks like IP or geo filtering.
+  - No user-agent change was tried. This is treated as BLOCKED.
+- **Open sources that work:**
+  - Yahoo Finance chart JSON for per-symbol EOD, intraday, splits and dividends, and IHSG.
+  - TradingView's public scanner for whole-market and index snapshots, delayed 10 min.
+  - Pasardana's public JSON for the universe plus the EOD snapshot with ratios.
+  - Bank Indonesia HTML tables.
+  - The BPS API, which needs a key.
+  - Four news RSS feeds.
+- **None of the open sources gives foreign buy/sell.**
+
+### 5.1 Universe (source 1)
+
+| Status | Endpoint | Format | Update | History | Size/run | Notes |
+| --- | --- | --- | --- | --- | --- | --- |
+| BLOCKED | IDX company/stock list (www.idx.co.id) | — | — | — | — | Cloudflare 403 (see 5.0) |
+| **PARTIAL** | `GET https://pasardana.id/api/StockSearchResult/GetAll?pageBegin=1&pageLength=<n>&sortField=Code&sortOrder=ASC` | JSON array | Daily after EOD (`LastDate` = previous session at 10:50 WIB) | Snapshot only | ~1 KB/row, about 1 MB for the whole universe | Fields: `Code, Name, SectorName, SubSectorName, NewSectorName, NewSubSectorName, NewIndustryName, Capitalization, FreeFloatPct, LastDate, LastUpdate`. **No board, notation or listing date**, so the HAKA-17 eligibility gate is still uncovered. Third-party aggregator; terms not reviewed |
+| PARTIAL | TradingView scanner (see 5.2) | JSON | Live, delayed | Snapshot | — | `totalCount: 887` IDX symbols. Can list symbols plus sector, but has no board or notation |
+
+### 5.2 EOD prices, all stocks (source 2)
+
+| Status | Endpoint | Format | Update | History | Size/run | Notes |
+| --- | --- | --- | --- | --- | --- | --- |
+| BLOCKED | IDX stock summary (www.idx.co.id) | — | — | — | — | Cloudflare 403. This was the only planned source of **foreign buy/sell** |
+| **OK (unofficial)** | `GET https://query1.finance.yahoo.com/v8/finance/chart/<SYM>.JK?range=<5d\|1y\|max>&interval=1d&events=div%2Csplit` | JSON (`chart.result[0]`) | Intraday-updating. The final bar settles after the close (`currentTradingPeriod.regular.end` = 16:15 WIB) | `range=max` back to `firstTradeDate` (BBCA: 2004-06-08). `validRanges` 1d…max | ~1.5 KB per symbol per 5 days, so ~1.4 MB and **~900 requests** per daily run; backfill is ~900 one-time `range=max` calls | `indicators.quote[0]`: `open, high, low, close, volume`, plus `indicators.adjclose[0].adjclose` and `meta.regularMarketPrice/regularMarketTime/chartPreviousClose`. **No value, frequency or foreign buy/sell.** **Split-adjusted:** BBCA's Jan-2021 `close` is 6760, after the 5:1 split of 2021-10-13, and `adjclose` 5672 is also dividend-adjusted. `events.splits` and `events.dividends` are included. Per-symbol only. The batch `v7/finance/spark` returns `close` only. Served by `server: ATS` with `cache-control: max-age=10`. Accessed fine with the honest UA; Yahoo has no public API terms, so treat it as best-effort |
+| **PARTIAL** | `GET https://pasardana.id/api/StockSearchResult/GetAll` (as in 5.1) | JSON | Daily (previous session) | Snapshot only | ~1 MB | `Last, PrevClosingPrice, AdjustedOpen/High/Low/ClosingPrice, Volume, Frequency, Value`, returns, `Per, Pbr, Roe, BetaOneYear`. Has **value and frequency**, which Yahoo lacks. No foreign. Good cross-check |
+| PARTIAL | TradingView scanner (see Intraday) | JSON | Delayed 10 min | Snapshot only | ~130 KB per full-market POST | After the close this gives the session's OHLCV + `Value.Traded` for all 887 symbols in one request |
+| NOT FOUND | Foreign buy/sell, whole market | — | — | — | — | No open source found. Options: an IDX data licence, arjum per-stock within quota, or IDX allowlisting the engine UA (§8) |
+
+### 5.3 Indices (source 3)
+
+| Status | Endpoint | Format | Update | History | Size/run | Notes |
+| --- | --- | --- | --- | --- | --- | --- |
+| BLOCKED | IDX index summary | — | — | — | — | Cloudflare 403 |
+| **OK (unofficial)** | Yahoo chart `…/v8/finance/chart/%5EJKSE?range=…&interval=1d` | JSON | As 5.2 | Long (`max`) | ~1 KB | IHSG (`^JKSE`) confirmed. Sector indices were not tested on Yahoo |
+| **OK (unofficial)** | `POST https://scanner.tradingview.com/global/scan` with `{"symbols":{"tickers":["IDX:COMPOSITE","IDX:LQ45","IDX:IDXFINANCE","IDX:IDXENERGY",…]},"columns":["name","description","close","change","update_mode"]}` | JSON `{totalCount,data:[{s,d:[…]}]}` | Delayed 10 min (`update_mode: delayed_streaming_600`) | Snapshot only | <1 KB | IHSG, LQ45 and IDX-IC sector indices confirmed. Store the EOD row after the close |
+
+### 5.4 Disclosures / keterbukaan informasi (source 4)
+
+| Status | Endpoint | Format | Update | History | Size/run | Notes |
+| --- | --- | --- | --- | --- | --- | --- |
+| **BLOCKED** | IDX keterbukaan informasi / pengumuman | — | — | — | — | Cloudflare 403. No other official publisher mirrors IDX disclosures. Alternatives: IDX allowlist or data licence (§8), or headlines via news RSS (5.7) as a weak proxy |
+
+### 5.5 Financial statements (source 5)
+
+| Status | Endpoint | Format | Update | History | Size/run | Notes |
+| --- | --- | --- | --- | --- | --- | --- |
+| BLOCKED | IDX financial reports (XBRL/PDF) | — | — | — | — | Cloudflare 403 |
+| **PARTIAL (unofficial)** | `GET https://query1.finance.yahoo.com/ws/fundamentals-timeseries/v1/finance/timeseries/<SYM>.JK?type=annualNetIncome,annualTotalAssets,quarterlyNetIncome,…&period1=<unix>&period2=<unix>` | JSON `timeseries.result[]` with `{asOfDate, periodType, reportedValue.raw}` | When reports are filed | ~4 annual + ~5 quarterly periods | <1 KB per metric set per symbol | BBCA FY2025 and Q2-2026 were present. No crumb or cookie needed. Usable for screener ratios (`per, pbv, roe, roa, eps, der`) |
+| PARTIAL | Pasardana `GetAll` | JSON | Daily | Snapshot | (in 5.1) | Precomputed `Per, Pbr, Roe, PerAnnualized, PsrAnnualized, PcfrAnnualized` |
+
+### 5.6 Corporate actions (source 6)
+
+| Status | Endpoint | Format | Update | History | Size/run | Notes |
+| --- | --- | --- | --- | --- | --- | --- |
+| BLOCKED | IDX / KSEI calendars | — | — | — | — | IDX: Cloudflare 403. KSEI: placeholder body or connect timeout (5.0). KSEI PDF notices at `/Announcement/Files/<SYM>_PROX_<yyyymmdd>_ID.pdf` were seen only in search results, not fetched |
+| **PARTIAL (unofficial)** | Yahoo chart with `events=div%2Csplit` (5.2) | JSON `events.splits{date,numerator,denominator,splitRatio}`, `events.dividends{date,amount}` | After the ex-date | Full (BBCA: 22 dividends since 2016, split 5:1 on 2021-10-13) | Included in the price call | Ex-dates only: **no record/payment dates, no rights issues or warrants**. Enough for price adjustment |
+
+### 5.7 News RSS (source 7)
+
+| Status | Endpoint | Format | Update | History | Size/run | Notes |
+| --- | --- | --- | --- | --- | --- | --- |
+| **OK** | `https://www.cnbcindonesia.com/market/rss` | RSS 2.0 | Minutes (newest 10:40 WIB) | 100 items, about 2 days | 18 KB | Item: `title, link, guid, pubDate, description, enclosure, content:encoded`. Served by Cloudflare, no challenge |
+| **OK** | `https://finance.detik.com/rss` | RSS 2.0 | Minutes | 100 items, about 2 days | 21 KB | Same item shape. General finance, not only the market |
+| **OK** | `https://www.antaranews.com/rss/ekonomi-bursa.xml` | RSS 2.0 | Hours | 20 items, about 3 days | 4 KB | Stock-market channel. Has `last-modified` (good for conditional GET) |
+| **OK** | `https://investortrust.id/rss/market.rss` (also `/rss/macro.rss`, listed in its `llms.txt`) | RSS 2.0 | Minutes | 10 items, a few hours | 7 KB | English. Fields: `title, link, guid, pubDate, author, description` |
+| PARTIAL | `https://rss.tempo.co/bisnis` | RSS 2.0 | **Stale** (newest item 2026-09-14) | 50 items | 7 KB | Reachable but not updating. Skip |
+| PARTIAL | Kontan: index page `https://www.kontan.co.id/rss` | HTML | — | — | — | Only `http://rss.kontan.co.id/…` feeds are linked, and the HTTPS guess `rss.kontan.co.id/news/investasi` failed to connect. The page says the feeds are **for individual / non-commercial sites**. Not used |
+| **BLOCKED** | `https://www.bisnis.com/rss` | — | — | — | — | 403 with `cf-mitigated: challenge` (Cloudflare JS challenge) |
+| **BLOCKED** | `https://investor.id/rss` | — | — | — | — | 403 from CloudFront ("Request blocked", `x-cache: Error from cloudfront`) |
+
+Store headline + link + time + outlet only (§2).
+
+### 5.8 Macro (source 8)
+
+| Status | Endpoint | Format | Update | History | Size/run | Notes |
+| --- | --- | --- | --- | --- | --- | --- |
+| **OK** | `GET https://www.bi.go.id/id/statistik/indikator/bi-rate.aspx` | HTML table (ASP.NET WebForms) | After each Board of Governors meeting (monthly) | 10 rows per page. Older pages need a `__VIEWSTATE` postback | 143 KB | Columns: `No, Tanggal, BI-Rate, Pranala Siaran Pers`. Latest row: 23 Sep 2026, 5.75 %. No CSV/XLS link on the page |
+| **OK** | `GET https://www.bi.go.id/id/statistik/informasi-kurs/jisdor/default.aspx` | HTML table | Business days (latest row was the previous day at 10:45 WIB) | 10 rows by default; a date-range form (postback) gives more | 139 KB | Columns: `Tanggal, Kurs` (for example `15 Oktober 2026, Rp17.948,00`). Parse the Indonesian number format |
+| **PARTIAL (key needed)** | `GET https://webapi.bps.go.id/v1/api/list/model/<model>/domain/0000/key/<KEY>/` | JSON | Per release | Long | Small | Without a key: 200 `{"status":"Error","message":"Parameter Key is Missing."}`. A free key needs **registration at `https://webapi.bps.go.id/developer/`** (owner action; not registered) |
+
+### 5.9 KSEI ≥1% ownership lists (source 9)
+
+| Status | Endpoint | Format | Update | History | Size/run | Notes |
+| --- | --- | --- | --- | --- | --- | --- |
+| **BLOCKED** | IDX announcement PDF `/StaticData/NewsAndAnnouncement/ANNOUNCEMENTSTOCK/From_EREP/<yyyymm>/…pdf` | PDF | Monthly | Since Feb 2026 | ~73 pages | On idx.co.id, so Cloudflare 403. KSEI is not reachable either (5.0). This still needs the licence decision in CONNECTION-NETWORK.md, which now also covers access. Only legitimate routes: written permission + an IDX/KSEI feed, or a manual monthly download by the owner into the raw store |
+
+### 5.10 Intraday (scope addition, 2026-10-16)
+
+| Status | Endpoint | Format | Update during session | Delay | Whole-market payload | Notes |
+| --- | --- | --- | --- | --- | --- | --- |
+| BLOCKED | IDX intraday / running trade pages | — | — | — | — | Cloudflare 403 |
+| **OK (unofficial)** | `POST https://scanner.tradingview.com/indonesia/scan`, body `{"columns":["name","close","open","high","low","change","volume","Value.Traded","market_cap_basic","update_mode"],"range":[0,1000],"sort":{"sortBy":"Value.Traded","sortOrder":"desc"}}` | JSON `{totalCount:887, data:[{s:"IDX:BBCA", d:[…]}]}` | Continuous (cached; header `x-cache-level: hit1`) | **10 min**, stated per row as `update_mode: "delayed_streaming_600"` | ~130 KB for all 887 symbols in **one request** (~85 B/row measured with 10 columns) | Last, change %, OHLC, volume and value for the whole market. Bid/offer columns (`bid`, `ask`) exist in TradingView's column set but were not tested. No frequency, no foreign. Served behind CloudFront with no challenge. TradingView's terms restrict automated use and redistribution: internal experiment only, see §2 |
+| **OK (unofficial)** | Yahoo chart `…/chart/<SYM>.JK?range=1d&interval=5m` and `…/chart/%5EJKSE?range=1d&interval=5m` | JSON | Bars of 1m/5m/15m | **~10 min** (`regularMarketTime` 10:36 WIB when fetched at about 10:46 WIB) | Per symbol, a few KB; not suited to whole-market polling | Good for single-stock intraday charts and IHSG intraday bars |
+| **OK (unofficial)** | TradingView `global/scan` with an index ticker list (5.3) | JSON | Continuous | 10 min | <1 KB | Intraday IHSG, LQ45 and sector indices in one request |
+
+### 5.11 Recommended first fetchers for E2/E3
+
+1. **E2 prices: Yahoo chart (per symbol)** for daily OHLCV, split-adjusted candles, splits and dividends, and the
+   history backfill (`range=max`, spread over several nights at one request every 2–3 s, about 900 calls).
+   - Daily run: `range=5d&interval=1d` per symbol after 16:30 WIB. Upsert the last 5 bars so late corrections land.
+   - Store raw `close` (already split-adjusted) and `adjclose`. Recompute our own adjustment from `events`.
+   - **Plus one TradingView `indonesia/scan` call after the close** for the same-day universe (887 symbols), `value`,
+     and a cross-check of close and volume.
+   - **Plus one Pasardana `GetAll` pass** (paginated) for `Frequency`, sector/industry, `Capitalization`,
+     `FreeFloatPct`, and ratios.
+   - `foreignBuy/foreignSell` stay `null` (the contract allows it) until §8 Q5 is resolved. The foreign-flow signal
+     (`/v1/signals`) and the HAKA-17 board/notation gate cannot be served from open sources.
+2. **E2 universe:** TradingView symbol list ∪ Pasardana `Code` list, with sector data from Pasardana. Board and
+   notation are marked unknown.
+3. **E3 indices:** TradingView `global/scan` index list (IHSG, LQ45, IDX-IC sectors) every few minutes in-session and
+   once after the close. Yahoo `^JKSE` gives IHSG history.
+4. **E3 news:** CNBC Indonesia market, detik finance, Antara bursa, and InvestorTrust market + macro RSS, every
+   15 min. Use conditional GET (ETag / Last-Modified) and store headline/link only.
+5. **E3 macro:** BI-Rate and JISDOR HTML pages, daily (JISDOR) or after each meeting (BI-Rate). BPS once the owner
+   registers a key.
+6. **E3 corporate actions:** splits and dividends from Yahoo `events`. Rights, warrants, and record/payment dates
+   are deferred (blocked).
+7. **E3 disclosures and E6 ownership: no fetcher.** Both are blocked at IDX/KSEI and depend on §8 Q5.
+8. **Intraday:** one TradingView `indonesia/scan` (whole market) plus one `global/scan` (indices) every **60 s** at
+   most, only between 09:00–12:00 and 13:30–15:50 WIB (Friday 09:00–11:30 / 14:00–15:50).
+   - The data is already 10 min delayed and served from cache, so polling faster gains nothing.
+   - Back off to 5 min on any non-200 and stop with `SOURCE_BLOCKED` on 403/429.
+   - Freshness is DELAYED with the row timestamp. Per-symbol Yahoo intraday bars are fetched on demand, not polled.
+
+**Caveat:** every working price source is an unofficial, undocumented endpoint (Yahoo, TradingView, Pasardana). It is
+fine for the internal experiment under §2, but each one can disappear or start blocking without notice, so the
+fetchers must detect blocks and fall back (Yahoo ↔ TradingView ↔ Pasardana ↔ arjum). None of them is a licensed
+source for a public or paid HAKAPRO.
 
 ## 6. Data model (first cut)
 
@@ -133,7 +286,7 @@ Every table has `source` and `as_of`; derived tables also record the derivation 
 
 | Phase | Work |
 | --- | --- |
-| E0. Discovery | Confirm endpoints, formats, update times and block behaviour for sources 1–9 with single requests. Record findings here |
+| E0. Discovery | Confirm endpoints, formats, update times and block behaviour for sources 1–9 with single requests. **Done 2026-10-16, see §5** |
 | E1. Foundation | `services/engine` (Bun, Dockerfile, health), engine DB + Drizzle, fetcher framework (policy, cache, raw store, block detection), scheduler, `/v1/meta/health`. Coolify environment `data-engine` with app + DB |
 | E2. Universe + EOD prices | Sources 1–2, daily run + backfill since 2020-01-01, `/v1/securities`, `/v1/stocks/{s}`, `/v1/market` movers/breadth. Point develop's `MARKET_API_URL` at it first, then staging and production |
 | E2b. Intraday snapshots | Session-window polling (default 5 min) for quotes and indices, `intraday_snapshots` with 30-day retention, intraday movers/breadth served as DELAYED on `/v1/market` and `/v1/stocks/{s}` |
@@ -146,5 +299,15 @@ Every table has `source` and `as_of`; derived tables also record the derivation 
 
 1. **Raw store:** a new R2 bucket, `hakapro-engine-raw` (created 2026-10-16), with its own bucket-scoped token (Object Read & Write, owner creates it). It is not shared with `heulaulab-db-backups`.
 2. **EOD history:** backfill from **2020-01-01**, matching arjum's daily history. The backfill runs gradually at night and never competes with the daily run.
-3. **Intraday: yes, alongside EOD** (corrected by the owner the same day). The engine polls intraday snapshots during IDX sessions: the default is every 5 minutes, configurable per source, with jobs only inside session windows from the IDX calendar. These snapshots are stored as `intraday_snapshots` (symbol, ts, last, change, volume, value, frequency, bid/offer if available, source, raw_ref), served as **DELAYED** with their timestamp and never LIVE, and kept for a limited window (default 30 days; EOD rows are the permanent record). Intraday polling counts against the server safeguards (§4): it pauses during builds and above the disk threshold, with concurrency 1 per host. Running Trade (HAKA-14/15) stays the path for true streaming.
+3. **Intraday: yes, alongside EOD** (corrected by the owner the same day). Discovery: TradingView's scanner gives the whole market in one call, already 10 min delayed (§5.10), so polling faster than every 60 s gains nothing; the default stays 5 min. The engine polls intraday snapshots during IDX sessions: the default is every 5 minutes, configurable per source, with jobs only inside session windows from the IDX calendar. These snapshots are stored as `intraday_snapshots` (symbol, ts, last, change, volume, value, frequency, bid/offer if available, source, raw_ref), served as **DELAYED** with their timestamp and never LIVE, and kept for a limited window (default 30 days; EOD rows are the permanent record). Intraday polling counts against the server safeguards (§4): it pauses during builds and above the disk threshold, with concurrency 1 per host. Running Trade (HAKA-14/15) stays the path for true streaming.
 4. **Deployment:** **one shared engine** during the experiment. It runs in its own Coolify environment `data-engine` (app `hakapro-engine`, PostgreSQL `hakapro-engine-postgres`) and serves develop, staging and production over the private network (`MARKET_API_URL`). Per-environment engines can come later if needed.
+
+### Open questions after discovery
+
+5. **idx.co.id and KSEI block the engine (§5.0).** This leaves foreign buy/sell, board/notation, disclosures, the full corporate-action calendar, IDX financial reports and the ≥1% lists with no source. Options for the owner:
+   - (a) ask IDX to allowlist the engine's UA/IP for the public site (the Cloudflare block page offers a contact route; quote Ray ID `a4b40c040d19d4f1`);
+   - (b) license IDX data (Layanan Data BEI / IDX data feed), which is needed before going public anyway;
+   - (c) fill foreign flow per stock from arjum within its 1000/day quota, which covers about 900 stocks only if nothing else uses the quota;
+   - (d) download the monthly ≥1% PDF manually into the raw store.
+6. Unofficial price sources (Yahoo, TradingView, Pasardana) are accepted for the internal experiment under §2. Confirm that the owner accepts that their terms forbid or ignore automated use, and that none of them may back a public or paid HAKAPRO.
+7. BPS: the owner registers a free key at `https://webapi.bps.go.id/developer/` and stores it as an engine secret, or BPS macro is dropped from E3.
