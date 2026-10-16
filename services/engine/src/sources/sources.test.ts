@@ -93,6 +93,7 @@ describe("Pasardana GetAll", () => {
       symbol: "AADI", name: "Adaro Andalan Indonesia Tbk.", sector: "Energi", subsector: "Minyak, Gas & Batu Bara", industry: "Batu Bara",
       date: "2026-10-15", open: 11425, high: 11425, low: 11025, close: 11300, previousClose: 11550,
       volume: 6322100, value: 70842097500, frequency: 5707, marketCap: 87991876888000, sharesOutstanding: 7786891760, freeFloatPct: 18.18,
+      ratios: { per: 6.17137, pbv: 1.25254, roe: 0.24083955408348 },
     });
     expect(getAllUrl(2)).toBe("https://pasardana.id/api/StockSearchResult/GetAll?pageBegin=2&pageLength=200&sortField=Code&sortOrder=ASC");
   });

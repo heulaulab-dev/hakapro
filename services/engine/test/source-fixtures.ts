@@ -34,7 +34,12 @@ const BI_PAGES: Record<string, string> = {
   "/id/statistik/indikator/bi-rate.aspx": "bi-rate.html",
   "/id/statistik/informasi-kurs/jisdor/default.aspx": "bi-jisdor.html",
 };
-const ANTARA_LAST_MODIFIED = "Fri, 16 Oct 2026 07:27:02 GMT";
+const FUNDAMENTALS_PREFIX = "/ws/fundamentals-timeseries/v1/finance/timeseries/";
+/** Recorded fundamentals timeseries; every other ticker answers 404 (no fixture). */
+const FUNDAMENTALS: Record<string, string> = {
+  "BBCA.JK": "yahoo-fundamentals-BBCA.json", "TLKM.JK": "yahoo-fundamentals-TLKM.json", "GOTO.JK": "yahoo-fundamentals-GOTO.json",
+};
+const ANTARA_LAST_MODIFIED ="Fri, 16 Oct 2026 07:27:02 GMT";
 /** Prepended to CNBC's feed when `newsUpdate` is on: one new story and a re-post of an Antara headline. */
 const CNBC_UPDATE = `<item>
       <guid>https://www.cnbcindonesia.com/market/20261016150000-17-776900/asing-borong-bbca</guid>
@@ -68,6 +73,8 @@ export type SourceWorld = {
     arjumRemaining: number;
     /** CNBC's feed gains two items (new ETag): a new story naming $BBCA and a re-post of an Antara headline. */
     newsUpdate: boolean;
+    /** Yahoo's fundamentals path answers 429 (the host's rate limit); the chart path keeps answering. */
+    fundamentalsRateLimited: boolean;
   };
   fetch: typeof fetch;
   close(): Promise<void>;
@@ -88,7 +95,7 @@ function scaledScan(text: string, factor: number): string {
 
 export async function startSourceWorld(): Promise<SourceWorld> {
   const hits: Hit[] = [];
-  const state: SourceWorld["state"] = { blocked: new Set(), tvPriceFactor: 1, arjumRemaining: 1000, newsUpdate: false };
+  const state: SourceWorld["state"] = { blocked: new Set(), tvPriceFactor: 1, arjumRemaining: 1000, newsUpdate: false, fundamentalsRateLimited: false };
 
   const handle = async (req: IncomingMessage, res: ServerResponse) => {
     const chunks: Buffer[] = [];
@@ -137,6 +144,13 @@ export async function startSourceWorld(): Promise<SourceWorld> {
       if (ticker === "^JKSE") return send(res, 200, fixture("yahoo-chart-JKSE-5d.json"));
       if (ticker === "BBCA.JK") return send(res, 200, fixture(url.searchParams.has("period1") ? "yahoo-chart-BBCA-2021-events.json" : "yahoo-chart-BBCA-5d.json"));
       return send(res, 404, JSON.stringify({ chart: { result: null, error: { code: "Not Found", description: "No data found, symbol may be delisted" } } }));
+    }
+    if (source === "yahoo" && path.startsWith(FUNDAMENTALS_PREFIX)) {
+      if (state.fundamentalsRateLimited) return send(res, 429, "Too Many Requests", { "content-type": "text/plain", "retry-after": "60" });
+      const ticker = decodeURIComponent(path.slice(FUNDAMENTALS_PREFIX.length));
+      const recorded = FUNDAMENTALS[ticker];
+      if (recorded) return send(res, 200, fixture(recorded), { "cache-control": "public, max-age=60, stale-while-revalidate=30", server: "ATS" });
+      return send(res, 404, JSON.stringify({ finance: { result: null, error: { code: "Not Found", description: "Quote not found" } } }));
     }
     if (source === "arjum" && path.startsWith("/api/history/")) {
       if (req.headers["x-api-key"] !== ARJUM_TEST_KEY) return send(res, 401, '{"detail":"invalid key"}');
