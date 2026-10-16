@@ -3,6 +3,7 @@ import { mkdir } from "node:fs/promises";
 import type { EngineConfig } from "./config";
 import { createDb, migrationsDir, runMigrations, waitForDatabase, type EngineDb } from "./db/client";
 import { recentEodSessions } from "./db/ingest";
+import { deleteNewsOlderThan } from "./db/market-info";
 import { DbMarketStore } from "./db/market-store";
 import { DbCursorStore, DbRawDocumentIndex, DbRunRecorder, DbSourceStateStore, deleteIntradayOlderThan, sourceHealth, syncSources } from "./db/repos";
 import { Fetcher } from "./fetch/fetcher";
@@ -13,12 +14,15 @@ import { eodBackfillJob, eodDailyJob } from "./jobs/eod";
 import { foreignFlowJob } from "./jobs/foreign";
 import { indicesEodJob } from "./jobs/indices";
 import { intradayJob } from "./jobs/intraday";
+import { biRateJob, jisdorJob } from "./jobs/macro";
+import { newsJob } from "./jobs/news";
 import { universeJob } from "./jobs/universe";
 import { log as defaultLog, type Logger } from "./log";
-import { intradayRetentionJob, validateRegistry, type Registry } from "./registry";
+import { intradayRetentionJob, newsRetentionJob, validateRegistry, type Registry } from "./registry";
 import { PauseGuard } from "./schedule/pause";
 import { Scheduler } from "./schedule/scheduler";
 import { engineSources } from "./sources";
+import { NEWS_FEEDS } from "./sources/news";
 
 export type EngineServices = {
   config: EngineConfig;
@@ -32,7 +36,7 @@ export type EngineServices = {
 };
 
 /**
- * Production registry (E2/E2b, DATA-ENGINE.md §5.11). Schedules are WIB:
+ * Production registry (E2/E2b/E3, DATA-ENGINE.md §5.11). Schedules are WIB:
  *   intraday       every ENGINE_INTRADAY_INTERVAL_MINUTES inside IDX sessions   TradingView market + index scans
  *   universe       16:35 trading days                                           TradingView scan + Pasardana GetAll
  *   indices-eod    16:35 trading days                                           TradingView index scan
@@ -40,12 +44,16 @@ export type EngineServices = {
  *   foreign-flow   19:00, 21:00 trading days (only with ENGINE_ARJUM_*)          arjum /api/history, budgeted
  *   eod-backfill   every 10 min 19:00–05:59, background                          Yahoo from 2020-01-01 per symbol
  *   intraday-retention 02:30, background                                        prunes intraday tables
+ *   news           every ENGINE_NEWS_INTERVAL_MINUTES 06:00–22:00, every day   4 outlets' RSS (5 feeds), conditional GET
+ *   news-retention 02:45, background                                            prunes news_items past ENGINE_NEWS_RETENTION_DAYS
+ *   macro-jisdor   17:00 daily                                                  BI JISDOR table (first page)
+ *   macro-bi-rate  17:05 daily                                                  BI-Rate table (first page)
  */
 export function defaultRegistry(services: EngineServices): Registry {
   const sources = engineSources(services.config.arjum);
   const jobServices = { db: services.db, fetcher: services.fetcher, documents: services.documents, sourceState: services.sourceState, log: services.log, now: services.now };
   return {
-    sources: [sources.tradingview, sources.yahoo, sources.pasardana, ...(sources.arjum ? [sources.arjum] : [])],
+    sources: [sources.tradingview, sources.yahoo, sources.pasardana, ...(sources.arjum ? [sources.arjum] : []), ...sources.news, sources.bi],
     jobs: [
       universeJob(jobServices, { tradingview: sources.tradingview, pasardana: sources.pasardana }),
       indicesEodJob(jobServices, sources.tradingview),
@@ -58,6 +66,16 @@ export function defaultRegistry(services: EngineServices): Registry {
         deleteOlderThan: (cutoff, limit) => deleteIntradayOlderThan(services.db, cutoff, limit),
         now: services.now,
       }),
+      newsJob(jobServices, NEWS_FEEDS.map((feed) => ({ ...feed, source: sources.news.find((source) => source.id === feed.sourceId)! })), {
+        everyMinutes: services.config.news.intervalMinutes, retentionDays: services.config.news.retentionDays,
+      }),
+      newsRetentionJob({
+        retentionDays: services.config.news.retentionDays,
+        deleteOlderThan: (cutoff, limit) => deleteNewsOlderThan(services.db, cutoff, limit),
+        now: services.now,
+      }),
+      jisdorJob(jobServices, sources.bi),
+      biRateJob(jobServices, sources.bi),
     ],
   };
 }

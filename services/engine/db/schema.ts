@@ -207,16 +207,40 @@ export const announcements = pgTable("announcements", {
   index("announcements_symbol_published").on(t.symbol, t.publishedAt),
 ]);
 
-/** Headline + link only (§2: news is never stored in full). */
+/**
+ * News headlines (§2, §5.7): headline, canonical link, time, outlet, the feed's own short summary (≤ 280 chars, only
+ * when the feed provides a description) and matched IDX symbols. Article bodies are never fetched or stored.
+ * Deduplicated by `url` and by `title_key` within a few days; pruned after ENGINE_NEWS_RETENTION_DAYS.
+ */
 export const newsItems = pgTable("news_items", {
   id: uuid("id").primaryKey().defaultRandom(),
   publishedAt: ts("published_at").notNull(),
+  /** True when the feed gave no usable date and `published_at` is the fetch time. */
+  publishedAtEstimated: boolean("published_at_estimated").notNull().default(false),
   title: text("title").notNull(),
+  /** Normalized title (lower-case, no punctuation or accents) for cross-feed dedupe. */
+  titleKey: text("title_key").notNull(),
   url: text("url").notNull().unique("news_items_url"),
   outlet: text("outlet").notNull(),
+  summary: text("summary"),
   symbols: text("symbols").array().notNull().default(sql`'{}'::text[]`),
   ...provenance,
-}, (t) => [index("news_items_published").on(t.publishedAt)]);
+}, (t) => [
+  index("news_items_published").on(t.publishedAt),
+  index("news_items_title_key").on(t.titleKey, t.publishedAt),
+  index("news_items_symbols").using("gin", t.symbols),
+  check("news_items_summary_length", sql`${t.summary} is null or char_length(${t.summary}) <= 280`),
+]);
+
+/** Macro series from Bank Indonesia (§5.8): BI-Rate decisions (percent) and JISDOR (IDR per USD), one row per date. */
+export const macroObservations = pgTable("macro_observations", {
+  series: text("series").notNull(),
+  date: date("date").notNull(),
+  value: numeric("value", { precision: 18, scale: 6, mode: "number" }).notNull(),
+  /** Supporting link from the source table (the BI-Rate press release), when it has one. */
+  link: text("link"),
+  ...provenance,
+}, (t) => [primaryKey({ name: "macro_observations_pk", columns: [t.series, t.date] })]);
 
 export const corporateActions = pgTable("corporate_actions", {
   id: uuid("id").primaryKey().defaultRandom(),

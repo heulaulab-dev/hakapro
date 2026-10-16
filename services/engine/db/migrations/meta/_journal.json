@@ -15,6 +15,13 @@
       "when": 1792125286134,
       "tag": "20261016043446_eod_intraday_sources",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792136075107,
+      "tag": "20261016073435_market_info",
+      "breakpoints": true
     }
   ]
 }
