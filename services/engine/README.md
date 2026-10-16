@@ -8,6 +8,7 @@ Experimental internal collector and API for IDX data. Spec: [`docs/features/DATA
 - E3 (HAKA-63): market info: news RSS headlines, BI-Rate and JISDOR, the market-wide corporate-action calendar; announcements stay unavailable (IDX blocked).
 - E5 (HAKA-65): financial statements from Yahoo fundamentals timeseries, derived valuation ratios (with Pasardana's own as a secondary source), `/v1/stocks/{s}/fundamentals` and `POST /v1/screener`.
 - E6 (HAKA-66): ownership. The owner uploads the monthly KSEI ≥1% shareholder list (PDF, or a CSV/XLSX export); the engine parses it into HAKA-33 snapshot sets, computes month-over-month changes and a draft HAKA-34 free-float estimate. Nothing is fetched from IDX or KSEI. See [Ownership uploads](#ownership-uploads-e6).
+- E4 (HAKA-64): strategy scans on the HAKA-17 **draft** rules (BREAKOUT, BB REVERSAL) over the whole active universe, served as a HAKA-18 board on `/v1/strategies`. Off by default (`ENGINE_STRATEGY_SCANS_ENABLED`).
 
 It is a separate Bun + TypeScript service with no Next.js. It shares code with the app through the `@/*` path: the idx-bei and arjum Zod contracts (`src/server/schemas/`), the arjum URL builder, the IDX calendar, the freshness clock, the arjum page limits and the movers ranking.
 
@@ -18,10 +19,12 @@ It is a separate Bun + TypeScript service with no Next.js. It shares code with t
 | `src/main.ts` | Entry: `Bun.serve` on `PORT`, scheduler start, graceful SIGTERM |
 | `src/engine.ts` | Wiring: DB, raw store, fetcher, the production registry (sources + jobs), scheduler, HTTP handler |
 | `src/sources/` | One module per source: URL/body builders and parsers (TradingView, Yahoo, Pasardana, arjum, the news feeds, Bank Indonesia), a small RSS/Atom reader, source policies, IDX session dates |
-| `src/jobs/` | Collection jobs: `universe`, `indices-eod`, `eod-daily`, `eod-backfill`, `foreign-flow`, `intraday`, `news`, `macro-jisdor`, `macro-bi-rate`, `fundamentals`; the `ratios` derivation |
+| `src/jobs/` | Collection jobs: `universe`, `indices-eod`, `eod-daily`, `eod-backfill`, `foreign-flow`, `intraday`, `news`, `macro-jisdor`, `macro-bi-rate`, `fundamentals`; the `ratios` and `strategy-scan-eod` derivations |
 | `src/derive/` | Pure derivations: valuation ratios from statement lines (`ratios.ts`, formulas in its header) |
+| `src/strategies/` | E4 strategy rules: the versioned draft parameters (`rules.ts`), gate G, BREAKOUT, BB REVERSAL, the universe scan, the catalog of built / not-built strategies and the wording guard. Pure functions |
 | `src/db/ingest.ts`, `src/db/market-info.ts`, `src/db/fundamentals.ts`, `src/db/market-store.ts` | Idempotent upserts with source precedence (prices) and dedupe (news); statement lines and ratios; the read store behind `/v1` |
-| `src/serve/` | Builds `/v1` payloads (quote, candles, breadth, movers, indices, foreign-flow signals, actions, news, macro, the actions calendar, fundamentals, the screener) from stored rows |
+| `src/db/strategy-store.ts` | Scan inputs from `daily_prices`/`securities`/`corporate_actions`, scan run writes (`scan_runs`, `scan_candidates`) and their read port |
+| `src/serve/` | Builds `/v1` payloads (quote, candles, breadth, movers, indices, foreign-flow signals, actions, news, macro, the actions calendar, fundamentals, the screener, the strategy board) from stored rows |
 | `src/http/` | Routes (`/health`, `/ready`, `/v1/meta/health`, `/v1/admin/*`, idx-bei `/v1/*`) and the `{data, meta}` envelope |
 | `src/fetch/` | Polite fetcher: per-host token bucket and concurrency, honest UA, ETag/Last-Modified, URL+sha256 dedupe, raw store (R2/S3 or local), block detection |
 | `src/schedule/` | WIB cron, IDX session windows, disk/flag pause, single-flight scheduler, resumable backfill helpers (per day and per item) |
@@ -75,6 +78,7 @@ Schedules (WIB; "trading days" skips weekends and IDX holidays):
 | `macro-bi-rate` | 17:05 daily | BI-Rate table, first page (latest 10 decisions, with the press-release link) → `macro_observations` |
 | `fundamentals` | Every 10 min at :05, 19:00–05:59, every day, background **low priority** | Yahoo fundamentals, 20 symbols per run, most liquid first → `financials`. Weekly full cycle (ISO week, Monday WIB; ~900 calls ≈ 45 min of spaced requests over one or two nights). From Thursday to Sunday inside the filing windows (15 Mar–10 May, 15 Jul–10 Aug, 15 Oct–10 Nov) a catch-up pass refetches only symbols whose newest stored quarter is older than the expected one (the newest quarter end ≥ 21 days ago). Cursor in `job_cursors`; gives way to every other job, including the EOD backfill |
 | `ratios` | 06:15, 17:15, 21:15 daily | No network: derived ratios for every symbol with statement lines → `stock_ratios` (`derived`); ratios whose inputs are now missing are removed |
+| `strategy-scan-eod` | 21:00 and 23:00, trading days; only with `ENGINE_STRATEGY_SCANS_ENABLED` | Reads stored rows only (no source). Scans the last completed session once its `eod_sessions` status is `COMPLETE`; otherwise records a `SKIPPED` run with the reason. A scheduled run skips a session already scanned; `POST /v1/admin/jobs/strategy-scan-eod/run` recomputes it in place. See "Strategy scans" |
 
 Precedence: Yahoo is the primary OHLC source for stocks and overwrites TradingView/Pasardana/arjum fallback rows, but never their value/frequency. Pasardana's value/frequency replace TradingView's value. TradingView is primary for `index_daily`; Yahoo `^JKSE` only fills gaps. A fallback source refreshes only rows it wrote itself.
 
@@ -106,6 +110,21 @@ Pasardana's own `Per`, `Pbr` and `Roe` (a fraction) are stored by the `universe`
 
 Fallbacks when a source is `BLOCKED`: universe from Pasardana (or TradingView); session rows from TradingView/Pasardana (and arjum) when Yahoo is blocked; IHSG from Yahoo when TradingView is blocked. Intraday has no fallback: `/v1` then serves the latest EOD. Fundamentals have no second statement source (IDX is blocked): while `yahoo-fundamentals` is blocked, stored statements and ratios keep serving, and the screener falls back to Pasardana's ratios only where no derived row exists. Yahoo's two sources share one host, so a 429 on the fundamentals path also blocks `yahoo-chart`, and `fundamentals` refuses to run while `yahoo-chart` is blocked.
 
+## Strategy scans (E4, HAKA-64, draft rules)
+
+**The rules are the HAKA-17 DRAFT v0.1** (`docs/features/STRATEGY-RULES.md`, PR #4, not approved). Everything is behind `ENGINE_STRATEGY_SCANS_ENABLED` (default off) on the engine and `STRATEGY_ENGINE_ENABLED=1` (default off) in the app.
+
+- **Built:** BREAKOUT (§4) and BB REVERSAL (§5), the EOD-feasible strategies, after the common gate G (§3.3). **Not built:** ARA HUNTER, HAKA SORE/BSJP, HAKA PAGI and SCALPING INTRADAY. They need HAKA-25 (tick sizes, price limits) or the Running Trade tape (HAKA-14/15); `/v1/meta/health` lists them as `NOT_BUILT` with the reason.
+- **Parameters:** one frozen object, `STRATEGY_RULES` in `src/strategies/rules.ts`, `rulesVersion: "0.1-draft"`, with the draft's defaults unchanged. Every run stores the full parameter object (`scan_runs.parameters`), and every candidate stores `rules_version`. Changing any value means a new version.
+  - Gate G: `minHistory` 60 sessions; traded on 18 of the 20 sessions before t; 20-session average value ≥ Rp 1 bn; close ≥ Rp 100; consistent OHLC on every row read; watchlist/acceleration board or special notation excluded; no split ex-date in the rows read.
+  - BREAKOUT: N = 20; RVOL (20-session) ≥ 2.0; close location ≥ 0.5; first break required; base range off.
+  - BB REVERSAL: period 20, k = 2 population σ, pierce window 3, pierce by close, bandwidth ≥ 4%, close above the open.
+- **Data the gate can't see yet:** no source reports board or special notation, so every candidate carries `boardKnown = 0` and a note. It is never silently treated as the main board (the draft's default for unknown). Rights and bonus issues have no source; only Yahoo splits feed G8. Yahoo history rows have no traded value, so the value of such a session is `close × volume`, as in the draft's own test tables, with a note on the candidate.
+- **Determinism:** pure functions; thresholds inclusive with a 1e-9 float tolerance; candidates sorted by the strategy's key (BREAKOUT `breakoutPercent` desc, BB REVERSAL `percentB` asc), then symbol.
+- **Storage:** `scan_runs` holds one row per (session, rules version), replaced on re-run: status `SUCCEEDED`/`SKIPPED`, skip reason, parameters, universe counts, gate failures by rule, misses by rule, `source = HAKAPRO_EOD_ENGINE`, `as_of`. `scan_candidates` holds strategy, symbol, session, rules version, rank, `reasons[]`, `metrics[]`, source and `as_of`.
+- **Wording:** reasons are HAKA-18 `criterion` keys, worded by the app in en/id, plus English `note`s with the observed numbers and dates. There is no score. Labels, descriptions and notes go through a forbidden-wording guard (no buy/sell/entry/target/signal/potensi/win rate/drawdown/arrows) in the tests.
+- **App:** `engineStrategySource` (`src/server/strategies/engine-eod.ts`) reads `/v1/strategies` through `IdxBeiSource.engineStrategies()` and prefixes ids (`eod-breakout`, `eod-bb-reversal`). It is registered after the arjum screener only when `STRATEGY_ENGINE_ENABLED=1`. An unreachable engine contributes nothing and doesn't change the board's freshness.
+
 ## Scheduler
 
 - **Cron jobs** run on five-field cron in Asia/Jakarta. `tradingDaysOnly` skips weekends and IDX holidays (for EOD jobs).
@@ -124,7 +143,7 @@ Fallbacks when a source is `BLOCKED`: universe from Pasardana (or TradingView); 
 | --- | --- | --- |
 | `GET /health` | none | Liveness |
 | `GET /ready` | none | 200 when the DB answers within 4 s and the disk is at or below the stop threshold, otherwise 503 |
-| `GET /v1/meta/health` | API token | Per source: status, blocked/reason, last success/error, rows ingested. Also scheduler pause, disk %, jobs, raw store kind, the last EOD sessions (`COMPLETE`/`PARTIAL`/`STALE`, expected/present) and `unavailable`: the routes served empty on purpose and why (`SOURCE_BLOCKED` announcements and profile) |
+| `GET /v1/meta/health` | API token | Per source: status, blocked/reason, last success/error, rows ingested. Also scheduler pause, disk %, jobs, raw store kind, the last EOD sessions (`COMPLETE`/`PARTIAL`/`STALE`, expected/present) and `unavailable`: the routes served empty on purpose and why (`SOURCE_BLOCKED` announcements and profile, `DISABLED` strategies while the flag is off). `strategyScans`: the flag, the rules version (`0.1-draft`, `DRAFT_NOT_APPROVED`), the built strategies, the four `NOT_BUILT` ones with the reason, and the last scan runs (status, skip reason, universe counts, gate failures by rule) |
 | `GET /v1/securities?q=` | API token | Active securities by symbol prefix or name (all when `q` is empty) |
 | `GET /v1/stocks/{s}?limit=` | API token | Quote from the newest daily row (`EOD`/`STALE`), or from an intraday snapshot of a newer session (`DELAYED`, WIB timestamp). Daily candles, oldest first, up to `limit` (default 500, max 5000). `404 NO_DATA` without data |
 | `GET /v1/market` | API token | Indices (intraday when newer), breadth (advancers/decliners/unchanged, value, volume, frequency) and movers (top 50 gainers, losers and most active, same liquidity rule as the app) from the latest session or intraday snapshot |
@@ -134,6 +153,7 @@ Fallbacks when a source is `BLOCKED`: universe from Pasardana (or TradingView); 
 | `GET /v1/news?page=&page_size=&symbol=` | API token | Headlines newest first (`newsItemSchema`): `date` (WIB ISO), `title`, `summary`, `url`, plus `outlet`, `symbols`, `dateEstimated`. `page_size` 1–100 (default 20). `meta.freshness` is `DELAYED` while the newest headline is under a day old, then `STALE` |
 | `GET /v1/macro` | API token | BI-Rate and JISDOR (`macroSchema`): latest value and date, the previous one, the press-release link (BI-Rate), and up to 10 observations newest first. `meta.dataAsOf` is the newest date |
 | `GET /v1/announcements` | API token | Always the empty `UNAVAILABLE` form: IDX disclosures are only on `www.idx.co.id`, which blocks the engine (Cloudflare 403, §5.4). `/v1/meta/health` lists it under `unavailable` with the reason |
+| `GET /v1/strategies` | API token | The latest scan of the current rules version as a HAKA-18 board (`strategyBoardSchema` from `src/lib/strategies/contract.ts`): `contexts` (version, universe covered/eligible/skipped), `strategies` (`breakout`, `bb-reversal`; `HAKAPRO_EOD_ENGINE`, `EOD`) and `candidates` (score null, `criterion`/`note` reasons, metrics with units). `meta.dataAsOf` is the session date; freshness `EOD`, then `STALE`. Flag off, or no scan yet: the empty board, `UNAVAILABLE` |
 | `GET /v1/stocks/{s}/fundamentals` | API token | `fundamentalsSchema`: one entry per (period end, `ANNUAL`/`QUARTERLY`), newest first; `metrics` as stored, plus `units` per metric (`IDR`, `USD`, `IDR/share`, `shares`), `currency` and `source`. `meta.dataAsOf` = the newest period end, `HISTORICAL`. Empty `UNAVAILABLE` form without statements |
 | `POST /v1/screener` | API token | `screenRequestSchema` (≤ 20 conditions, `limit` 1–1000, default 500) over every stock with a row in the newest session: `price`, `volume`, `value`, `frequency`, `foreignNetShares` (buy − sell shares), `marketCap` (close × listed shares, else the universe snapshot), `per`, `pbv`, `roe`, `roa`, `eps`, `der`, `dividendYield`, `change1D` (fraction; the app converts its percent). AND binds tighter than OR; a null value never matches. Rows most traded first; `total` counts all matches; `supportedFields` lists only fields with a value in the session; `ratioSources` names `derived`/`pasardana` per symbol and ratio. Missing values are null, never 0. `400` on an invalid request |
 | `GET /v1/stocks/{s}/profile` | API token | `404 NO_DATA` (no source) |
@@ -167,6 +187,7 @@ All are runtime-only. None is needed at build time.
 | `ENGINE_ARJUM_BASE_URL` / `ENGINE_ARJUM_API_KEY` | unset | arjum base URL and key (same provider and key as the app's `HEULATRADE_MARKET_API_BASE_URL` / `_KEY`). Set together; without them `foreign-flow` is not registered and foreign buy/sell stay null |
 | `ENGINE_ARJUM_DAILY_BUDGET` | `600` | Max arjum calls per WIB day for foreign flow (of the shared 1000/day quota) |
 | `ENGINE_ARJUM_RESERVE` | `400` | Stop while arjum's `x-ratelimit-remaining` is below this (the app environments' share) |
+| `ENGINE_STRATEGY_SCANS_ENABLED` | `false` | `true`/`1` registers `strategy-scan-eod` and serves `/v1/strategies`. Leave off until the owner approves the HAKA-17 rules |
 | `ENGINE_SCHEDULER_ENABLED` | `true` | `false` serves the API only |
 | `ENGINE_MIGRATE_ON_START` | `true` | Applies `db/migrations` at boot |
 | `ENGINE_RAW_S3_ENDPOINT` | unset | R2: `https://6b331bf8590ae2dd7de440acdb2deeb5.r2.cloudflarestorage.com` |
@@ -201,7 +222,7 @@ Scripts (repo root):
 | `engine:typecheck` | Also run by `bun run typecheck` |
 | `engine:db:generate` | `drizzle-kit generate` from `db/schema.ts` |
 | `engine:db:migrate` | Apply the migrations |
-| `engine:test:e2e` | Docker PostgreSQL + the fixture world: every job, block/fallback paths, news (conditional GET, dedupe, per-outlet blocks, retention), macro, fundamentals (order, spacing, weekly and catch-up cycles, a 429 blocking both Yahoo sources) → ratios → `/v1` fundamentals and screener, universe → EOD → foreign → intraday → `/v1`, and ownership uploads (two synthetic months, dedupe, a corrected XLSX re-upload, re-parse, failure, size limit); not part of `bun run test` or CI |
+| `engine:test:e2e` | Docker PostgreSQL + the fixture world: every job, block/fallback paths, news (conditional GET, dedupe, per-outlet blocks, retention), macro, fundamentals (order, spacing, weekly and catch-up cycles, a 429 blocking both Yahoo sources) → ratios → `/v1` fundamentals and screener, universe → EOD → foreign → intraday → `/v1`, and ownership uploads (two synthetic months, dedupe, a corrected XLSX re-upload, re-parse, failure, size limit), and the strategy scan on a synthetic universe (flag off/on, `SKIPPED` → `SUCCEEDED`, schedule vs manual re-run, `/v1/strategies`); not part of `bun run test` or CI |
 
 Unit tests run with the root `bun run test` (parsers, fetcher, scheduler, `/v1` derivations and routes).
 

@@ -6,6 +6,7 @@ import { recentEodSessions } from "./db/ingest";
 import { deleteNewsOlderThan } from "./db/market-info";
 import { DbMarketStore } from "./db/market-store";
 import { DbOwnershipStore } from "./db/ownership";
+import { DbStrategyStore } from "./db/strategy-store";
 import { DbCursorStore, DbRawDocumentIndex, DbRunRecorder, DbSourceStateStore, deleteIntradayOlderThan, sourceHealth, syncSources } from "./db/repos";
 import { Fetcher } from "./fetch/fetcher";
 import { LimiterRegistry } from "./fetch/rate-limit";
@@ -19,6 +20,7 @@ import { indicesEodJob } from "./jobs/indices";
 import { intradayJob } from "./jobs/intraday";
 import { biRateJob, jisdorJob } from "./jobs/macro";
 import { newsJob } from "./jobs/news";
+import { strategyScanJob } from "./jobs/strategy-scan";
 import { universeJob } from "./jobs/universe";
 import { log as defaultLog, type Logger } from "./log";
 import { OwnershipService } from "./ownership/service";
@@ -55,6 +57,7 @@ export type EngineServices = {
  *   fundamentals   every 10 min at :05, 19:00–05:59, background, low priority  Yahoo fundamentals per symbol, weekly
  *                                                                               cycle + earnings-season catch-up
  *   ratios         06:15, 17:15, 21:15 daily (no network)                      derived ratios → stock_ratios
+ *   strategy-scan-eod 21:00, 23:00 trading days (only with ENGINE_STRATEGY_SCANS_ENABLED)  HAKA-17 draft rules over daily_prices
  */
 export function defaultRegistry(services: EngineServices): Registry {
   const sources = engineSources(services.config.arjum);
@@ -85,6 +88,7 @@ export function defaultRegistry(services: EngineServices): Registry {
       biRateJob(jobServices, sources.bi),
       fundamentalsJob(jobServices, sources.yahooFundamentals, { hostSources: [sources.yahoo.id] }),
       ratiosJob(jobServices, { fundamentals: sources.yahooFundamentals.id, chart: sources.yahoo.id }),
+      ...(services.config.strategyScans.enabled ? [strategyScanJob(jobServices)] : []),
     ],
   };
 }
@@ -129,6 +133,7 @@ export async function createEngine(config: EngineConfig, options: EngineOptions 
     sourceHealth: () => sourceHealth(db), unblockSource: (id) => sourceState.unblock(id),
     market: new DbMarketStore(db),
     ownership: { service: ownership, maxUploadBytes: config.ownership.maxUploadBytes, freeFloatEnabled: config.ownership.freeFloatEnabled },
+    strategies: { enabled: config.strategyScans.enabled, store: new DbStrategyStore(db) },
     eodSessions: async () => (await recentEodSessions(db)).map((row) => ({
       date: row.date, status: row.status, expected: row.expected, present: row.present, attempts: row.attempts, finalizedAt: row.finalizedAt?.toISOString() ?? null,
     })),

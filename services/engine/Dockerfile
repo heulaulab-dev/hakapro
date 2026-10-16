@@ -12,6 +12,8 @@ COPY src/server/services/strip-identifiers.ts ./src/server/services/strip-identi
 COPY src/server/config/idx-calendar.ts ./src/server/config/idx-calendar.ts
 COPY src/lib/freshness ./src/lib/freshness
 COPY src/lib/movers.ts ./src/lib/movers.ts
+COPY src/lib/strategies/contract.ts ./src/lib/strategies/contract.ts
+COPY src/lib/format/index.ts ./src/lib/format/index.ts
 COPY src/lib/api/provider-limits.ts ./src/lib/api/provider-limits.ts
 COPY src/lib/ownership ./src/lib/ownership
 COPY src/lib/insider-holders.ts ./src/lib/insider-holders.ts

@@ -163,6 +163,7 @@ Freshness note: old code has two enums. Lane A emits `EOD` / `STALE` (>7 calenda
 | `NEXT_PUBLIC_SUPABASE_URL` | public | Supabase clients |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | public | Supabase clients |
 | `MARKET_API_URL` | server | Lane A |
+| `STRATEGY_ENGINE_ENABLED` | server | `1` adds the Data Engine's EOD strategy scans (`/v1/strategies` over Lane A) to `/api/strategies`; off by default (draft rules, HAKA-17) |
 | `HEULATRADE_MARKET_API_BASE_URL` | server | Lane B |
 | `HEULATRADE_MARKET_API_KEY` | server (secret) | Lane B |
 | `SUPABASE_SERVICE_ROLE_KEY` | server (secret) | alert job only |

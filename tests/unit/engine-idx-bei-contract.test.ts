@@ -16,15 +16,16 @@ import { MemoryOwnershipStore } from "../../services/engine/src/ownership/store"
 import { PauseGuard } from "../../services/engine/src/schedule/pause";
 import { Scheduler } from "../../services/engine/src/schedule/scheduler";
 import { MemoryMarketStore } from "../../services/engine/src/serve/store";
+import { fixtureStrategyStore } from "../../services/engine/test/strategy-fixtures";
 
 const BASE = "http://engine.test";
 const NOW = new Date("2026-10-14T10:00:00Z");
 
-function engineFetch(dir: string, now: Date, market?: AppDeps["market"]) {
+function engineFetch(dir: string, now: Date, market?: AppDeps["market"], strategies?: AppDeps["strategies"]) {
   const pause = new PauseGuard(dir, 85, { cacheMs: 0, measure: async () => 10 });
   const sourceState = new MemorySourceStateStore();
   const scheduler = new Scheduler({ jobs: [], pause, runs: new MemoryRunRecorder(), cursors: new MemoryCursorStore(), sourceState });
-  const app = createApp({ ping: async () => true, pause, scheduler, rawStoreKind: "local", sourceHealth: async () => [], unblockSource: async () => false, now: () => now, market });
+  const app = createApp({ ping: async () => true, pause, scheduler, rawStoreKind: "local", sourceHealth: async () => [], unblockSource: async () => false, now: () => now, market, strategies });
   return ((input: string | URL | Request, init?: RequestInit) => app(new Request(input, init))) as typeof fetch;
 }
 
@@ -46,6 +47,8 @@ describe("engine /v1 stubs via IdxBeiSource", () => {
     expect((await source.corporateActions("BBCA")).data).toEqual([]);
     expect((await source.screen({ conditions: [], limit: 10 })).data.rows).toEqual([]);
     expect(await source.macro()).toMatchObject({ freshness: "UNAVAILABLE", data: { series: [] } });
+    // Strategy scans off (the default): the empty board.
+    expect(await source.engineStrategies()).toMatchObject({ freshness: "UNAVAILABLE", asOf: null, data: { contexts: [], strategies: [], candidates: [] } });
     // No price data yet: a typed provider error, never a fake quote.
     await expect(source.stock("BBCA")).rejects.toBeInstanceOf(MarketDataError);
     await expect(source.foreignFlow()).rejects.toBeInstanceOf(MarketDataError);
@@ -172,6 +175,24 @@ describe("engine /v1 real responses via IdxBeiSource", () => {
     const stock = await new FreshSource(BASE, () => now, engineFetch(dir, now, store(true))).stock("BBCA");
     expect(stock).toMatchObject({ freshness: "DELAYED", asOf: "2026-10-19T09:55:00+07:00" });
     expect(stock.data.quote).toMatchObject({ date: "2026-10-19", close: 5400, previousClose: 5225, change: 175 });
+  });
+
+  it("parses the strategy board (/v1/strategies) and the app's engine strategy source merges it after arjum", async () => {
+    vi.resetModules();
+    const { IdxBeiSource: FreshSource } = await import("@/server/market/idx-bei-source");
+    const { strategyBoard, strategySources } = await import("@/server/strategies");
+    const now = new Date("2026-10-16T11:00:00Z"); // Friday 18:00 WIB: the 2026-10-15 scan is a session old
+    const source = new FreshSource(BASE, () => now, engineFetch(dir, now, undefined, { enabled: true, store: fixtureStrategyStore() }));
+
+    const lane = await source.engineStrategies();
+    expect(lane).toMatchObject({ freshness: "STALE", asOf: "2026-10-15", source: "idx-bei" });
+    expect(lane.data.candidates.map((candidate) => `${candidate.strategyId}:${candidate.symbol}`)).toEqual(["breakout:BRKT", "bb-reversal:BBRV"]);
+
+    const arjum = { strategies: async () => ({ data: { date: "2026-10-16", screenerVersion: "V5.2", marketCondition: null, universe: null, strategies: [] }, freshness: "EOD", asOf: "2026-10-16", source: "fixture:arjum" }) };
+    const board = await strategyBoard(strategySources(arjum as never, { STRATEGY_ENGINE_ENABLED: "1" }, () => source));
+    expect(board.data.strategies.map((strategy) => `${strategy.id}:${strategy.freshness}`)).toEqual(["eod-breakout:STALE", "eod-bb-reversal:STALE"]);
+    expect(board.data.candidates.map((candidate) => `${candidate.strategyId}:${candidate.symbol}:${candidate.score}`)).toEqual(["eod-breakout:BRKT:null", "eod-bb-reversal:BBRV:null"]);
+    expect(board.data.contexts.find((context) => context.source === "HAKAPRO_EOD_ENGINE")).toMatchObject({ version: "0.1-draft", universe: { covered: 7, liquid: 3, skipped: 4 } });
   });
 });
 

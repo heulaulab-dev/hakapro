@@ -15,11 +15,19 @@ export type StrategySourceId = (typeof STRATEGY_SOURCES)[number];
 export const STRATEGY_KINDS = ["EOD", "REALTIME"] as const;
 export type StrategyKind = (typeof STRATEGY_KINDS)[number];
 
-/** Observed criteria, worded by HAKAPRO (i18n `criteria.<key>`), never by the source. */
-export const CRITERION_KEYS = [
+/** Criteria the arjum screener's flags map to (src/server/services/why-matched.ts). */
+export const PROVIDER_CRITERION_KEYS = [
   "accumulation", "distribution", "brokerConcentration", "institutional", "foreignBuying", "strongTechnicals",
   "quietAccumulation", "historicalEdge", "historicalTrap", "pumpRisk", "lateEntry", "climax",
 ] as const;
+
+/** Criteria HAKAPRO's own EOD engine reports (HAKA-17 draft rules: BREAKOUT, BB REVERSAL). */
+export const ENGINE_CRITERION_KEYS = [
+  "closeAboveHigh", "relativeVolume", "closeLocation", "firstBreak", "closedBelowBand", "backInsideBand", "bullishCandle",
+] as const;
+
+/** Observed criteria, worded by HAKAPRO (i18n `criteria.<key>`), never by the source. */
+export const CRITERION_KEYS = [...PROVIDER_CRITERION_KEYS, ...ENGINE_CRITERION_KEYS] as const;
 export type CriterionKey = (typeof CRITERION_KEYS)[number];
 
 const freshness = z.enum(FRESHNESS_STATES);

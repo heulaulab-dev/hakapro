@@ -21,7 +21,8 @@ const enabled = dockerEnabled();
 const TV_SYMBOLS = ["BBCA", "BBRI", "BMRI", "TLKM", "GOTO"];
 const PASARDANA_SYMBOLS = ["AADI", "AALI", "ABBA"];
 
-describe.skipIf(!enabled)("engine sources (docker postgres + fixtures)", () => {
+// These tests run several jobs against a real database; give the whole suite the longer budget the slow ones already use.
+describe.skipIf(!enabled)("engine sources (docker postgres + fixtures)", { timeout: 30_000 }, () => {
   let pg: TestPostgres;
   let world: SourceWorld;
   const cleanups: Array<() => Promise<void>> = [];
@@ -617,7 +618,8 @@ describe.skipIf(!enabled)("engine sources (docker postgres + fixtures)", () => {
       "bank-indonesia": "NEVER_RUN", "news-antara": "NEVER_RUN", "news-cnbcindonesia": "NEVER_RUN", "news-detik": "NEVER_RUN", "news-investortrust": "NEVER_RUN",
       "yahoo-fundamentals": "NEVER_RUN",
     });
-    expect(health.data.unavailable.map((row) => row.route)).toEqual(["/v1/announcements", "/v1/stocks/{s}/profile"]);
+    expect(health.data.unavailable.map((row) => row.route)).toEqual(["/v1/announcements", "/v1/stocks/{s}/profile", "/v1/strategies"]);
+    expect(health.data.unavailable.find((row) => row.route === "/v1/strategies")?.status).toBe("DISABLED");
     expect(health.data.unavailable.find((row) => row.route === "/v1/announcements")?.status).toBe("SOURCE_BLOCKED");
     expect(health.data.eodSessions[0]).toMatchObject({ date: "2026-10-16", status: "PARTIAL" });
   });

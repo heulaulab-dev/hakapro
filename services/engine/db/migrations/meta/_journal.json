@@ -36,6 +36,13 @@
       "when": 1792141921989,
       "tag": "20261016091201_ownership_uploads",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792143564555,
+      "tag": "20261016093924_strategy_scans",
+      "breakpoints": true
     }
   ]
 }

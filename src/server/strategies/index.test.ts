@@ -26,6 +26,15 @@ test("a board of several sources is as fresh as its stalest source and as of its
   expect(board.data.candidates.map((candidate) => candidate.strategyId)).toEqual(["a", "b"]);
 });
 
+test("a source with no strategies doesn't make the board UNAVAILABLE; with no strategies anywhere, every source counts", async () => {
+  const empty = { ...fakeSource("HAKAPRO_EOD_ENGINE", "UNAVAILABLE", "2026-10-15", []), context: async () => withFreshness({ source: "HAKAPRO_EOD_ENGINE" as const, version: null, marketCondition: null, universe: null }, { freshness: "UNAVAILABLE", asOf: null, source: "idx-bei" }) };
+  const board = await strategyBoard([fakeSource("ARJUM_SCREENER", "EOD", "2026-10-15", ["a"]), empty]);
+  expect(board).toMatchObject({ freshness: "EOD", asOf: "2026-10-15", source: "arjum_screener" });
+  expect(board.data.contexts).toHaveLength(2);
+  const none = await strategyBoard([fakeSource("ARJUM_SCREENER", "EOD", "2026-10-15", []), empty]);
+  expect(none).toMatchObject({ freshness: "UNAVAILABLE" });
+});
+
 test("a strategy id already taken by an earlier source is skipped with its candidates, and logged", async () => {
   const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
   const board = await strategyBoard([

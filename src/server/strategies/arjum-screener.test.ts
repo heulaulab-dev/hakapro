@@ -1,7 +1,7 @@
 import { describe, expect, test, vi } from "vitest";
 import { BASELINE_DIR, fixture, wib } from "../../../tests/support/fixtures";
 import { withFreshness, type WithFreshness } from "@/lib/freshness";
-import { CRITERION_KEYS, strategyBoardSchema, type ScreenerCandidate } from "@/lib/strategies/contract";
+import { PROVIDER_CRITERION_KEYS, strategyBoardSchema, type ScreenerCandidate } from "@/lib/strategies/contract";
 import { FixtureSource } from "@/server/market/fixture-source";
 import type { MarketDataSource } from "@/server/market/source";
 import type { StrategyScreen } from "@/server/market/types";
@@ -69,7 +69,7 @@ describe("arjum screener → Strategy Engine contract", () => {
   });
 
   test("every provider flag maps to a contract criterion key", () => {
-    expect(new Set(Object.values(KNOWN_FLAGS).map((meta) => meta.key))).toEqual(new Set(CRITERION_KEYS));
+    expect(new Set(Object.values(KNOWN_FLAGS).map((meta) => meta.key))).toEqual(new Set(PROVIDER_CRITERION_KEYS));
   });
 });
 

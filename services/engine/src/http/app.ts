@@ -8,6 +8,7 @@ import {
 } from "@/server/schemas/idx-bei";
 import { dateSchema, symbolSchema } from "@/server/schemas/inputs";
 import { ownershipChangesSchema, ownershipMonthSchema, stockOwnershipSchema } from "@/server/schemas/ownership";
+import { strategyBoardSchema } from "@/lib/strategies/contract";
 import type { SourceHealth } from "../db/repos";
 import type { PauseGuard } from "../schedule/pause";
 import type { Scheduler } from "../schedule/scheduler";
@@ -21,6 +22,8 @@ import { serveFundamentals, serveScreener } from "../serve/fundamentals";
 import { previousMonth as previousMonthOf } from "../ownership/numbers";
 import { emptyStockOwnership, serveOwnershipChanges, serveStockOwnership } from "../serve/ownership";
 import type { MarketStore } from "../serve/store";
+import { EMPTY_BOARD, serveStrategies, strategyScanHealth, type StrategyStore } from "../serve/strategies";
+import { STRATEGY_RULES, type StrategyRules } from "../strategies/rules";
 import { envelope, servedMeta, unavailableMeta } from "./envelope";
 import { ownershipAdmin, type OwnershipDeps } from "./ownership-admin";
 
@@ -41,6 +44,8 @@ export type AppDeps = {
   eodSessions?: () => Promise<EodSessionHealth[]>;
   /** Ownership uploads and their snapshot sets (E6). Without it the ownership routes answer with empty forms. */
   ownership?: OwnershipDeps;
+  /** E4 strategy scans (ENGINE_STRATEGY_SCANS_ENABLED). Absent or disabled → /v1/strategies serves the empty board. */
+  strategies?: { enabled: boolean; store: StrategyStore | null; rules?: StrategyRules };
   now?: () => Date;
   log?: Logger;
 };
@@ -68,6 +73,12 @@ export const UNAVAILABLE_ROUTES = [
   { route: "/v1/stocks/{s}/profile", status: "SOURCE_BLOCKED", reason: "Company profiles come from IDX (blocked, §5.0); answered with 404 NO_DATA." },
 ] as const;
 
+/** Listed under `unavailable` while ENGINE_STRATEGY_SCANS_ENABLED is off (the default). */
+export const STRATEGIES_DISABLED = {
+  route: "/v1/strategies", status: "DISABLED",
+  reason: "ENGINE_STRATEGY_SCANS_ENABLED is off (the default): the HAKA-17 strategy rules are a draft (v0.1) awaiting owner approval, so no scan runs and the route answers with the empty UNAVAILABLE board. See strategyScans.",
+} as const;
+
 const pageParam = (max: number, fallback: number) => z.string().regex(/^\d{1,6}$/).transform(Number).pipe(z.number().int().min(1).max(max)).optional().transform((value) => value ?? fallback);
 const newsQuerySchema = z.object({ page: pageParam(NEWS_MAX_PAGE, 1), page_size: pageParam(NEWS_MAX_PAGE_SIZE, NEWS_DEFAULT_PAGE_SIZE), symbol: symbolSchema.optional() });
 const DAY_MS = 86_400_000;
@@ -83,6 +94,8 @@ const param = (url: URL, name: string) => url.searchParams.get(name) || undefine
 export function createApp(deps: AppDeps): (request: Request) => Promise<Response> {
   const now = deps.now ?? (() => new Date());
   const log = deps.log ?? nullLogger;
+  const scansEnabled = deps.strategies?.enabled === true;
+  const rules = deps.strategies?.rules ?? STRATEGY_RULES;
 
   async function handle(request: Request): Promise<Response> {
     const url = new URL(request.url);
@@ -119,12 +132,15 @@ export function createApp(deps: AppDeps): (request: Request) => Promise<Response
 
     if (path === "/v1/meta/health") {
       if (!get) return error(405, "METHOD_NOT_ALLOWED", "Use GET");
-      const [sources, pause, eodSessions] = await Promise.all([deps.sourceHealth(), deps.pause.check(), deps.eodSessions?.() ?? Promise.resolve([])]);
+      const [sources, pause, eodSessions, strategyScans] = await Promise.all([
+        deps.sourceHealth(), deps.pause.check(), deps.eodSessions?.() ?? Promise.resolve([]),
+        strategyScanHealth(scansEnabled, deps.strategies?.store ?? null, rules),
+      ]);
       // Operational status, not market data: meta.freshness stays UNAVAILABLE.
       return json({
         data: {
           sources, scheduler: { paused: pause.paused, pauseReason: pause.reason, diskPercent: pause.diskPercent, diskStopPercent: pause.diskStopPercent, jobs: deps.scheduler.status() },
-          rawStore: deps.rawStoreKind, eodSessions, unavailable: UNAVAILABLE_ROUTES,
+          rawStore: deps.rawStoreKind, eodSessions, unavailable: [...UNAVAILABLE_ROUTES, ...(scansEnabled ? [] : [STRATEGIES_DISABLED])], strategyScans,
         },
         meta: unavailableMeta(at),
       });
@@ -172,6 +188,11 @@ export function createApp(deps: AppDeps): (request: Request) => Promise<Response
       const span = (Date.parse(to.data) - Date.parse(from.data)) / DAY_MS;
       if (span < 0 || span > ACTIONS_MAX_RANGE_DAYS) return error(400, "BAD_REQUEST", `from must not be after to, and the range is at most ${ACTIONS_MAX_RANGE_DAYS} days`);
       return respond(actionsCalendarSchema, market ? await serveActionsCalendar(market, { from: from.data, to: to.data }, at) : null, []);
+    }
+    if (path === "/v1/strategies") {
+      // HAKA-18 board of the latest scan. Disabled (default) or no run yet: the contract's empty form, UNAVAILABLE.
+      const store = scansEnabled ? deps.strategies?.store : null;
+      return respond(strategyBoardSchema, store ? await serveStrategies(store, rules, at) : null, EMPTY_BOARD);
     }
     if (path === "/v1/signals") {
       const served = market ? await serveSignals(market, at) : null;

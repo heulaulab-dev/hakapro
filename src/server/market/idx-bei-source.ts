@@ -1,6 +1,7 @@
 import "server-only";
 import type { z } from "zod";
 import { classifySessionDate, withFreshness, type Freshness, type WithFreshness } from "@/lib/freshness";
+import { strategyBoardSchema } from "@/lib/strategies/contract";
 import {
   actionsSchema, announcementItemSchema, fundamentalsSchema, idxBeiEnvelope, macroSchema, marketOverviewSchema, newsItemSchema,
   profileSchema, screenRequestSchema, screenResultSchema, securitySchema, signalsSchema, stockSchema, type ScreenRequest,
@@ -175,5 +176,14 @@ export class IdxBeiSource extends BaseMarketDataSource {
     if (symbol) params.set("symbol", symbolSchema.parse(symbol));
     const { data, meta } = await this.get(`/v1/ownership/changes?${params}`, ownershipChangesSchema, TTL_MS.securities);
     return this.wrap(data, "HISTORICAL", meta.dataAsOf);
+  }
+
+  /**
+   * Data Engine only (`/v1/strategies`, E4): the EOD strategy scan as a HAKA-18 board. Freshness is re-derived from the
+   * scan's session date. Not a MarketDataSource capability; read by the engine strategy source (src/server/strategies).
+   */
+  async engineStrategies() {
+    const { data, meta } = await this.get("/v1/strategies", strategyBoardSchema, TTL_MS.market);
+    return this.snapshot(data, meta.dataAsOf);
   }
 }
