@@ -36,6 +36,23 @@ export function resolveDeploymentEnvironment(env: Env): DeploymentEnvironment {
   return environment as DeploymentEnvironment;
 }
 
+/**
+ * Public origin for absolute URLs (share images, canonical and hreflang links). Undefined in local
+ * development without BETTER_AUTH_URL, where Next falls back to the dev server's own origin.
+ */
+export function resolveSiteOrigin(env: Env): string | undefined {
+  const environment = resolveDeploymentEnvironment(env);
+  const trim = (value: string | undefined) => value?.trim().replace(/\/$/, "") || undefined;
+  if (environment === "rehearsal") return trim(env.BETTER_AUTH_REHEARSAL_URL);
+  if (isProductionEnv(env)) return DEPLOYMENT_ORIGINS[environment];
+  return trim(env.BETTER_AUTH_URL);
+}
+
+/** Only the production deployment may be indexed; develop, staging and rehearsal ask crawlers to stay out. */
+export function isIndexable(env: Env): boolean {
+  return resolveDeploymentEnvironment(env) === "production";
+}
+
 /** Missing credentials disable their provider; incomplete pairs fail closed. */
 export function resolveAuthConfig(env: Env): AuthConfig {
   const production = isProductionEnv(env);

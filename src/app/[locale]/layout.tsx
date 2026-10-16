@@ -11,6 +11,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { routing } from "@/i18n/routing";
 import { BRAND_NAME } from "@/lib/brand";
 import { DENSITY_COOKIE, parseDensity, parseTheme, THEME_COLOR, THEME_COOKIE } from "@/lib/preferences";
+import { isIndexable, resolveSiteOrigin } from "@/server/config/auth";
 import "../globals.css";
 
 // Brand typeface (logo guidelines §06): headings and brand surfaces only. Body and data stay on Geist.
@@ -21,13 +22,17 @@ const CLIENT_NAMESPACES = ["app", "freshness", "locale", "theme", "density", "na
 export async function generateMetadata({ params }: LayoutProps<"/[locale]">): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "app" });
+  const origin = resolveSiteOrigin(process.env);
+  const indexable = isIndexable(process.env);
   return {
+    // Share images and alternate links resolve against the environment's own origin, not the build's.
+    ...(origin ? { metadataBase: new URL(origin) } : {}),
     title: { default: BRAND_NAME, template: `%s · ${BRAND_NAME}` },
     applicationName: BRAND_NAME,
     description: `${t("tagline")} ${t("summary")}`,
     // No openGraph/twitter objects here: they would replace the share images from
     // src/app/opengraph-image.tsx and twitter-image.tsx (merged at the app root, above this layout).
-    robots: { index: true, follow: true },
+    robots: { index: indexable, follow: indexable },
   };
 }
 
