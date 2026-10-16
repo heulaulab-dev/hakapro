@@ -69,7 +69,7 @@ sources ─► fetchers (policy: rate limit, UA, cache, block detection)
 Responses use the `{data, meta}` envelope. The app's composite source already uses arjum first and fills gaps from idx-bei when `MARKET_API_URL` is set, so connecting the engine is a configuration change. New capabilities, such as strategy scans and ownership, get new `/v1/*` routes plus app adapters (for example `HAKAPRO_EOD_ENGINE` in the HAKA-18 strategy contract).
 
 **Storage:**
-- A separate private PostgreSQL 17 per environment (`hakapro-engine-<env>-postgres`) keeps engine volume out of the app database.
+- A separate private PostgreSQL 17 (`hakapro-engine-postgres`, one shared engine; see §8) keeps engine volume out of the app database.
 - Drizzle migrations live in `services/engine`.
 - Raw documents go to an R2 bucket (`hakapro-engine-raw`; needs its own bucket-scoped token) with a retention policy.
 
