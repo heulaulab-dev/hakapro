@@ -134,16 +134,16 @@ Every table has `source` and `as_of`; derived tables also record the derivation 
 | Phase | Work |
 | --- | --- |
 | E0. Discovery | Confirm endpoints, formats, update times and block behaviour for sources 1–9 with single requests. Record findings here |
-| E1. Foundation | `services/engine` (Bun, Dockerfile, health), engine DB + Drizzle, fetcher framework (policy, cache, raw store, block detection), scheduler, `/v1/meta/health`. Coolify app + DB for develop |
-| E2. Universe + EOD prices | Sources 1–2, daily run + gradual backfill, `/v1/securities`, `/v1/stocks/{s}`, `/v1/market` movers/breadth. Point develop's `MARKET_API_URL` at it |
+| E1. Foundation | `services/engine` (Bun, Dockerfile, health), engine DB + Drizzle, fetcher framework (policy, cache, raw store, block detection), scheduler, `/v1/meta/health`. Coolify environment `data-engine` with app + DB |
+| E2. Universe + EOD prices | Sources 1–2, daily run + backfill since 2020-01-01, `/v1/securities`, `/v1/stocks/{s}`, `/v1/market` movers/breadth. Point develop's `MARKET_API_URL` at it first, then staging and production |
 | E3. Market info | Indices, announcements, news, corporate actions, macro → `/v1/market`, `/v1/news`, `/v1/announcements`, `/v1/stocks/{s}/actions` |
 | E4. Strategy scans | `HAKAPRO_EOD_ENGINE` running the approved HAKA-17 rules over the whole universe, exposed via the HAKA-18 contract |
 | E5. Fundamentals + screener | Financial statements → fundamentals and `POST /v1/screener` |
 | E6. Ownership | Monthly ≥1% lists → HAKA-33 change engine and HAKA-34 estimate (draft until approved) |
 
-## 8. Open questions
+## 8. Decisions (owner, 2026-10-16)
 
-1. R2: create a second bucket `hakapro-engine-raw` with its own token (owner action), or reuse a prefix in `heulaulab-db-backups`?
-2. History depth for the EOD backfill (1 year? since 2020, as with arjum?).
-3. Intraday: is DELAYED intraday data wanted in E2/E3, or EOD only until Running Trade (HAKA-14/15)?
-4. Does the engine run in all three environments, or one shared engine (develop) feeding develop/staging/production during the experiment?
+1. **Raw store:** a new R2 bucket, `hakapro-engine-raw` (created 2026-10-16), with its own bucket-scoped token (Object Read & Write, owner creates it). It is not shared with `heulaulab-db-backups`.
+2. **EOD history:** backfill from **2020-01-01**, matching arjum's daily history. The backfill runs gradually at night and never competes with the daily run.
+3. **Intraday:** **EOD only** for now. Delayed intraday waits until after E3, or for Running Trade (HAKA-14/15).
+4. **Deployment:** **one shared engine** during the experiment. It runs in its own Coolify environment `data-engine` (app `hakapro-engine`, PostgreSQL `hakapro-engine-postgres`) and serves develop, staging and production over the private network (`MARKET_API_URL`). Per-environment engines can come later if needed.
