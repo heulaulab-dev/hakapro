@@ -1,6 +1,6 @@
 // Block detection (DATA-ENGINE.md §2). A detected block stops the source; it is never bypassed or auto-retried.
 
-export type BlockReason = "RATE_LIMITED" | "CLOUDFLARE_CHALLENGE" | "CDN_FORBIDDEN" | "CAPTCHA" | "LOGIN_REQUIRED";
+export type BlockReason = "RATE_LIMITED" | "CLOUDFLARE_CHALLENGE" | "CDN_FORBIDDEN" | "FORBIDDEN" | "CAPTCHA" | "LOGIN_REQUIRED";
 export type BlockDetection = { reason: BlockReason; markers: string[] };
 
 export type BlockInput = {
@@ -21,7 +21,7 @@ const CAPTCHA = ["g-recaptcha", "recaptcha/api.js", "h-captcha", "hcaptcha.com",
 const LOGIN_PATH = /\/(login|log-in|signin|sign-in|sso|auth|account\/login|masuk)(\/|\?|$|\.)/i;
 
 /** Response headers worth keeping as evidence (never request headers or cookies). */
-export const EVIDENCE_HEADERS = ["cf-ray", "cf-mitigated", "server", "retry-after", "location", "content-type"] as const;
+export const EVIDENCE_HEADERS = ["cf-ray", "cf-mitigated", "server", "x-cache", "retry-after", "location", "content-type"] as const;
 
 export function evidenceHeaders(headers: Headers): Record<string, string> {
   const kept: Record<string, string> = {};
@@ -62,5 +62,10 @@ export function detectBlock(input: BlockInput): BlockDetection | null {
   }
 
   if (status === 403 && headers.has("cf-ray")) return { reason: "CDN_FORBIDDEN", markers: ["status:403", "header:cf-ray"] };
+  if (status === 403 && /cloudfront/i.test(`${headers.get("x-cache") ?? ""} ${headers.get("server") ?? ""}`)) {
+    return { reason: "CDN_FORBIDDEN", markers: ["status:403", "header:cloudfront"] };
+  }
+  // Any other 403 is a refusal too: the source stops instead of retrying (§2), until an admin unblocks it.
+  if (status === 403) return { reason: "FORBIDDEN", markers: ["status:403"] };
   return null;
 }

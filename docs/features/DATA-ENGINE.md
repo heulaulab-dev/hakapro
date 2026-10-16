@@ -288,8 +288,8 @@ Every table has `source` and `as_of`; derived tables also record the derivation 
 | --- | --- |
 | E0. Discovery | Confirm endpoints, formats, update times and block behaviour for sources 1–9 with single requests. **Done 2026-10-16, see §5** |
 | E1. Foundation | `services/engine` (Bun, Dockerfile, health), engine DB + Drizzle, fetcher framework (policy, cache, raw store, block detection), scheduler, `/v1/meta/health`. Coolify environment `data-engine` with app + DB |
-| E2. Universe + EOD prices | Sources 1–2, daily run + backfill since 2020-01-01, `/v1/securities`, `/v1/stocks/{s}`, `/v1/market` movers/breadth. Point develop's `MARKET_API_URL` at it first, then staging and production |
-| E2b. Intraday snapshots | Session-window polling (default 5 min) for quotes and indices, `intraday_snapshots` with 30-day retention, intraday movers/breadth served as DELAYED on `/v1/market` and `/v1/stocks/{s}` |
+| E2. Universe + EOD prices | Sources 1–2, daily run + backfill since 2020-01-01, `/v1/securities`, `/v1/stocks/{s}`, `/v1/market` movers/breadth. Point develop's `MARKET_API_URL` at it first, then staging and production. **Built 2026-10-16** (HAKA-62, with arjum foreign flow and index EOD; see `services/engine/README.md`); not yet deployed |
+| E2b. Intraday snapshots | Session-window polling (default 5 min) for quotes and indices, `intraday_snapshots` with 30-day retention, intraday movers/breadth served as DELAYED on `/v1/market` and `/v1/stocks/{s}`. **Built 2026-10-16** (HAKA-67) |
 | E3. Market info | Indices, announcements, news, corporate actions, macro → `/v1/market`, `/v1/news`, `/v1/announcements`, `/v1/stocks/{s}/actions` |
 | E4. Strategy scans | `HAKAPRO_EOD_ENGINE` running the approved HAKA-17 rules over the whole universe, exposed via the HAKA-18 contract |
 | E5. Fundamentals + screener | Financial statements → fundamentals and `POST /v1/screener` |

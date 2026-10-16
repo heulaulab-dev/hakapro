@@ -4,7 +4,7 @@ import { timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 import {
   actionsSchema, announcementItemSchema, fundamentalsSchema, marketOverviewSchema, newsItemSchema, screenRequestSchema,
-  screenResultSchema, securitySchema,
+  screenResultSchema, securitySchema, signalsSchema, stockSchema,
 } from "@/server/schemas/idx-bei";
 import { symbolSchema } from "@/server/schemas/inputs";
 import type { SourceHealth } from "../db/repos";
@@ -12,7 +12,11 @@ import type { PauseGuard } from "../schedule/pause";
 import type { Scheduler } from "../schedule/scheduler";
 import type { Logger } from "../log";
 import { nullLogger } from "../log";
-import { envelope, unavailableMeta } from "./envelope";
+import { DEFAULT_CANDLES, MAX_CANDLES, serveActions, serveMarket, serveSecurities, serveSignals, serveStock, type Served } from "../serve/market";
+import type { MarketStore } from "../serve/store";
+import { envelope, servedMeta, unavailableMeta } from "./envelope";
+
+export type EodSessionHealth = { date: string; status: string; expected: number; present: number; attempts: number; finalizedAt: string | null };
 
 export type AppDeps = {
   apiToken?: string;
@@ -23,6 +27,10 @@ export type AppDeps = {
   sourceHealth(): Promise<SourceHealth[]>;
   unblockSource(id: string): Promise<boolean>;
   rawStoreKind: "s3" | "local";
+  /** Stored market data (E2/E2b). Without it the idx-bei routes answer as the E1 stubs did. */
+  market?: MarketStore;
+  /** Recent EOD session completeness for /v1/meta/health. */
+  eodSessions?: () => Promise<EodSessionHealth[]>;
   now?: () => Date;
   log?: Logger;
 };
@@ -76,10 +84,10 @@ export function createApp(deps: AppDeps): (request: Request) => Promise<Response
 
     if (path === "/v1/meta/health") {
       if (!get) return error(405, "METHOD_NOT_ALLOWED", "Use GET");
-      const [sources, pause] = await Promise.all([deps.sourceHealth(), deps.pause.check()]);
+      const [sources, pause, eodSessions] = await Promise.all([deps.sourceHealth(), deps.pause.check(), deps.eodSessions?.() ?? Promise.resolve([])]);
       // Operational status, not market data: meta.freshness stays UNAVAILABLE.
       return json({
-        data: { sources, scheduler: { paused: pause.paused, pauseReason: pause.reason, diskPercent: pause.diskPercent, diskStopPercent: pause.diskStopPercent, jobs: deps.scheduler.status() }, rawStore: deps.rawStoreKind },
+        data: { sources, scheduler: { paused: pause.paused, pauseReason: pause.reason, diskPercent: pause.diskPercent, diskStopPercent: pause.diskStopPercent, jobs: deps.scheduler.status() }, rawStore: deps.rawStoreKind, eodSessions },
         meta: unavailableMeta(at),
       });
     }
@@ -93,21 +101,39 @@ export function createApp(deps: AppDeps): (request: Request) => Promise<Response
     }
     if (!get) return error(405, "METHOD_NOT_ALLOWED", "Use GET");
 
-    if (path === "/v1/market") return json(envelope(marketOverviewSchema, { indices: [], breadth: { advancers: 0, decliners: 0, unchanged: 0, value: 0, volume: 0, frequency: 0 }, movers: [] }, unavailableMeta(at)));
-    if (path === "/v1/securities") return json(envelope(securitySchema.array(), [], unavailableMeta(at)));
+    const market = deps.market;
+    // Stored data when there is some; otherwise the contract's empty form (or a typed 404 where it has none).
+    const respond = <T extends z.ZodType>(schema: T, served: Served<z.input<T>> | null, empty: z.input<T>) =>
+      json(served ? envelope(schema, served.data, servedMeta(served, at)) : envelope(schema, empty, unavailableMeta(at)));
+
+    if (path === "/v1/market") {
+      return respond(marketOverviewSchema, market ? await serveMarket(market, at) : null, { indices: [], breadth: { advancers: 0, decliners: 0, unchanged: 0, value: 0, volume: 0, frequency: 0 }, movers: [] });
+    }
+    if (path === "/v1/securities") {
+      return respond(securitySchema.array(), market ? await serveSecurities(market, (url.searchParams.get("q") ?? "").slice(0, 64), at) : null, []);
+    }
     if (path === "/v1/news") return json(envelope(newsItemSchema.array(), [], unavailableMeta(at)));
     if (path === "/v1/announcements") return json(envelope(announcementItemSchema.array(), [], unavailableMeta(at)));
-    // No trading date can be vouched for yet; the schema has no empty form, so this is a typed miss.
-    if (path === "/v1/signals") return error(404, "NO_DATA", "No signals available yet");
+    if (path === "/v1/signals") {
+      const served = market ? await serveSignals(market, at) : null;
+      // No trading date can be vouched for without foreign data; the schema has no empty form, so this is a typed miss.
+      if (!served) return error(404, "NO_DATA", "No signals available yet");
+      return json(envelope(signalsSchema, served.data, servedMeta(served, at)));
+    }
 
     const stock = path.match(/^\/v1\/stocks\/([^/]+)(?:\/(fundamentals|actions|profile))?$/);
     if (stock) {
       const symbol = symbolSchema.safeParse(decodeURIComponent(stock[1]));
       if (!symbol.success) return error(400, "BAD_REQUEST", "Invalid symbol");
       if (stock[2] === "fundamentals") return json(envelope(fundamentalsSchema, [], unavailableMeta(at)));
-      if (stock[2] === "actions") return json(envelope(actionsSchema, [], unavailableMeta(at)));
-      // quote and profile have no empty form in the contract: a symbol without data is a 404, never a fake row.
-      return error(404, "NO_DATA", `No ${stock[2] ?? "price"} data for ${symbol.data}`);
+      if (stock[2] === "actions") return respond(actionsSchema, market ? await serveActions(market, symbol.data, at) : null, []);
+      if (stock[2] === "profile") return error(404, "NO_DATA", `No profile data for ${symbol.data}`);
+      const limit = Number(url.searchParams.get("limit") ?? DEFAULT_CANDLES);
+      if (!Number.isInteger(limit) || limit < 1) return error(400, "BAD_REQUEST", "Invalid limit");
+      const served = market ? await serveStock(market, symbol.data, Math.min(limit, MAX_CANDLES), at) : null;
+      // A quote has no empty form in the contract: a symbol without data is a 404, never a fake row.
+      if (!served) return error(404, "NO_DATA", `No price data for ${symbol.data}`);
+      return json(envelope(stockSchema, served.data, servedMeta(served, at)));
     }
     return error(404, "NOT_FOUND", "Not found");
   }

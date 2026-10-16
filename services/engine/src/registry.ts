@@ -1,5 +1,5 @@
-// Source and job registry. E1 registers no third-party source: real sources arrive in E2/E3 after discovery (E0).
-// Tests wire a local fixture source end to end (test/fixture-source.ts).
+// Source and job registry. The production registry (src/engine.ts defaultRegistry) wires the E2/E2b sources in
+// src/sources/ and the jobs in src/jobs/; tests also wire a local fixture source (test/fixture-source.ts).
 import type { HostPolicy } from "./fetch/rate-limit";
 import type { JobDefinition } from "./schedule/scheduler";
 

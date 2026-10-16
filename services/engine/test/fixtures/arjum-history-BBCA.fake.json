@@ -1,0 +1,10 @@
+{
+  "stock_code": "BBCA",
+  "frame": "daily",
+  "data_available": { "start": "2020-01-02", "end": "2026-10-16" },
+  "rows": [
+    { "date": "2026-10-16", "close": 5225, "change": -850, "change_pct": -13.99, "value": 5196076490000, "volume": 994464400, "freq": 154210, "f_buy": 310000000, "f_sell": 420000000, "n_foreign": -110000000, "open": 5825, "high": 5825, "low": 5175, "avg": 5225.4 },
+    { "date": "2026-10-15", "close": 6075, "change": -50, "change_pct": -0.82, "value": 820000000000, "volume": 134763200, "freq": 30111, "f_buy": 70000000, "f_sell": 90000000, "n_foreign": -20000000, "open": 6075, "high": 6125, "low": 6025, "avg": 6080.1 },
+    { "date": "2026-10-14", "close": 6125, "change": 175, "change_pct": 2.94, "value": 830000000000, "volume": 136303100, "freq": 28900, "f_buy": 80000000, "f_sell": 60000000, "n_foreign": 20000000, "open": 6000, "high": 6125, "low": 5950, "avg": 6060.0 }
+  ]
+}

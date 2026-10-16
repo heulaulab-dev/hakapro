@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { fakeClock, tempDir } from "../../test/support";
-import { ENGINE_USER_AGENT, FetchError, Fetcher, SourceBlockedError } from "./fetcher";
+import { documentKey, ENGINE_USER_AGENT, FetchError, Fetcher, SourceBlockedError } from "./fetcher";
 import { LimiterRegistry } from "./rate-limit";
 import { LocalRawStore } from "./raw-store";
 import { MemoryRawDocumentIndex, MemorySourceStateStore } from "./stores";
@@ -128,6 +128,46 @@ describe("Fetcher", () => {
     const t = setup(dir.path, [() => new Response("<title>Just a moment...</title>", { status: 503, headers: { "content-type": "text/html" } })]);
     await expect(t.fetcher.fetch(SOURCE, URL_)).rejects.toBeInstanceOf(SourceBlockedError);
     expect(t.requests).toHaveLength(1);
+  });
+
+  it("POSTs a JSON body, never conditionally, and keys the document by URL + body hash", async () => {
+    const json = (body: string) => () => new Response(body, { status: 200, headers: { "content-type": "application/json", etag: '"v1"' } });
+    const t = setup(dir.path, [json('{"a":1}'), json('{"b":2}'), json('{"a":1}')]);
+    const scan = "https://scanner.example.test/indonesia/scan";
+    const first = await t.fetcher.fetch(SOURCE, scan, { method: "POST", body: '{"q":1}', headers: { "content-type": "application/json" } });
+    const second = await t.fetcher.fetch(SOURCE, scan, { method: "POST", body: '{"q":2}', headers: { "content-type": "application/json" } });
+    const again = await t.fetcher.fetch(SOURCE, scan, { method: "POST", body: '{"q":1}', headers: { "content-type": "application/json" } });
+    expect(t.requests.map((request) => request.method)).toEqual(["POST", "POST", "POST"]);
+    expect(await t.requests[0].text()).toBe('{"q":1}');
+    expect(t.requests[2].headers.get("if-none-match")).toBeNull();
+    expect(t.requests[0].headers.get("user-agent")).toBe(ENGINE_USER_AGENT);
+    expect(first.document.url).toBe(documentKey(scan, { method: "POST", body: '{"q":1}' }));
+    expect(first.document.url).toMatch(/^https:\/\/scanner\.example\.test\/indonesia\/scan#post-[0-9a-f]{16}$/);
+    expect(second.document.url).not.toBe(first.document.url);
+    expect([first.kind, second.kind, again.kind]).toEqual(["new", "new", "duplicate"]);
+    expect(first.headers.get("etag")).toBe('"v1"');
+  });
+
+  it("sends a credential header without storing it, and refuses identity or cookie overrides", async () => {
+    const t = setup(dir.path, [() => new Response("{}", { status: 200, headers: { "content-type": "application/json", "x-ratelimit-remaining": "512" } })]);
+    const result = await t.fetcher.fetch(SOURCE, URL_, { headers: { "x-api-key": "k-123" } });
+    expect(t.requests[0].headers.get("x-api-key")).toBe("k-123");
+    expect(result.headers.get("x-ratelimit-remaining")).toBe("512");
+    expect(JSON.stringify(t.documents.docs)).not.toContain("k-123");
+    for (const name of ["User-Agent", "cookie", "If-None-Match", "x-forwarded-for"]) {
+      await expect(t.fetcher.fetch(SOURCE, URL_, { headers: { [name]: "x" } })).rejects.toBeInstanceOf(FetchError);
+    }
+    expect(t.requests).toHaveLength(1);
+  });
+
+  it("never follows a redirect with a credential header or a POST", async () => {
+    const t = setup(dir.path, [
+      () => new Response(null, { status: 302, headers: { location: "https://elsewhere.example.test/" } }),
+      () => new Response(null, { status: 307, headers: { location: "/other" } }),
+    ]);
+    await expect(t.fetcher.fetch(SOURCE, URL_, { headers: { "x-api-key": "k" } })).rejects.toBeInstanceOf(FetchError);
+    await expect(t.fetcher.fetch(SOURCE, URL_, { method: "POST", body: "{}" })).rejects.toBeInstanceOf(FetchError);
+    expect(t.requests).toHaveLength(2);
   });
 
   it("does not retry other 4xx", async () => {

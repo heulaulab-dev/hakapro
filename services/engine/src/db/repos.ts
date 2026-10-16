@@ -131,13 +131,19 @@ export async function sourceHealth(db: EngineDb): Promise<SourceHealth[]> {
   }));
 }
 
-/** Deletes up to `limit` intraday snapshots older than `cutoff`; returns the count. */
+/** Deletes up to `limit` intraday snapshots (stocks, then indices) older than `cutoff`; returns the count. */
 export async function deleteIntradayOlderThan(db: EngineDb, cutoff: Date, limit: number): Promise<number> {
   const victims = db.select({ symbol: t.intradaySnapshots.symbol, ts: t.intradaySnapshots.ts, source: t.intradaySnapshots.source })
     .from(t.intradaySnapshots).where(lt(t.intradaySnapshots.ts, cutoff)).limit(limit);
   const deleted = await db.delete(t.intradaySnapshots)
     .where(sql`(${t.intradaySnapshots.symbol}, ${t.intradaySnapshots.ts}, ${t.intradaySnapshots.source}) in (${victims})`)
     .returning({ ts: t.intradaySnapshots.ts });
-  return deleted.length;
+  if (deleted.length >= limit) return deleted.length;
+  const indexVictims = db.select({ code: t.indexIntraday.code, ts: t.indexIntraday.ts, source: t.indexIntraday.source })
+    .from(t.indexIntraday).where(lt(t.indexIntraday.ts, cutoff)).limit(limit - deleted.length);
+  const indexDeleted = await db.delete(t.indexIntraday)
+    .where(sql`(${t.indexIntraday.code}, ${t.indexIntraday.ts}, ${t.indexIntraday.source}) in (${indexVictims})`)
+    .returning({ ts: t.indexIntraday.ts });
+  return deleted.length + indexDeleted.length;
 }
 

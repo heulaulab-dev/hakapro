@@ -18,6 +18,13 @@ export function intradayMeta(snapshotTs: Date | null, now: Date): EngineMeta {
   return { source: ENGINE_SOURCE, fetchedAt: now.toISOString(), dataAsOf: snapshotTs.toISOString(), freshness: "DELAYED" };
 }
 
+/** Meta for stored data: its data date (or WIB timestamp for intraday) and the freshness derived from it. */
+export function servedMeta(served: { dataAsOf: string | null; freshness: Freshness }, now: Date): EngineMeta {
+  // LIVE is never served (§8.3): no source behind the engine is a realtime feed.
+  const freshness = served.freshness === "LIVE" ? "DELAYED" : served.freshness;
+  return { source: ENGINE_SOURCE, fetchedAt: now.toISOString(), dataAsOf: served.dataAsOf, freshness };
+}
+
 export function envelope<T extends z.ZodType>(schema: T, data: z.input<T>, meta: EngineMeta): z.infer<ReturnType<typeof idxBeiEnvelope<T>>> {
   return idxBeiEnvelope(schema).parse({ data, meta });
 }

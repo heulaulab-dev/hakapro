@@ -11,6 +11,9 @@ COPY src/server/schemas ./src/server/schemas
 COPY src/server/services/strip-identifiers.ts ./src/server/services/strip-identifiers.ts
 COPY src/server/config/idx-calendar.ts ./src/server/config/idx-calendar.ts
 COPY src/lib/freshness ./src/lib/freshness
+COPY src/lib/movers.ts ./src/lib/movers.ts
+COPY src/lib/api/provider-limits.ts ./src/lib/api/provider-limits.ts
+COPY src/server/providers/arjum/queries.ts ./src/server/providers/arjum/queries.ts
 COPY services/engine/tsconfig.json ./services/engine/tsconfig.json
 COPY services/engine/db ./services/engine/db
 COPY services/engine/src ./services/engine/src

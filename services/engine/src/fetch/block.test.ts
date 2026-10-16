@@ -40,6 +40,12 @@ describe("detectBlock", () => {
     expect(detectBlock({ status: 403, headers: new Headers({ "cf-ray": "abc", "content-type": "application/json" }), requestUrl: URL_, body: "{}" })?.reason).toBe("CDN_FORBIDDEN");
   });
 
+  it("flags a CloudFront 403 as a CDN block and any other 403 as a refusal", () => {
+    expect(detectBlock({ status: 403, headers: new Headers({ "x-cache": "Error from cloudfront", "content-type": "text/html" }), requestUrl: URL_, body: "Request blocked" })?.reason).toBe("CDN_FORBIDDEN");
+    expect(detectBlock({ status: 403, headers: new Headers({ "content-type": "application/json" }), requestUrl: URL_, body: "{}" })).toEqual({ reason: "FORBIDDEN", markers: ["status:403"] });
+    expect(detectBlock({ status: 404, headers: new Headers({ "content-type": "application/json" }), requestUrl: URL_, body: "{}" })).toBeNull();
+  });
+
   it("treats 429 as a block (never retried)", () => {
     expect(detectBlock({ status: 429, headers: new Headers({ "retry-after": "60" }), requestUrl: URL_ })?.reason).toBe("RATE_LIMITED");
   });
