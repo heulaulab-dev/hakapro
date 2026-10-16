@@ -16,15 +16,36 @@ export type FetchOptions = {
   accept?: string;
   /** Skip If-None-Match / If-Modified-Since (e.g. a deliberate re-check). */
   unconditional?: boolean;
+  /** POST with a JSON body (e.g. TradingView's scanner). POSTs are never conditional and never follow redirects. */
+  method?: "GET" | "POST";
+  body?: string;
+  /**
+   * Extra request headers, for a documented API credential (arjum `x-api-key`) or a content type. Identity, cookie
+   * and conditional headers are refused: the fetcher owns them, and they are never changed to get past a block.
+   */
+  headers?: Record<string, string>;
 };
 
 export type FetchResult = {
   /** new: stored now · duplicate: same bytes as a stored copy · not_modified: 304 on the stored validators. */
   kind: "new" | "duplicate" | "not_modified";
   document: RawDocumentRecord;
+  /** Response headers of this request (e.g. a provider's x-ratelimit-* quota). */
+  headers: Headers;
   body(): Promise<Uint8Array>;
   text(): Promise<string>;
 };
+
+const RESERVED_HEADERS = /^(user-agent|cookie|if-none-match|if-modified-since|host|proxy-.*|x-forwarded-.*|forwarded)$/i;
+
+/**
+ * Index key of a request in raw_documents. A GET is its URL; a POST adds a fragment with the body hash (never sent
+ * to the server), so different scanner queries to one URL are cached and deduplicated separately.
+ */
+export function documentKey(url: string, options: Pick<FetchOptions, "method" | "body"> = {}): string {
+  if ((options.method ?? "GET") === "GET") return url;
+  return `${url.split("#")[0]}#post-${createHash("sha256").update(options.body ?? "").digest("hex").slice(0, 16)}`;
+}
 
 export class SourceBlockedError extends Error {
   constructor(readonly sourceId: string, readonly evidence: BlockEvidence | null) {
@@ -80,8 +101,13 @@ export class Fetcher {
   }
 
   async fetch(source: FetchSource, url: string, options: FetchOptions = {}): Promise<FetchResult> {
+    for (const name of Object.keys(options.headers ?? {})) {
+      if (RESERVED_HEADERS.test(name)) throw new FetchError(`Header ${name} is managed by the fetcher`, null, false);
+    }
     if (await this.deps.sourceState.isBlocked(source.id)) throw new SourceBlockedError(source.id, null);
-    const previous = options.unconditional ? null : await this.deps.documents.latestForUrl(url);
+    const key = documentKey(url, options);
+    const conditional = !options.unconditional && (options.method ?? "GET") === "GET";
+    const previous = conditional ? await this.deps.documents.latestForUrl(key) : null;
 
     let response: Response | null = null;
     let finalUrl = url;
@@ -105,7 +131,7 @@ export class Fetcher {
 
     if (!response) throw new FetchError("No response", null, false);
     if (response.status === 304 && previous) {
-      return this.result("not_modified", previous, null);
+      return this.result("not_modified", previous, null, response.headers);
     }
 
     const body = await this.readBody(response);
@@ -117,19 +143,19 @@ export class Fetcher {
     }
 
     const digest = sha256(body);
-    const duplicate = await this.deps.documents.findByUrlSha(url, digest);
-    if (duplicate) return this.result("duplicate", duplicate, body);
+    const duplicate = await this.deps.documents.findByUrlSha(key, digest);
+    if (duplicate) return this.result("duplicate", duplicate, body, response.headers);
 
     const fetchedAt = new Date(this.clock.now());
     const contentType = response.headers.get("content-type");
-    const key = rawKey(source.id, fetchedAt, digest, contentType);
-    if (!(await this.deps.rawStore.exists(key))) await this.deps.rawStore.put(key, body, contentType);
+    const storeKey = rawKey(source.id, fetchedAt, digest, contentType);
+    if (!(await this.deps.rawStore.exists(storeKey))) await this.deps.rawStore.put(storeKey, body, contentType);
     const document = await this.deps.documents.insert({
-      source: source.id, url, fetchedAt, httpStatus: response.status, sha256: digest, r2Key: key, contentType,
+      source: source.id, url: key, fetchedAt, httpStatus: response.status, sha256: digest, r2Key: storeKey, contentType,
       byteSize: body.byteLength, etag: response.headers.get("etag"), lastModified: response.headers.get("last-modified"),
       fetchRunId: options.fetchRunId ?? null,
     });
-    return this.result(document.sha256 === digest && document.fetchedAt.getTime() === fetchedAt.getTime() ? "new" : "duplicate", document, body);
+    return this.result(document.sha256 === digest && document.fetchedAt.getTime() === fetchedAt.getTime() ? "new" : "duplicate", document, body, response.headers);
   }
 
   /** One logical request, following up to maxRedirects hops manually so every hop is rate-limited and checked. */
@@ -138,17 +164,22 @@ export class Fetcher {
     for (let hop = 0; hop <= this.maxRedirects; hop += 1) {
       const target = new URL(current);
       if (target.protocol !== "https:" && target.protocol !== "http:") throw new FetchError("Unsupported URL scheme", null, false);
-      const headers: Record<string, string> = { "user-agent": ENGINE_USER_AGENT, accept: options.accept ?? "*/*" };
+      const headers: Record<string, string> = { ...options.headers, "user-agent": ENGINE_USER_AGENT, accept: options.accept ?? "*/*" };
       if (hop === 0 && previous) {
         if (previous.etag) headers["if-none-match"] = previous.etag;
         if (previous.lastModified) headers["if-modified-since"] = previous.lastModified;
       }
+      const method = options.method ?? "GET";
       const limiter = this.limiters.forHost(target.host, source.policy ?? DEFAULT_HOST_POLICY);
-      const response = await limiter.run(() => this.fetchImpl(current, { headers, redirect: "manual", signal: AbortSignal.timeout(this.timeoutMs) }));
+      const response = await limiter.run(() => this.fetchImpl(current, {
+        method, headers, body: method === "POST" ? options.body ?? "" : undefined, redirect: "manual", signal: AbortSignal.timeout(this.timeoutMs),
+      }));
       const location = response.headers.get("location");
       if (response.status >= 300 && response.status < 400 && response.status !== 304 && location) {
         await this.stopIfBlocked(source, current, response, new Uint8Array(), location);
         await response.body?.cancel().catch(() => {});
+        // A POST is not replayed, and a credential header never follows a redirect to wherever it points.
+        if (method === "POST" || options.headers) throw new FetchError(`Unexpected redirect (HTTP ${response.status})`, response.status, false);
         current = new URL(location, current).toString();
         continue;
       }
@@ -182,13 +213,13 @@ export class Fetcher {
     throw new SourceBlockedError(source.id, evidence);
   }
 
-  private result(kind: FetchResult["kind"], document: RawDocumentRecord, body: Uint8Array | null): FetchResult {
+  private result(kind: FetchResult["kind"], document: RawDocumentRecord, body: Uint8Array | null, headers: Headers): FetchResult {
     const load = async () => {
       if (body) return body;
       const stored = await this.deps.rawStore.get(document.r2Key);
       if (!stored) throw new FetchError(`Raw copy missing for ${document.r2Key}`, null, false);
       return stored;
     };
-    return { kind, document, body: load, text: async () => decoder.decode(await load()) };
+    return { kind, document, headers, body: load, text: async () => decoder.decode(await load()) };
   }
 }

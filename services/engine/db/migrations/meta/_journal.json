@@ -8,6 +8,13 @@
       "when": 1792122277848,
       "tag": "20261016034437_engine_foundation",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792125286134,
+      "tag": "20261016043446_eod_intraday_sources",
+      "breakpoints": true
     }
   ]
 }
