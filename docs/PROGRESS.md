@@ -307,3 +307,29 @@ The user kept the layout and asked for heulaulab-dashboard's design system:
 - Snapshot type (Zod 4): rows carry `holderKey`, the disclosed name, kind, integer-string shares, ≤6-decimal percent, position date, and `source {dataset, reference, retrievedAt}`. A snapshot also states its disclosure threshold and, optionally, issued shares. The existing `ownership_snapshots` table doesn't fit; the needed columns and unique-key change are listed in `CONNECTION-NETWORK.md` → "Ownership snapshot type and change engine". No migration was added.
 - HAKA-33 `compareOwnershipSnapshots`: NEW / INCREASE / DECREASE / EXIT / UNCHANGED, plus BELOW_THRESHOLD (dropping off the ≥1% list is not a proven exit) and AMBIGUOUS (conflicting duplicate lines). Deltas are exact (BigInt shares, micro-percent pp). Corporate-action flags. Non-adjacent, same-month, reversed and cross-ticker comparisons are refused. Source rows are preserved on both sides.
 - HAKA-34 `docs/features/FREE-FLOAT-METHODOLOGY.md` v0.1-draft, **awaiting owner approval** (10 open questions), and `estimateFreeFloat`: strategic / portfolio / unknown rules and an exact low–high range (headline = low). The output is versioned, `isOfficial: false`, and any official figure stays separate.
+
+## S15: Data Engine foundation (E1) (2026-10-16, Plane HAKA-61, branch `feat/engine-foundation`)
+- `services/engine/` is a separate Bun + TypeScript service with no Next.js. It shares the idx-bei Zod contract, the IDX calendar and the freshness clock with the app through `@/*`. See `services/engine/README.md` for env vars, local runs and Coolify setup.
+- HTTP:
+  - `/health` and `/ready` (DB ping, disk at or below threshold).
+  - `/v1/meta/health`: per-source status, block reason, last success/error, rows ingested, plus scheduler pause, disk and jobs.
+  - Admin (`ENGINE_ADMIN_TOKEN`): run a job, pause/resume, unblock a source.
+  - idx-bei `/v1/*` stubs: contract-valid empty envelopes, `UNAVAILABLE`. Quote, profile and signals return `404 NO_DATA` (no fake rows).
+  - Optional `ENGINE_API_TOKEN` bearer on `/v1/*`.
+  - `tests/unit/engine-idx-bei-contract.test.ts` checks that the app's `IdxBeiSource` parses every stub.
+- Engine DB has its own Drizzle schema and migration in `services/engine/db/`:
+  - Bookkeeping: `sources`, `raw_documents`, `fetch_runs`, `job_cursors`.
+  - Data: `securities`, `daily_prices` (PK symbol+date), `intraday_snapshots` (index symbol+ts), `index_daily`, `announcements`, `news_items` (headline + link only), `corporate_actions`. Each data row carries `source`, `as_of` and `raw_ref`.
+  - `bun run engine:db:migrate`, or migrate on start.
+- Fetcher:
+  - Honest UA; per-host token bucket and concurrency (1 req/2 s, 2 in flight; intraday sources forced to 1).
+  - ETag/Last-Modified revalidation and URL+sha256 dedupe, with a raw copy in R2/S3 (`Bun.S3Client`) or a local-directory fallback.
+  - A challenge, 403+cf-ray, captcha, login redirect/401 or 429 marks the source `BLOCKED` with evidence and stops it; it is never retried automatically.
+  - Backoff applies only to 5xx and network errors. There is no bypass of any kind.
+- Scheduler:
+  - WIB cron with trading-day skipping, and session-window jobs (every N minutes inside IDX sessions incl. Friday, default 5).
+  - Each job is single-flight. Background jobs (2020-01-01 EOD backfill in night batches with a DB cursor; 30-day intraday retention) yield to all other jobs.
+  - Global pause above `ENGINE_DISK_STOP_PERCENT` (statfs on the data volume) or while the build/maintenance flag is set.
+- Owner decisions applied: one shared engine (Coolify env `data-engine`, app `hakapro-engine`, DB `hakapro-engine-postgres`), R2 bucket `hakapro-engine-raw` (token pending; local fallback works without it), backfill from 2020-01-01, intraday alongside EOD served as DELAYED.
+- No real source is registered yet (E2/E3 after discovery). A local fixture source exercises fetch → raw → parse → DB in `bun run engine:test:e2e` (Docker PostgreSQL; not in CI).
+- Root `typecheck` now also runs `engine:typecheck`; vitest includes `services/engine/**/*.test.ts`; the root tsconfig excludes `services/engine` (Bun types).
