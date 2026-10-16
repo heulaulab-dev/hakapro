@@ -29,6 +29,13 @@
       "when": 1792139812033,
       "tag": "20261016083652_fundamentals_ratios",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792141921989,
+      "tag": "20261016091201_ownership_uploads",
+      "breakpoints": true
     }
   ]
 }

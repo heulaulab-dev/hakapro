@@ -313,3 +313,143 @@ export const stockRatios = pgTable("stock_ratios", {
   primaryKey({ name: "stock_ratios_pk", columns: [t.symbol, t.ratio, t.ratioSource] }),
   check("stock_ratios_ratio_source_check", sql`${t.ratioSource} in ('derived', 'pasardana')`),
 ]);
+
+// ── Ownership (E6, HAKA-66): the owner's monthly ≥1% list uploads → HAKA-33 snapshot sets, changes, HAKA-34 draft ──
+// Fills the schema gap documented in CONNECTION-NETWORK.md ("Ownership snapshot type and change engine" → Schema gap):
+// holder_key/holder_kind, structured provenance (dataset, reference, retrieved_at), threshold and issued shares per
+// set, and no unique key that would reject a line the source really publishes twice (rows are unique per line locator).
+
+export const OWNERSHIP_UPLOAD_STATUSES = ["RECEIVED", "PARSED", "FAILED"] as const;
+export const OWNERSHIP_UPLOAD_FORMATS = ["pdf", "csv", "xlsx"] as const;
+export const OWNERSHIP_HOLDER_KIND_VALUES = ["person", "organisation", "custodian_nominee", "government", "public", "unknown"] as const;
+export const OWNERSHIP_CHANGE_KIND_VALUES = ["NEW", "INCREASE", "DECREASE", "EXIT", "UNCHANGED", "BELOW_THRESHOLD", "AMBIGUOUS"] as const;
+
+/** Exact integer share counts and six-decimal percentages, kept as strings (HAKA-33 decimal.ts). */
+const shareCount = (name: string) => numeric(name, { precision: 24, scale: 0 });
+const signedShareCount = (name: string) => numeric(name, { precision: 25, scale: 0 });
+const percent6 = (name: string) => numeric(name, { precision: 9, scale: 6 });
+const ppDelta = (name: string) => numeric(name, { precision: 10, scale: 6 });
+
+export type OwnershipUploadIssue = { severity: "error" | "warning"; locator: string; field?: string; message: string; text?: string };
+export type OwnershipUploadStats = {
+  parserVersion: string; records: number; rowsAccepted: number; rowsRejected: number; warnings: number; issuers: number;
+  pages: number | null; columns: Array<{ label: string; field: string | null }>; setsReplaced: number; changes: number;
+  issuesTruncated: boolean;
+};
+
+/** One uploaded file (raw copy in the raw store, deduplicated by sha256). */
+export const ownershipUploads = pgTable("ownership_uploads", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  receivedAt: ts("received_at").notNull().defaultNow(),
+  /** The month the owner says the list is for (YYYY-MM); the position date must fall in it. */
+  asOfMonth: text("as_of_month").notNull(),
+  /** Position date found in the file (or given as snapshotDate), once parsed. */
+  snapshotDate: date("snapshot_date"),
+  /** Position date override given with the upload (snapshotDate parameter), kept for re-parses. */
+  snapshotDateOverride: date("snapshot_date_override"),
+  /** The owner's label for where the file came from (e.g. the IDX announcement number). */
+  sourceLabel: text("source_label"),
+  fileName: text("file_name"),
+  format: text("format", { enum: OWNERSHIP_UPLOAD_FORMATS }).notNull(),
+  contentType: text("content_type").notNull(),
+  byteSize: integer("byte_size").notNull(),
+  sha256: text("sha256").notNull().unique("ownership_uploads_sha256"),
+  rawRef: uuid("raw_ref").notNull().references(() => rawDocuments.id),
+  status: text("status", { enum: OWNERSHIP_UPLOAD_STATUSES }).notNull().default("RECEIVED"),
+  /** File-level failure (no header, no position date, no valid row). */
+  error: text("error"),
+  /** Per-row validation errors and warnings (capped); rows with errors were not stored. */
+  issues: jsonb("issues").$type<OwnershipUploadIssue[]>().notNull().default(sql`'[]'::jsonb`),
+  stats: jsonb("stats").$type<OwnershipUploadStats>(),
+  parsedAt: ts("parsed_at"),
+}, (t) => [
+  index("ownership_uploads_received").on(t.receivedAt),
+  check("ownership_uploads_month_check", sql`${t.asOfMonth} ~ '^[0-9]{4}-(0[1-9]|1[0-2])$'`),
+]);
+
+/**
+ * One issuer's snapshot for one month: the HAKA-33 OwnershipSnapshot header. A later upload of the same month
+ * replaces the issuer's set (one set per symbol and month). `snapshot_date` is the set's as-of (position date).
+ */
+export const ownershipSnapshotSets = pgTable("ownership_snapshot_sets", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  uploadId: uuid("upload_id").notNull().references(() => ownershipUploads.id),
+  symbol: text("symbol").notNull(),
+  month: text("month").notNull(),
+  snapshotDate: date("snapshot_date").notNull(),
+  issuerName: text("issuer_name"),
+  dataset: text("dataset").notNull(),
+  thresholdPercent: percent6("threshold_percent").notNull(),
+  issuedShares: shareCount("issued_shares"),
+  /** Set-level provenance: the owner's label (or the upload id and file name). */
+  sourceReference: text("source_reference").notNull(),
+  retrievedAt: ts("retrieved_at").notNull(),
+  rawRef: uuid("raw_ref").notNull().references(() => rawDocuments.id),
+  rowCount: integer("row_count").notNull(),
+  /** Comparison with the previous month (status, counts, issued-share change); null until derived. */
+  comparison: jsonb("comparison").$type<Record<string, unknown>>(),
+  /** HAKA-34 estimate (methodology DRAFT); served only with ENGINE_FREE_FLOAT_ENABLED=1. */
+  freeFloat: jsonb("free_float").$type<Record<string, unknown>>(),
+  derivedAt: ts("derived_at"),
+  createdAt: ts("created_at").notNull().defaultNow(),
+}, (t) => [
+  unique("ownership_snapshot_sets_symbol_month").on(t.symbol, t.month),
+  index("ownership_snapshot_sets_month").on(t.month),
+  index("ownership_snapshot_sets_upload").on(t.uploadId),
+]);
+
+/** One disclosed holder line (HAKA-33 OwnershipSnapshotRow). Duplicate published lines are kept, unique by locator. */
+export const ownershipSnapshotRows = pgTable("ownership_snapshot_rows", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  setId: uuid("set_id").notNull().references(() => ownershipSnapshotSets.id, { onDelete: "cascade" }),
+  /** Order in the file (1-based record number). */
+  lineNo: integer("line_no").notNull(),
+  holderKey: text("holder_key").notNull(),
+  holderName: text("holder_name").notNull(),
+  holderKind: text("holder_kind", { enum: OWNERSHIP_HOLDER_KIND_VALUES }).notNull(),
+  shares: shareCount("shares"),
+  percent: percent6("percent"),
+  /** As stated by the source (e.g. KSEI "CP", "ID", "MF"); never guessed. */
+  investorType: text("investor_type"),
+  localForeign: text("local_foreign"),
+  /** Line locator inside the uploaded file, e.g. "upload:<id>#p3.l12". */
+  sourceReference: text("source_reference").notNull(),
+}, (t) => [
+  unique("ownership_snapshot_rows_set_reference").on(t.setId, t.sourceReference),
+  index("ownership_snapshot_rows_set").on(t.setId, t.lineNo),
+  index("ownership_snapshot_rows_holder").on(t.holderKey),
+  check("ownership_snapshot_rows_kind_check", sql`${t.holderKind} in ('person', 'organisation', 'custodian_nominee', 'government', 'public', 'unknown')`),
+  check("ownership_snapshot_rows_values_check", sql`${t.shares} is not null or ${t.percent} is not null`),
+]);
+
+/** Per-holder month-over-month changes (HAKA-33 compareOwnershipSnapshots), one row per holder key and target set. */
+export const ownershipChanges = pgTable("ownership_changes", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  toSetId: uuid("to_set_id").notNull().references(() => ownershipSnapshotSets.id, { onDelete: "cascade" }),
+  fromSetId: uuid("from_set_id").notNull().references(() => ownershipSnapshotSets.id, { onDelete: "cascade" }),
+  symbol: text("symbol").notNull(),
+  /** Month of the later snapshot (YYYY-MM). */
+  month: text("month").notNull(),
+  fromDate: date("from_date").notNull(),
+  toDate: date("to_date").notNull(),
+  holderKey: text("holder_key").notNull(),
+  holderName: text("holder_name").notNull(),
+  holderKind: text("holder_kind", { enum: OWNERSHIP_HOLDER_KIND_VALUES }).notNull(),
+  kind: text("kind", { enum: OWNERSHIP_CHANGE_KIND_VALUES }).notNull(),
+  sharesBefore: shareCount("shares_before"),
+  sharesAfter: shareCount("shares_after"),
+  shareDelta: signedShareCount("share_delta"),
+  percentBefore: percent6("percent_before"),
+  percentAfter: percent6("percent_after"),
+  ppDelta: ppDelta("pp_delta"),
+  flags: text("flags").array().notNull().default(sql`'{}'::text[]`),
+  /** Source references of the holder's lines in each month (the verbatim rows stay in ownership_snapshot_rows). */
+  fromReferences: text("from_references").array().notNull().default(sql`'{}'::text[]`),
+  toReferences: text("to_references").array().notNull().default(sql`'{}'::text[]`),
+  /** Derivation version (DATA-ENGINE.md §6), e.g. "haka33-compare@1". */
+  derivation: text("derivation").notNull(),
+}, (t) => [
+  unique("ownership_changes_to_set_holder").on(t.toSetId, t.holderKey),
+  index("ownership_changes_month_symbol").on(t.month, t.symbol),
+  index("ownership_changes_holder").on(t.holderKey),
+]);
