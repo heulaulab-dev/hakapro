@@ -4,7 +4,8 @@
 import { and, asc, eq } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import {
-  actionsCalendarSchema, actionsSchema, announcementItemSchema, idxBeiEnvelope, macroSchema, marketOverviewSchema, newsItemSchema, securitySchema, signalsSchema, stockSchema,
+  actionsCalendarSchema, actionsSchema, announcementItemSchema, fundamentalsSchema, idxBeiEnvelope, macroSchema, marketOverviewSchema, newsItemSchema,
+  screenResultSchema, securitySchema, signalsSchema, stockSchema,
 } from "@/server/schemas/idx-bei";
 import * as t from "../db/schema";
 import { loadConfig } from "../src/config";
@@ -43,6 +44,7 @@ describe.skipIf(!enabled)("engine sources (docker postgres + fixtures)", () => {
     world.state.tvPriceFactor = 1;
     world.state.arjumRemaining = 1000;
     world.state.newsUpdate = false;
+    world.state.fundamentalsRateLimited = false;
   });
 
   /** A fresh database and engine; the clock is controlled, rate limits run on a virtual clock. */
@@ -79,6 +81,7 @@ describe.skipIf(!enabled)("engine sources (docker postgres + fixtures)", () => {
       ["news-antara", "www.antaranews.com", { minIntervalMs: 5000, concurrency: 1 }],
       ["news-investortrust", "investortrust.id", { minIntervalMs: 5000, concurrency: 1 }],
       ["bank-indonesia", "www.bi.go.id", { minIntervalMs: 5000, concurrency: 1 }],
+      ["yahoo-fundamentals", "query1.finance.yahoo.com", { minIntervalMs: 3000, concurrency: 1 }],
     ]);
     expect(Object.fromEntries(h.engine.scheduler.status().map((job) => [job.id, job.trigger]))).toEqual({
       universe: { kind: "cron", spec: "35 16 * * *", tradingDaysOnly: true },
@@ -92,7 +95,10 @@ describe.skipIf(!enabled)("engine sources (docker postgres + fixtures)", () => {
       "news-retention": { kind: "cron", spec: "45 2 * * *" },
       "macro-jisdor": { kind: "cron", spec: "0 17 * * *" },
       "macro-bi-rate": { kind: "cron", spec: "5 17 * * *" },
+      fundamentals: { kind: "cron", spec: "5-55/10 19-23,0-5 * * *" },
+      ratios: { kind: "cron", spec: "15 6,17,21 * * *" },
     });
+    expect(h.engine.scheduler.status().find((job) => job.id === "fundamentals")).toMatchObject({ background: true, sourceId: "yahoo-fundamentals" });
   });
 
   it("universe: TradingView + Pasardana → securities and fallback session rows with provenance", async () => {
@@ -427,6 +433,132 @@ describe.skipIf(!enabled)("engine sources (docker postgres + fixtures)", () => {
     expect(bi).toMatchObject({ status: "BLOCKED", blockEvidence: { reason: "CDN_FORBIDDEN" } });
   });
 
+  it("fundamentals: one Yahoo call per symbol, most liquid first, spaced with the chart on one host; weekly cycle + catch-up", async () => {
+    const h = await harness();
+    await h.run("universe");
+    world.hits.length = 0;
+    h.clock.sleeps.length = 0;
+    h.setNow(wib("2026-10-16", "20:05")); // Friday, inside the October filing window
+    expect((await h.run("fundamentals")).lastStatus).toBe("SUCCEEDED");
+    const calls = world.hits.filter((hit) => hit.source === "yahoo");
+    const tickers = (hits: typeof calls) => hits.map((hit) => decodeURIComponent(hit.path.split("?")[0].split("/").pop()!));
+    expect(tickers(calls)).toEqual(["BBCA.JK", "BBRI.JK", "BMRI.JK", "TLKM.JK", "GOTO.JK", "AADI.JK", "AALI.JK", "ABBA.JK"]);
+    expect(calls.every((hit) => hit.userAgent === ENGINE_USER_AGENT && hit.method === "GET")).toBe(true);
+    expect(calls[0].path).toContain(`period2=${Date.parse("2026-10-17T00:00:00+07:00") / 1000}`);
+    expect(h.clock.sleeps.filter((ms) => ms > 2000).length).toBeGreaterThanOrEqual(7); // 3 s apart on the Yahoo host
+
+    const rows = await h.db.select().from(t.financials);
+    const count = (symbol: string) => rows.filter((row) => row.symbol === symbol).length;
+    expect([count("BBCA"), count("TLKM"), count("GOTO")]).toEqual([101, 120, 69]);
+    expect(new Set(rows.map((row) => row.symbol))).toEqual(new Set(["BBCA", "TLKM", "GOTO"])); // the others answered 404
+    expect(rows.every((row) => row.source === "yahoo-fundamentals" && row.rawRef && row.asOf)).toBe(true);
+    expect(rows.find((row) => row.symbol === "BBCA" && row.metric === "netIncome" && row.periodType === "quarterly" && row.periodEnd === "2026-06-30"))
+      .toMatchObject({ value: 14850323000000, unit: "amount", currency: "IDR" });
+    const docs = await h.db.select().from(t.rawDocuments).where(eq(t.rawDocuments.source, "yahoo-fundamentals"));
+    expect(docs).toHaveLength(3);
+    expect(docs.every((doc) => doc.parseStatus === "PARSED" && doc.url.startsWith("https://query1.finance.yahoo.com/ws/fundamentals-timeseries/"))).toBe(true);
+    let [cursor] = await h.db.select().from(t.jobCursors).where(eq(t.jobCursors.jobId, "fundamentals"));
+    expect(cursor.cursor).toMatchObject({ full: { key: "2026-10-12" }, expectedQuarter: "2026-06-30" });
+
+    // Same week, full pass done: the catch-up refetches only symbols without the expected quarter (2026-06-30).
+    world.hits.length = 0;
+    await h.run("fundamentals");
+    expect(tickers(world.hits)).toEqual(["BBRI.JK", "BMRI.JK", "AADI.JK", "AALI.JK", "ABBA.JK"]);
+    world.hits.length = 0;
+    await h.run("fundamentals");
+    expect(world.hits).toEqual([]);
+    // Next Monday: a new weekly cycle; restated values replace stored ones instead of adding rows.
+    h.setNow(wib("2026-10-19", "20:05"));
+    await h.run("fundamentals");
+    expect(world.hits).toHaveLength(8);
+    [cursor] = await h.db.select().from(t.jobCursors).where(eq(t.jobCursors.jobId, "fundamentals"));
+    expect(cursor.cursor).toMatchObject({ full: { key: "2026-10-19" }, catchup: null });
+    expect((await h.db.select().from(t.financials)).length).toBe(290);
+  });
+
+  it("fundamentals: a 429 stops both Yahoo sources after one request; the job refuses while the chart is blocked", async () => {
+    const h = await harness();
+    await h.run("universe");
+    world.hits.length = 0;
+    world.state.fundamentalsRateLimited = true;
+    h.setNow(wib("2026-10-16", "20:05"));
+    expect((await h.run("fundamentals")).lastStatus).toBe("BLOCKED");
+    expect(world.hits).toHaveLength(1);
+    const blocked = await h.db.select().from(t.sources).where(eq(t.sources.host, "query1.finance.yahoo.com")).orderBy(asc(t.sources.id));
+    expect(blocked.map((row) => [row.id, row.status, row.blockEvidence?.reason])).toEqual([["yahoo-chart", "BLOCKED", "RATE_LIMITED"], ["yahoo-fundamentals", "BLOCKED", "RATE_LIMITED"]]);
+    // The chart jobs stop too: the backfill refuses to start, eod-daily skips the blocked source.
+    await h.run("eod-backfill", "blocked");
+    await h.run("eod-daily");
+    expect(world.hits).toHaveLength(1);
+    await h.run("fundamentals", "blocked");
+    // Unblocking only the fundamentals source is not enough: the shared host's chart source is still blocked.
+    await h.engine.services.sourceState.unblock("yahoo-fundamentals");
+    world.state.fundamentalsRateLimited = false;
+    expect((await h.run("fundamentals")).lastStatus).toBe("BLOCKED");
+    expect(world.hits).toHaveLength(1);
+  });
+
+  it("ratios + /v1 fundamentals + screener: derived from statements and the close, Pasardana as the secondary source", async () => {
+    const h = await harness();
+    await h.run("universe");
+    h.setNow(wib("2026-10-16", "16:45"));
+    await h.run("eod-daily");
+    h.setNow(wib("2026-10-16", "19:10"));
+    await h.run("eod-backfill");
+    h.setNow(wib("2026-10-16", "20:05"));
+    await h.run("fundamentals");
+    world.hits.length = 0;
+    h.setNow(wib("2026-10-16", "21:15"));
+    expect((await h.run("ratios")).lastStatus).toBe("SUCCEEDED");
+    expect(world.hits).toEqual([]); // no network
+
+    const ratios = await h.db.select().from(t.stockRatios).orderBy(asc(t.stockRatios.symbol), asc(t.stockRatios.ratio), asc(t.stockRatios.ratioSource));
+    const of = (symbol: string, ratio: string, source = "derived") => ratios.find((row) => row.symbol === symbol && row.ratio === ratio && row.ratioSource === source);
+    // BBCA: NI ttm (ttm-ytd) 58 055 319 M / 122 841 751 300 shares; close 5 225 (Yahoo, 2026-10-16).
+    const bbcaEps = 58_055_319_000_000 / 122_841_751_300;
+    expect(of("BBCA", "eps")).toMatchObject({ basis: "ttm-ytd:2026-06-30", date: "2026-10-16", derivation: "ratios-v1", source: "yahoo-fundamentals" });
+    expect(of("BBCA", "eps")!.value).toBeCloseTo(bbcaEps, 6);
+    expect(of("BBCA", "per")!.value).toBeCloseTo(5225 / bbcaEps, 6);
+    expect(of("BBCA", "roe")!.value).toBeCloseTo(58_055_319 / 270_437_543, 8);
+    expect(of("BBCA", "per")!.rawRef).not.toBeNull();
+    // BBCA's price history reaches back a year (backfill) and no dividend went ex in the window: a true zero.
+    expect(of("BBCA", "dividendYield")).toMatchObject({ value: 0, basis: "dividends-365d", source: "yahoo-chart" });
+    // TLKM: four consecutive quarters; TradingView's fallback close 1 965 (Yahoo has no chart fixture for it).
+    const tlkmEps = (4_809 + 1_702 + 4_344 + 6_279) * 1e9 / 98_580_940_800;
+    expect(of("TLKM", "per")).toMatchObject({ basis: "ttm-4q:2026-06-30" });
+    expect(of("TLKM", "per")!.value).toBeCloseTo(1965 / tlkmEps, 6);
+    // TLKM's price history is short: its dividend yield comes from the cash flow statement.
+    expect(of("TLKM", "dividendYield")).toMatchObject({ basis: "annual:2025-12-31" });
+    expect(of("TLKM", "dividendYield")!.value).toBeCloseTo(21_047e9 / (1965 * 98_580_940_800), 8);
+    // Pasardana's own ratios are stored next to them with their provenance.
+    expect(of("AADI", "per", "pasardana")).toMatchObject({ value: 6.17137, date: "2026-10-15", basis: "pasardana:Per", source: "pasardana" });
+    expect(of("AADI", "per", "pasardana")!.rawRef).not.toBeNull();
+    expect(of("AADI", "per")).toBeUndefined();
+
+    const fundamentals = idxBeiEnvelope(fundamentalsSchema).parse(await (await h.call("/v1/stocks/BBCA/fundamentals")).json());
+    expect(fundamentals.meta).toMatchObject({ source: "hakapro-engine", dataAsOf: "2026-06-30", freshness: "HISTORICAL" });
+    expect(fundamentals.data.map((row) => `${row.periodDate} ${row.periodType}`)).toEqual([
+      "2026-06-30 QUARTERLY", "2026-03-31 QUARTERLY", "2025-12-31 ANNUAL", "2025-12-31 QUARTERLY", "2025-06-30 QUARTERLY", "2025-03-31 QUARTERLY",
+      "2024-12-31 ANNUAL", "2023-12-31 ANNUAL", "2022-12-31 ANNUAL",
+    ]);
+    expect(fundamentals.data[0]).toMatchObject({ currency: "IDR", source: "yahoo-fundamentals", metrics: { netIncome: 14850323000000, equity: 270437543000000 }, units: { netIncome: "IDR", sharesOutstanding: "shares" } });
+    expect(idxBeiEnvelope(fundamentalsSchema).parse(await (await h.call("/v1/stocks/BBRI/fundamentals")).json())).toMatchObject({ data: [], meta: { freshness: "UNAVAILABLE" } });
+
+    const post = (body: unknown) => h.engine.app(new Request("http://engine.test/v1/screener", { method: "POST", body: JSON.stringify(body), headers: { "content-type": "application/json" } }));
+    const screen = idxBeiEnvelope(screenResultSchema).parse(await (await post({ conditions: [{ field: "per", operator: "LT", value: 15 }, { field: "roe", operator: "GT", value: 0.1 }], limit: 50 })).json());
+    expect(screen.meta).toMatchObject({ dataAsOf: "2026-10-16", freshness: "EOD" });
+    expect(screen.data.rows.map((row) => row.symbol)).toEqual(["BBCA", "TLKM"]);
+    expect(screen.data.ratioSources).toMatchObject({ BBCA: { per: "derived", roe: "derived" }, TLKM: { per: "derived" } });
+    expect(screen.data.rows[0].per).toBeCloseTo(5225 / bbcaEps, 6);
+    expect(screen.data.supportedFields).toEqual(expect.arrayContaining(["price", "value", "per", "pbv", "roe", "roa", "eps", "der", "dividendYield", "change1D"]));
+    // GOTO's earnings are barely positive: a real PER, not a cap.
+    const all = idxBeiEnvelope(screenResultSchema).parse(await (await post({ conditions: [], limit: 500 })).json());
+    expect(all.data.total).toBe(5);
+    expect(all.data.rows.find((row) => row.symbol === "BBRI")).toMatchObject({ per: null, pbv: null, eps: null });
+    expect((await post({ conditions: [{ field: "nope", operator: "GT", value: 1 }] })).status).toBe(400);
+    expect((await post({ conditions: Array.from({ length: 21 }, () => ({ field: "price", operator: "GT", value: 0 })) })).status).toBe(400);
+  });
+
   it("end to end: universe → indices → EOD → backfill → foreign → intraday → /v1 responses", async () => {
     const h = await harness();
     await h.run("universe");
@@ -483,7 +615,9 @@ describe.skipIf(!enabled)("engine sources (docker postgres + fixtures)", () => {
     expect(Object.fromEntries(health.data.sources.map((row) => [row.id, row.status]))).toEqual({
       arjum: "OK", pasardana: "OK", "tradingview-scanner": "OK", "yahoo-chart": "OK",
       "bank-indonesia": "NEVER_RUN", "news-antara": "NEVER_RUN", "news-cnbcindonesia": "NEVER_RUN", "news-detik": "NEVER_RUN", "news-investortrust": "NEVER_RUN",
+      "yahoo-fundamentals": "NEVER_RUN",
     });
+    expect(health.data.unavailable.map((row) => row.route)).toEqual(["/v1/announcements", "/v1/stocks/{s}/profile"]);
     expect(health.data.unavailable.find((row) => row.route === "/v1/announcements")?.status).toBe("SOURCE_BLOCKED");
     expect(health.data.eodSessions[0]).toMatchObject({ date: "2026-10-16", status: "PARTIAL" });
   });

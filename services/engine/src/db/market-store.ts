@@ -2,7 +2,8 @@
 import { and, arrayContains, asc, desc, eq, gte, ilike, inArray, isNotNull, like, lt, lte, max, or, sql } from "drizzle-orm";
 import * as t from "../../db/schema";
 import type {
-  ActionCalendarRecord, ActionRecord, DailyRecord, IndexDailyRecord, IndexIntradayRecord, IntradayRecord, MacroRecord, MarketStore, NewsQuery, NewsRecord, SecurityRecord,
+  ActionCalendarRecord, ActionRecord, DailyRecord, FundamentalRecord, IndexDailyRecord, IndexIntradayRecord, IntradayRecord, MacroRecord, MarketStore, NewsQuery, NewsRecord,
+  RatioRecord, SecurityRecord,
 } from "../serve/store";
 import type { EngineDb } from "./client";
 
@@ -19,6 +20,7 @@ const intradayColumns = {
 const securityColumns = {
   symbol: t.securities.symbol, name: t.securities.name, sector: t.securities.sector, subsector: t.securities.subsector, board: t.securities.board,
   sharesOutstanding: t.securities.sharesOutstanding, freeFloatPct: t.securities.freeFloatPct, asOf: t.securities.asOf,
+  marketCap: t.securities.marketCap,
 };
 const escapeLike = (value: string) => value.replace(/[\\%_]/g, (char) => `\\${char}`);
 
@@ -127,6 +129,19 @@ export class DbMarketStore implements MarketStore {
   async latestNewsAt(): Promise<Date | null> {
     const [row] = await this.db.select({ at: max(t.newsItems.publishedAt) }).from(t.newsItems);
     return row?.at ?? null;
+  }
+
+  async fundamentals(symbol: string): Promise<FundamentalRecord[]> {
+    return this.db.select({
+      periodEnd: t.financials.periodEnd, periodType: t.financials.periodType, metric: t.financials.metric, value: t.financials.value,
+      unit: t.financials.unit, currency: t.financials.currency, source: t.financials.source,
+    }).from(t.financials).where(eq(t.financials.symbol, symbol)).orderBy(desc(t.financials.periodEnd), asc(t.financials.periodType), asc(t.financials.metric));
+  }
+
+  async ratios(symbols: string[]): Promise<RatioRecord[]> {
+    if (!symbols.length) return [];
+    return this.db.select({ symbol: t.stockRatios.symbol, ratio: t.stockRatios.ratio, ratioSource: t.stockRatios.ratioSource, value: t.stockRatios.value, date: t.stockRatios.date })
+      .from(t.stockRatios).where(inArray(t.stockRatios.symbol, symbols));
   }
 
   async macro(perSeries: number): Promise<MacroRecord[]> {

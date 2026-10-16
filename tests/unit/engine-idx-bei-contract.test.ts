@@ -72,6 +72,18 @@ describe("engine /v1 real responses via IdxBeiSource", () => {
       { publishedAt: new Date("2026-10-16T06:51:19Z"), publishedAtEstimated: false, title: "Asing lepas BBCA", url: "https://www.antaranews.com/berita/1/asing-lepas-bbca", outlet: "ANTARA", summary: null, symbols: ["BBCA"] },
     ],
     macro: [{ series: "JISDOR", date: "2026-10-16", value: 17948, link: null }, { series: "BI_RATE", date: "2026-09-23", value: 5.75, link: null }],
+    fundamentals: [
+      { symbol: "BBCA", periodEnd: "2026-06-30", periodType: "quarterly", metric: "netIncome", value: 14_850_323e6, unit: "amount", currency: "IDR", source: "yahoo-fundamentals" },
+      { symbol: "BBCA", periodEnd: "2026-06-30", periodType: "quarterly", metric: "equity", value: 270_437_543e6, unit: "amount", currency: "IDR", source: "yahoo-fundamentals" },
+      { symbol: "BBCA", periodEnd: "2025-12-31", periodType: "annual", metric: "netIncome", value: 57_537_287e6, unit: "amount", currency: "IDR", source: "yahoo-fundamentals" },
+      { symbol: "BBCA", periodEnd: "2025-12-31", periodType: "annual", metric: "epsDiluted", value: 467, unit: "per_share", currency: "IDR", source: "yahoo-fundamentals" },
+    ],
+    ratios: [
+      { symbol: "BBCA", ratio: "per", ratioSource: "derived", value: 11.06, date: "2026-10-16" },
+      { symbol: "BBCA", ratio: "roe", ratioSource: "derived", value: 0.2147, date: "2026-10-16" },
+      { symbol: "GOTO", ratio: "per", ratioSource: "derived", value: null, date: "2026-10-16" },
+      { symbol: "GOTO", ratio: "pbv", ratioSource: "pasardana", value: 1.97, date: "2026-10-15" },
+    ],
   });
 
   it("parses stored EOD data with freshness re-derived by the app", async () => {
@@ -112,6 +124,41 @@ describe("engine /v1 real responses via IdxBeiSource", () => {
     const macro = await source.macro();
     expect(macro).toMatchObject({ freshness: "EOD", asOf: "2026-10-16" });
     expect(macro.data.series.map((row) => [row.id, row.value])).toEqual([["BI_RATE", 5.75], ["JISDOR", 17948]]);
+  });
+
+  it("parses fundamentals (E5) as HISTORICAL periods, newest first", async () => {
+    vi.resetModules();
+    const { IdxBeiSource: FreshSource } = await import("@/server/market/idx-bei-source");
+    const now = new Date("2026-10-16T11:00:00Z");
+    const source = new FreshSource(BASE, () => now, engineFetch(dir, now, store(false)));
+    const fundamentals = await source.fundamentals("BBCA");
+    expect(fundamentals).toMatchObject({ freshness: "HISTORICAL", asOf: "2026-06-30", period: "2026-06-30" });
+    expect(fundamentals.data).toEqual([
+      { periodDate: "2026-06-30", periodType: "QUARTERLY", metrics: { equity: 270_437_543e6, netIncome: 14_850_323e6 }, units: { equity: "IDR", netIncome: "IDR" }, currency: "IDR", source: "yahoo-fundamentals" },
+      { periodDate: "2025-12-31", periodType: "ANNUAL", metrics: { epsDiluted: 467, netIncome: 57_537_287e6 }, units: { epsDiluted: "IDR/share", netIncome: "IDR" }, currency: "IDR", source: "yahoo-fundamentals" },
+    ]);
+    // A symbol without statements keeps the empty form.
+    expect((await source.fundamentals("GOTO")).data).toEqual([]);
+  });
+
+  it("screens the newest session (E5): change1D in percent both ways, ratios with their source, nulls kept", async () => {
+    vi.resetModules();
+    const { IdxBeiSource: FreshSource } = await import("@/server/market/idx-bei-source");
+    const now = new Date("2026-10-16T11:00:00Z");
+    const source = new FreshSource(BASE, () => now, engineFetch(dir, now, store(false)));
+    // The app sends change1D in percent (−12 %); IdxBeiSource converts it to the API's fraction.
+    const screen = await source.screen({ conditions: [{ field: "change1D", operator: "LT", value: -12, connective: "AND" }], limit: 500 });
+    expect(screen).toMatchObject({ freshness: "EOD", asOf: "2026-10-16" });
+    expect(screen.data.total).toBe(1);
+    expect(screen.data.rows[0]).toMatchObject({ symbol: "BBCA", name: "PT Bank Central Asia Tbk", price: 5225, per: 11.06, roe: 0.2147, pbv: null, foreignNetShares: -110e6 });
+    expect(screen.data.rows[0].change1D).toBeCloseTo((5225 / 6075 - 1) * 100, 9);
+
+    const all = await source.screen({ conditions: [{ field: "price", operator: "GT", value: 0, connective: "AND" }], limit: 500 });
+    expect(all.data.rows.map((row) => row.symbol)).toEqual(["BBCA", "GOTO"]);
+    expect(all.data.rows[1]).toMatchObject({ symbol: "GOTO", per: null, pbv: 1.97, marketCap: null });
+    // No frequency in this session's rows: the field is not offered.
+    expect(all.data.supportedFields).toEqual(["price", "volume", "value", "foreignNetShares", "marketCap", "per", "pbv", "roe", "change1D"]);
+    expect(all.data.ratioSources).toEqual({ BBCA: { per: "derived", roe: "derived" }, GOTO: { per: "derived", pbv: "pasardana" } });
   });
 
   it("parses an intraday quote from a newer session as DELAYED", async () => {
