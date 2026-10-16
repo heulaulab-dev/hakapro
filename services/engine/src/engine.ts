@@ -5,6 +5,7 @@ import { createDb, migrationsDir, runMigrations, waitForDatabase, type EngineDb 
 import { recentEodSessions } from "./db/ingest";
 import { deleteNewsOlderThan } from "./db/market-info";
 import { DbMarketStore } from "./db/market-store";
+import { DbOwnershipStore } from "./db/ownership";
 import { DbCursorStore, DbRawDocumentIndex, DbRunRecorder, DbSourceStateStore, deleteIntradayOlderThan, sourceHealth, syncSources } from "./db/repos";
 import { Fetcher } from "./fetch/fetcher";
 import { LimiterRegistry } from "./fetch/rate-limit";
@@ -20,6 +21,7 @@ import { biRateJob, jisdorJob } from "./jobs/macro";
 import { newsJob } from "./jobs/news";
 import { universeJob } from "./jobs/universe";
 import { log as defaultLog, type Logger } from "./log";
+import { OwnershipService } from "./ownership/service";
 import { intradayRetentionJob, newsRetentionJob, validateRegistry, type Registry } from "./registry";
 import { PauseGuard } from "./schedule/pause";
 import { Scheduler } from "./schedule/scheduler";
@@ -116,11 +118,17 @@ export async function createEngine(config: EngineConfig, options: EngineOptions 
   await syncSources(db, registry.sources);
 
   const pause = new PauseGuard(config.dataDir, config.diskStopPercent);
+  // Ownership (E6): owner uploads only; there is no fetcher or job for IDX/KSEI (§8.5d).
+  const ownership = new OwnershipService({
+    store: new DbOwnershipStore(db), rawStore, documents, log, now,
+    setParseStatus: (id, status, error) => documents.setParseStatus(id, status, error ?? null),
+  });
   const scheduler = new Scheduler({ jobs: registry.jobs, pause, runs: new DbRunRecorder(db), cursors: new DbCursorStore(db), sourceState, log, now });
   const app = createApp({
     apiToken: config.apiToken, adminToken: config.adminToken, ping, pause, scheduler, rawStoreKind: rawStore.kind, log, now,
     sourceHealth: () => sourceHealth(db), unblockSource: (id) => sourceState.unblock(id),
     market: new DbMarketStore(db),
+    ownership: { service: ownership, maxUploadBytes: config.ownership.maxUploadBytes, freeFloatEnabled: config.ownership.freeFloatEnabled },
     eodSessions: async () => (await recentEodSessions(db)).map((row) => ({
       date: row.date, status: row.status, expected: row.expected, present: row.present, attempts: row.attempts, finalizedAt: row.finalizedAt?.toISOString() ?? null,
     })),

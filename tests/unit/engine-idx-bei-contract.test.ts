@@ -1,14 +1,18 @@
 // The Data Engine's /v1 routes must be consumable by the app's IdxBeiSource (MARKET_API_URL) without crashing:
 // the E1 stubs (no stored data) and the E2/E2b responses built from stored rows.
 // Lives here, not in services/engine, because it typechecks app code (Next/DOM fetch types).
+import { readFileSync } from "node:fs";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MarketDataError } from "@/server/market/errors";
 import { IdxBeiSource } from "@/server/market/idx-bei-source";
-import { MemoryCursorStore, MemoryRunRecorder, MemorySourceStateStore } from "../../services/engine/src/fetch/stores";
+import { LocalRawStore } from "../../services/engine/src/fetch/raw-store";
+import { MemoryCursorStore, MemoryRawDocumentIndex, MemoryRunRecorder, MemorySourceStateStore } from "../../services/engine/src/fetch/stores";
 import { createApp, type AppDeps } from "../../services/engine/src/http/app";
+import { OwnershipService } from "../../services/engine/src/ownership/service";
+import { MemoryOwnershipStore } from "../../services/engine/src/ownership/store";
 import { PauseGuard } from "../../services/engine/src/schedule/pause";
 import { Scheduler } from "../../services/engine/src/schedule/scheduler";
 import { MemoryMarketStore } from "../../services/engine/src/serve/store";
@@ -168,5 +172,50 @@ describe("engine /v1 real responses via IdxBeiSource", () => {
     const stock = await new FreshSource(BASE, () => now, engineFetch(dir, now, store(true))).stock("BBCA");
     expect(stock).toMatchObject({ freshness: "DELAYED", asOf: "2026-10-19T09:55:00+07:00" });
     expect(stock.data.quote).toMatchObject({ date: "2026-10-19", close: 5400, previousClose: 5225, change: 175 });
+  });
+});
+
+describe("engine ownership routes via IdxBeiSource (E6, synthetic uploads)", () => {
+  let dir: string;
+  beforeEach(async () => { dir = await mkdtemp(join(tmpdir(), "engine-contract-")); });
+  afterEach(async () => { await rm(dir, { recursive: true, force: true }); });
+
+  const fixture = (name: string) => new Uint8Array(readFileSync(join(process.cwd(), "services/engine/test/fixtures/ownership", name)));
+
+  async function ownershipFetch(now: Date, upload: boolean) {
+    const service = new OwnershipService({ store: new MemoryOwnershipStore(), rawStore: new LocalRawStore(join(dir, "raw")), documents: new MemoryRawDocumentIndex(), now: () => now });
+    if (upload) {
+      for (const [name, month] of [["synthetic-1pct-2026-02.pdf", "2026-02"], ["synthetic-1pct-2026-03.pdf", "2026-03"]] as const) {
+        await service.upload({ bytes: fixture(name), contentType: "application/pdf", fileName: name, asOfMonth: month, sourceLabel: `SYNTHETIC ${month}`, snapshotDate: null });
+      }
+    }
+    const pause = new PauseGuard(dir, 85, { cacheMs: 0, measure: async () => 10 });
+    const scheduler = new Scheduler({ jobs: [], pause, runs: new MemoryRunRecorder(), cursors: new MemoryCursorStore(), sourceState: new MemorySourceStateStore() });
+    const app = createApp({
+      ping: async () => true, pause, scheduler, rawStoreKind: "local", sourceHealth: async () => [], unblockSource: async () => false, now: () => now,
+      ownership: { service, maxUploadBytes: 20 * 1024 * 1024, freeFloatEnabled: false },
+    });
+    return ((input: string | URL | Request, init?: RequestInit) => app(new Request(input, init))) as typeof fetch;
+  }
+
+  it("parses the empty forms as UNAVAILABLE", async () => {
+    vi.resetModules();
+    const { IdxBeiSource: FreshSource } = await import("@/server/market/idx-bei-source");
+    const source = new FreshSource(BASE, () => NOW, await ownershipFetch(NOW, false));
+    expect(await source.ownership("TEST1")).toMatchObject({ freshness: "UNAVAILABLE", asOf: null, data: { symbol: "TEST1", holders: [] } });
+    expect(await source.ownershipChanges("2026-03")).toMatchObject({ freshness: "UNAVAILABLE", data: { changes: [] } });
+  });
+
+  it("parses stored months and changes as HISTORICAL, dated by the position date", async () => {
+    vi.resetModules();
+    const { IdxBeiSource: FreshSource } = await import("@/server/market/idx-bei-source");
+    const source = new FreshSource(BASE, () => NOW, await ownershipFetch(NOW, true));
+    const ownership = await source.ownership("TEST1");
+    expect(ownership).toMatchObject({ freshness: "HISTORICAL", asOf: "2026-03-31", data: { month: "2026-03", freeFloat: null, source: { reference: "SYNTHETIC 2026-03" } } });
+    expect(ownership.data.holders).toHaveLength(5);
+    const changes = await source.ownershipChanges("2026-03", "TEST2");
+    expect(changes).toMatchObject({ freshness: "HISTORICAL", asOf: "2026-03-31" });
+    expect(changes.data.changes.find((change) => change.holderName === "PT FIKTIF HOLDCO")).toMatchObject({ kind: "DECREASE", shareDelta: "-10000000" });
+    await expect(source.ownershipChanges("2026-3")).rejects.toThrow();
   });
 });

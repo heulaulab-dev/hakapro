@@ -6,7 +6,12 @@ import { log } from "./log";
 const config = loadConfig();
 const engine = await createEngine(config);
 
-const server = Bun.serve({ port: config.port, hostname: "0.0.0.0", fetch: engine.app });
+// Ownership uploads (E6) carry files up to ENGINE_OWNERSHIP_MAX_UPLOAD_MB and are parsed within the request, so the body
+// cap follows that limit (plus multipart framing) and idle connections get two minutes instead of Bun's 10 s.
+const server = Bun.serve({
+  port: config.port, hostname: "0.0.0.0", fetch: engine.app,
+  maxRequestBodySize: config.ownership.maxUploadBytes + 1024 * 1024, idleTimeout: 120,
+});
 if (config.schedulerEnabled) engine.scheduler.start();
 log.info("engine_started", {
   port: server.port, scheduler: config.schedulerEnabled, rawStore: engine.services.rawStore.kind,
