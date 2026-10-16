@@ -33,6 +33,8 @@ const envSchema = z.object({
   // Ownership uploads (E6, §8.5d): file size cap, and the HAKA-34 draft estimate on /v1 (off until the owner approves).
   ENGINE_OWNERSHIP_MAX_UPLOAD_MB: z.coerce.number().int().min(1).max(100).default(20),
   ENGINE_FREE_FLOAT_ENABLED: flag(false),
+  // E4 strategy scans on the HAKA-17 DRAFT rules (not owner-approved): off by default (job not registered, /v1/strategies empty).
+  ENGINE_STRATEGY_SCANS_ENABLED: flag(false),
 });
 
 export type ArjumConfig = { baseUrl: string; apiKey: string; dailyBudget: number; reserve: number };
@@ -55,6 +57,8 @@ export type EngineConfig = {
   arjum: ArjumConfig | null;
   /** Ownership uploads: largest accepted file, and whether the free-float draft estimate is served. */
   ownership: { maxUploadBytes: number; freeFloatEnabled: boolean };
+  /** false → strategy-scan-eod is not registered and /v1/strategies serves the empty UNAVAILABLE board. */
+  strategyScans: { enabled: boolean };
 };
 
 /** Parses env; error messages name variables, never values. */
@@ -94,5 +98,6 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
       ? { baseUrl: e.ENGINE_ARJUM_BASE_URL.replace(/\/+$/, ""), apiKey: e.ENGINE_ARJUM_API_KEY, dailyBudget: e.ENGINE_ARJUM_DAILY_BUDGET, reserve: e.ENGINE_ARJUM_RESERVE }
       : null,
     ownership: { maxUploadBytes: e.ENGINE_OWNERSHIP_MAX_UPLOAD_MB * 1024 * 1024, freeFloatEnabled: e.ENGINE_FREE_FLOAT_ENABLED },
+    strategyScans: { enabled: e.ENGINE_STRATEGY_SCANS_ENABLED },
   };
 }

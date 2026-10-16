@@ -453,3 +453,55 @@ export const ownershipChanges = pgTable("ownership_changes", {
   index("ownership_changes_month_symbol").on(t.month, t.symbol),
   index("ownership_changes_holder").on(t.holderKey),
 ]);
+
+export const SCAN_RUN_STATUSES = ["SUCCEEDED", "SKIPPED"] as const;
+
+/**
+ * Strategy scans (E4, HAKA-64): one run per (session, rules version), replaced when re-run. Derived from daily_prices,
+ * so there is no raw_ref; `rules_version` and `parameters` are the derivation version (§6) and `source` is the
+ * HAKA-18 strategy source (HAKAPRO_EOD_ENGINE).
+ */
+export const scanRuns = pgTable("scan_runs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  sessionDate: date("session_date").notNull(),
+  rulesVersion: text("rules_version").notNull(),
+  status: text("status", { enum: SCAN_RUN_STATUSES }).notNull(),
+  /** Why the scan did not run (e.g. the EOD session was not COMPLETE). */
+  skipReason: text("skip_reason"),
+  /** The full rule parameters the run used. */
+  parameters: jsonb("parameters").$type<Record<string, unknown>>().notNull(),
+  /** Securities scanned, passing gate G, failing it. */
+  covered: integer("covered").notNull().default(0),
+  eligible: integer("eligible").notNull().default(0),
+  skipped: integer("skipped").notNull().default(0),
+  /** Gate failures by rule (G1…G8), and per strategy the first failing rule of each eligible symbol not listed. */
+  gateFailures: jsonb("gate_failures").$type<Record<string, number>>().notNull().default({}),
+  misses: jsonb("misses").$type<Record<string, Record<string, number>>>().notNull().default({}),
+  candidateCount: integer("candidate_count").notNull().default(0),
+  jobRunId: uuid("job_run_id").references(() => fetchRuns.id),
+  source: text("source").notNull(),
+  /** When the engine computed the run (`detectedAt` of its candidates). */
+  asOf: ts("as_of").notNull(),
+}, (t) => [
+  unique("scan_runs_session_rules").on(t.sessionDate, t.rulesVersion),
+  index("scan_runs_status_session").on(t.status, t.sessionDate),
+]);
+
+/** One stock listed by one strategy in one scan run, in the strategy's sort order (`rank`). */
+export const scanCandidates = pgTable("scan_candidates", {
+  runId: uuid("run_id").notNull().references(() => scanRuns.id, { onDelete: "cascade" }),
+  strategyId: text("strategy_id").notNull(),
+  symbol: text("symbol").notNull(),
+  sessionDate: date("session_date").notNull(),
+  rulesVersion: text("rules_version").notNull(),
+  rank: integer("rank").notNull(),
+  name: text("name"),
+  /** HAKA-18 reasons (`criterion` keys and `note` texts) and metrics (`{key, value, unit}`). */
+  reasons: jsonb("reasons").$type<Array<Record<string, unknown>>>().notNull(),
+  metrics: jsonb("metrics").$type<Array<{ key: string; value: number | null; unit: string }>>().notNull(),
+  source: text("source").notNull(),
+  asOf: ts("as_of").notNull(),
+}, (t) => [
+  primaryKey({ name: "scan_candidates_pk", columns: [t.runId, t.strategyId, t.symbol] }),
+  index("scan_candidates_session_strategy").on(t.sessionDate, t.strategyId),
+]);
