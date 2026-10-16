@@ -1,0 +1,11 @@
+{
+  "name": "hakapro-engine",
+  "version": "0.1.0",
+  "private": true,
+  "description": "HAKAPRO Data Engine. Image-build manifest only: local development uses the repo root install and scripts (engine:*).",
+  "dependencies": {
+    "drizzle-orm": "0.45.4",
+    "postgres": "3.4.9",
+    "zod": "4.6.5"
+  }
+}

@@ -57,3 +57,8 @@ next-env.d.ts
 
 # Private migration source snapshots and local database credentials
 /.superpowers/sdd/*/private-source-snapshot/
+
+# data engine local data (raw-store fallback, pause flag)
+/.engine-data/
+/services/engine/.engine-data/
+/services/engine/node_modules/
