@@ -266,3 +266,9 @@ The user kept the layout and asked for heulaulab-dashboard's design system:
 - Acceptance (e2e, `tests/e2e/landing.spec.ts`): absolute canonical/hreflang/og:image on this origin, and no horizontal overflow on desktop, tablet (820 px) and mobile (Pixel 7) for both locales. The e2e server sets `BETTER_AUTH_URL` to its own origin.
 - Still open: the Indonesian tagline. `id.json` `app.tagline` still holds the English text (brand copy, owner's decision).
 
+
+## S14: Ownership change engine + free-float methodology draft (HAKA-33, HAKA-34) (2026-10-16, branch `feat/ownership-engine`)
+- Pure domain layer in `src/lib/ownership/`. No UI, no ingestion, and no network. Tests use synthetic fixtures only (`TEST1`, invented holders).
+- Snapshot type (Zod 4): rows carry `holderKey`, the disclosed name, kind, integer-string shares, ≤6-decimal percent, position date, and `source {dataset, reference, retrievedAt}`. A snapshot also states its disclosure threshold and, optionally, issued shares. The existing `ownership_snapshots` table doesn't fit; the needed columns and unique-key change are listed in `CONNECTION-NETWORK.md` → "Ownership snapshot type and change engine". No migration was added.
+- HAKA-33 `compareOwnershipSnapshots`: NEW / INCREASE / DECREASE / EXIT / UNCHANGED, plus BELOW_THRESHOLD (dropping off the ≥1% list is not a proven exit) and AMBIGUOUS (conflicting duplicate lines). Deltas are exact (BigInt shares, micro-percent pp). Corporate-action flags. Non-adjacent, same-month, reversed and cross-ticker comparisons are refused. Source rows are preserved on both sides.
+- HAKA-34 `docs/features/FREE-FLOAT-METHODOLOGY.md` v0.1-draft, **awaiting owner approval** (10 open questions), and `estimateFreeFloat`: strategic / portfolio / unknown rules and an exact low–high range (headline = low). The output is versioned, `isOfficial: false`, and any official figure stays separate.
