@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { MemoryCursorStore } from "../fetch/stores";
-import { BACKFILL_START, backfillJob } from "./backfill";
+import { BACKFILL_START, backfillJob, itemBackfillJob } from "./backfill";
 import type { JobContext } from "./scheduler";
 
 function context(cursors: MemoryCursorStore, jobId: string, shouldYield = () => false): JobContext & { rows: number } {
@@ -42,5 +42,35 @@ describe("backfillJob", () => {
     const yielding = backfillJob({ id: "y", sourceId: "s", until: () => "2021-01-01", processDay: async () => { calls += 1; return { rows: 1 }; } });
     expect(await yielding.run(context(cursors, "y", () => true))).toEqual({ status: "YIELDED" });
     expect(calls).toBe(0);
+  });
+});
+
+describe("itemBackfillJob", () => {
+  it("covers items in small batches, resumes from the cursor and picks up new items", async () => {
+    const cursors = new MemoryCursorStore();
+    let items = ["^JKSE", "AAAA", "BBBB", "CCCC"];
+    const seen: string[] = [];
+    const job = itemBackfillJob({ id: "eod-backfill", sourceId: "s", items: async () => items, batchSize: 2, processItem: async (item) => { seen.push(item); return { rows: 3 }; } });
+    expect(job.background).toBe(true);
+    expect(job.trigger).toEqual({ kind: "cron", spec: "*/10 19-23,0-5 * * *" });
+    const first = context(cursors, job.id);
+    await job.run(first);
+    expect(seen).toEqual(["^JKSE", "AAAA"]);
+    expect(first.rows).toBe(6);
+    expect(await cursors.get(job.id)).toEqual({ from: BACKFILL_START, done: ["^JKSE", "AAAA"], remaining: 2 });
+    items = [...items, "DDDD"];
+    await job.run(context(cursors, job.id));
+    await job.run(context(cursors, job.id));
+    expect(seen).toEqual(["^JKSE", "AAAA", "BBBB", "CCCC", "DDDD"]);
+    await job.run(context(cursors, job.id));
+    expect(seen).toHaveLength(5);
+  });
+
+  it("yields between items and does not mark a failed item done", async () => {
+    const cursors = new MemoryCursorStore();
+    const job = itemBackfillJob({ id: "i", items: async () => ["AAAA", "BBBB"], processItem: async () => { throw new Error("boom"); } });
+    await expect(job.run(context(cursors, "i"))).rejects.toThrow("boom");
+    expect(await cursors.get("i")).toBeNull();
+    expect(await job.run(context(cursors, "i", () => true))).toEqual({ status: "YIELDED" });
   });
 });
