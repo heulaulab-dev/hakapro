@@ -260,6 +260,8 @@ Freshness: today's price is DELAYED during a session (as-of = last trade time, W
 
 ## 10. Provider conduct (permanent rule, decided at Connection Network N1, 2026-10-03)
 
+> **Revised 2026-10-16 for the experimental internal Data Engine:** crawling public sources is allowed, but access protections are never bypassed. See [DATA-ENGINE.md §2](features/DATA-ENGINE.md). The rules below still apply to the app's own provider calls (arjum and idx-bei clients in the BFF).
+
 Applies to every provider (arjum, idx-bei, any future source), to app code, scripts, and agents working on this repo.
 
 1. **Only call documented endpoints the app actually uses.** No probing of undocumented paths, and no crawling: no loops over symbols or pages beyond what a user action, the reviewed fixture recorder, or the reviewed drift sweep needs.
