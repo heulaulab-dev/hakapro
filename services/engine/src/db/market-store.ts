@@ -1,7 +1,9 @@
 // Drizzle implementation of the /v1 read port (src/serve/store.ts).
-import { and, asc, desc, eq, ilike, inArray, isNotNull, like, lt, lte, max, or, sql } from "drizzle-orm";
+import { and, arrayContains, asc, desc, eq, gte, ilike, inArray, isNotNull, like, lt, lte, max, or, sql } from "drizzle-orm";
 import * as t from "../../db/schema";
-import type { ActionRecord, DailyRecord, IndexDailyRecord, IndexIntradayRecord, IntradayRecord, MarketStore, SecurityRecord } from "../serve/store";
+import type {
+  ActionCalendarRecord, ActionRecord, DailyRecord, IndexDailyRecord, IndexIntradayRecord, IntradayRecord, MacroRecord, MarketStore, NewsQuery, NewsRecord, SecurityRecord,
+} from "../serve/store";
 import type { EngineDb } from "./client";
 
 const dailyColumns = {
@@ -98,5 +100,40 @@ export class DbMarketStore implements MarketStore {
   async actions(symbol: string): Promise<ActionRecord[]> {
     return this.db.select({ exDate: t.corporateActions.exDate, type: t.corporateActions.type, description: t.corporateActions.description, asOf: t.corporateActions.asOf })
       .from(t.corporateActions).where(eq(t.corporateActions.symbol, symbol)).orderBy(desc(t.corporateActions.exDate));
+  }
+
+  async actionsBetween(from: string, to: string): Promise<ActionCalendarRecord[]> {
+    const rows = await this.db.select({
+      symbol: t.corporateActions.symbol, exDate: t.corporateActions.exDate, type: t.corporateActions.type, description: t.corporateActions.description,
+      amount: t.corporateActions.amount, ratio: t.corporateActions.ratio, asOf: t.corporateActions.asOf,
+    }).from(t.corporateActions).where(and(gte(t.corporateActions.exDate, from), lte(t.corporateActions.exDate, to)))
+      .orderBy(asc(t.corporateActions.exDate), asc(t.corporateActions.symbol), asc(t.corporateActions.type));
+    return rows.map((row) => ({ ...row, exDate: row.exDate! }));
+  }
+
+  async latestActionAsOf(): Promise<Date | null> {
+    const [row] = await this.db.select({ asOf: max(t.corporateActions.asOf) }).from(t.corporateActions);
+    return row?.asOf ?? null;
+  }
+
+  async news(query: NewsQuery): Promise<NewsRecord[]> {
+    return this.db.select({
+      publishedAt: t.newsItems.publishedAt, publishedAtEstimated: t.newsItems.publishedAtEstimated, title: t.newsItems.title, url: t.newsItems.url,
+      outlet: t.newsItems.outlet, summary: t.newsItems.summary, symbols: t.newsItems.symbols,
+    }).from(t.newsItems).where(query.symbol ? arrayContains(t.newsItems.symbols, [query.symbol]) : undefined)
+      .orderBy(desc(t.newsItems.publishedAt), asc(t.newsItems.id)).offset(query.offset).limit(query.limit);
+  }
+
+  async latestNewsAt(): Promise<Date | null> {
+    const [row] = await this.db.select({ at: max(t.newsItems.publishedAt) }).from(t.newsItems);
+    return row?.at ?? null;
+  }
+
+  async macro(perSeries: number): Promise<MacroRecord[]> {
+    const result = await this.db.execute<{ series: string; date: string; value: string; link: string | null }>(sql`
+      select series, date::text as date, value::text as value, link from (
+        select m.*, row_number() over (partition by series order by date desc) as n from macro_observations m
+      ) ranked where n <= ${perSeries} order by series asc, date desc`);
+    return [...result].map((row) => ({ series: row.series, date: row.date, value: Number(row.value), link: row.link }));
   }
 }

@@ -20,6 +20,13 @@ export type IndexDailyRecord = { code: string; name: string | null; date: string
 export type IndexIntradayRecord = { code: string; name: string | null; ts: Date; last: number; changePercent: number | null };
 
 export type ActionRecord = { exDate: string | null; type: string; description: string | null; asOf: Date };
+export type ActionCalendarRecord = { symbol: string; exDate: string; type: string; description: string | null; amount: number | null; ratio: string | null; asOf: Date };
+
+export type NewsRecord = {
+  publishedAt: Date; publishedAtEstimated: boolean; title: string; url: string; outlet: string; summary: string | null; symbols: string[];
+};
+export type NewsQuery = { offset: number; limit: number; symbol?: string };
+export type MacroRecord = { series: string; date: string; value: number; link: string | null };
 
 export interface MarketStore {
   /** Active securities whose symbol starts with, or whose name contains, `query` (all when empty). */
@@ -44,6 +51,16 @@ export interface MarketStore {
   /** Rows with foreign data in the newest `sessions` foreign-flow dates up to `endDate`. */
   foreignHistory(endDate: string, sessions: number): Promise<DailyRecord[]>;
   actions(symbol: string): Promise<ActionRecord[]>;
+  /** Corporate actions with an ex-date in [from, to], oldest first (then symbol). */
+  actionsBetween(from: string, to: string): Promise<ActionCalendarRecord[]>;
+  /** Newest `as_of` in corporate_actions (when the calendar was last refreshed). */
+  latestActionAsOf(): Promise<Date | null>;
+  /** Headlines newest first (publication time), optionally only those naming `symbol`. */
+  news(query: NewsQuery): Promise<NewsRecord[]>;
+  /** Newest publication time among stored headlines. */
+  latestNewsAt(): Promise<Date | null>;
+  /** The newest `perSeries` observations of each macro series, newest first. */
+  macro(perSeries: number): Promise<MacroRecord[]>;
 }
 
 const contains = (haystack: string, needle: string) => haystack.toLowerCase().includes(needle.toLowerCase());
@@ -52,7 +69,8 @@ const contains = (haystack: string, needle: string) => haystack.toLowerCase().in
 export class MemoryMarketStore implements MarketStore {
   constructor(readonly data: {
     securities?: SecurityRecord[]; daily?: DailyRecord[]; intraday?: IntradayRecord[];
-    indexDaily?: IndexDailyRecord[]; indexIntraday?: IndexIntradayRecord[]; actions?: Array<ActionRecord & { symbol: string }>;
+    indexDaily?: IndexDailyRecord[]; indexIntraday?: IndexIntradayRecord[]; actions?: Array<ActionRecord & { symbol: string; amount?: number | null; ratio?: string | null }>;
+    news?: NewsRecord[]; macro?: MacroRecord[];
   } = {}) {}
 
   private get daily() { return this.data.daily ?? []; }
@@ -98,5 +116,23 @@ export class MemoryMarketStore implements MarketStore {
   async actions(symbol: string) {
     return (this.data.actions ?? []).filter((row) => row.symbol === symbol).map(({ exDate, type, description, asOf }) => ({ exDate, type, description, asOf }));
   }
+  async actionsBetween(from: string, to: string) {
+    return (this.data.actions ?? []).filter((row) => row.exDate !== null && row.exDate >= from && row.exDate <= to)
+      .sort((a, b) => a.exDate!.localeCompare(b.exDate!) || a.symbol.localeCompare(b.symbol))
+      .map((row) => ({ symbol: row.symbol, exDate: row.exDate!, type: row.type, description: row.description, amount: row.amount ?? null, ratio: row.ratio ?? null, asOf: row.asOf }));
+  }
+  async latestActionAsOf() { return (this.data.actions ?? []).map((row) => row.asOf).sort((a, b) => b.getTime() - a.getTime())[0] ?? null; }
+  async news(query: NewsQuery) {
+    return (this.data.news ?? []).filter((row) => !query.symbol || row.symbols.includes(query.symbol))
+      .sort((a, b) => b.publishedAt.getTime() - a.publishedAt.getTime()).slice(query.offset, query.offset + query.limit);
+  }
+  async latestNewsAt() { return (this.data.news ?? []).map((row) => row.publishedAt).sort((a, b) => b.getTime() - a.getTime())[0] ?? null; }
+  async macro(perSeries: number) {
+    const rows = [...(this.data.macro ?? [])].sort((a, b) => a.series.localeCompare(b.series) || b.date.localeCompare(a.date));
+    const counts = new Map<string, number>();
+    return rows.filter((row) => {
+      counts.set(row.series, (counts.get(row.series) ?? 0) + 1);
+      return counts.get(row.series)! <= perSeries;
+    });
+  }
 }
-

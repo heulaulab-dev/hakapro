@@ -69,8 +69,27 @@ export const profileSchema = z.object({
 export const actionsSchema = z.array(z.object({ date: z.string().nullable(), type: z.string().nullable(), description: z.string().nullable(), documentUrl: z.string().nullable() }));
 
 // app.py /v1/news and /v1/announcements item shapes (the old BFF dropped these items — fixed here).
-export const newsItemSchema = z.object({ date: z.string().nullable(), title: z.string().nullable(), summary: z.string().nullable(), url: z.string().nullable() });
+// The Data Engine (E3) also sends the outlet, matched IDX symbols and whether the date is the fetch time (optional).
+export const newsItemSchema = z.object({
+  date: z.string().nullable(), title: z.string().nullable(), summary: z.string().nullable(), url: z.string().nullable(),
+  outlet: z.string().nullable().optional(), symbols: z.array(z.string()).optional(), dateEstimated: z.boolean().optional(),
+});
 export const announcementItemSchema = z.object({ date: z.string().nullable(), symbol: z.string().nullable(), title: z.string().nullable(), documentUrl: z.string().nullable() });
+
+/** Data Engine `/v1/macro` (E3): Bank Indonesia series, observations newest first. BI-Rate in percent units. */
+export const macroSeriesSchema = z.object({
+  id: z.enum(["BI_RATE", "JISDOR"]), name: z.string(), unit: z.string(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), value: z.number(),
+  previousDate: z.string().nullable(), previousValue: num, link: z.string().nullable(),
+  observations: z.array(z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), value: z.number() })),
+});
+export const macroSchema = z.object({ series: z.array(macroSeriesSchema) });
+
+/** Data Engine `/v1/actions?from&to` (E3): market-wide corporate actions by ex-date, oldest first. */
+export const actionsCalendarSchema = z.array(z.object({
+  symbol: symbolSchema, date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), type: z.string(), description: z.string().nullable(),
+  amount: num, ratio: z.string().nullable(), documentUrl: z.string().nullable(),
+}));
 
 export const SCREEN_FIELDS = ["price", "volume", "value", "frequency", "foreignNetShares", "marketCap", "per", "pbv", "roe", "roa", "eps", "der", "dividendYield", "change1D"] as const;
 export const screenFieldSchema = z.enum(SCREEN_FIELDS);
@@ -95,5 +114,7 @@ export type Profile = z.infer<typeof profileSchema>;
 export type CorporateActions = z.infer<typeof actionsSchema>;
 export type NewsItem = z.infer<typeof newsItemSchema>;
 export type AnnouncementItem = z.infer<typeof announcementItemSchema>;
+export type Macro = z.infer<typeof macroSchema>;
+export type ActionsCalendar = z.infer<typeof actionsCalendarSchema>;
 export type ScreenRequest = z.infer<typeof screenRequestSchema>;
 export type ScreenResult = z.infer<typeof screenResultSchema>;

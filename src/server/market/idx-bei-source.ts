@@ -2,7 +2,7 @@ import "server-only";
 import type { z } from "zod";
 import { classifySessionDate, withFreshness, type Freshness, type WithFreshness } from "@/lib/freshness";
 import {
-  actionsSchema, announcementItemSchema, fundamentalsSchema, idxBeiEnvelope, marketOverviewSchema, newsItemSchema,
+  actionsSchema, announcementItemSchema, fundamentalsSchema, idxBeiEnvelope, macroSchema, marketOverviewSchema, newsItemSchema,
   profileSchema, screenRequestSchema, screenResultSchema, securitySchema, signalsSchema, stockSchema, type ScreenRequest,
 } from "@/server/schemas/idx-bei";
 import { symbolSchema } from "@/server/schemas/inputs";
@@ -151,5 +151,11 @@ export class IdxBeiSource extends BaseMarketDataSource {
     if (query.keywords) params.set("keywords", query.keywords);
     const { data, meta } = await this.get(`/v1/announcements?${params}`, announcementItemSchema.array(), TTL_MS.news);
     return this.wrap(data, "HISTORICAL", meta.dataAsOf);
+  }
+
+  /** Data Engine only (`/v1/macro`, E3): BI-Rate and JISDOR. Not a MarketDataSource capability; no UI uses it yet. */
+  async macro() {
+    const { data, meta } = await this.get("/v1/macro", macroSchema, TTL_MS.news);
+    return this.snapshot(data, meta.dataAsOf);
   }
 }
