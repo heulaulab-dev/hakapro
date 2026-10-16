@@ -474,7 +474,7 @@ describe.skipIf(!enabled)("engine sources (docker postgres + fixtures)", () => {
     [cursor] = await h.db.select().from(t.jobCursors).where(eq(t.jobCursors.jobId, "fundamentals"));
     expect(cursor.cursor).toMatchObject({ full: { key: "2026-10-19" }, catchup: null });
     expect((await h.db.select().from(t.financials)).length).toBe(290);
-  });
+  }, 30_000);
 
   it("fundamentals: a 429 stops both Yahoo sources after one request; the job refuses while the chart is blocked", async () => {
     const h = await harness();
@@ -496,7 +496,7 @@ describe.skipIf(!enabled)("engine sources (docker postgres + fixtures)", () => {
     world.state.fundamentalsRateLimited = false;
     expect((await h.run("fundamentals")).lastStatus).toBe("BLOCKED");
     expect(world.hits).toHaveLength(1);
-  });
+  }, 30_000);
 
   it("ratios + /v1 fundamentals + screener: derived from statements and the close, Pasardana as the secondary source", async () => {
     const h = await harness();
@@ -557,7 +557,7 @@ describe.skipIf(!enabled)("engine sources (docker postgres + fixtures)", () => {
     expect(all.data.rows.find((row) => row.symbol === "BBRI")).toMatchObject({ per: null, pbv: null, eps: null });
     expect((await post({ conditions: [{ field: "nope", operator: "GT", value: 1 }] })).status).toBe(400);
     expect((await post({ conditions: Array.from({ length: 21 }, () => ({ field: "price", operator: "GT", value: 0 })) })).status).toBe(400);
-  });
+  }, 30_000);
 
   it("end to end: universe → indices → EOD → backfill → foreign → intraday → /v1 responses", async () => {
     const h = await harness();
