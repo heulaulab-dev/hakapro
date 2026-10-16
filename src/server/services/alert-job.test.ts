@@ -3,7 +3,7 @@ import { fixture } from "../../../tests/support/fixtures";
 import { withFreshness } from "@/lib/freshness";
 import { historyResponseSchema } from "@/server/schemas/arjum";
 import { normalizeHistory } from "./arjum-normalize";
-import { quoteFromHistory, runAlertJob } from "./alert-job";
+import { classifyDailyHistory, quoteFromHistory, runAlertJob } from "./alert-job";
 
 const history = normalizeHistory(historyResponseSchema.parse(fixture("history")));
 const alert = (id: string, metric: string, operator: string, threshold: number, symbol = "BBCA") => ({ id, symbol, metric, operator, threshold });
@@ -41,4 +41,33 @@ test("history fetched once per symbol; provider errors count as unavailable", as
   const result = await runAlertJob({ fetchAlerts: async (offset) => (offset === 0 ? [alert(ids[0], "PRICE", "GT", 0), alert(ids[1], "VOLUME", "GT", 0)] : []), getHistory, insertEvent: async () => true });
   expect(getHistory).toHaveBeenCalledTimes(1);
   expect(result.unavailable).toBe(2);
+});
+
+test.each([
+  ["2026-09-18T10:00:00Z", "EOD"], // 17:00 WIB, after post-trading
+  ["2026-09-21T01:00:00Z", "EOD"], // next trading day before the open
+  ["2026-09-18T08:00:00Z", "DELAYED"], // session in progress
+  ["2026-09-22T10:00:00Z", "STALE"], // a newer session has completed
+] as const)("daily history as of 2026-09-18 at %s reads as %s", (now, freshness) => {
+  const envelope = withFreshness(history, { freshness: "HISTORICAL", asOf: "2026-09-18", source: "arjum" });
+  expect(classifyDailyHistory(envelope, new Date(now)).freshness).toBe(freshness);
+});
+
+test("fixture and non-series envelopes are not reclassified", () => {
+  const now = new Date("2026-09-18T10:00:00Z");
+  const fixtureEnvelope = withFreshness(history, { freshness: "HISTORICAL", asOf: "2026-09-18", source: "fixture:arjum" });
+  expect(classifyDailyHistory(fixtureEnvelope, now)).toBe(fixtureEnvelope);
+  const unavailable = withFreshness(history, { freshness: "UNAVAILABLE", asOf: "2026-09-18", source: "arjum" });
+  expect(classifyDailyHistory(unavailable, now)).toBe(unavailable);
+});
+
+test("provider history (HISTORICAL) is evaluated once its newest session has closed", async () => {
+  const insertEvent = vi.fn(async () => true);
+  const now = new Date("2026-09-18T10:00:00Z");
+  const result = await runAlertJob({
+    fetchAlerts: async (offset) => (offset === 0 ? [alert(ids[0], "PRICE", "LT", 6400)] : []),
+    getHistory: async () => classifyDailyHistory(withFreshness(history, { freshness: "HISTORICAL", asOf: "2026-09-18", source: "arjum" }), now),
+    insertEvent,
+  });
+  expect(result).toEqual({ evaluated: 1, triggered: 1, unavailable: 0, failed: 0 });
 });

@@ -1,10 +1,9 @@
 import { timingSafeEqual } from "node:crypto";
-import { asc, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { alerts, alertEvents } from "@/db/schema";
 import { logError } from "@/server/log";
 import { getMarketDataSource } from "@/server/market";
-import { runAlertJob } from "@/server/services/alert-job";
+import { classifyDailyHistory, runAlertJob } from "@/server/services/alert-job";
+import { postgresAlertJobStore } from "@/server/services/alert-job-store";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -28,17 +27,8 @@ async function handle(request: Request) {
     const { db } = await import("@/server/db");
     const source = getMarketDataSource();
     const result = await runAlertJob({
-      fetchAlerts: (offset, size) => db.select({ id: alerts.id, symbol: alerts.symbol,
-        metric: alerts.metric, operator: alerts.operator, threshold: alerts.threshold })
-        .from(alerts).where(eq(alerts.enabled, true)).orderBy(asc(alerts.id)).offset(offset).limit(size),
-      getHistory: (symbol) => source.history(symbol, { frame: "daily", limit: 30 }),
-      insertEvent: async ({ alertId, value, asOf }) => {
-        const inserted = await db.insert(alertEvents)
-          .values({ alertId, observedValue: String(value), observedAsOf: asOf })
-          .onConflictDoNothing({ target: [alertEvents.alertId, alertEvents.observedAsOf] })
-          .returning({ id: alertEvents.id });
-        return inserted.length > 0;
-      },
+      ...postgresAlertJobStore(db),
+      getHistory: async (symbol) => classifyDailyHistory(await source.history(symbol, { frame: "daily", limit: 30 }), new Date()),
     });
     return NextResponse.json(result, { headers: { "cache-control": "no-store" } });
   } catch {

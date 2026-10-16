@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { WithFreshness } from "@/lib/freshness";
+import { classifySessionDate, type WithFreshness } from "@/lib/freshness";
 import type { History } from "./arjum-normalize";
 import type { Candle, Quote } from "@/server/market/types";
 import { observedMetric, triggered, type AlertRule } from "./alerts";
@@ -24,6 +24,15 @@ export function quoteFromHistory(history: History): { quote: Quote; candles: Can
     foreignBuyShares: latest.foreignBuyShares, foreignSellShares: latest.foreignSellShares,
   };
   return { quote, candles };
+}
+
+/**
+ * Daily history is a series, so sources label it HISTORICAL as of its newest row. The job classifies that row
+ * against the IDX session clock itself, so a completed session reads as EOD. Fixture data stays HISTORICAL.
+ */
+export function classifyDailyHistory<T>(envelope: WithFreshness<T>, now: Date): WithFreshness<T> {
+  if (envelope.freshness !== "HISTORICAL" || envelope.source.startsWith("fixture:")) return envelope;
+  return { ...envelope, freshness: classifySessionDate(envelope.asOf, now) };
 }
 
 export type AlertJobDeps = {
