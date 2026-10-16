@@ -8,7 +8,11 @@ import { getViewer } from "@/server/viewer";
 export async function generateMetadata({ params }: PageProps<"/[locale]">): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "landing.meta" });
-  return { title: { absolute: t("title") }, description: t("description"), alternates: { languages: { id: "/id", en: "/en" } } };
+  return {
+    title: { absolute: t("title") },
+    description: t("description"),
+    alternates: { canonical: `/${locale}`, languages: { id: "/id", en: "/en", "x-default": "/id" } },
+  };
 }
 
 export default async function LandingRoute({ params }: PageProps<"/[locale]">) {

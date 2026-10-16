@@ -257,4 +257,12 @@ The user kept the layout and asked for heulaulab-dashboard's design system:
 - `<Logo />` (`src/components/brand/logo.tsx`) in sidebar, mobile header, auth, landing header/footer, 404, error, global-error. Plus Jakarta Sans (`font-brand`) on brand-surface headings only.
 - Copy: the brand is written "HAKA PRO" in all UI copy (code identifiers, cookies and the provider user agent stay `HAKAPRO`/`hakapro`). Tagline "Read the market. Follow the flow." in `app.tagline`.
 - TODO (user): Indonesian translation of the tagline. `id.json` `app.tagline` holds the English text until then.
-- Open: root `metadataBase` is unset (Vercel falls back to `VERCEL_PROJECT_PRODUCTION_URL`; elsewhere set it). Market greens close to brand teal are flagged, not changed (see the branch summary).
+- Open: market greens close to brand teal are flagged, not changed (see the branch summary). (`metadataBase` is resolved in S12.)
+
+## S12: environment-aware metadata and landing acceptance (2026-10-16, Plane HAKA-13)
+- `metadataBase` follows the deployment: `resolveSiteOrigin()` in `src/server/config/auth.ts` returns the environment's origin (production, staging, develop, or the rehearsal URL), or `BETTER_AUTH_URL` locally. Share images, canonical and hreflang links are absolute on every environment. Before this, canonical links were relative and the share-image URL fell back to the build host.
+- Indexing: `isIndexable()` allows only production. Develop, staging and rehearsal send `noindex, nofollow` and a disallow-all `robots.txt`.
+- Landing: canonical `/{locale}`, hreflang `id`/`en` plus `x-default` → `/id`.
+- Acceptance (e2e, `tests/e2e/landing.spec.ts`): absolute canonical/hreflang/og:image on this origin, and no horizontal overflow on desktop, tablet (820 px) and mobile (Pixel 7) for both locales. The e2e server sets `BETTER_AUTH_URL` to its own origin.
+- Still open: the Indonesian tagline. `id.json` `app.tagline` still holds the English text (brand copy, owner's decision).
+

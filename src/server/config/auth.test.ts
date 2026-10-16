@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from "vitest";
-import { AuthConfigError, decideAccess, DEPLOYMENT_ORIGINS, PRODUCTION_AUTH_URL, resolveAuthConfig, resolveDeploymentEnvironment } from "./auth";
+import { AuthConfigError, decideAccess, DEPLOYMENT_ORIGINS, isIndexable, PRODUCTION_AUTH_URL, resolveAuthConfig, resolveDeploymentEnvironment, resolveSiteOrigin } from "./auth";
 
 const CORE = { DATABASE_URL: "postgresql://test.invalid/db", BETTER_AUTH_SECRET: "test-secret-with-at-least-32-characters", BETTER_AUTH_URL: PRODUCTION_AUTH_URL };
 const GOOGLE = { GOOGLE_CLIENT_ID: "test-client-id", GOOGLE_CLIENT_SECRET: "test-client-secret" };
@@ -50,6 +50,23 @@ describe("deployment environments", () => {
     const rehearsal = (url: string) => ({ ...deployed("rehearsal", url), BETTER_AUTH_REHEARSAL_URL: url });
     expect(resolveAuthConfig(rehearsal("https://rehearsal.test.invalid")).mode).toBe("better_auth");
     expect(() => resolveAuthConfig(rehearsal(DEPLOYMENT_ORIGINS.staging))).toThrow(AuthConfigError);
+  });
+
+  test("site origin follows the deployment, not the build", () => {
+    for (const [environment, origin] of Object.entries(DEPLOYMENT_ORIGINS)) {
+      expect(resolveSiteOrigin({ NODE_ENV: "production", BETTER_AUTH_ENVIRONMENT: environment })).toBe(origin);
+    }
+    expect(resolveSiteOrigin({ NODE_ENV: "production" })).toBe(PRODUCTION_AUTH_URL);
+    expect(resolveSiteOrigin({ NODE_ENV: "production", BETTER_AUTH_ENVIRONMENT: "rehearsal", BETTER_AUTH_REHEARSAL_URL: "https://rehearsal.test.invalid/" })).toBe("https://rehearsal.test.invalid");
+    expect(resolveSiteOrigin({ NODE_ENV: "development", BETTER_AUTH_URL: "http://localhost:3200/" })).toBe("http://localhost:3200");
+    expect(resolveSiteOrigin({ NODE_ENV: "development" })).toBeUndefined();
+  });
+
+  test("only production is indexable", () => {
+    expect(isIndexable({ NODE_ENV: "production" })).toBe(true);
+    for (const environment of ["staging", "develop", "rehearsal"]) {
+      expect(isIndexable({ NODE_ENV: "production", BETTER_AUTH_ENVIRONMENT: environment })).toBe(false);
+    }
   });
 
   test("local development keeps its own origin", () => {
