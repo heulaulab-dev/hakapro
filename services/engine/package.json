@@ -5,7 +5,9 @@
   "description": "HAKAPRO Data Engine. Image-build manifest only: local development uses the repo root install and scripts (engine:*).",
   "dependencies": {
     "drizzle-orm": "0.45.4",
+    "fflate": "0.8.3",
     "postgres": "3.4.9",
+    "unpdf": "1.8.1",
     "zod": "4.6.5"
   }
 }

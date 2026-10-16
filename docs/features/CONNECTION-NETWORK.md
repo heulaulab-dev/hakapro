@@ -359,8 +359,11 @@ the holder's verbatim rows (with `source`) from both months, and each side's sum
 Percentage precision is whatever the source published: the KSEI list uses 2 decimals, so a pp delta below 0.01 can't be
 seen, and a small trade can show as `UNCHANGED` in percent but not in shares.
 
-**Schema gap.** The existing `ownership_snapshots` table (`src/db/schema/app.ts`) does **not** fit as is. No
-migration has been added. A Data Engine slice would need:
+**Schema gap.** The existing `ownership_snapshots` table (`src/db/schema/app.ts`) does **not** fit as is. No app
+migration has been added. *Update 2026-10-16 (E6, HAKA-66): the engine database fills this gap with its own tables
+(`ownership_snapshot_sets`, `ownership_snapshot_rows`, `ownership_changes`, `ownership_uploads` in
+`services/engine/db/schema.ts`): items 1–5 below, with `local_foreign` and `investor_type` kept as stated. The app table
+is unchanged.* A Data Engine slice would need:
 
 1. `holder_key text not null` and `holder_kind text not null` (check on the six kinds). An alias table would make the key
    curated state.

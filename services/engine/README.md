@@ -7,6 +7,7 @@ Experimental internal collector and API for IDX data. Spec: [`docs/features/DATA
 - E2b (HAKA-67): session-window intraday snapshots, served as `DELAYED`.
 - E3 (HAKA-63): market info: news RSS headlines, BI-Rate and JISDOR, the market-wide corporate-action calendar; announcements stay unavailable (IDX blocked).
 - E5 (HAKA-65): financial statements from Yahoo fundamentals timeseries, derived valuation ratios (with Pasardana's own as a secondary source), `/v1/stocks/{s}/fundamentals` and `POST /v1/screener`.
+- E6 (HAKA-66): ownership. The owner uploads the monthly KSEI ≥1% shareholder list (PDF, or a CSV/XLSX export); the engine parses it into HAKA-33 snapshot sets, computes month-over-month changes and a draft HAKA-34 free-float estimate. Nothing is fetched from IDX or KSEI. See [Ownership uploads](#ownership-uploads-e6).
 
 It is a separate Bun + TypeScript service with no Next.js. It shares code with the app through the `@/*` path: the idx-bei and arjum Zod contracts (`src/server/schemas/`), the arjum URL builder, the IDX calendar, the freshness clock, the arjum page limits and the movers ranking.
 
@@ -25,6 +26,8 @@ It is a separate Bun + TypeScript service with no Next.js. It shares code with t
 | `src/fetch/` | Polite fetcher: per-host token bucket and concurrency, honest UA, ETag/Last-Modified, URL+sha256 dedupe, raw store (R2/S3 or local), block detection |
 | `src/schedule/` | WIB cron, IDX session windows, disk/flag pause, single-flight scheduler, resumable backfill helpers (per day and per item) |
 | `src/registry.ts` | Source/job registry (`defineSource`, intraday retention job) |
+| `src/ownership/` | E6: upload service, parsers (`pdf.ts`, `tabular.ts` for CSV/XLSX), the ≥1% column layout (`layout.ts`), number/date parsing, normalization into HAKA-33 rows, derivations (changes, draft free float), the store port |
+| `src/db/ownership.ts`, `src/serve/ownership.ts`, `src/http/ownership-admin.ts` | E6 storage, `/v1` payloads, admin routes |
 | `db/schema.ts`, `db/migrations/` | Engine Drizzle schema and generated SQL |
 | `test/` | Recorded source fixtures, the local fixture world, and the Docker e2e suites |
 
@@ -134,7 +137,10 @@ Fallbacks when a source is `BLOCKED`: universe from Pasardana (or TradingView); 
 | `GET /v1/stocks/{s}/fundamentals` | API token | `fundamentalsSchema`: one entry per (period end, `ANNUAL`/`QUARTERLY`), newest first; `metrics` as stored, plus `units` per metric (`IDR`, `USD`, `IDR/share`, `shares`), `currency` and `source`. `meta.dataAsOf` = the newest period end, `HISTORICAL`. Empty `UNAVAILABLE` form without statements |
 | `POST /v1/screener` | API token | `screenRequestSchema` (≤ 20 conditions, `limit` 1–1000, default 500) over every stock with a row in the newest session: `price`, `volume`, `value`, `frequency`, `foreignNetShares` (buy − sell shares), `marketCap` (close × listed shares, else the universe snapshot), `per`, `pbv`, `roe`, `roa`, `eps`, `der`, `dividendYield`, `change1D` (fraction; the app converts its percent). AND binds tighter than OR; a null value never matches. Rows most traded first; `total` counts all matches; `supportedFields` lists only fields with a value in the session; `ratioSources` names `derived`/`pasardana` per symbol and ratio. Missing values are null, never 0. `400` on an invalid request |
 | `GET /v1/stocks/{s}/profile` | API token | `404 NO_DATA` (no source) |
+| `GET /v1/stocks/{s}/ownership` | API token | E6: the symbol's newest uploaded ≥1% month (`stockOwnershipSchema` in `src/server/schemas/ownership.ts`): each disclosed line verbatim (holder key, name, kind, shares, percent, investor type, local/foreign, line reference), the position date, threshold, source (dataset, the owner's label, retrieval time, upload id) and the comparison with the previous month. `freeFloat` is `null` unless `ENGINE_FREE_FLOAT_ENABLED=1`. `HISTORICAL`, dated by the position date; the empty form (`UNAVAILABLE`) when nothing is stored |
+| `GET /v1/ownership/changes?month=YYYY-MM[&symbol=]` | API token | E6: per-holder changes into `month` from the previous month (`ownershipChangesSchema`): `NEW` / `INCREASE` / `DECREASE` / `UNCHANGED` / `BELOW_THRESHOLD` / `EXIT` / `AMBIGUOUS` with exact share and percentage-point deltas, flags and the line references of both months, plus each issuer's comparison status (`COMPARED`, `NO_PREVIOUS`, `NOT_ADJACENT`). `month` is required (`400` otherwise) |
 | `POST /v1/admin/jobs/{id}/run`, `/v1/admin/pause`, `/v1/admin/resume`, `/v1/admin/sources/{id}/unblock` | `ENGINE_ADMIN_TOKEN` | Return 404 when the admin token is unset |
+| `POST /v1/admin/ownership/upload`, `GET /v1/admin/ownership/uploads`, `POST /v1/admin/ownership/uploads/{id}/reparse` | `ENGINE_ADMIN_TOKEN` | E6 uploads, see [Ownership uploads](#ownership-uploads-e6) |
 
 Every `/v1` response is validated with the shared idx-bei Zod schemas before it leaves. `meta.dataAsOf` is the session date, or the WIB timestamp of an intraday snapshot; routes with no stored data keep the E1 empty forms. The app re-derives freshness from `dataAsOf` with the same IDX clock, and the contract test (`tests/unit/engine-idx-bei-contract.test.ts`) parses both the stubs and real responses through `IdxBeiSource`.
 
@@ -167,6 +173,8 @@ All are runtime-only. None is needed at build time.
 | `ENGINE_RAW_S3_BUCKET` | unset | `hakapro-engine-raw` |
 | `ENGINE_RAW_S3_ACCESS_KEY_ID` / `ENGINE_RAW_S3_SECRET_ACCESS_KEY` | unset | Bucket-scoped R2 token (Object Read & Write) |
 | `ENGINE_RAW_S3_REGION` | `auto` | |
+| `ENGINE_OWNERSHIP_MAX_UPLOAD_MB` | `20` | Largest ownership upload (1–100); larger bodies get `413` |
+| `ENGINE_FREE_FLOAT_ENABLED` | `false` | `1`/`true` serves the HAKA-34 estimate (`methodologyStatus: "draft"`) on `/v1/stocks/{s}/ownership`. Leave it off until the owner approves FREE-FLOAT-METHODOLOGY.md; the estimate is computed and stored either way |
 
 The four `ENGINE_RAW_S3_*` connection variables must be set together. Without them, raw documents go to `${ENGINE_DATA_DIR}/raw`. The S3 client is Bun's built-in `Bun.S3Client`.
 
@@ -193,7 +201,7 @@ Scripts (repo root):
 | `engine:typecheck` | Also run by `bun run typecheck` |
 | `engine:db:generate` | `drizzle-kit generate` from `db/schema.ts` |
 | `engine:db:migrate` | Apply the migrations |
-| `engine:test:e2e` | Docker PostgreSQL + the fixture world: every job, block/fallback paths, news (conditional GET, dedupe, per-outlet blocks, retention), macro, fundamentals (order, spacing, weekly and catch-up cycles, a 429 blocking both Yahoo sources) → ratios → `/v1` fundamentals and screener, and universe → EOD → foreign → intraday → `/v1`; not part of `bun run test` or CI |
+| `engine:test:e2e` | Docker PostgreSQL + the fixture world: every job, block/fallback paths, news (conditional GET, dedupe, per-outlet blocks, retention), macro, fundamentals (order, spacing, weekly and catch-up cycles, a 429 blocking both Yahoo sources) → ratios → `/v1` fundamentals and screener, universe → EOD → foreign → intraday → `/v1`, and ownership uploads (two synthetic months, dedupe, a corrected XLSX re-upload, re-parse, failure, size limit); not part of `bun run test` or CI |
 
 Unit tests run with the root `bun run test` (parsers, fetcher, scheduler, `/v1` derivations and routes).
 
@@ -202,6 +210,65 @@ Unit tests run with the root `bun run test` (parsers, fetcher, scheduler, `/v1` 
 `test/fixtures/` holds trimmed real responses for the parsers, recorded on 2026-10-16 between 11:29 and 11:40 WIB with 8 requests in total (honest UA, at least 2 s apart per host, no block seen): TradingView `indonesia/scan` (5 rows) and `global/scan` (two calls: the confirmed index list), Pasardana `GetAll` (3 rows, plus one call that confirmed 1-based paging), and Yahoo chart for `BBCA.JK` (5d, and 2021 events trimmed to 5 bars) and `^JKSE` (5d). The E3 fixtures were recorded on 2026-10-16 between 14:27 and 14:28 WIB with 7 requests (one per URL, honest UA, no retries, at least 6 s apart and never two in a row to one host, no block seen): the five news feeds trimmed to 3 items each (`news-*.xml`) and the BI-Rate and JISDOR pages trimmed to the table with 3 rows (`bi-rate.html`, `bi-jisdor.html`; the BI-Rate one keeps its commented-out `BI-7 Day` column). The E5 fixtures were recorded on 2026-10-16 between 15:24 and 15:25 WIB with 3 requests (Yahoo fundamentals timeseries for BBCA, TLKM and GOTO, at least 15 s apart, honest UA, no retries, all 200, no block), trimmed to 13–15 of the 26 lines each (`yahoo-fundamentals-*.json`). `arjum-history-BBCA.fake.json` is invented data in the shape of `fixtures/arjum`; arjum was not called. `test/source-fixtures.ts` serves them at the real paths and refuses every other URL, so no test touches the network.
 
 The image build uses `services/engine/package.json` and `bun.lock` only. Local development uses the root install. After changing a runtime dependency version at the root, mirror it there and run `bun install --lockfile-only` in `services/engine`.
+
+## Ownership uploads (E6)
+
+The KSEI ≥1% shareholder list is published monthly as a PDF in an IDX announcement ("Pemegang Saham di atas 1% (KSEI)"). idx.co.id and KSEI block the engine (DATA-ENGINE.md §5.9), so the owner downloads the file by hand and uploads it (§8.5d). The engine never fetches it. The data is for internal use only: it needs written permission from IDX/KSEI before a public or paid HAKAPRO (CONNECTION-NETWORK.md → "Data Engine inputs").
+
+**Network: the engine has no public domain.** It listens on port 8080 inside the Coolify private network only, so an upload has to come from inside that network, or through an admin-only domain or tunnel set up later. Which route to use is the owner's decision; nothing here adds a public domain. Options on the Coolify server today:
+
+- From the host shell: the engine container's IP (`docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}} {{end}}' <engine container>`) on port 8080.
+- From a throwaway container on the engine's Docker network, where the container name resolves: `docker run --rm --network <network> -v "$PWD":/f curlimages/curl:8.10.1 …` with `@/f/<file>`. (The engine image has no curl, so `docker exec` into it doesn't help.)
+
+### Uploading a month
+
+1. Download the month's PDF from the IDX announcement in a browser.
+2. Copy it to the Coolify server (e.g. `scp`), then upload it with the admin token. `asOf` is the month the list is for, `source` is your label for where it came from (the announcement number is ideal):
+
+```sh
+ENGINE=http://<engine-ip-or-name>:8080     # private network address; see above
+TOKEN='<ENGINE_ADMIN_TOKEN>'               # placeholder: the value from Coolify's env vars
+
+# Raw body (PDF; CSV with -H 'content-type: text/csv'; XLSX with the spreadsheet content type)
+curl -sS -X POST "$ENGINE/v1/admin/ownership/upload?asOf=2026-02&source=IDX%20Pengumuman%20Peng-00000%2FBEI%2F03-2026&filename=ksei-1pct-2026-02.pdf" \
+  -H "authorization: Bearer $TOKEN" -H 'content-type: application/pdf' --data-binary @ksei-1pct-2026-02.pdf
+
+# Or multipart (the parameters may be form fields)
+curl -sS -X POST "$ENGINE/v1/admin/ownership/upload" -H "authorization: Bearer $TOKEN" \
+  -F asOf=2026-02 -F 'source=IDX Pengumuman Peng-00000/BEI/03-2026' -F file=@ksei-1pct-2026-02.pdf
+
+# What happened to every upload (status, row errors, counts), newest first
+curl -sS "$ENGINE/v1/admin/ownership/uploads?limit=10" -H "authorization: Bearer $TOKEN"
+```
+
+Parameters: `asOf=YYYY-MM` (required; not in the future), `source` (optional, ≤ 200 characters), `snapshotDate=YYYY-MM-DD` (optional; the position date when the file has no DATE column or title date; must be inside `asOf`), `filename` (optional label for raw bodies). The file may be at most `ENGINE_OWNERSHIP_MAX_UPLOAD_MB` (20 MB). Accepted: PDF with a text layer (not a scan), XLSX (first sheet), CSV (UTF-8, comma or semicolon).
+
+Responses: `201` parsed; `422 PARSE_FAILED` with the stored upload, its `error` and row `issues`; `200` with `duplicate: true` for the same bytes again (sha256); `409` when the same file was already uploaded for another month; `413` too large; `415` not a PDF/XLSX/CSV; `400` bad parameters; `503 DISK_GUARD` while the disk guard trips; `401` without the token (`404` when `ENGINE_ADMIN_TOKEN` is unset).
+
+What the engine does with an upload:
+
+- Stores the original in the raw store (`ownership-upload/<date>/<sha256>.<ext>`, indexed in `raw_documents` under the source `ownership-upload`, which `/v1/meta/health` lists) and records an `ownership_uploads` row (`RECEIVED` → `PARSED` or `FAILED`).
+- Parses the table into one snapshot set per issuer (`ownership_snapshot_sets` + `ownership_snapshot_rows`): ticker, holder name as published, holder kind (`person`, `organisation`, `custodian_nominee`, `government`, `public`, `unknown`, from the stated investor type and the existing name rules), holder key (HAKA-33 policy), shares, percent, investor type and local/foreign as stated, and a line reference (`upload:<id>#p3.l12` = page 3, line 12; `#r12` for spreadsheet rows). Columns the engine doesn't use (nationality, domicile, addresses, any identifier) are dropped at parsing. A row with a bad value is skipped and listed in `issues` with its locator; the rest of the file still loads. The upload fails only when the file has no header, no position date, a position date outside `asOf`, or no valid row.
+- Replaces each issuer's set for that month (a corrected re-upload of the month wins; issuers missing from it keep their earlier set). Lines the list prints twice are kept twice.
+- Compares each issuer with the previous month when that month is stored (`compareOwnershipSnapshots`, adjacent months only; otherwise `NOT_ADJACENT`, no changes) and stores the per-holder changes (`ownership_changes`, derivation `haka33-compare@1`). Uploading an earlier month later re-derives the month after it. Holders missing from the later list are `BELOW_THRESHOLD`, never `EXIT`.
+- Computes the HAKA-34 free-float estimate per issuer (`estimateFreeFloat`, investor types as the only signal) and stores it with `methodologyStatus: "draft"`. It is not served unless `ENGINE_FREE_FLOAT_ENABLED=1`, and it is never an official figure.
+
+**Re-parse** after a layout fix, without uploading again: `curl -sS -X POST "$ENGINE/v1/admin/ownership/uploads/<id>/reparse" -H "authorization: Bearer $TOKEN"`. It reads the raw copy, replaces that upload's sets and changes, and records the result on the same upload. A failed re-parse withdraws the upload's sets.
+
+### When the first real PDF arrives
+
+No real ≥1% PDF has been read yet; the parser was designed against the columns CONNECTION-NETWORK.md §1.3 documents and tested on a synthetic PDF in that layout. Upload the first real month, then check `GET /v1/admin/ownership/uploads`: `stats.columns` shows which header labels were found and the field each mapped to (`null` = unused), `stats.rowsAccepted/rowsRejected` and `issues` show what didn't fit. Adjust only `src/ownership/layout.ts`, then re-parse:
+
+1. `HEADER_ALIASES`: add the PDF's exact header labels (upper case, whitespace collapsed) for any column mapped to `null` that should be read.
+2. `PDF_LAYOUT`: `minHeaderMatches`; `headerMergeLineHeights` (two-line headers); `continuation` (`"previous"` when wrapped names continue below their row, `"next"` when the row's values print on the last line); `continuationMaxPitch`.
+3. `IGNORED_LINE_PATTERNS` for page headers, footers or totals reported as "line is not a table row".
+4. `holderKindFor` in `src/ownership/normalize.ts` if the file uses other investor-type codes.
+
+Bump `OWNERSHIP_PARSER_VERSION` in `src/ownership/parse.ts` with any layout change. If the PDF can't be made to parse (a scan, merged cells), export the table to CSV/XLSX with the same headers and upload that instead.
+
+Fixtures: `test/fixtures/ownership/` holds **synthetic** files only (tickers `TEST1`–`TEST4`, invented holders such as `PT CONTOH DUMMY TBK`), generated by `bun services/engine/test/fixtures/ownership/generate.ts` from `test/ownership-fixtures.ts` (a unit test checks they match). The PDFs are written by the tiny `test/pdf-writer.ts`; no real list was downloaded or copied.
+
+PDF text extraction uses [`unpdf`](https://github.com/unjs/unpdf) (the serverless pdf.js build: pure JavaScript, no native dependency, no worker); XLSX reading uses `fflate` for the zip container. Both are bundled into `main.js` at image build. The first PDF parse after a start takes a few seconds while pdf.js loads.
 
 ## Coolify (one shared engine, §8.4)
 
@@ -219,6 +286,7 @@ The image build uses `services/engine/package.json` and `bun.lock` only. Local d
   - optionally `ENGINE_API_TOKEN`
   - the R2 variables, once the owner issues the bucket-scoped token
   - `ENGINE_ARJUM_BASE_URL` and `ENGINE_ARJUM_API_KEY` for foreign flow (optionally `ENGINE_ARJUM_DAILY_BUDGET`, `ENGINE_ARJUM_RESERVE`)
+  - optionally `ENGINE_OWNERSHIP_MAX_UPLOAD_MB`; leave `ENGINE_FREE_FLOAT_ENABLED` unset until the methodology is approved
 - **Consumers:** develop, staging and production set `MARKET_API_URL` to the engine's private-network URL (for example `http://hakapro-engine:8080`). Point develop at it first, once the first universe and EOD runs have filled the tables (`/v1/meta/health` shows the sources `OK` and the session `COMPLETE` or `PARTIAL`); routes without data still answer with empty `UNAVAILABLE` envelopes or `404 NO_DATA`.
 - **Builds:** pause crawling around deployments with `POST /v1/admin/pause`, then `/resume`. Coolify concurrent builds are already 1.
 - **Startup:** the engine waits up to 60 s for PostgreSQL, then exits non-zero, and Coolify's restart policy brings it back. If the DB hostname does not resolve at boot, Bun caches the failed lookup for the life of the process, so a restart is the recovery path.

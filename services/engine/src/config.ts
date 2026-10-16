@@ -30,6 +30,9 @@ const envSchema = z.object({
   ENGINE_ARJUM_API_KEY: optionalSecret,
   ENGINE_ARJUM_DAILY_BUDGET: z.coerce.number().int().min(0).max(1000).default(600),
   ENGINE_ARJUM_RESERVE: z.coerce.number().int().min(0).max(1000).default(400),
+  // Ownership uploads (E6, §8.5d): file size cap, and the HAKA-34 draft estimate on /v1 (off until the owner approves).
+  ENGINE_OWNERSHIP_MAX_UPLOAD_MB: z.coerce.number().int().min(1).max(100).default(20),
+  ENGINE_FREE_FLOAT_ENABLED: flag(false),
 });
 
 export type ArjumConfig = { baseUrl: string; apiKey: string; dailyBudget: number; reserve: number };
@@ -50,6 +53,8 @@ export type EngineConfig = {
   rawS3: { endpoint: string; bucket: string; accessKeyId: string; secretAccessKey: string; region: string } | null;
   /** Null → the foreign-flow job is not registered and foreignBuy/foreignSell stay null. */
   arjum: ArjumConfig | null;
+  /** Ownership uploads: largest accepted file, and whether the free-float draft estimate is served. */
+  ownership: { maxUploadBytes: number; freeFloatEnabled: boolean };
 };
 
 /** Parses env; error messages name variables, never values. */
@@ -88,5 +93,6 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     arjum: e.ENGINE_ARJUM_BASE_URL && e.ENGINE_ARJUM_API_KEY
       ? { baseUrl: e.ENGINE_ARJUM_BASE_URL.replace(/\/+$/, ""), apiKey: e.ENGINE_ARJUM_API_KEY, dailyBudget: e.ENGINE_ARJUM_DAILY_BUDGET, reserve: e.ENGINE_ARJUM_RESERVE }
       : null,
+    ownership: { maxUploadBytes: e.ENGINE_OWNERSHIP_MAX_UPLOAD_MB * 1024 * 1024, freeFloatEnabled: e.ENGINE_FREE_FLOAT_ENABLED },
   };
 }

@@ -7,6 +7,7 @@ import {
   screenRequestSchema, screenResultSchema, securitySchema, signalsSchema, stockSchema,
 } from "@/server/schemas/idx-bei";
 import { dateSchema, symbolSchema } from "@/server/schemas/inputs";
+import { ownershipChangesSchema, ownershipMonthSchema, stockOwnershipSchema } from "@/server/schemas/ownership";
 import type { SourceHealth } from "../db/repos";
 import type { PauseGuard } from "../schedule/pause";
 import type { Scheduler } from "../schedule/scheduler";
@@ -17,8 +18,11 @@ import {
   ACTIONS_MAX_RANGE_DAYS, defaultActionsRange, NEWS_DEFAULT_PAGE_SIZE, NEWS_MAX_PAGE, NEWS_MAX_PAGE_SIZE, serveActionsCalendar, serveMacro, serveNews,
 } from "../serve/market-info";
 import { serveFundamentals, serveScreener } from "../serve/fundamentals";
+import { previousMonth as previousMonthOf } from "../ownership/numbers";
+import { emptyStockOwnership, serveOwnershipChanges, serveStockOwnership } from "../serve/ownership";
 import type { MarketStore } from "../serve/store";
 import { envelope, servedMeta, unavailableMeta } from "./envelope";
+import { ownershipAdmin, type OwnershipDeps } from "./ownership-admin";
 
 export type EodSessionHealth = { date: string; status: string; expected: number; present: number; attempts: number; finalizedAt: string | null };
 
@@ -35,6 +39,8 @@ export type AppDeps = {
   market?: MarketStore;
   /** Recent EOD session completeness for /v1/meta/health. */
   eodSessions?: () => Promise<EodSessionHealth[]>;
+  /** Ownership uploads and their snapshot sets (E6). Without it the ownership routes answer with empty forms. */
+  ownership?: OwnershipDeps;
   now?: () => Date;
   log?: Logger;
 };
@@ -98,6 +104,10 @@ export function createApp(deps: AppDeps): (request: Request) => Promise<Response
     if (path.startsWith("/v1/admin/")) {
       if (!deps.adminToken) return error(404, "NOT_FOUND", "Not found");
       if (!tokenMatches(request.headers.get("authorization"), deps.adminToken)) return error(401, "UNAUTHORIZED", "Admin token required", { "www-authenticate": "Bearer" });
+      if (path.startsWith("/v1/admin/ownership/")) {
+        if (!deps.ownership) return error(404, "NOT_FOUND", "Ownership uploads are not configured");
+        return ownershipAdmin(deps.ownership, request, url, path, method, { pause: deps.pause, now: now(), log });
+      }
       if (method !== "POST") return error(405, "METHOD_NOT_ALLOWED", "Use POST");
       return admin(path);
     }
@@ -170,10 +180,22 @@ export function createApp(deps: AppDeps): (request: Request) => Promise<Response
       return json(envelope(signalsSchema, served.data, servedMeta(served, at)));
     }
 
-    const stock = path.match(/^\/v1\/stocks\/([^/]+)(?:\/(fundamentals|actions|profile))?$/);
+    if (path === "/v1/ownership/changes") {
+      const month = ownershipMonthSchema.safeParse(param(url, "month"));
+      const symbol = symbolSchema.optional().safeParse(param(url, "symbol"));
+      if (!month.success || !symbol.success) return error(400, "BAD_REQUEST", "month=YYYY-MM is required; symbol is optional");
+      const served = deps.ownership ? await serveOwnershipChanges(deps.ownership.service.store, month.data, symbol.data) : null;
+      return respond(ownershipChangesSchema, served, { month: month.data, previousMonth: previousMonthOf(month.data), comparisons: [], changes: [] });
+    }
+
+    const stock = path.match(/^\/v1\/stocks\/([^/]+)(?:\/(fundamentals|actions|profile|ownership))?$/);
     if (stock) {
       const symbol = symbolSchema.safeParse(decodeURIComponent(stock[1]));
       if (!symbol.success) return error(400, "BAD_REQUEST", "Invalid symbol");
+      if (stock[2] === "ownership") {
+        const served = deps.ownership ? await serveStockOwnership(deps.ownership.service.store, symbol.data, { freeFloatEnabled: deps.ownership.freeFloatEnabled }) : null;
+        return respond(stockOwnershipSchema, served, emptyStockOwnership(symbol.data));
+      }
       if (stock[2] === "fundamentals") return respond(fundamentalsSchema, market ? await serveFundamentals(market, symbol.data) : null, []);
       if (stock[2] === "actions") return respond(actionsSchema, market ? await serveActions(market, symbol.data, at) : null, []);
       if (stock[2] === "profile") return error(404, "NO_DATA", `No profile data for ${symbol.data}`);

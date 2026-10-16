@@ -19,7 +19,7 @@ export function assertKey(key: string): void {
 }
 
 const EXTENSIONS: Array<[string, string]> = [
-  ["json", ".json"], ["csv", ".csv"], ["html", ".html"], ["xml", ".xml"], ["pdf", ".pdf"], ["zip", ".zip"], ["text/plain", ".txt"],
+  ["spreadsheetml", ".xlsx"], ["json", ".json"], ["csv", ".csv"], ["html", ".html"], ["xml", ".xml"], ["pdf", ".pdf"], ["zip", ".zip"], ["text/plain", ".txt"],
 ];
 
 /** `<source>/<YYYY-MM-DD>/<sha256><ext>`: content-addressed, so re-storing the same bytes is idempotent. */

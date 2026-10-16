@@ -13,6 +13,8 @@ COPY src/server/config/idx-calendar.ts ./src/server/config/idx-calendar.ts
 COPY src/lib/freshness ./src/lib/freshness
 COPY src/lib/movers.ts ./src/lib/movers.ts
 COPY src/lib/api/provider-limits.ts ./src/lib/api/provider-limits.ts
+COPY src/lib/ownership ./src/lib/ownership
+COPY src/lib/insider-holders.ts ./src/lib/insider-holders.ts
 COPY src/server/providers/arjum/queries.ts ./src/server/providers/arjum/queries.ts
 COPY services/engine/tsconfig.json ./services/engine/tsconfig.json
 COPY services/engine/db ./services/engine/db

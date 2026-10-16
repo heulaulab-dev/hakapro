@@ -6,6 +6,7 @@ import {
   profileSchema, screenRequestSchema, screenResultSchema, securitySchema, signalsSchema, stockSchema, type ScreenRequest,
 } from "@/server/schemas/idx-bei";
 import { symbolSchema } from "@/server/schemas/inputs";
+import { ownershipChangesSchema, ownershipMonthSchema, stockOwnershipSchema } from "@/server/schemas/ownership";
 import { PROVIDER_USER_AGENT } from "@/server/config/provider-identity";
 import { logWarn } from "@/server/log";
 import { ProviderBackoff } from "@/server/providers/backoff";
@@ -157,5 +158,22 @@ export class IdxBeiSource extends BaseMarketDataSource {
   async macro() {
     const { data, meta } = await this.get("/v1/macro", macroSchema, TTL_MS.news);
     return this.snapshot(data, meta.dataAsOf);
+  }
+
+  /**
+   * Data Engine only (`/v1/stocks/{s}/ownership`, E6): the newest uploaded KSEI ≥1% list month for a symbol, dated by
+   * its position date (HISTORICAL). No UI uses it yet; the data is not licensed for a public HAKAPRO.
+   */
+  async ownership(symbol: string) {
+    const { data, meta } = await this.get(`/v1/stocks/${encodeURIComponent(symbolSchema.parse(symbol))}/ownership`, stockOwnershipSchema, TTL_MS.securities);
+    return this.wrap(data, "HISTORICAL", meta.dataAsOf);
+  }
+
+  /** Data Engine only (`/v1/ownership/changes`, E6): per-holder changes into `month` from the previous month. */
+  async ownershipChanges(month: string, symbol?: string) {
+    const params = new URLSearchParams({ month: ownershipMonthSchema.parse(month) });
+    if (symbol) params.set("symbol", symbolSchema.parse(symbol));
+    const { data, meta } = await this.get(`/v1/ownership/changes?${params}`, ownershipChangesSchema, TTL_MS.securities);
+    return this.wrap(data, "HISTORICAL", meta.dataAsOf);
   }
 }

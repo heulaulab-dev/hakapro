@@ -279,7 +279,7 @@ source for a public or paid HAKAPRO.
 - `corporate_actions`: symbol, type, ex/record/payment dates, ratio/amount, source.
 - `financials`: symbol, period_end, period_type (annual | quarterly), metric, value, unit, currency, source, as_of, raw_ref (built in E5).
 - `stock_ratios`: symbol, ratio, ratio_source (derived | pasardana), value, date, basis, inputs, derivation version (built in E5).
-- `ownership_snapshots`: per the HAKA-33 types, with a parent snapshot-set table.
+- `ownership_snapshots`: per the HAKA-33 types, with a parent snapshot-set table. Built in E6 as `ownership_uploads`, `ownership_snapshot_sets`, `ownership_snapshot_rows` and `ownership_changes` (see `services/engine/README.md` → Ownership uploads).
 
 Every table has `source` and `as_of`; derived tables also record the derivation version.
 
@@ -294,7 +294,7 @@ Every table has `source` and `as_of`; derived tables also record the derivation 
 | E3. Market info | Indices, announcements, news, corporate actions, macro → `/v1/market`, `/v1/news`, `/v1/announcements`, `/v1/stocks/{s}/actions`. **Built 2026-10-16** (HAKA-63): news RSS from the four §5.7 outlets every 15 min (06:00–22:00 WIB) → `/v1/news`; BI-Rate + JISDOR daily → `/v1/macro`; the Yahoo-event calendar → `/v1/actions`; announcements stay `UNAVAILABLE` (IDX blocked), explained on `/v1/meta/health`. See `services/engine/README.md` |
 | E4. Strategy scans | `HAKAPRO_EOD_ENGINE` running the approved HAKA-17 rules over the whole universe, exposed via the HAKA-18 contract |
 | E5. Fundamentals + screener | Financial statements → fundamentals and `POST /v1/screener`. **Built 2026-10-16** (HAKA-65): Yahoo fundamentals timeseries per symbol (annual + quarterly statement lines) → `financials`, a weekly night refresh as a low-priority background job plus an earnings-season catch-up; derived PER/PBV/ROE/ROA/EPS/DER/dividend yield (TTM, documented formulas) → `stock_ratios`, with Pasardana's own PER/PBV/ROE kept as a secondary source (never blended); `/v1/stocks/{s}/fundamentals` and `POST /v1/screener` over the newest session. See `services/engine/README.md` |
-| E6. Ownership | Monthly ≥1% lists → HAKA-33 change engine and HAKA-34 estimate (draft until approved) |
+| E6. Ownership | Monthly ≥1% lists → HAKA-33 change engine and HAKA-34 estimate (draft until approved). **Built 2026-10-16** (HAKA-66): the owner uploads the month's PDF (or a CSV/XLSX export) to `POST /v1/admin/ownership/upload` (§8.5d; nothing is fetched from IDX/KSEI); raw copy with sha256 dedupe; a header-driven PDF table parser (unpdf) with per-row validation errors; snapshot sets per issuer filling the HAKA-33 schema gap; changes against the adjacent previous month; the free-float estimate stored as a draft and served only with `ENGINE_FREE_FLOAT_ENABLED=1`. Served on `/v1/stocks/{s}/ownership` and `/v1/ownership/changes?month=`. Designed against the documented column layout and tested on synthetic files only: the layout must be checked on the first real PDF. The engine has no public domain, so uploads go through the private network until the owner sets up an admin-only route. See `services/engine/README.md` |
 
 ## 8. Decisions (owner, 2026-10-16)
 
