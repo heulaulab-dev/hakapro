@@ -179,7 +179,7 @@ moveable holidays for 2026 are not modelled. On a listed holiday no strategy run
   score: null,                       // V1: no score (Q-G6)
   reasons: [{ key: "breakout.closeAboveHigh", params: { lookback: 20, closeIdr: 1080, highIdr: 1040 } }],
   metrics: { closeIdr: 1080, priorHighIdr: 1040, relativeVolume: 3.0 /* units in names, percent = 1.25 means 1.25% */ },
-  source: "HEULATRADE_EOD_ENGINE" | "HEULATRADE_REALTIME_ENGINE",
+  source: "HAKAPRO_EOD_ENGINE" | "HAKAPRO_REALTIME_ENGINE",
   rulesVersion: "breakout@0.1"        // proposed addition
 }
 ```
@@ -204,7 +204,7 @@ moveable holidays for 2026 are not modelled. On a listed holiday no strategy run
 
 **Intent:** the session closed above the highest high of the previous N sessions, on clearly higher volume.
 
-**Mode:** EOD (`HEULATRADE_EOD_ENGINE`). An intraday "breaking out now" variant is out of scope for V1.
+**Mode:** EOD (`HAKAPRO_EOD_ENGINE`). An intraday "breaking out now" variant is out of scope for V1.
 
 **Inputs:** `history` daily, ≥ max(`minHistory`, N + 2) rows. Optionally HAKA-25 `araPrice` for a flag.
 **Feasibility:** per symbol now. Universe per §2.4.
@@ -375,7 +375,7 @@ qualifies as the pierce.
 value was **buyer-initiated**. "Haka" = *hajar kanan*: buyers lift the offer. "Pagi" = morning. This is an
 interpretation and must be confirmed (Q-HP1).
 
-**Mode:** intraday/live (`HEULATRADE_REALTIME_ENGINE`).
+**Mode:** intraday/live (`HAKAPRO_REALTIME_ENGINE`).
 
 **Inputs:**
 
@@ -475,7 +475,7 @@ directional pattern. Q-SC1.
 **Mode:** intraday/live, plus a proposed **EOD pre-filter** ("scalping watchlist" for the next session). The
 pre-filter is feasible now per symbol, once HAKA-25 exists.
 
-### 7a. EOD pre-filter (`HEULATRADE_EOD_ENGINE`, strategyId `scalping-intraday`, `variant: "eod-watchlist"`)
+### 7a. EOD pre-filter (`HAKAPRO_EOD_ENGINE`, strategyId `scalping-intraday`, `variant: "eod-watchlist"`)
 
 | Parameter | Default | Unit |
 |---|---|---|
@@ -490,7 +490,7 @@ Under the test rule set T1 (§9), the relative tick at 0.5% passes from Rp 1,000
 and Rp 300 (0.667%). It is 0.5% again at Rp 2,000, where the tick becomes 10. **The tick table must come from
 HAKA-25.**
 
-### 7b. Live (`HEULATRADE_REALTIME_ENGINE`)
+### 7b. Live (`HAKAPRO_REALTIME_ENGINE`)
 
 Evaluation windows avoid the open, the lunch break and the close:
 
@@ -557,11 +557,11 @@ day, closing near the high on elevated volume." Q-HS2.
 
 **Mode:** two variants.
 
-- **8a. EOD (`HEULATRADE_EOD_ENGINE`), feasible per symbol after HAKA-25.**
+- **8a. EOD (`HAKAPRO_EOD_ENGINE`), feasible per symbol after HAKA-25.**
   - This is a historical record of the session's close.
   - It is **not actionable at the close**: the list exists only after 16:15, when the session is over.
   - The UI must say "closed strong on {t}", never "for tomorrow".
-- **8b. Live (`HEULATRADE_REALTIME_ENGINE`), blocked on HAKA-14/15.** Evaluated 15:00–15:49, before the
+- **8b. Live (`HAKAPRO_REALTIME_ENGINE`), blocked on HAKA-14/15.** Evaluated 15:00–15:49, before the
   pre-closing auction.
 
 | Parameter | Default | Unit |
