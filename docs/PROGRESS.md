@@ -333,3 +333,23 @@ The user kept the layout and asked for heulaulab-dashboard's design system:
 - Owner decisions applied: one shared engine (Coolify env `data-engine`, app `hakapro-engine`, DB `hakapro-engine-postgres`), R2 bucket `hakapro-engine-raw` (token pending; local fallback works without it), backfill from 2020-01-01, intraday alongside EOD served as DELAYED.
 - No real source is registered yet (E2/E3 after discovery). A local fixture source exercises fetch → raw → parse → DB in `bun run engine:test:e2e` (Docker PostgreSQL; not in CI).
 - Root `typecheck` now also runs `engine:typecheck`; vitest includes `services/engine/**/*.test.ts`; the root tsconfig excludes `services/engine` (Bun types).
+
+## S16: Data Engine EOD + intraday sources (E2, E2b) (2026-10-16, Plane HAKA-62 + HAKA-67, branch `feat/engine-eod-intraday`, on top of `feat/engine-foundation`)
+- Sources, all through the E1 fetcher (honest UA, per-host limits with 1 in flight, raw copies, block detection; no bypass of any kind). All four are unofficial and internal-only (§8.6):
+  - TradingView scanner: `indonesia/scan` (whole market, one POST) and `global/scan` (IHSG, LQ45, IDX30 and six IDX-IC sector indices confirmed).
+  - Yahoo chart: per-symbol daily OHLCV with `adjclose`, splits, dividends, and IHSG `^JKSE`.
+  - Pasardana GetAll: IDX-IC sector/sub-sector/industry, capitalisation, shares, free float, previous-session value and frequency.
+  - arjum `/api/history/{code}` for foreign buy/sell (§8.5c), reusing the app's arjum schema, URL builder and page limits. Registered only with `ENGINE_ARJUM_BASE_URL` + `ENGINE_ARJUM_API_KEY`.
+- Jobs (WIB):
+  - `intraday` every `ENGINE_INTRADAY_INTERVAL_MINUTES` (default 5, minimum 1) inside sessions → `intraday_snapshots` + `index_intraday`, stamped with the data time (10 min delay).
+  - `universe` + `indices-eod` at 16:35 → `securities` (board/notation unknown = null), fallback session rows, `index_daily`.
+  - `eod-daily` at 16:45/18:45/20:45: Yahoo `range=5d` per active symbol, most liquid first; retries only missing symbols; the 20:45 run finalizes `eod_sessions` as `COMPLETE` or `STALE`.
+  - `foreign-flow` at 19:00/21:00: most liquid first, capped by `ENGINE_ARJUM_DAILY_BUDGET` (600) per WIB day and stopped while `x-ratelimit-remaining` < `ENGINE_ARJUM_RESERVE` (400); a 429 blocks the source.
+  - `eod-backfill` (night window, background): one Yahoo call per symbol from 2020-01-01, resumable per-symbol cursor; never overlaps the daily job.
+- Precedence and fallback: Yahoo owns stock OHLC, TradingView owns index rows; fallback sources fill missing rows and refresh only their own. Universe survives a TradingView or Pasardana block; session rows survive a Yahoo block; IHSG survives a TradingView block. `daily_prices` keeps separate provenance for value/frequency and foreign flow.
+- Fetcher: POST bodies (indexed as URL + body hash), a documented credential header that is never stored or redirected, response headers on results. Any 403 now blocks the source.
+- New migration: `index_intraday`, `eod_sessions`, intraday OHLC/change, index name/change, securities industry/market cap/free float, and the split provenance columns.
+- `/v1` serves stored data through the shared idx-bei schemas: `/v1/securities`, `/v1/stocks/{s}` (EOD quote, or a newer session's intraday snapshot as `DELAYED` with its WIB timestamp; candles up to `limit`), `/v1/market` (indices, breadth, gainers/losers/active), `/v1/signals` (foreign-flow runs) and `/v1/stocks/{s}/actions`. `/v1/meta/health` adds EOD session completeness. News, announcements, fundamentals, screener and profile stay stubs.
+- Fixtures: 8 real requests on 2026-10-16 (TradingView 3, Pasardana 2, Yahoo 3), no block; trimmed responses in `services/engine/test/fixtures/`. arjum is a fake (no credentials used).
+- Tests: parser, fetcher, config, backfill, `/v1` derivation and route unit tests; the app contract test parses real engine responses through `IdxBeiSource`; `bun run engine:test:e2e` runs every job, the block/fallback/budget paths and universe → EOD → foreign → intraday → `/v1` against Docker PostgreSQL and a local fixture world.
+- Not done (E3 and later): news RSS, BI-Rate/JISDOR macro, `/v1/news`, fundamentals/screener (E5), disclosures and board/notation (blocked at IDX), ownership upload (E6), strategy scans (E4). The engine is not deployed; no environment points `MARKET_API_URL` at it yet.
