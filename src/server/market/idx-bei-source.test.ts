@@ -18,6 +18,26 @@ describe("IdxBeiSource", () => {
     expect(result.source).toBe("idx-bei");
   });
 
+  test("screen: percentage ratios convert between app percentage points and engine fractions", async () => {
+    let sentValues: number[] = [];
+    const fetcher = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body));
+      sentValues = body.conditions.map((condition: { value: number }) => condition.value);
+      return Response.json({ data: {
+        rows: [{ symbol: "BBCA", name: "Bank Central Asia", roe: 0.2, roa: 0.03, dividendYield: -0.05 }], total: 1,
+        supportedFields: ["roe", "roa", "dividendYield"],
+      }, meta });
+    });
+    const source = new IdxBeiSource("http://market.test", () => wib("2026-09-18T10:30:00"), fetcher as unknown as typeof fetch);
+    const result = await source.screen({ conditions: [
+      { field: "roe", operator: "GT", value: 20, connective: "AND" },
+      { field: "roa", operator: "GTE", value: 3, connective: "AND" },
+      { field: "dividendYield", operator: "LT", value: -5, connective: "AND" },
+    ], limit: 50 });
+    expect(sentValues).toEqual([0.2, 0.03, -0.05]);
+    expect(result.data.rows[0]).toMatchObject({ roe: 20, roa: 3, dividendYield: -5 });
+  });
+
   test("quote change percent is converted to percent units", async () => {
     const fetcher = async () => Response.json({ data: { quote: { symbol: "BBCA", timestamp: "2026-09-17", open: 1, high: 1, low: 1, close: 6300, previousClose: 6350, change: -50, changePercent: -0.0079, volume: 1, value: 1, frequency: 1, foreignBuy: 1, foreignSell: 1 }, candles: [] }, meta });
     const result = await new IdxBeiSource("http://market.test", () => wib("2026-09-18T10:30:00"), fetcher as unknown as typeof fetch).stock("BBCA");

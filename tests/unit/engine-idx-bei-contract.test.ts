@@ -153,11 +153,11 @@ describe("engine /v1 real responses via IdxBeiSource", () => {
     const { IdxBeiSource: FreshSource } = await import("@/server/market/idx-bei-source");
     const now = new Date("2026-10-16T11:00:00Z");
     const source = new FreshSource(BASE, () => now, engineFetch(dir, now, store(false)));
-    // The app sends change1D in percent (−12 %); IdxBeiSource converts it to the API's fraction.
+    // The app sends percentage points (−12 %); IdxBeiSource converts them to the API's fractions.
     const screen = await source.screen({ conditions: [{ field: "change1D", operator: "LT", value: -12, connective: "AND" }], limit: 500 });
     expect(screen).toMatchObject({ freshness: "EOD", asOf: "2026-10-16" });
     expect(screen.data.total).toBe(1);
-    expect(screen.data.rows[0]).toMatchObject({ symbol: "BBCA", name: "PT Bank Central Asia Tbk", price: 5225, per: 11.06, roe: 0.2147, pbv: null, foreignNetShares: -110e6 });
+    expect(screen.data.rows[0]).toMatchObject({ symbol: "BBCA", name: "PT Bank Central Asia Tbk", price: 5225, per: 11.06, roe: 21.47, pbv: null, foreignNetShares: -110e6 });
     expect(screen.data.rows[0].change1D).toBeCloseTo((5225 / 6075 - 1) * 100, 9);
 
     const all = await source.screen({ conditions: [{ field: "price", operator: "GT", value: 0, connective: "AND" }], limit: 500 });

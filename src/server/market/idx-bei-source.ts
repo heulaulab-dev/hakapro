@@ -16,7 +16,8 @@ import { BaseMarketDataSource, type PageQuery } from "./source";
 import type { Candle, Quote } from "./types";
 import type { Clock } from "./arjum-source";
 
-const pct = (fraction: number | null) => (fraction === null ? null : fraction * 100);
+const pct = (fraction: number | null | undefined) => (typeof fraction === "number" ? fraction * 100 : null);
+const SCREEN_PERCENT_FIELDS = new Set<string>(["change1D", "roe", "roa", "dividendYield"]);
 
 /** In-memory TTL cache, ported from heulatrade lib/market/providers/direct.ts. */
 const TTL_MS = { securities: 3_600_000, profile: 86_400_000, news: 900_000, market: 300_000 } as const;
@@ -136,11 +137,14 @@ export class IdxBeiSource extends BaseMarketDataSource {
 
   async screen(request: ScreenRequest) {
     const parsed = screenRequestSchema.parse(request);
-    // The API takes change1D in percent units (domain convention); app.py compares fractions.
-    const body = { ...parsed, conditions: parsed.conditions.map((condition) => (condition.field === "change1D" ? { ...condition, value: condition.value / 100 } : condition)) };
+    // The engine stores changes and ratio percentages as fractions; the app uses percentage points.
+    const body = { ...parsed, conditions: parsed.conditions.map((condition) => (SCREEN_PERCENT_FIELDS.has(condition.field) ? { ...condition, value: condition.value / 100 } : condition)) };
     const { data, meta } = await this.get("/v1/screener", screenResultSchema, undefined, { method: "POST", body: JSON.stringify(body), headers: { "content-type": "application/json" } });
-    // change1D comes back as a fraction; domain percent fields are percent units.
-    return this.snapshot({ ...data, rows: data.rows.map((row) => ({ ...row, change1D: typeof row.change1D === "number" ? row.change1D * 100 : null })) }, meta.dataAsOf);
+    const rows = data.rows.map((row) => ({
+      ...row,
+      change1D: pct(row.change1D), roe: pct(row.roe), roa: pct(row.roa), dividendYield: pct(row.dividendYield),
+    }));
+    return this.snapshot({ ...data, rows }, meta.dataAsOf);
   }
 
   async news(query: PageQuery) {

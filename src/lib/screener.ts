@@ -1,14 +1,11 @@
 import type { ScreenCondition, ScreenField } from "@/lib/api/market";
 import type { ValueFormat } from "@/lib/format";
 
-/**
- * Display format per screen field. Ratios whose units the provider hasn't confirmed (ROE, ROA,
- * dividend yield) are shown as plain numbers rather than guessed as percents. TODO(verify).
- */
+/** Display format per screen field. Ratio percentages are normalized by the market source adapter. */
 export const FIELD_FORMAT: Record<ScreenField, ValueFormat> = {
   price: "idr", volume: "sharesCompact", value: "idrCompact", frequency: "number", foreignNetShares: "netSharesCompact",
-  marketCap: "idrCompact", per: "number", pbv: "number", roe: "number", roa: "number", eps: "idr", der: "number",
-  dividendYield: "number", change1D: "percent",
+  marketCap: "idrCompact", per: "number", pbv: "number", roe: "percent", roa: "percent", eps: "idr", der: "number",
+  dividendYield: "percent", change1D: "percent",
 };
 
 export const DEFAULT_CONDITIONS: ScreenCondition[] = [{ field: "value", operator: "GT", value: 10_000_000_000, connective: "AND" }];
