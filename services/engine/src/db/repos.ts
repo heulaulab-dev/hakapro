@@ -1,5 +1,5 @@
 // Drizzle implementations of the fetcher/scheduler ports (src/fetch/stores.ts).
-import { and, asc, desc, eq, lt, sql } from "drizzle-orm";
+import { and, asc, desc, eq, lt, ne, sql } from "drizzle-orm";
 import * as t from "../../db/schema";
 import type {
   BlockEvidence, CursorStore, RawDocumentIndex, RawDocumentRecord, RunRecorder, RunStatus, RunTotals, SourceStateStore,
@@ -91,6 +91,18 @@ export class DbRunRecorder implements RunRecorder {
       rowsIngested: result.rowsIngested, error: result.error?.slice(0, 1000) ?? null,
     }).where(eq(t.fetchRuns.id, runId));
   }
+}
+
+export type JobRunHistory = { id: string; lastStartedAt: string; lastStatus: Exclude<RunStatus, "RUNNING">; lastError: string | null };
+
+/** Latest finished run per job, used to restore health details after an engine restart. */
+export async function recentJobHistory(db: EngineDb): Promise<JobRunHistory[]> {
+  const rows = await db.selectDistinctOn([t.fetchRuns.jobId], {
+    id: t.fetchRuns.jobId, startedAt: t.fetchRuns.startedAt, status: t.fetchRuns.status, error: t.fetchRuns.error,
+  }).from(t.fetchRuns).where(ne(t.fetchRuns.status, "RUNNING")).orderBy(t.fetchRuns.jobId, desc(t.fetchRuns.startedAt));
+  return rows.map((row) => ({
+    id: row.id, lastStartedAt: row.startedAt.toISOString(), lastStatus: row.status as Exclude<RunStatus, "RUNNING">, lastError: row.error,
+  }));
 }
 
 export class DbCursorStore implements CursorStore {

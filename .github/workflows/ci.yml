@@ -24,6 +24,8 @@ jobs:
       - run: bun run typecheck
       - run: bun run lint
       - run: bun run test
+      - name: Engine integration tests (throwaway PostgreSQL)
+        run: bun run engine:test:e2e
       - name: Production guards refuse unsafe configuration
         run: bun run check:prod-guards
       - name: server-only boundary

@@ -7,7 +7,7 @@ import { deleteNewsOlderThan } from "./db/market-info";
 import { DbMarketStore } from "./db/market-store";
 import { DbOwnershipStore } from "./db/ownership";
 import { DbStrategyStore } from "./db/strategy-store";
-import { DbCursorStore, DbRawDocumentIndex, DbRunRecorder, DbSourceStateStore, deleteIntradayOlderThan, sourceHealth, syncSources } from "./db/repos";
+import { DbCursorStore, DbRawDocumentIndex, DbRunRecorder, DbSourceStateStore, deleteIntradayOlderThan, recentJobHistory, sourceHealth, syncSources } from "./db/repos";
 import { Fetcher } from "./fetch/fetcher";
 import { LimiterRegistry } from "./fetch/rate-limit";
 import { createRawStore, type RawStore } from "./fetch/raw-store";
@@ -130,7 +130,7 @@ export async function createEngine(config: EngineConfig, options: EngineOptions 
   const scheduler = new Scheduler({ jobs: registry.jobs, pause, runs: new DbRunRecorder(db), cursors: new DbCursorStore(db), sourceState, log, now });
   const app = createApp({
     apiToken: config.apiToken, adminToken: config.adminToken, ping, pause, scheduler, rawStoreKind: rawStore.kind, log, now,
-    sourceHealth: () => sourceHealth(db), unblockSource: (id) => sourceState.unblock(id),
+    sourceHealth: () => sourceHealth(db), unblockSource: (id) => sourceState.unblock(id), jobHistory: () => recentJobHistory(db),
     market: new DbMarketStore(db),
     ownership: { service: ownership, maxUploadBytes: config.ownership.maxUploadBytes, freeFloatEnabled: config.ownership.freeFloatEnabled },
     strategies: { enabled: config.strategyScans.enabled, store: new DbStrategyStore(db) },

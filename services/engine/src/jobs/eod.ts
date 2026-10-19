@@ -97,7 +97,7 @@ export function eodDailyJob(services: JobServices, source: SourceRef): JobDefini
       });
 
       const expected = await activeSymbols(services.db);
-      const withRow = await symbolsWithDaily(services.db, session);
+      const withRow = await symbolsWithDaily(services.db, session, source.id);
       const present = expected.filter((symbol) => withRow.has(symbol)).length;
       const status = present === expected.length && expected.length > 0 ? "COMPLETE" : final ? "STALE" : "PARTIAL";
       await recordEodSession(services.db, session, { status, expected: expected.length, present, final: final || status === "COMPLETE" });

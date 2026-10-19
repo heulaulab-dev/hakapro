@@ -1,5 +1,5 @@
 // E2/E2b/E3 jobs and the /v1 routes against a throwaway PostgreSQL (Docker) and the local source fixtures.
-// Opt-in (`bun run engine:test:e2e`); skipped in `bun run test` and CI. No request leaves the machine: the fixture
+// Opt-in (`bun run engine:test:e2e`); skipped in `bun run test` and run separately in CI. No request leaves the machine: the fixture
 // world refuses any URL it does not serve, and arjum is a fake.
 import { and, asc, eq } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
@@ -13,6 +13,7 @@ import { createEngine } from "../src/engine";
 import { ENGINE_USER_AGENT } from "../src/fetch/fetcher";
 import { LimiterRegistry } from "../src/fetch/rate-limit";
 import { nullLogger } from "../src/log";
+import { upsertDaily } from "../src/db/ingest";
 import { dockerEnabled, startPostgres, type TestPostgres } from "./postgres";
 import { ARJUM_TEST_KEY, ARJUM_TEST_ORIGIN, startSourceWorld, type SourceWorld } from "./source-fixtures";
 import { fakeClock, tempDir, wib } from "./support";
@@ -100,6 +101,14 @@ describe.skipIf(!enabled)("engine sources (docker postgres + fixtures)", { timeo
       ratios: { kind: "cron", spec: "15 6,17,21 * * *" },
     });
     expect(h.engine.scheduler.status().find((job) => job.id === "fundamentals")).toMatchObject({ background: true, sourceId: "yahoo-fundamentals" });
+  });
+
+  it("serves the latest persisted job result through health", async () => {
+    const h = await harness();
+    await h.run("universe");
+    const response = await h.call("/v1/meta/health");
+    const body = await response.json() as { data: { scheduler: { jobs: Array<{ id: string; lastStatus: string | null }> } } };
+    expect(body.data.scheduler.jobs.find((job) => job.id === "universe")?.lastStatus).toBe("SUCCEEDED");
   });
 
   it("universe: TradingView + Pasardana → securities and fallback session rows with provenance", async () => {
@@ -191,6 +200,22 @@ describe.skipIf(!enabled)("engine sources (docker postgres + fixtures)", { timeo
     // TradingView's fallback rows still serve the session.
     const [session] = await h.db.select().from(t.eodSessions);
     expect(session).toMatchObject({ status: "PARTIAL", present: 5 });
+  });
+
+  it("eod-daily does not count fallback rows as Yahoo coverage", async () => {
+    const h = await harness();
+    await h.run("universe");
+    const asOf = wib("2026-10-16", "16:35");
+    await upsertDaily(h.db, PASARDANA_SYMBOLS.map((symbol) => ({
+      symbol, date: "2026-10-16", open: 100, high: 110, low: 90, close: 100,
+      previousClose: 100, volume: 1000,
+    })), { source: "tradingview-scanner", asOf, rawRef: null }, { primary: false, value: "fill" });
+    world.state.blocked.add("yahoo");
+    h.setNow(wib("2026-10-16", "20:45"));
+    await h.run("eod-daily");
+    const [session] = await h.db.select().from(t.eodSessions);
+    expect(session).toMatchObject({ status: "STALE", expected: 8, present: 0, attempts: 1 });
+    expect(session.finalizedAt).not.toBeNull();
   });
 
   it("indices-eod: TradingView is the primary index row; Yahoo IHSG only fills gaps", async () => {

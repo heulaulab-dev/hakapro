@@ -98,6 +98,17 @@ describe("engine HTTP app", () => {
     expect(unavailable.find((row) => row.route === "/v1/announcements")).toMatchObject({ status: "SOURCE_BLOCKED", reason: expect.stringContaining("Cloudflare HTTP 403") });
   });
 
+  it("restores last job outcomes from persisted run history after a restart", async () => {
+    const { call } = app({ jobHistory: async () => [{
+      id: "demo-job", lastStartedAt: "2026-10-16T09:00:00.000Z", lastStatus: "SUCCEEDED", lastError: null,
+    }] });
+    const response = await call("/v1/meta/health");
+    const body = await response.json() as { data: { scheduler: { jobs: Array<Record<string, unknown>> } } };
+    expect(body.data.scheduler.jobs).toContainEqual(expect.objectContaining({
+      id: "demo-job", lastStartedAt: "2026-10-16T09:00:00.000Z", lastStatus: "SUCCEEDED", lastError: null,
+    }));
+  });
+
   it("admin endpoints are disabled without ENGINE_ADMIN_TOKEN and token-gated with it", async () => {
     expect((await app().call("/v1/admin/jobs/demo-job/run", { method: "POST" })).status).toBe(404);
     const { call, scheduler } = app({ adminToken: "admin-secret-for-tests", apiToken: "api-secret-for-tests" });

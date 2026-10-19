@@ -11,7 +11,7 @@ import { ownershipChangesSchema, ownershipMonthSchema, stockOwnershipSchema } fr
 import { strategyBoardSchema } from "@/lib/strategies/contract";
 import type { SourceHealth } from "../db/repos";
 import type { PauseGuard } from "../schedule/pause";
-import type { Scheduler } from "../schedule/scheduler";
+import type { JobStatus, Scheduler } from "../schedule/scheduler";
 import type { Logger } from "../log";
 import { nullLogger } from "../log";
 import { DEFAULT_CANDLES, MAX_CANDLES, serveActions, serveMarket, serveSecurities, serveSignals, serveStock, type Served } from "../serve/market";
@@ -36,6 +36,8 @@ export type AppDeps = {
   pause: PauseGuard;
   scheduler: Scheduler;
   sourceHealth(): Promise<SourceHealth[]>;
+  /** Latest completed jobs from persistence, available before this process runs any scheduled work. */
+  jobHistory?(): Promise<Array<Pick<JobStatus, "id" | "lastStartedAt" | "lastStatus" | "lastError">>>;
   unblockSource(id: string): Promise<boolean>;
   rawStoreKind: "s3" | "local";
   /** Stored market data (E2/E2b). Without it the idx-bei routes answer as the E1 stubs did. */
@@ -132,14 +134,26 @@ export function createApp(deps: AppDeps): (request: Request) => Promise<Response
 
     if (path === "/v1/meta/health") {
       if (!get) return error(405, "METHOD_NOT_ALLOWED", "Use GET");
-      const [sources, pause, eodSessions, strategyScans] = await Promise.all([
+      const [sources, pause, eodSessions, strategyScans, jobHistory] = await Promise.all([
         deps.sourceHealth(), deps.pause.check(), deps.eodSessions?.() ?? Promise.resolve([]),
         strategyScanHealth(scansEnabled, deps.strategies?.store ?? null, rules),
+        deps.jobHistory?.() ?? Promise.resolve([]),
       ]);
+      const historyById = new Map(jobHistory.map((run) => [run.id, run]));
+      const jobs = deps.scheduler.status().map((job) => {
+        const previous = historyById.get(job.id);
+        if (!previous) return job;
+        return {
+          ...job,
+          lastStartedAt: job.lastStartedAt ?? previous.lastStartedAt,
+          lastStatus: job.lastStatus ?? previous.lastStatus,
+          lastError: job.lastStatus === null ? previous.lastError : job.lastError,
+        };
+      });
       // Operational status, not market data: meta.freshness stays UNAVAILABLE.
       return json({
         data: {
-          sources, scheduler: { paused: pause.paused, pauseReason: pause.reason, diskPercent: pause.diskPercent, diskStopPercent: pause.diskStopPercent, jobs: deps.scheduler.status() },
+          sources, scheduler: { paused: pause.paused, pauseReason: pause.reason, diskPercent: pause.diskPercent, diskStopPercent: pause.diskStopPercent, jobs },
           rawStore: deps.rawStoreKind, eodSessions, unavailable: [...UNAVAILABLE_ROUTES, ...(scansEnabled ? [] : [STRATEGIES_DISABLED])], strategyScans,
         },
         meta: unavailableMeta(at),
