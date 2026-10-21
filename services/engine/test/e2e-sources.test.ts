@@ -14,6 +14,7 @@ import { ENGINE_USER_AGENT } from "../src/fetch/fetcher";
 import { LimiterRegistry } from "../src/fetch/rate-limit";
 import { nullLogger } from "../src/log";
 import { upsertDaily } from "../src/db/ingest";
+import { DbSourceStateStore, sourceHealth } from "../src/db/repos";
 import { dockerEnabled, startPostgres, type TestPostgres } from "./postgres";
 import { ARJUM_TEST_KEY, ARJUM_TEST_ORIGIN, startSourceWorld, type SourceWorld } from "./source-fixtures";
 import { fakeClock, tempDir, wib } from "./support";
@@ -75,7 +76,7 @@ describe.skipIf(!enabled)("engine sources (docker postgres + fixtures)", { timeo
     const h = await harness();
     expect(h.engine.registry.sources.map((source) => [source.id, source.host, source.policy])).toEqual([
       ["tradingview-scanner", "scanner.tradingview.com", { minIntervalMs: 2000, concurrency: 1 }],
-      ["yahoo-chart", "query1.finance.yahoo.com", { minIntervalMs: 3000, concurrency: 1 }],
+      ["yahoo-chart", "query1.finance.yahoo.com", { minIntervalMs: 5000, concurrency: 1 }],
       ["pasardana", "pasardana.id", { minIntervalMs: 3000, concurrency: 1 }],
       ["arjum", "arjum.example.test", { minIntervalMs: 2000, concurrency: 1 }],
       ["news-cnbcindonesia", "www.cnbcindonesia.com", { minIntervalMs: 5000, concurrency: 1 }],
@@ -83,7 +84,7 @@ describe.skipIf(!enabled)("engine sources (docker postgres + fixtures)", { timeo
       ["news-antara", "www.antaranews.com", { minIntervalMs: 5000, concurrency: 1 }],
       ["news-investortrust", "investortrust.id", { minIntervalMs: 5000, concurrency: 1 }],
       ["bank-indonesia", "www.bi.go.id", { minIntervalMs: 5000, concurrency: 1 }],
-      ["yahoo-fundamentals", "query1.finance.yahoo.com", { minIntervalMs: 3000, concurrency: 1 }],
+      ["yahoo-fundamentals", "query1.finance.yahoo.com", { minIntervalMs: 5000, concurrency: 1 }],
     ]);
     expect(Object.fromEntries(h.engine.scheduler.status().map((job) => [job.id, job.trigger]))).toEqual({
       universe: { kind: "cron", spec: "35 16 * * *", tradingDaysOnly: true },
@@ -282,6 +283,23 @@ describe.skipIf(!enabled)("engine sources (docker postgres + fixtures)", { timeo
     h.setNow(wib("2026-10-19", "19:00"));
     await h.run("foreign-flow");
     expect(world.hits.filter((hit) => hit.source === "arjum").length).toBe(3);
+  });
+
+  it("can use the authenticated arjum history feed as quota-limited EOD and records honest coverage", async () => {
+    const h = await harness({ ENGINE_ARJUM_DAILY_BUDGET: "3", ENGINE_ARJUM_EOD_ENABLED: "1" });
+    await h.run("universe");
+    h.setNow(wib("2026-10-16", "19:00"));
+    expect((await h.run("foreign-flow")).lastStatus).toBe("SUCCEEDED");
+    const [bbca] = await h.db.select().from(t.dailyPrices).where(and(eq(t.dailyPrices.symbol, "BBCA"), eq(t.dailyPrices.date, "2026-10-16")));
+    expect(bbca).toMatchObject({ source: "arjum", close: 5225, volume: 994464400, value: 5196076490000, foreignSource: "arjum" });
+    const [partial] = await h.db.select().from(t.eodSessions).where(eq(t.eodSessions.date, "2026-10-16"));
+    expect(partial).toMatchObject({ status: "PARTIAL", expected: 8, present: 3, finalizedAt: null });
+
+    h.setNow(wib("2026-10-16", "21:00"));
+    await h.run("foreign-flow");
+    const [final] = await h.db.select().from(t.eodSessions).where(eq(t.eodSessions.date, "2026-10-16"));
+    expect(final).toMatchObject({ status: "STALE", expected: 8, present: 3 });
+    expect(final.finalizedAt).not.toBeNull();
   });
 
   it("foreign-flow stops when x-ratelimit-remaining drops below the reserve, and skips a 404", async () => {
@@ -525,6 +543,49 @@ describe.skipIf(!enabled)("engine sources (docker postgres + fixtures)", { timeo
     world.state.fundamentalsRateLimited = false;
     expect((await h.run("fundamentals")).lastStatus).toBe("BLOCKED");
     expect(world.hits).toHaveLength(1);
+  }, 30_000);
+
+  it("fundamentals: a 429 rests both Yahoo sources for the cooldown, then they fetch again; a repeat rests longer", async () => {
+    const h = await harness();
+    await h.run("universe");
+    world.hits.length = 0;
+    world.state.fundamentalsRateLimited = true;
+    h.setNow(wib("2026-10-16", "20:05"));
+    expect((await h.run("fundamentals")).lastStatus).toBe("BLOCKED");
+    const rows = await h.db.select().from(t.sources).where(eq(t.sources.host, "query1.finance.yahoo.com")).orderBy(asc(t.sources.id));
+    const [chart, fundamentals] = rows.map((row) => row.blockEvidence!);
+    expect(chart).toMatchObject({ reason: "RATE_LIMITED", strike: 1 });
+    expect(Date.parse(chart.retryAt!) - Date.parse(chart.detectedAt)).toBe(2 * 3_600_000);
+    expect(fundamentals).toEqual(chart);
+    const health = await sourceHealth(h.db, new Date(chart.detectedAt));
+    expect(health.find((row) => row.id === "yahoo-chart")).toMatchObject({ status: "BLOCKED", blocked: true, retryAt: chart.retryAt, strike: 1 });
+
+    // Before the cooldown ends the block holds; after it, the block is lifted and the job fetches again.
+    const before = new DbSourceStateStore(h.db, () => new Date(Date.parse(chart.retryAt!) - 1000));
+    expect(await before.isBlocked("yahoo-chart")).toBe(true);
+    const after = new DbSourceStateStore(h.db, () => new Date(Date.parse(chart.retryAt!) + 1000));
+    expect(await after.isBlocked("yahoo-chart")).toBe(false);
+    expect(await after.isBlocked("yahoo-fundamentals")).toBe(false);
+    const [lifted] = await h.db.select().from(t.sources).where(eq(t.sources.id, "yahoo-chart"));
+    expect(lifted).toMatchObject({ status: "ERROR", blockedAt: null, blockEvidence: { strike: 1 } });
+
+    // Still limited: one request, then a second strike rests 6 h.
+    world.hits.length = 0;
+    expect((await h.run("fundamentals")).lastStatus).toBe("BLOCKED");
+    expect(world.hits).toHaveLength(1);
+    const [again] = await h.db.select().from(t.sources).where(eq(t.sources.id, "yahoo-fundamentals"));
+    expect(again.blockEvidence).toMatchObject({ strike: 2 });
+    expect(Date.parse(again.blockEvidence!.retryAt!) - Date.parse(again.blockEvidence!.detectedAt)).toBe(6 * 3_600_000);
+
+    // The limit is gone after the second cooldown: the run succeeds.
+    const later = new DbSourceStateStore(h.db, () => new Date(Date.parse(again.blockEvidence!.retryAt!) + 1000));
+    expect(await later.isBlocked("yahoo-chart")).toBe(false);
+    expect(await later.isBlocked("yahoo-fundamentals")).toBe(false);
+    world.state.fundamentalsRateLimited = false;
+    expect((await h.run("fundamentals")).lastStatus).toBe("SUCCEEDED");
+    expect(world.hits.length).toBeGreaterThan(1);
+    const [ok] = await h.db.select().from(t.sources).where(eq(t.sources.id, "yahoo-fundamentals"));
+    expect(ok.status).toBe("OK");
   }, 30_000);
 
   it("ratios + /v1 fundamentals + screener: derived from statements and the close, Pasardana as the secondary source", async () => {

@@ -7,9 +7,9 @@ describe("loadConfig", () => {
   it("leaves arjum off by default with a 600 budget and a 400 reserve once enabled", () => {
     expect(loadConfig(BASE).arjum).toBeNull();
     const config = loadConfig({ ...BASE, ENGINE_ARJUM_BASE_URL: "https://arjum.example.test/", ENGINE_ARJUM_API_KEY: "secret-key" });
-    expect(config.arjum).toEqual({ baseUrl: "https://arjum.example.test", apiKey: "secret-key", dailyBudget: 600, reserve: 400 });
-    expect(loadConfig({ ...BASE, ENGINE_ARJUM_BASE_URL: "https://a.test", ENGINE_ARJUM_API_KEY: "k", ENGINE_ARJUM_DAILY_BUDGET: "50", ENGINE_ARJUM_RESERVE: "0" }).arjum)
-      .toMatchObject({ dailyBudget: 50, reserve: 0 });
+    expect(config.arjum).toEqual({ baseUrl: "https://arjum.example.test", apiKey: "secret-key", dailyBudget: 600, reserve: 400, eodEnabled: false });
+    expect(loadConfig({ ...BASE, ENGINE_ARJUM_BASE_URL: "https://a.test", ENGINE_ARJUM_API_KEY: "k", ENGINE_ARJUM_DAILY_BUDGET: "50", ENGINE_ARJUM_RESERVE: "0", ENGINE_ARJUM_EOD_ENABLED: "1" }).arjum)
+      .toMatchObject({ dailyBudget: 50, reserve: 0, eodEnabled: true });
   });
 
   it("requires the arjum URL and key together and never echoes values", () => {

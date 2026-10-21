@@ -1,6 +1,7 @@
 // Drizzle implementations of the fetcher/scheduler ports (src/fetch/stores.ts).
 import { and, asc, desc, eq, lt, ne, sql } from "drizzle-orm";
 import * as t from "../../db/schema";
+import { blockRetryAt, cooldownOver, withCooldown } from "../fetch/block";
 import type {
   BlockEvidence, CursorStore, RawDocumentIndex, RawDocumentRecord, RunRecorder, RunStatus, RunTotals, SourceStateStore,
 } from "../fetch/stores";
@@ -41,18 +42,28 @@ export class DbRawDocumentIndex implements RawDocumentIndex {
 }
 
 export class DbSourceStateStore implements SourceStateStore {
-  constructor(private readonly db: EngineDb) {}
+  constructor(private readonly db: EngineDb, private readonly now: () => Date = () => new Date()) {}
 
-  async isBlocked(id: string) {
-    const [row] = await this.db.select({ status: t.sources.status }).from(t.sources).where(eq(t.sources.id, id)).limit(1);
-    return row?.status === "BLOCKED";
+  async isBlocked(id: string): Promise<boolean> {
+    const [row] = await this.db.select({ status: t.sources.status, evidence: t.sources.blockEvidence }).from(t.sources).where(eq(t.sources.id, id)).limit(1);
+    if (row?.status !== "BLOCKED") return false;
+    if (!row.evidence || !cooldownOver(row.evidence, this.now())) return true;
+    // The rate-limit cooldown is over: lift this block (never a newer one stored meanwhile) so the source may try again.
+    // ERROR until the next success; the evidence stays, so a new 429 continues the strike count.
+    const lifted = await this.db.update(t.sources).set({ status: "ERROR", blockedAt: null, updatedAt: new Date() })
+      .where(and(eq(t.sources.id, id), eq(t.sources.status, "BLOCKED"), sql`${t.sources.blockEvidence}->>'detectedAt' = ${row.evidence.detectedAt}`))
+      .returning({ id: t.sources.id });
+    return lifted.length ? false : this.isBlocked(id);
   }
 
   async markBlocked(id: string, evidence: BlockEvidence) {
+    const [row] = await this.db.select({ evidence: t.sources.blockEvidence }).from(t.sources).where(eq(t.sources.id, id)).limit(1);
+    const stored = withCooldown(evidence, row?.evidence ?? null);
     await this.db.update(t.sources).set({
-      status: "BLOCKED", blockedAt: new Date(evidence.detectedAt), blockEvidence: evidence,
-      lastErrorAt: new Date(evidence.detectedAt), lastError: `blocked: ${evidence.reason}`, updatedAt: new Date(),
+      status: "BLOCKED", blockedAt: new Date(stored.detectedAt), blockEvidence: stored,
+      lastErrorAt: new Date(stored.detectedAt), lastError: `blocked: ${stored.reason}`, updatedAt: new Date(),
     }).where(eq(t.sources.id, id));
+    return stored;
   }
 
   async unblock(id: string) {
@@ -130,17 +141,23 @@ export async function syncSources(db: EngineDb, sources: SourceDefinition[]): Pr
 
 export type SourceHealth = {
   id: string; host: string; status: string; blocked: boolean; blockedAt: string | null; blockReason: string | null;
+  /** Blocked by a rate limit: when it may try again (null: only an admin unblock), and its strike in the ladder. */
+  retryAt: string | null; strike: number | null;
   lastSuccessAt: string | null; lastErrorAt: string | null; lastError: string | null; rowsIngested: number;
 };
 
-export async function sourceHealth(db: EngineDb): Promise<SourceHealth[]> {
+export async function sourceHealth(db: EngineDb, now: Date = new Date()): Promise<SourceHealth[]> {
   const rows = await db.select().from(t.sources).orderBy(asc(t.sources.id));
-  return rows.map((row) => ({
-    id: row.id, host: row.host, status: row.status, blocked: row.status === "BLOCKED",
-    blockedAt: row.blockedAt?.toISOString() ?? null, blockReason: row.blockEvidence?.reason ?? null,
-    lastSuccessAt: row.lastSuccessAt?.toISOString() ?? null, lastErrorAt: row.lastErrorAt?.toISOString() ?? null,
-    lastError: row.lastError, rowsIngested: row.rowsIngested,
-  }));
+  return rows.map((row) => {
+    const blocked = row.status === "BLOCKED" && !cooldownOver(row.blockEvidence, now);
+    return {
+      id: row.id, host: row.host, status: row.status === "BLOCKED" && !blocked ? "ERROR" : row.status, blocked,
+      blockedAt: row.blockedAt?.toISOString() ?? null, blockReason: row.blockEvidence?.reason ?? null,
+      retryAt: blocked ? blockRetryAt(row.blockEvidence) : null, strike: row.blockEvidence?.strike ?? null,
+      lastSuccessAt: row.lastSuccessAt?.toISOString() ?? null, lastErrorAt: row.lastErrorAt?.toISOString() ?? null,
+      lastError: row.lastError, rowsIngested: row.rowsIngested,
+    };
+  });
 }
 
 /** Deletes up to `limit` intraday snapshots (stocks, then indices) older than `cutoff`; returns the count. */
