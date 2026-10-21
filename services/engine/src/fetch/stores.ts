@@ -2,6 +2,7 @@
 // the in-memory ones here back unit tests.
 import { randomUUID } from "node:crypto";
 import type { BlockEvidence } from "../../db/schema";
+import { cooldownOver, withCooldown } from "./block";
 
 export type { BlockEvidence };
 
@@ -29,8 +30,10 @@ export interface RawDocumentIndex {
 }
 
 export interface SourceStateStore {
+  /** False once a rate-limit cooldown is over: the block is lifted then (status ERROR until the next success). */
   isBlocked(sourceId: string): Promise<boolean>;
-  markBlocked(sourceId: string, evidence: BlockEvidence): Promise<void>;
+  /** Stores the block with its cooldown (block.ts withCooldown) and returns the stored evidence. */
+  markBlocked(sourceId: string, evidence: BlockEvidence): Promise<BlockEvidence>;
   unblock(sourceId: string): Promise<boolean>;
   recordSuccess(sourceId: string, rows?: number): Promise<void>;
   recordError(sourceId: string, message: string): Promise<void>;
@@ -69,22 +72,35 @@ export class MemoryRawDocumentIndex implements RawDocumentIndex {
   }
 }
 
-export type MemorySourceState = { blocked: BlockEvidence | null; lastSuccessAt: Date | null; lastError: string | null; rows: number };
+/** `lastBlock` outlives an unblock or a finished cooldown, so the next rate limit continues the strike count. */
+export type MemorySourceState = { blocked: BlockEvidence | null; lastBlock: BlockEvidence | null; lastSuccessAt: Date | null; lastError: string | null; rows: number };
 
 export class MemorySourceStateStore implements SourceStateStore {
   readonly state = new Map<string, MemorySourceState>();
 
+  constructor(private readonly now: () => Date = () => new Date()) {}
+
   private entry(id: string): MemorySourceState {
     let entry = this.state.get(id);
     if (!entry) {
-      entry = { blocked: null, lastSuccessAt: null, lastError: null, rows: 0 };
+      entry = { blocked: null, lastBlock: null, lastSuccessAt: null, lastError: null, rows: 0 };
       this.state.set(id, entry);
     }
     return entry;
   }
 
-  async isBlocked(id: string) { return this.entry(id).blocked !== null; }
-  async markBlocked(id: string, evidence: BlockEvidence) { this.entry(id).blocked = evidence; }
+  async isBlocked(id: string) {
+    const entry = this.entry(id);
+    if (entry.blocked && cooldownOver(entry.blocked, this.now())) entry.blocked = null;
+    return entry.blocked !== null;
+  }
+  async markBlocked(id: string, evidence: BlockEvidence) {
+    const entry = this.entry(id);
+    const stored = withCooldown(evidence, entry.lastBlock);
+    entry.blocked = stored;
+    entry.lastBlock = stored;
+    return stored;
+  }
   async unblock(id: string) {
     const entry = this.entry(id);
     const was = entry.blocked !== null;
