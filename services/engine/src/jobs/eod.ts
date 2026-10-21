@@ -69,8 +69,9 @@ export function eodDailyJob(services: JobServices, source: SourceRef): JobDefini
       const session = lastCompletedSession(now);
       const final = wibToday(now) > session || jakartaClock(now).minutes >= EOD_FINAL_ATTEMPT_MINUTES;
       let yielded = false;
+      let sourceBlocked = false;
 
-      await withSource(services, ctx, source.id, async () => {
+      const sourceRun = await withSource(services, ctx, source.id, async () => {
         let rows = 0;
         try {
           rows += (await ingestIhsgChart(services, ctx, source, { range: "5d" }, session)).rows;
@@ -95,6 +96,7 @@ export function eodDailyJob(services: JobServices, source: SourceRef): JobDefini
         }
         return { value: null, rows };
       });
+      sourceBlocked = !sourceRun.ok;
 
       const expected = await activeSymbols(services.db);
       const withRow = await symbolsWithDaily(services.db, session, source.id);
@@ -102,6 +104,9 @@ export function eodDailyJob(services: JobServices, source: SourceRef): JobDefini
       const status = present === expected.length && expected.length > 0 ? "COMPLETE" : final ? "STALE" : "PARTIAL";
       await recordEodSession(services.db, session, { status, expected: expected.length, present, final: final || status === "COMPLETE" });
       if (status === "STALE") services.log.warn("eod_session_stale", { session, expected: expected.length, present });
+      // Persist session coverage even when Yahoo is blocked, then report the run as BLOCKED
+      // so monitoring does not show a false-success with zero rows/documents.
+      if (sourceBlocked) throw new SourceBlockedError(source.id, null);
       return yielded ? { status: "YIELDED" } : undefined;
     },
   };

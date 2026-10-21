@@ -195,7 +195,7 @@ describe.skipIf(!enabled)("engine sources (docker postgres + fixtures)", { timeo
     await h.run("universe");
     world.state.blocked.add("yahoo");
     h.setNow(wib("2026-10-16", "16:45"));
-    await h.run("eod-daily");
+    expect((await h.run("eod-daily")).lastStatus).toBe("BLOCKED");
     expect(world.hits.filter((hit) => hit.source === "yahoo")).toHaveLength(1);
     const [yahoo] = await h.db.select().from(t.sources).where(eq(t.sources.id, "yahoo-chart"));
     expect(yahoo.status).toBe("BLOCKED");
