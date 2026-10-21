@@ -106,7 +106,10 @@
     "more": "More",
     "search": "Search",
     "alerts": "Alerts",
-    "about": "About HAKA PRO"
+    "about": "About HAKA PRO",
+    "radar": "Signal Radar",
+    "stealth": "KSEI Corporate",
+    "methodology": "Methodology"
   },
   "stockTabs": {
     "label": "Stock sections",
@@ -1307,5 +1310,190 @@
       "unavailableDescription": "A brief can't be compiled without a price. Not available: {list}.",
       "price": "Price"
     }
+  },
+  "radar": {
+    "title": "Signal Confluence Radar",
+    "intro": "Stocks showing several data observations at once in the newest session. Each signal has a documented threshold. Signals are counted, never combined into a score.",
+    "methodologyLink": "How it works and thresholds",
+    "asOf": "Session {date}",
+    "rulesVersion": "Rules {version}",
+    "kseiMonth": "KSEI list: {month}",
+    "kseiNotUploaded": "KSEI list: none uploaded yet",
+    "coverage": "{listed} of {stocks} stocks in this session have at least one signal.",
+    "coverageCapped": "Showing the top {returned}.",
+    "coverageDetails": "Data coverage per signal",
+    "coverageCount": "{count} of {stocks}",
+    "noSession": "No stored trading session to evaluate yet.",
+    "noneFired": "No signal met its threshold in this session.",
+    "noMatch": "No stocks match these filters.",
+    "shown": "{count, plural, one {# stock} other {# stocks}}",
+    "firedCount": "{count, plural, one {# signal} other {# signals}}",
+    "firedLabel": "Signals observed",
+    "counterLabel": "Observations pointing the other way",
+    "missing": "Data not available yet for: {list}",
+    "previewTitle": "Signal radar",
+    "viewAll": "View all",
+    "filters": {
+      "minSignals": "Minimum number of signals",
+      "minOption": "{count}+ signals",
+      "sector": "Sector",
+      "allSectors": "All sectors"
+    },
+    "signal": {
+      "foreignNetBuy": "Foreign net buying, {sessions} sessions ({share} of volume)",
+      "volumeSpike": "Volume {ratio}× the {baseline}-session average",
+      "closeAboveAverage": "Close {pct} above the {baseline}-session average",
+      "priceUp": "Price up {pct} over {sessions} sessions",
+      "orderSizeSpike": "Value per trade {ratio}× the {baseline}-session average",
+      "kseiHolderIncrease": "{count, plural, one {# ≥1% holder added shares} other {# ≥1% holders added shares}} ({month})"
+    },
+    "counter": {
+      "priceVsForeign": "Price {direction, select, up {up} other {down}} {pct}, foreign net {flow, select, sell {selling} other {buying}} {shares} ({sessions} sessions)",
+      "volumeOnDownSession": "Volume {ratio}× the average on a session that fell {pct}",
+      "kseiHolderDecrease": "{count, plural, one {# ≥1% holder reduced shares} other {# ≥1% holders reduced shares}} ({month})"
+    },
+    "name": {
+      "foreignNetBuy5": "Foreign net buying, {window} sessions",
+      "foreignNetBuy20": "Foreign net buying, {window} sessions",
+      "volumeSpike": "Volume spike",
+      "closeAboveAverage": "Close above the {baseline}-session average",
+      "priceUp5": "Price rise over {window} sessions",
+      "orderSizeSpike": "Unusual value per trade",
+      "kseiHolderIncrease": "KSEI ≥1% holders added shares"
+    },
+    "counterName": {
+      "priceVsForeign5": "Price and foreign flow disagree (short window)",
+      "priceVsForeign20": "Price and foreign flow disagree (long window)",
+      "volumeOnDownSession": "Heavy volume on a down session",
+      "kseiHolderDecrease": "KSEI ≥1% holders reduced shares"
+    }
+  },
+  "stealth": {
+    "title": "Corporate Holders Up, Price Flat",
+    "intro": "From the newest uploaded KSEI ≥1% list: issuers whose corporate holders raised their combined shares while the price was flat or lower between the two position dates. This puts two data sets side by side; it is not a conclusion about anyone's intent.",
+    "methodologyLink": "How it works",
+    "notUploaded": "No KSEI ≥1% list has been uploaded yet.",
+    "notUploadedHint": "This view fills in once monthly lists are uploaded and can be compared with the month before.",
+    "uploadLink": "Upload a KSEI list",
+    "none": "No issuer meets the criteria in {month}.",
+    "months": "{month} compared with {previous}",
+    "rulesVersion": "Rules {version}",
+    "coverage": "{corporate} of {issuers} issuers: corporate holders ({types}) raised their combined shares. {rose} not shown because the price rose more than {max}; {missing} shown without a price change because prices are not available.",
+    "period": "Positions {from} → {to}",
+    "combined": "Corporate total {delta}",
+    "newHolders": "{count, plural, one {# corporate holder newly listed at ≥1%} other {# corporate holders newly listed at ≥1%}} (earlier holding unknown)",
+    "price": "Price {from} → {to}",
+    "priceMissing": "Price data for this period is not available",
+    "issuedSharesChanged": "Issued shares changed",
+    "previewTitle": "KSEI: corporate holders up, price flat",
+    "viewAll": "View all",
+    "kind": {
+      "NEW": "New ≥1%",
+      "INCREASE": "Increased",
+      "DECREASE": "Decreased",
+      "EXIT": "Exited",
+      "UNCHANGED": "Unchanged",
+      "BELOW_THRESHOLD": "Below 1%",
+      "AMBIGUOUS": "Not comparable"
+    }
+  },
+  "methodology": {
+    "title": "Methodology",
+    "intro": "How HAKA PRO reads data: where it comes from, when it arrives, what each signal means, and the limits we hold ourselves to. Every threshold on this page is read directly from the configuration the data engine uses.",
+    "version": "Rules version: {version}",
+    "principles": {
+      "title": "Principles",
+      "observe": "We show observations, not advice. Labels say what the data shows, such as \"Volume 2.3× the 20-session average\", not what to do about it.",
+      "trace": "Every figure has a data date and a source. The session date or position date is always shown next to the data.",
+      "missing": "Data that is absent is marked \"not available yet\", never treated as zero.",
+      "counter": "Observations pointing the other way are shown next to the signals, never hidden."
+    },
+    "sources": {
+      "title": "Data sources and their delays",
+      "intro": "All data is end of day (EOD) unless stated otherwise. There is no real-time price feed.",
+      "source": "Source",
+      "what": "What we use",
+      "when": "When it is available",
+      "arjum": {
+        "name": "arjum (API-key data provider)",
+        "what": "Foreign buying and selling per stock, price history, broker summaries, insider transactions for the stock pages.",
+        "when": "After the close. The data engine collects foreign flow at 19:00 and 21:00 WIB on trading days, most liquid stocks first, within a daily quota. Stocks the quota does not reach have no foreign data for that session, so their foreign signals are \"not available yet\"."
+      },
+      "prices": {
+        "name": "Data engine daily prices (Yahoo Finance, TradingView, Pasardana)",
+        "what": "Open, high, low, close, volume and value; the list of active issuers and their sectors; the previous session's trade count.",
+        "when": "From about 16:35–16:45 WIB on trading days, with refetches until 20:45 WIB. Trade counts often arrive only the next session or from arjum, so the value-per-trade signal can be \"not available yet\"."
+      },
+      "ksei": {
+        "name": "≥1% shareholder list (KSEI, uploaded by an admin)",
+        "what": "≥1% holders per issuer, investor type (for example CP for corporations), shares and percentage, compared with the month before.",
+        "when": "Monthly. IDX publishes the list on its own site and a HAKA PRO admin uploads it by hand, usually days to weeks after the position date. Until a list is uploaded, the KSEI signal and view are empty."
+      },
+      "intraday": {
+        "name": "Intraday snapshots",
+        "what": "Running prices for the movers list and stock quotes.",
+        "when": "Delayed by about 10 minutes and always labelled delayed. The radar does not use them; it only reads stored daily sessions."
+      }
+    },
+    "inputs": {
+      "dailyPrices": "daily prices",
+      "foreignFlow": "foreign buy/sell",
+      "frequency": "trade count",
+      "kseiUpload": "KSEI ≥1% list"
+    },
+    "radar": {
+      "title": "Radar signals",
+      "intro": "Each signal is evaluated on its own over the newest stored session. A signal \"fires\" when the observed value reaches its threshold. A signal whose data is incomplete is marked not available and is not counted.",
+      "open": "Open the radar",
+      "signal": "Signal",
+      "measures": "What is measured",
+      "windowHead": "Window",
+      "threshold": "Threshold",
+      "needs": "Data needed",
+      "window": "Last {window} sessions",
+      "windowBaseline": "Newest session vs the {baseline} before it",
+      "monthly": "Newest uploaded month",
+      "describe": {
+        "foreignNetBuy5": "Foreign net buying (shares bought minus shares sold) over {window} sessions, as a share of those sessions' total volume.",
+        "foreignNetBuy20": "The same over {window} sessions. Needs foreign data on every session in the window.",
+        "volumeSpike": "Newest session volume divided by the average volume of the {baseline} sessions before it.",
+        "closeAboveAverage": "Newest close compared with the average close of {baseline} sessions (including the newest).",
+        "priceUp5": "Close change from the session before the window to the newest session, over {window} sessions.",
+        "orderSizeSpike": "Newest value per trade (value divided by trade count) divided by its average over the {baseline} sessions before. Orders much larger than usual can show up here.",
+        "kseiHolderIncrease": "Number of ≥1% holders whose shares rose against the month before. Holders newly listed at ≥1% are not counted because their earlier holding is unknown."
+      },
+      "ranking": "Order: stocks with the most signals first, then by the newest session's traded value. At most {limit} stocks are shown; the full count is still reported.",
+      "foreignCoverage": "Because foreign data is limited by a daily quota, the radar reports how many stocks each signal could be evaluated for. A signal that is not available does not mean there was no activity."
+    },
+    "counter": {
+      "title": "Counter-evidence",
+      "intro": "Observations pointing the other way are always shown next to the signals, whatever fired. The point is that one striking figure is never read without context, for example a rising price while foreign investors are net sellers.",
+      "describe": {
+        "priceVsForeign5": "price direction and net foreign flow point opposite ways over the same {window} sessions (both non-zero).",
+        "priceVsForeign20": "the same over {window} sessions.",
+        "volumeOnDownSession": "volume reached {volume} the {baseline}-session average, but that session closed lower.",
+        "kseiHolderDecrease": "at least {threshold} ≥1% holder reduced their shares in the newest uploaded month."
+      }
+    },
+    "stealth": {
+      "title": "KSEI view: corporate holders up, price flat",
+      "intro": "This view puts two data sets side by side: the change in holdings of corporate ≥1% holders, and the price change over the same period.",
+      "open": "Open the view",
+      "types": "Investor types counted: {types} (the KSEI code for corporations), as stated in the list, never guessed.",
+      "combined": "Corporate total = the sum of share changes of corporate holders listed in both months. Holders newly listed at ≥1% are shown separately and not summed.",
+      "price": "The price counts as flat or lower when the close change between the two position dates is at most {max}. The close used is the newest session on or before each position date, at most {gap} days before it; otherwise the price is marked not available.",
+      "notIntent": "This view does not infer intent, the buyer's identity or the next price move. A change in issued shares (a corporate action) is flagged because it can change holdings without any trade."
+    },
+    "noScore": {
+      "title": "Why there is no score",
+      "p1": "A combined score is only worth showing once each component has been tested on our own history: how often a signal was followed by a price move over the next 5 and 20 sessions, on how many samples, and with how wide an uncertainty range.",
+      "p2": "That test has not been done yet. So the radar only counts the signals that fired. A signal count is not a probability and not a quality ranking; two signals are not necessarily more meaningful than one.",
+      "p3": "The thresholds on this page are drafts chosen to describe unusual activity. Every change to a threshold gets a new version, and that version is shown with every result."
+    },
+    "missing": {
+      "title": "Missing data",
+      "body": "When a signal's data is incomplete, for example foreign data outside the quota, a trade count that is not available yet, a newly listed stock, or a KSEI list that has not been uploaded, the signal is marked \"not available yet\". It is not counted as zero and not counted as fired."
+    },
+    "disclaimer": "This page and every view it refers to are for research and education. They describe past data; they are not investment advice, not an invitation to buy or sell, and guarantee no outcome."
   }
 }

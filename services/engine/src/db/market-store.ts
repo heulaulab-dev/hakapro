@@ -74,6 +74,20 @@ export class DbMarketStore implements MarketStore {
     return new Map(rows.map((row) => [row.symbol, row.close]));
   }
 
+  async closesOnOrBefore(date: string, symbols: string[]): Promise<Map<string, { date: string; close: number }>> {
+    if (!symbols.length) return new Map();
+    const rows = await this.db.selectDistinctOn([t.dailyPrices.symbol], { symbol: t.dailyPrices.symbol, date: t.dailyPrices.date, close: t.dailyPrices.close })
+      .from(t.dailyPrices).where(and(inArray(t.dailyPrices.symbol, symbols), lte(t.dailyPrices.date, date)))
+      .orderBy(t.dailyPrices.symbol, desc(t.dailyPrices.date));
+    return new Map(rows.map((row) => [row.symbol, { date: row.date, close: row.close }]));
+  }
+
+  async sessionHistory(endDate: string, sessions: number): Promise<DailyRecord[]> {
+    const dates = this.db.selectDistinct({ date: t.dailyPrices.date }).from(t.dailyPrices)
+      .where(lte(t.dailyPrices.date, endDate)).orderBy(desc(t.dailyPrices.date)).limit(sessions);
+    return this.db.select(dailyColumns).from(t.dailyPrices).where(sql`${t.dailyPrices.date} in (select date from (${dates}) as recent)`);
+  }
+
   async latestIndexDaily(): Promise<IndexDailyRecord[]> {
     return this.db.selectDistinctOn([t.indexDaily.code], {
       code: t.indexDaily.code, name: t.indexDaily.name, date: t.indexDaily.date, close: t.indexDaily.close,

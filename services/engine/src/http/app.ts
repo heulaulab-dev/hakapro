@@ -3,8 +3,8 @@
 import { timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 import {
-  actionsCalendarSchema, actionsSchema, announcementItemSchema, fundamentalsSchema, macroSchema, marketOverviewSchema, newsItemSchema, sectorsSchema,
-  screenRequestSchema, screenResultSchema, securitySchema, signalsSchema, stockSchema,
+  actionsCalendarSchema, actionsSchema, announcementItemSchema, fundamentalsSchema, macroSchema, marketOverviewSchema, newsItemSchema, radarSchema, sectorsSchema,
+  screenRequestSchema, screenResultSchema, securitySchema, signalsSchema, stealthOwnershipSchema, stockSchema,
 } from "@/server/schemas/idx-bei";
 import { dateSchema, symbolSchema } from "@/server/schemas/inputs";
 import { ownershipChangesSchema, ownershipMonthSchema, stockOwnershipSchema } from "@/server/schemas/ownership";
@@ -21,6 +21,7 @@ import {
 import { serveFundamentals, serveScreener } from "../serve/fundamentals";
 import { previousMonth as previousMonthOf } from "../ownership/numbers";
 import { emptyStockOwnership, serveOwnershipChanges, serveStockOwnership } from "../serve/ownership";
+import { emptyRadar, emptyStealth, serveRadar, serveStealth } from "../serve/radar";
 import type { MarketStore } from "../serve/store";
 import { EMPTY_BOARD, serveStrategies, strategyScanHealth, type StrategyStore } from "../serve/strategies";
 import { STRATEGY_RULES, type StrategyRules } from "../strategies/rules";
@@ -180,6 +181,8 @@ export function createApp(deps: AppDeps): (request: Request) => Promise<Response
       return respond(marketOverviewSchema, market ? await serveMarket(market, at) : null, { indices: [], breadth: { advancers: 0, decliners: 0, unchanged: 0, value: 0, volume: 0, frequency: 0 }, movers: [] });
     }
     if (path === "/v1/sectors") return respond(sectorsSchema, market ? await serveSectors(market, at) : null, []);
+    // Signal confluence over the newest session (stored rows only, versioned draft rules, no score).
+    if (path === "/v1/radar") return respond(radarSchema, market ? await serveRadar(market, deps.ownership?.service.store ?? null, at) : null, emptyRadar());
     if (path === "/v1/securities") {
       return respond(securitySchema.array(), market ? await serveSecurities(market, (url.searchParams.get("q") ?? "").slice(0, 64), at) : null, []);
     }
@@ -225,6 +228,12 @@ export function createApp(deps: AppDeps): (request: Request) => Promise<Response
       if (!month.success || !symbol.success) return error(400, "BAD_REQUEST", "month must be YYYY-MM; symbol is optional");
       const served = store ? await serveOwnershipChanges(store, month.data, symbol.data) : null;
       return respond(ownershipChangesSchema, served, { month: month.data, previousMonth: previousMonthOf(month.data), comparisons: [], changes: [] });
+    }
+
+    if (path === "/v1/ownership/stealth") {
+      // Corporate ≥1% holders up while the close was flat or lower, in the newest uploaded month; empty before any upload.
+      const store = deps.ownership?.service.store;
+      return respond(stealthOwnershipSchema, store ? await serveStealth(store, market ?? null) : null, emptyStealth());
     }
 
     const stock = path.match(/^\/v1\/stocks\/([^/]+)(?:\/(fundamentals|actions|profile|ownership))?$/);

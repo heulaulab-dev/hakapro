@@ -3,6 +3,7 @@
  * (src/server/market/types.ts); every response is validated again here.
  */
 import { z } from "zod";
+import { RADAR_COUNTER_KEYS, RADAR_SIGNAL_KEYS } from "@/lib/radar/rules";
 import { strategyBoardSchema } from "@/lib/strategies/contract";
 import { fetchEnvelope } from "./envelope";
 
@@ -224,7 +225,50 @@ export const ownershipChangeSchema = z.object({
 export const ownershipChangesSchema = z.object({ month: z.string(), previousMonth: z.string(), changes: z.array(ownershipChangeSchema) });
 export type OwnershipChange = z.infer<typeof ownershipChangeSchema>;
 
+// --- Data Engine: signal confluence radar and KSEI corporate holders -------------------------------------------
+const radarSignalKey = z.enum(RADAR_SIGNAL_KEYS);
+export const radarStockSchema = z.object({
+  symbol: z.string(), name: z.string().nullable(), sector: z.string().nullable(), close: n,
+  /** 1-day change in percentage points. */
+  changePercent: nn, value: nn,
+  fired: z.array(z.object({ key: radarSignalKey, observed: n, threshold: n, window: z.string(), detail: z.record(z.string(), nn) })),
+  counter: z.array(z.object({ key: z.enum(RADAR_COUNTER_KEYS), window: z.string(), values: z.record(z.string(), nn) })),
+  firedCount: n,
+  status: z.record(radarSignalKey, z.enum(["ok", "missing"])),
+});
+export type RadarStock = z.infer<typeof radarStockSchema>;
+export const radarSchema = z.object({
+  tradingDate: z.string().nullable(), rulesVersion: z.string(), kseiMonth: z.string().nullable(),
+  rules: z.record(radarSignalKey, z.object({ window: nn, baseline: nn, threshold: n, unit: z.enum(["fraction", "ratio", "count"]) })),
+  coverage: z.object({ stocks: n, listed: n, returned: n, signals: z.record(radarSignalKey, n) }),
+  stocks: z.array(radarStockSchema),
+});
+export type Radar = z.infer<typeof radarSchema>;
+const closeAtSchema = z.object({ date: z.string(), close: n });
+export const stealthStockSchema = z.object({
+  symbol: z.string(), name: z.string().nullable(), fromDate: z.string(), toDate: z.string(),
+  /** Integer string; shown, never recomputed. */
+  combinedShareDelta: z.string(), newHolders: n,
+  holders: z.array(z.object({
+    holderKey: z.string(), holderName: z.string(), investorType: z.string(), kind: z.string(),
+    sharesBefore: z.string().nullable(), sharesAfter: z.string().nullable(), shareDelta: z.string().nullable(),
+    percentBefore: z.string().nullable(), percentAfter: z.string().nullable(), ppDelta: z.string().nullable(), flags: z.array(z.string()),
+  })),
+  /** Close change between the two position dates in percentage points; null when a close is not stored. */
+  price: z.object({ from: closeAtSchema, to: closeAtSchema, changePercent: n }).nullable(),
+});
+export type StealthStock = z.infer<typeof stealthStockSchema>;
+export const stealthOwnershipSchema = z.object({
+  month: z.string().nullable(), previousMonth: z.string().nullable(), rulesVersion: z.string(),
+  rules: z.object({ investorTypes: z.array(z.string()), maxPriceChange: n, maxCloseGapDays: n }),
+  coverage: z.object({ issuers: n, corporateIncrease: n, priceRose: n, priceMissing: n }),
+  stocks: z.array(stealthStockSchema),
+});
+export type StealthOwnership = z.infer<typeof stealthOwnershipSchema>;
+
 export const engineApi = {
+  radar: (signal?: AbortSignal) => fetchEnvelope("/api/radar", radarSchema, { signal }),
+  stealthOwnership: (signal?: AbortSignal) => fetchEnvelope("/api/ownership/stealth", stealthOwnershipSchema, { signal }),
   sectors: (signal?: AbortSignal) => fetchEnvelope("/api/sectors", z.array(sectorPerformanceSchema), { signal }),
   actionsCalendar: (range: { from?: string; to?: string } = {}, signal?: AbortSignal) => fetchEnvelope(`/api/actions${qs(range)}`, z.array(actionCalendarItemSchema), { signal }),
   ownership: (symbol: string, signal?: AbortSignal) => fetchEnvelope(`/api/stocks/${encodeURIComponent(symbol.toUpperCase())}/ownership`, stockOwnershipSchema, { signal }),
