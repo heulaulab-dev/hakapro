@@ -100,6 +100,7 @@
     "screener": "Screener",
     "strategies": "Strategi",
     "movers": "Penggerak Pasar",
+    "heatmap": "Peta Pasar",
     "ownership": "Perubahan Kepemilikan",
     "watchlist": "Daftar Pantau",
     "news": "Berita & Kalender",
@@ -558,6 +559,86 @@
     "viewLabel": "Tampilan",
     "capDate": "Tanggal kapitalisasi pasar",
     "capsAsOf": "Per {date} · {total} saham"
+  },
+  "heatmap": {
+    "title": "Peta Pasar",
+    "intro": "Saham dengan nilai transaksi terbesar pada data terbaru, dikelompokkan per sektor. Luas dan warna menggambarkan data pasar, bukan saran jual atau beli.",
+    "scope": "Top {count} saham menurut nilai transaksi",
+    "asOf": "Data per {date}",
+    "source": "Sumber: {source}",
+    "coverage": "{count} saham · data asing tersedia untuk {foreign}",
+    "controls": "Pengaturan peta",
+    "viewLabel": "Tampilan",
+    "views": {
+      "treemap": "Treemap",
+      "bubbles": "Gelembung",
+      "pulse": "Denyut sektor"
+    },
+    "limitLabel": "Jumlah saham",
+    "limit": "Top {count}",
+    "directionLabel": "Arah perubahan",
+    "direction": {
+      "all": "Semua",
+      "gainers": "Naik",
+      "losers": "Turun"
+    },
+    "sectorLabel": "Sektor",
+    "allSectors": "Semua sektor",
+    "unknownSector": "Sektor belum diketahui",
+    "searchLabel": "Cari kode atau nama saham",
+    "searchPlaceholder": "Cari kode/nama",
+    "sizeLabel": "Luas kotak",
+    "size": {
+      "value": "Nilai transaksi",
+      "foreign": "Besar asing bersih (estimasi)"
+    },
+    "colorLabel": "Warna",
+    "color": {
+      "change": "Perubahan %",
+      "foreign": "Asing bersih (estimasi)"
+    },
+    "yLabel": "Sumbu Y",
+    "y": {
+      "value": "Nilai transaksi (log)",
+      "foreign": "Asing bersih (estimasi)"
+    },
+    "xAxis": "Perubahan (%)",
+    "bubbleHint": "Sumbu X: perubahan harga. Luas gelembung sebanding dengan nilai transaksi.",
+    "foreignNote": "Asing bersih adalah ESTIMASI: (lembar beli asing − lembar jual asing) × harga penutupan. Hanya tersedia untuk saham yang tercakup data asing, dan hanya pada data akhir hari (tidak pada snapshot intraday).",
+    "foreignHidden": "{count} saham tanpa data asing tidak ditampilkan pada pengaturan ini.",
+    "noForeign": "Belum ada data asing untuk data ini (snapshot intraday atau di luar cakupan data asing).",
+    "noMatch": "Tidak ada saham yang cocok dengan filter.",
+    "legend": {
+      "down": "Turun",
+      "up": "Naik",
+      "netSell": "Jual bersih",
+      "netBuy": "Beli bersih",
+      "noData": "Tanpa data",
+      "cap": "Warna penuh pada ±{value}",
+      "foreignCap": "Warna penuh pada nilai terbesar yang tampil (±{value})"
+    },
+    "tile": "{symbol}, {name}. Perubahan {change}. Nilai transaksi {value}. Asing bersih (estimasi) {foreign}. Sektor {sector}.",
+    "fields": {
+      "change": "Perubahan",
+      "price": "Harga",
+      "value": "Nilai transaksi",
+      "volume": "Volume",
+      "foreign": "Asing bersih (estimasi)",
+      "sector": "Sektor"
+    },
+    "sectorTile": "Sektor {sector}: {count} saham, nilai {value}, rata-rata perubahan {change}",
+    "pulse": {
+      "hint": "Rata-rata perubahan per sektor, dan jumlah saham naik, turun dan tetap, di antara saham yang tampil.",
+      "average": "Rata-rata perubahan",
+      "breadth": "{adv} naik · {dec} turun · {unch} tetap",
+      "stocks": "{count} saham",
+      "value": "Nilai {value}",
+      "only": "Tampilkan sektor {sector} saja"
+    },
+    "mobileHint": "Geser ke samping untuk melihat seluruh peta.",
+    "previewTitle": "Peta Pasar",
+    "previewHint": "30 saham dengan nilai transaksi terbesar, warna menurut perubahan.",
+    "previewMore": "Buka peta pasar"
   },
   "news": {
     "title": "Berita & Kalender",

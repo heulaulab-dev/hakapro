@@ -100,6 +100,7 @@
     "screener": "Screener",
     "strategies": "Strategies",
     "movers": "Movers",
+    "heatmap": "Market Map",
     "ownership": "Ownership Changes",
     "watchlist": "Watchlist",
     "news": "News & Calendar",
@@ -558,6 +559,86 @@
     "viewLabel": "View",
     "capDate": "Market cap date",
     "capsAsOf": "As of {date} · {total} stocks"
+  },
+  "heatmap": {
+    "title": "Market Map",
+    "intro": "The most-traded stocks in the latest data, grouped by sector. Area and color describe market data; they are not buy or sell advice.",
+    "scope": "Top {count} stocks by traded value",
+    "asOf": "Data as of {date}",
+    "source": "Source: {source}",
+    "coverage": "{count} stocks · foreign data for {foreign}",
+    "controls": "Map settings",
+    "viewLabel": "View",
+    "views": {
+      "treemap": "Treemap",
+      "bubbles": "Bubbles",
+      "pulse": "Sector pulse"
+    },
+    "limitLabel": "Number of stocks",
+    "limit": "Top {count}",
+    "directionLabel": "Change direction",
+    "direction": {
+      "all": "All",
+      "gainers": "Up",
+      "losers": "Down"
+    },
+    "sectorLabel": "Sector",
+    "allSectors": "All sectors",
+    "unknownSector": "Sector not yet known",
+    "searchLabel": "Search ticker or name",
+    "searchPlaceholder": "Search ticker/name",
+    "sizeLabel": "Tile area",
+    "size": {
+      "value": "Traded value",
+      "foreign": "Net foreign size (estimate)"
+    },
+    "colorLabel": "Color",
+    "color": {
+      "change": "Change %",
+      "foreign": "Net foreign (estimate)"
+    },
+    "yLabel": "Y axis",
+    "y": {
+      "value": "Traded value (log)",
+      "foreign": "Net foreign (estimate)"
+    },
+    "xAxis": "Change (%)",
+    "bubbleHint": "X axis: price change. Bubble area is proportional to traded value.",
+    "foreignNote": "Net foreign is an ESTIMATE: (foreign shares bought − foreign shares sold) × closing price. It is only available for stocks covered by foreign-flow data, and only on end-of-day data (not on intraday snapshots).",
+    "foreignHidden": "{count} stocks without foreign data are not shown with this setting.",
+    "noForeign": "No foreign data for this data set yet (an intraday snapshot, or outside foreign-flow coverage).",
+    "noMatch": "No stocks match the filters.",
+    "legend": {
+      "down": "Down",
+      "up": "Up",
+      "netSell": "Net sell",
+      "netBuy": "Net buy",
+      "noData": "No data",
+      "cap": "Full color at ±{value}",
+      "foreignCap": "Full color at the largest value shown (±{value})"
+    },
+    "tile": "{symbol}, {name}. Change {change}. Traded value {value}. Net foreign (estimate) {foreign}. Sector {sector}.",
+    "fields": {
+      "change": "Change",
+      "price": "Price",
+      "value": "Traded value",
+      "volume": "Volume",
+      "foreign": "Net foreign (estimate)",
+      "sector": "Sector"
+    },
+    "sectorTile": "Sector {sector}: {count} stocks, value {value}, average change {change}",
+    "pulse": {
+      "hint": "Average change per sector, and how many stocks rose, fell or were unchanged, among the stocks shown.",
+      "average": "Average change",
+      "breadth": "{adv} up · {dec} down · {unch} unchanged",
+      "stocks": "{count} stocks",
+      "value": "Value {value}",
+      "only": "Show only {sector}"
+    },
+    "mobileHint": "Scroll sideways to see the whole map.",
+    "previewTitle": "Market Map",
+    "previewHint": "The 30 most-traded stocks, colored by change.",
+    "previewMore": "Open the market map"
   },
   "news": {
     "title": "News & Calendar",
