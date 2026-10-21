@@ -106,7 +106,27 @@ export const actionsCalendarSchema = z.array(z.object({
   amount: num, ratio: z.string().nullable(), documentUrl: z.string().nullable(),
 }));
 
-export const SCREEN_FIELDS = ["price", "volume", "value", "frequency", "foreignNetShares", "marketCap", "per", "pbv", "roe", "roa", "eps", "der", "dividendYield", "change1D"] as const;
+const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+/**
+ * Data Engine `/v1/insiders/recent?days&action&limit`: market-wide insider transactions dated within the last `days`
+ * (from `from` to `to`, WIB), newest first, from a rotating per-symbol crawl (arjum). `coverage` states how much of the
+ * market that crawl has read: `checked` of `active` symbols within the last `revisitDays` days, the oldest such read
+ * on `oldestCheck`. Shares are signed (+ buy, − sell); percents in percent units (0.0061 = 0.0061%); price and value
+ * (|shares| × price) in IDR, null when the source gives no price. Empty form (UNAVAILABLE) before the first read.
+ */
+export const insidersRecentSchema = z.object({
+  days: z.number().int().positive(), from: isoDate, to: isoDate, action: z.enum(["buy", "sell", "cross"]).nullable(),
+  coverage: z.object({
+    checked: z.number().int().nonnegative(), active: z.number().int().nonnegative(), revisitDays: z.number().int().positive(), oldestCheck: isoDate.nullable(),
+  }),
+  transactions: z.array(z.object({
+    symbol: symbolSchema, person: z.string(), roles: z.array(z.string()), action: z.enum(["BUY", "SELL", "CROSS", "OTHER"]), date: isoDate,
+    sharesChange: num, sharesBefore: num, sharesAfter: num, percentBefore: num, percentAfter: num, percentChange: num,
+    price: num, value: num, broker: z.string().nullable(), nationality: z.string().nullable(), source: z.string(), asOf: z.string(),
+  })),
+});
+
+export const SCREEN_FIELDS =["price", "volume", "value", "frequency", "foreignNetShares", "marketCap", "per", "pbv", "roe", "roa", "eps", "der", "dividendYield", "change1D"] as const;
 export const screenFieldSchema = z.enum(SCREEN_FIELDS);
 export const screenConditionSchema = z.object({
   field: screenFieldSchema,
@@ -136,5 +156,6 @@ export type NewsItem = z.infer<typeof newsItemSchema>;
 export type AnnouncementItem = z.infer<typeof announcementItemSchema>;
 export type Macro = z.infer<typeof macroSchema>;
 export type ActionsCalendar = z.infer<typeof actionsCalendarSchema>;
+export type InsidersRecent = z.infer<typeof insidersRecentSchema>;
 export type ScreenRequest = z.infer<typeof screenRequestSchema>;
 export type ScreenResult = z.infer<typeof screenResultSchema>;

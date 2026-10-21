@@ -15,17 +15,19 @@ import { OwnershipService } from "../../services/engine/src/ownership/service";
 import { MemoryOwnershipStore } from "../../services/engine/src/ownership/store";
 import { PauseGuard } from "../../services/engine/src/schedule/pause";
 import { Scheduler } from "../../services/engine/src/schedule/scheduler";
+import { MemoryInsiderStore } from "../../services/engine/src/serve/insiders";
 import { MemoryMarketStore } from "../../services/engine/src/serve/store";
+import { recentInsidersSchema } from "@/lib/api/market";
 import { fixtureStrategyStore } from "../../services/engine/test/strategy-fixtures";
 
 const BASE = "http://engine.test";
 const NOW = new Date("2026-10-14T10:00:00Z");
 
-function engineFetch(dir: string, now: Date, market?: AppDeps["market"], strategies?: AppDeps["strategies"]) {
+function engineFetch(dir: string, now: Date, market?: AppDeps["market"], strategies?: AppDeps["strategies"], insiders?: AppDeps["insiders"]) {
   const pause = new PauseGuard(dir, 85, { cacheMs: 0, measure: async () => 10 });
   const sourceState = new MemorySourceStateStore();
   const scheduler = new Scheduler({ jobs: [], pause, runs: new MemoryRunRecorder(), cursors: new MemoryCursorStore(), sourceState });
-  const app = createApp({ ping: async () => true, pause, scheduler, rawStoreKind: "local", sourceHealth: async () => [], unblockSource: async () => false, now: () => now, market, strategies });
+  const app = createApp({ ping: async () => true, pause, scheduler, rawStoreKind: "local", sourceHealth: async () => [], unblockSource: async () => false, now: () => now, market, strategies, insiders });
   return ((input: string | URL | Request, init?: RequestInit) => app(new Request(input, init))) as typeof fetch;
 }
 
@@ -49,6 +51,11 @@ describe("engine /v1 stubs via IdxBeiSource", () => {
     expect(await source.macro()).toMatchObject({ freshness: "UNAVAILABLE", data: { series: [] } });
     // Strategy scans off (the default): the empty board.
     expect(await source.engineStrategies()).toMatchObject({ freshness: "UNAVAILABLE", asOf: null, data: { contexts: [], strategies: [], candidates: [] } });
+    // Insider feed off (budget 0) or not run yet: the empty form, still parseable.
+    expect(await source.recentInsiders({ days: 7, action: "buy" })).toMatchObject({
+      freshness: "UNAVAILABLE", asOf: null,
+      data: { days: 7, from: "2026-10-07", to: "2026-10-14", action: "buy", coverage: { checked: 0, active: 0, revisitDays: 7, oldestCheck: null }, transactions: [] },
+    });
     // No price data yet: a typed provider error, never a fake quote.
     await expect(source.stock("BBCA")).rejects.toBeInstanceOf(MarketDataError);
     await expect(source.foreignFlow()).rejects.toBeInstanceOf(MarketDataError);
@@ -159,6 +166,40 @@ describe("engine /v1 real responses via IdxBeiSource", () => {
     ]);
     // A symbol without statements keeps the empty form.
     expect((await source.fundamentals("GOTO")).data).toEqual([]);
+  });
+
+  it("parses the market-wide insider feed into the app's insider rows, with coverage and the newest read as as-of", async () => {
+    vi.resetModules();
+    const { IdxBeiSource: FreshSource } = await import("@/server/market/idx-bei-source");
+    const now = new Date("2026-10-16T15:00:00Z"); // 22:00 WIB
+    const readAt = new Date("2026-10-16T14:40:00Z");
+    const insiders = new MemoryInsiderStore({
+      active: ["BBCA", "GOTO", "TLKM"],
+      checks: [{ symbol: "BBCA", checkedDate: "2026-10-16", asOf: readAt }, { symbol: "GOTO", checkedDate: "2026-10-12", asOf: new Date("2026-10-12T14:40:00Z") }],
+      transactions: [
+        { symbol: "BBCA", person: "BUDI CONTOH", roles: ["DIREKTUR"], action: "BUY", date: "2026-10-15", sharesChange: 500_000, sharesBefore: 1_000_000, sharesAfter: 1_500_000, percentBefore: 0.0008, percentAfter: 0.0012, percentChange: 0.0004, price: 6000, broker: null, nationality: "local", source: "arjum", asOf: readAt },
+        { symbol: "GOTO", person: "PT INDUK", roles: [], action: "SELL", date: "2026-10-12", sharesChange: -1_000, sharesBefore: null, sharesAfter: null, percentBefore: null, percentAfter: null, percentChange: null, price: null, broker: "DH", nationality: null, source: "arjum", asOf: readAt },
+      ],
+    });
+    const source = new FreshSource(BASE, () => now, engineFetch(dir, now, undefined, undefined, { store: insiders, revisitDays: 7 }));
+    const feed = await source.recentInsiders({ days: 7 });
+    expect(feed).toMatchObject({ freshness: "HISTORICAL", asOf: readAt.toISOString(), source: "idx-bei" });
+    expect(feed.data).toMatchObject({ days: 7, from: "2026-10-09", to: "2026-10-16", action: null, coverage: { checked: 2, active: 3, revisitDays: 7, oldestCheck: "2026-10-12" } });
+    expect(feed.data.transactions).toEqual([
+      {
+        symbol: "BBCA", person: "BUDI CONTOH", date: "2026-10-15", action: "BUY", roles: ["DIREKTUR"], broker: null, nationality: "local",
+        previousShares: 1_000_000, currentShares: 1_500_000, changeShares: 500_000, previousPercent: 0.0008, currentPercent: 0.0012, changePercent: 0.0004,
+        priceIdr: 6000, valueIdr: 3_000_000_000,
+      },
+      {
+        symbol: "GOTO", person: "PT INDUK", date: "2026-10-12", action: "SELL", roles: [], broker: "DH", nationality: "",
+        previousShares: null, currentShares: null, changeShares: -1000, previousPercent: null, currentPercent: null, changePercent: null, priceIdr: null, valueIdr: null,
+      },
+    ]);
+    // The client schema accepts what the app serves.
+    expect(recentInsidersSchema.parse(feed.data)).toEqual(feed.data);
+    const sells = await source.recentInsiders({ days: 7, action: "sell", limit: 1 });
+    expect(sells.data.transactions.map((row) => row.symbol)).toEqual(["GOTO"]);
   });
 
   it("screens the newest session (E5): change1D in percent both ways, ratios with their source, nulls kept", async () => {

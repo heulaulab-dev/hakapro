@@ -3,8 +3,8 @@
 import { timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 import {
-  actionsCalendarSchema, actionsSchema, announcementItemSchema, fundamentalsSchema, macroSchema, marketOverviewSchema, newsItemSchema, sectorsSchema,
-  screenRequestSchema, screenResultSchema, securitySchema, signalsSchema, stockSchema,
+  actionsCalendarSchema, actionsSchema, announcementItemSchema, fundamentalsSchema, insidersRecentSchema, macroSchema, marketOverviewSchema, newsItemSchema,
+  sectorsSchema, screenRequestSchema, screenResultSchema, securitySchema, signalsSchema, stockSchema,
 } from "@/server/schemas/idx-bei";
 import { dateSchema, symbolSchema } from "@/server/schemas/inputs";
 import { ownershipChangesSchema, ownershipMonthSchema, stockOwnershipSchema } from "@/server/schemas/ownership";
@@ -20,6 +20,9 @@ import {
 } from "../serve/market-info";
 import { serveFundamentals, serveScreener } from "../serve/fundamentals";
 import { previousMonth as previousMonthOf } from "../ownership/numbers";
+import {
+  DEFAULT_INSIDER_REVISIT_DAYS, emptyRecentInsiders, INSIDER_ACTION_FILTERS, INSIDERS_DEFAULT_DAYS, INSIDERS_DEFAULT_LIMIT, INSIDERS_MAX_DAYS, INSIDERS_MAX_LIMIT, serveRecentInsiders, type InsiderStore,
+} from "../serve/insiders";
 import { emptyStockOwnership, serveOwnershipChanges, serveStockOwnership } from "../serve/ownership";
 import type { MarketStore } from "../serve/store";
 import { EMPTY_BOARD, serveStrategies, strategyScanHealth, type StrategyStore } from "../serve/strategies";
@@ -48,6 +51,8 @@ export type AppDeps = {
   ownership?: OwnershipDeps;
   /** E4 strategy scans (ENGINE_STRATEGY_SCANS_ENABLED). Absent or disabled → /v1/strategies serves the empty board. */
   strategies?: { enabled: boolean; store: StrategyStore | null; rules?: StrategyRules };
+  /** The insider feed's stored reads and the revisit window its coverage is measured over. Absent → the empty form. */
+  insiders?: { store: InsiderStore; revisitDays: number };
   now?: () => Date;
   log?: Logger;
 };
@@ -83,6 +88,9 @@ export const STRATEGIES_DISABLED = {
 
 const pageParam = (max: number, fallback: number) => z.string().regex(/^\d{1,6}$/).transform(Number).pipe(z.number().int().min(1).max(max)).optional().transform((value) => value ?? fallback);
 const newsQuerySchema = z.object({ page: pageParam(NEWS_MAX_PAGE, 1), page_size: pageParam(NEWS_MAX_PAGE_SIZE, NEWS_DEFAULT_PAGE_SIZE), symbol: symbolSchema.optional() });
+const insidersQuerySchema = z.object({
+  days: pageParam(INSIDERS_MAX_DAYS, INSIDERS_DEFAULT_DAYS), limit: pageParam(INSIDERS_MAX_LIMIT, INSIDERS_DEFAULT_LIMIT), action: z.enum(INSIDER_ACTION_FILTERS).optional(),
+});
 const DAY_MS = 86_400_000;
 /** A calendar date that exists (2026-02-31 does not). */
 const realDate = (value: string) => {
@@ -203,6 +211,15 @@ export function createApp(deps: AppDeps): (request: Request) => Promise<Response
       const span = (Date.parse(to.data) - Date.parse(from.data)) / DAY_MS;
       if (span < 0 || span > ACTIONS_MAX_RANGE_DAYS) return error(400, "BAD_REQUEST", `from must not be after to, and the range is at most ${ACTIONS_MAX_RANGE_DAYS} days`);
       return respond(actionsCalendarSchema, market ? await serveActionsCalendar(market, { from: from.data, to: to.data }, at) : null, []);
+    }
+    if (path === "/v1/insiders/recent") {
+      const query = insidersQuerySchema.safeParse({ days: param(url, "days"), limit: param(url, "limit"), action: param(url, "action") });
+      if (!query.success) return error(400, "BAD_REQUEST", `days must be 1–${INSIDERS_MAX_DAYS}, limit 1–${INSIDERS_MAX_LIMIT}, action buy, sell or cross`);
+      const request = { days: query.data.days, limit: query.data.limit, action: query.data.action };
+      const revisitDays = deps.insiders?.revisitDays ?? DEFAULT_INSIDER_REVISIT_DAYS;
+      // Before the feed's first read (or without it): the empty form, UNAVAILABLE.
+      const result = deps.insiders ? await serveRecentInsiders(deps.insiders.store, request, revisitDays, at) : null;
+      return respond(insidersRecentSchema, result?.served ?? null, result?.empty ?? emptyRecentInsiders(at, request, revisitDays));
     }
     if (path === "/v1/strategies") {
       // HAKA-18 board of the latest scan. Disabled (default) or no run yet: the contract's empty form, UNAVAILABLE.

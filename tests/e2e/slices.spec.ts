@@ -121,9 +121,52 @@ test.describe("slice 5: Movers, News & Calendar, Ownership Changes", () => {
     await page.goto("/id/discover/ownership");
     // The fixture source has no KSEI ≥1% lists: the market-wide feed says the source lacks it, never an empty "no changes".
     await expect(page.getByTestId("ksei-changes").getByTestId("data-state-code")).toHaveText("UNSUPPORTED");
+    // Same for the market-wide insider feed (a Data Engine capability), shown above the watchlist section.
+    await expect(page.getByTestId("insider-feed")).toContainText("Transaksi insider 7 hari");
+    await expect(page.getByTestId("insider-feed").getByTestId("data-state-code")).toHaveText("UNSUPPORTED");
     await page.getByTestId("ownership-symbol").fill("bbca");
     await page.keyboard.press("Enter");
     await expect(page).toHaveURL(/\/id\/stock\/BBCA\/insiders$/);
+  });
+
+  test("market-wide insider feed: states coverage plainly, filters buy/sell, and says when it has not run", async ({ page }) => {
+    const tx = (symbol: string, action: "BUY" | "SELL", changeShares: number, priceIdr: number | null) => ({
+      symbol, person: `${symbol} DIREKTUR`, date: "2026-10-15", action, nationality: "local", roles: ["DIREKTUR"], broker: null,
+      previousShares: 1_000_000, currentShares: 1_000_000 + changeShares, changeShares, previousPercent: 0.01, currentPercent: 0.02, changePercent: 0.01,
+      priceIdr, valueIdr: priceIdr === null ? null : Math.abs(changeShares) * priceIdr,
+    });
+    const actions: Array<string | null> = [];
+    let running = true;
+    await page.route("**/api/insiders/recent**", (route) => {
+      const action = new URL(route.request().url()).searchParams.get("action");
+      actions.push(action);
+      const all = [tx("BBCA", "BUY", 500_000, 6000), tx("TLKM", "SELL", -200_000, null)];
+      const rows = all.filter((row) => !action || row.action === action.toUpperCase());
+      return route.fulfill({ json: running
+        ? { data: { days: 7, from: "2026-10-14", to: "2026-10-21", action, coverage: { checked: 412, active: 951, revisitDays: 7, oldestCheck: "2026-10-15" }, transactions: rows }, freshness: "HISTORICAL", asOf: "2026-10-21T15:40:00.000Z", source: "test-intercept" }
+        : { data: { days: 7, from: "2026-10-14", to: "2026-10-21", action: null, coverage: { checked: 0, active: 951, revisitDays: 7, oldestCheck: null }, transactions: [] }, freshness: "UNAVAILABLE", asOf: null, source: "test-intercept" } });
+    });
+    await page.goto("/id/discover/ownership");
+    const feed = page.getByTestId("insider-feed");
+    await expect(feed.getByTestId("insider-feed-coverage")).toContainText("Mencakup 412 dari 951 saham; diperbarui bergiliran.");
+    await expect(feed.getByTestId("insider-feed-table")).toContainText("BBCA");
+    await expect(feed.getByTestId("insider-feed-table")).toContainText("TLKM");
+    await feed.getByTestId("insider-feed-sell").click();
+    await expect(feed.getByTestId("insider-feed-table")).not.toContainText("BBCA");
+    await expect(feed.getByTestId("insider-feed-table")).toContainText("TLKM");
+    expect(actions).toContain("sell");
+    // Before the first read: say the feed has not run, never "no transactions".
+    running = false;
+    await page.reload();
+    await expect(feed).toContainText("Umpan insider lintas pasar belum berjalan");
+  });
+
+  test("/api/insiders/recent is its own route, not a stock code for /api/insiders/[code]", async ({ request }) => {
+    const recent = await request.get("/api/insiders/recent?days=7&action=buy");
+    // The fixture source has no market-wide feed; the per-stock route would answer NOT_RECORDED for a code "RECENT".
+    expect((await recent.json()).error).toBe("UNSUPPORTED");
+    expect((await request.get("/api/insiders/recent?days=31")).status()).toBe(400);
+    expect((await (await request.get("/api/insiders/BBCA")).json()).data.symbol).toBe("BBCA");
   });
 });
 

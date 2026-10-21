@@ -279,7 +279,23 @@
       "SELL": "Sell",
       "CROSS": "Crossing",
       "OTHER": "Other"
-    }
+    },
+    "value": "Value"
+  },
+  "insiderFeed": {
+    "title": "Insider transactions, 7 days",
+    "hint": "Reported insider transactions across the market. Each stock's insider page is read in rotation, so this list only includes stocks read so far.",
+    "coverage": "Covers {checked} of {active} stocks; updated in rotation.",
+    "oldest": "Oldest read within the last {days} days: {date}.",
+    "window": "Transaction dates {from} – {to}",
+    "filter": "Filter by action",
+    "all": "All",
+    "notRunning": "The market-wide insider feed hasn't run yet. Transactions appear once the data engine starts reading each stock's insider page.",
+    "none": "No insider transactions dated in the last {days} days among the stocks read so far.",
+    "previewTitle": "Largest insider purchases · 7 days",
+    "previewHint": "Ordered by value (shares × price). Covers {checked} of {active} stocks; updated in rotation.",
+    "previewNone": "No insider purchases with a value in the last 7 days among the stocks read so far.",
+    "seeAll": "See all"
   },
   "broker": {
     "title": "Broker Summary",
