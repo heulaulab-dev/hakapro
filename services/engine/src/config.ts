@@ -30,6 +30,9 @@ const envSchema = z.object({
   ENGINE_ARJUM_API_KEY: optionalSecret,
   ENGINE_ARJUM_DAILY_BUDGET: z.coerce.number().int().min(0).max(1000).default(600),
   ENGINE_ARJUM_RESERVE: z.coerce.number().int().min(0).max(1000).default(400),
+  // When explicitly enabled, the existing authenticated history endpoint is also the engine's EOD OHLCV source.
+  // Keep off until the provider plan permits this collection, storage, and app display use.
+  ENGINE_ARJUM_EOD_ENABLED: flag(false),
   // Ownership uploads (E6, §8.5d): file size cap, and the HAKA-34 draft estimate on /v1 (off until the owner approves).
   ENGINE_OWNERSHIP_MAX_UPLOAD_MB: z.coerce.number().int().min(1).max(100).default(20),
   ENGINE_FREE_FLOAT_ENABLED: flag(false),
@@ -37,7 +40,7 @@ const envSchema = z.object({
   ENGINE_STRATEGY_SCANS_ENABLED: flag(false),
 });
 
-export type ArjumConfig = { baseUrl: string; apiKey: string; dailyBudget: number; reserve: number };
+export type ArjumConfig = { baseUrl: string; apiKey: string; dailyBudget: number; reserve: number; eodEnabled: boolean };
 
 export type EngineConfig = {
   port: number;
@@ -95,7 +98,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
       ? { endpoint: e.ENGINE_RAW_S3_ENDPOINT!, bucket: e.ENGINE_RAW_S3_BUCKET!, accessKeyId: e.ENGINE_RAW_S3_ACCESS_KEY_ID!, secretAccessKey: e.ENGINE_RAW_S3_SECRET_ACCESS_KEY!, region: e.ENGINE_RAW_S3_REGION }
       : null,
     arjum: e.ENGINE_ARJUM_BASE_URL && e.ENGINE_ARJUM_API_KEY
-      ? { baseUrl: e.ENGINE_ARJUM_BASE_URL.replace(/\/+$/, ""), apiKey: e.ENGINE_ARJUM_API_KEY, dailyBudget: e.ENGINE_ARJUM_DAILY_BUDGET, reserve: e.ENGINE_ARJUM_RESERVE }
+      ? { baseUrl: e.ENGINE_ARJUM_BASE_URL.replace(/\/+$/, ""), apiKey: e.ENGINE_ARJUM_API_KEY, dailyBudget: e.ENGINE_ARJUM_DAILY_BUDGET, reserve: e.ENGINE_ARJUM_RESERVE, eodEnabled: e.ENGINE_ARJUM_EOD_ENABLED }
       : null,
     ownership: { maxUploadBytes: e.ENGINE_OWNERSHIP_MAX_UPLOAD_MB * 1024 * 1024, freeFloatEnabled: e.ENGINE_FREE_FLOAT_ENABLED },
     strategyScans: { enabled: e.ENGINE_STRATEGY_SCANS_ENABLED },

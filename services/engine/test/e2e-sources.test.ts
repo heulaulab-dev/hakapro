@@ -284,6 +284,23 @@ describe.skipIf(!enabled)("engine sources (docker postgres + fixtures)", { timeo
     expect(world.hits.filter((hit) => hit.source === "arjum").length).toBe(3);
   });
 
+  it("can use the authenticated arjum history feed as quota-limited EOD and records honest coverage", async () => {
+    const h = await harness({ ENGINE_ARJUM_DAILY_BUDGET: "3", ENGINE_ARJUM_EOD_ENABLED: "1" });
+    await h.run("universe");
+    h.setNow(wib("2026-10-16", "19:00"));
+    expect((await h.run("foreign-flow")).lastStatus).toBe("SUCCEEDED");
+    const [bbca] = await h.db.select().from(t.dailyPrices).where(and(eq(t.dailyPrices.symbol, "BBCA"), eq(t.dailyPrices.date, "2026-10-16")));
+    expect(bbca).toMatchObject({ source: "arjum", close: 5225, volume: 994464400, value: 5196076490000, foreignSource: "arjum" });
+    const [partial] = await h.db.select().from(t.eodSessions).where(eq(t.eodSessions.date, "2026-10-16"));
+    expect(partial).toMatchObject({ status: "PARTIAL", expected: 8, present: 3, finalizedAt: null });
+
+    h.setNow(wib("2026-10-16", "21:00"));
+    await h.run("foreign-flow");
+    const [final] = await h.db.select().from(t.eodSessions).where(eq(t.eodSessions.date, "2026-10-16"));
+    expect(final).toMatchObject({ status: "STALE", expected: 8, present: 3 });
+    expect(final.finalizedAt).not.toBeNull();
+  });
+
   it("foreign-flow stops when x-ratelimit-remaining drops below the reserve, and skips a 404", async () => {
     const h = await harness();
     await h.run("universe");

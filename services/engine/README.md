@@ -46,7 +46,7 @@ It is a separate Bun + TypeScript service with no Next.js. It shares code with t
 
 ## Sources and jobs (E2, E2b, E3, E5)
 
-The four price sources are unofficial (§8.6): fine for the internal experiment, never for a public or paid HAKAPRO. The news feeds are public RSS (headline + link only, §2); Bank Indonesia publishes official statistics.
+Yahoo, TradingView, and Pasardana are unofficial sources and are for internal experiments only. Arjum is an authenticated provider; its plan must explicitly permit HAKAPRO's collection, storage, and display before its rows are used as production EOD. Public access, an API key, or an existing app integration alone does not establish redistribution rights. The news feeds are used for headline + link only; BI is a separate macro source.
 
 | Source id | Host | Policy | Used for |
 | --- | --- | --- | --- |
@@ -54,7 +54,7 @@ The four price sources are unofficial (§8.6): fine for the internal experiment,
 | `yahoo-chart` | `query1.finance.yahoo.com` | 1 request / 3 s, 1 in flight | Daily OHLCV (`range=5d`), history from 2020-01-01, splits/dividends, IHSG `^JKSE` |
 | `yahoo-fundamentals` | `query1.finance.yahoo.com` (same limiter as the chart) | 1 request / 3 s, 1 in flight, shared with `yahoo-chart` | `/ws/fundamentals-timeseries/v1/finance/timeseries/<SYM>.JK`: 26 statement lines, annual + quarterly, one request per symbol |
 | `pasardana` | `pasardana.id` | 1 request / 3 s, 1 in flight | Sectors (IDX-IC), capitalisation, shares, free float, previous-session value/frequency |
-| `arjum` | from `ENGINE_ARJUM_BASE_URL` | 1 request / 2 s, 1 in flight | Foreign buy/sell (`/api/history/{code}?limit=20`); registered only when configured |
+| `arjum` | from `ENGINE_ARJUM_BASE_URL` | 1 request / 2 s, 1 in flight | Foreign buy/sell; optionally primary EOD OHLCV/value/frequency via the same history response when `ENGINE_ARJUM_EOD_ENABLED=1` and the provider entitlement permits storage and app display |
 | `news-cnbcindonesia` | `www.cnbcindonesia.com` | 1 request / 5 s, 1 in flight | `/market/rss` |
 | `news-detik` | `finance.detik.com` | 1 request / 5 s, 1 in flight | `/rss` (general finance) |
 | `news-antara` | `www.antaranews.com` | 1 request / 5 s, 1 in flight | `/rss/ekonomi-bursa.xml` |
@@ -187,6 +187,7 @@ All are runtime-only. None is needed at build time.
 | `ENGINE_ARJUM_BASE_URL` / `ENGINE_ARJUM_API_KEY` | unset | arjum base URL and key (same provider and key as the app's `HEULATRADE_MARKET_API_BASE_URL` / `_KEY`). Set together; without them `foreign-flow` is not registered and foreign buy/sell stay null |
 | `ENGINE_ARJUM_DAILY_BUDGET` | `600` | Max arjum calls per WIB day for foreign flow (of the shared 1000/day quota) |
 | `ENGINE_ARJUM_RESERVE` | `400` | Stop while arjum's `x-ratelimit-remaining` is below this (the app environments' share) |
+| `ENGINE_ARJUM_EOD_ENABLED` | `false` | Also treats arjum history as primary EOD OHLCV/value/frequency and records its per-session coverage. Enable only when the provider plan/terms permit server-side storage and display in HAKAPRO. The configured daily budget/reserve still applies; sessions below full active-universe coverage remain `PARTIAL` or `STALE`, and this endpoint does not provide the long backfill used by Yahoo |
 | `ENGINE_STRATEGY_SCANS_ENABLED` | `false` | `true`/`1` registers `strategy-scan-eod` and serves `/v1/strategies`. Leave off until the owner approves the HAKA-17 rules |
 | `ENGINE_SCHEDULER_ENABLED` | `true` | `false` serves the API only |
 | `ENGINE_MIGRATE_ON_START` | `true` | Applies `db/migrations` at boot |

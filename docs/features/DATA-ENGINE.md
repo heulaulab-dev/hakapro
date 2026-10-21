@@ -262,10 +262,21 @@ Store headline + link + time + outlet only (§2).
    - Back off to 5 min on any non-200 and stop with `SOURCE_BLOCKED` on 403/429.
    - Freshness is DELAYED with the row timestamp. Per-symbol Yahoo intraday bars are fetched on demand, not polled.
 
-**Caveat:** every working price source is an unofficial, undocumented endpoint (Yahoo, TradingView, Pasardana). It is
-fine for the internal experiment under §2, but each one can disappear or start blocking without notice, so the
-fetchers must detect blocks and fall back (Yahoo ↔ TradingView ↔ Pasardana ↔ arjum). None of them is a licensed
-source for a public or paid HAKAPRO.
+**Production data-rights gate (reviewed 2026-10-21):** the public IDX Ringkasan Saham page shows broad daily OHLC-like
+data, but IDX's published terms prohibit web scraping/crawling and require prior written permission for commercial
+use or distribution. Do not crawl that page or its underlying requests. The existing Yahoo, TradingView, and
+Pasardana integrations are experimental sources; their presence in code or public accessibility does not grant
+HAKAPRO collection, storage, or redistribution rights. Keep Yahoo blocked after a provider block. No free, current,
+full-market EOD source with verified terms for HAKAPRO production was established. BPS provides older annual market
+statistics, OJK aggregate statistics, and BI FX data, but none replaces per-stock daily OHLCV. Ask the provider or
+rights holder for terms covering server-side collection, storage, history, app display, and redistribution before
+enabling a production source.
+
+The existing authenticated arjum history API also returns per-stock OHLCV, value, frequency, and foreign-flow fields.
+`ENGINE_ARJUM_EOD_ENABLED=1` promotes those rows to primary EOD and records source-specific session coverage under
+the existing daily request budget/reserve. It is off by default and must remain off until the arjum plan/terms permit
+this use. Its current 20-row request is a short rolling history, not a historical backfill; budget-limited coverage
+is reported `PARTIAL`/`STALE` and must not be represented as a complete market session.
 
 ## 6. Data model (first cut)
 
@@ -290,7 +301,7 @@ Every table has `source` and `as_of`; derived tables also record the derivation 
 | --- | --- |
 | E0. Discovery | Confirm endpoints, formats, update times and block behaviour for sources 1–9 with single requests. **Done 2026-10-16, see §5** |
 | E1. Foundation | `services/engine` (Bun, Dockerfile, health), engine DB + Drizzle, fetcher framework (policy, cache, raw store, block detection), scheduler, `/v1/meta/health`. Coolify environment `data-engine` with app + DB |
-| E2. Universe + EOD prices | Sources 1–2, daily run + backfill since 2020-01-01, `/v1/securities`, `/v1/stocks/{s}`, `/v1/market` movers/breadth. Point develop's `MARKET_API_URL` at it first, then staging and production. **Built 2026-10-16** (HAKA-62, with arjum foreign flow and index EOD; see `services/engine/README.md`); not yet deployed |
+| E2. Universe + EOD prices | Experimental integrations and `/v1/securities`, `/v1/stocks/{s}`, `/v1/market` are built. A production data provider and reuse rights remain unresolved; the Yahoo backfill path is blocked in production. Arjum can supply limited rolling EOD only after its entitlement explicitly allows storage/display. Do not claim production market coverage until the selected provider's terms, field coverage, and full-universe session coverage are confirmed. |
 | E2b. Intraday snapshots | Session-window polling (default 5 min) for quotes and indices, `intraday_snapshots` with 30-day retention, intraday movers/breadth served as DELAYED on `/v1/market` and `/v1/stocks/{s}`. **Built 2026-10-16** (HAKA-67) |
 | E3. Market info | Indices, announcements, news, corporate actions, macro → `/v1/market`, `/v1/news`, `/v1/announcements`, `/v1/stocks/{s}/actions`. **Built 2026-10-16** (HAKA-63): news RSS from the four §5.7 outlets every 15 min (06:00–22:00 WIB) → `/v1/news`; BI-Rate + JISDOR daily → `/v1/macro`; the Yahoo-event calendar → `/v1/actions`; announcements stay `UNAVAILABLE` (IDX blocked), explained on `/v1/meta/health`. See `services/engine/README.md` |
 | E4. Strategy scans | `HAKAPRO_EOD_ENGINE` running the approved HAKA-17 rules over the whole universe, exposed via the HAKA-18 contract. **Built 2026-10-16 on the DRAFT v0.1 rules** (HAKA-64; PR #4 is not approved yet), behind `ENGINE_STRATEGY_SCANS_ENABLED` (engine) and `STRATEGY_ENGINE_ENABLED=1` (app), both off by default: `strategy-scan-eod` (21:00/23:00 WIB once `eod_sessions` is `COMPLETE`, or on demand) runs BREAKOUT and BB REVERSAL behind gate G over `daily_prices`, stores `scan_runs`/`scan_candidates` with `rulesVersion: "0.1-draft"`, and serves `/v1/strategies`; the app's `engineStrategySource` merges it after the arjum screener as `eod-breakout`/`eod-bb-reversal`. ARA HUNTER, HAKA SORE/BSJP, HAKA PAGI and SCALPING are not built (HAKA-25, HAKA-14/15) and listed on `/v1/meta/health`. Re-version the rules when the owner approves or corrects them. See `services/engine/README.md` |
