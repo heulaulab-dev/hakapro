@@ -4,7 +4,7 @@ import { classifySessionDate, withFreshness, type Freshness, type WithFreshness 
 import { strategyBoardSchema } from "@/lib/strategies/contract";
 import {
   actionsCalendarSchema, actionsSchema, announcementItemSchema, fundamentalsSchema, idxBeiEnvelope, macroSchema, marketOverviewSchema, newsItemSchema,
-  profileSchema, screenRequestSchema, screenResultSchema, sectorsSchema, securitySchema, signalsSchema, stockSchema, type ScreenRequest,
+  profileSchema, radarSchema, screenRequestSchema, screenResultSchema, sectorsSchema, securitySchema, signalsSchema, stealthOwnershipSchema, stockSchema, type ScreenRequest,
 } from "@/server/schemas/idx-bei";
 import { symbolSchema } from "@/server/schemas/inputs";
 import { ownershipChangesSchema, ownershipMonthSchema, stockOwnershipSchema } from "@/server/schemas/ownership";
@@ -203,6 +203,22 @@ export class IdxBeiSource extends BaseMarketDataSource {
     if (query.symbol) params.set("symbol", symbolSchema.parse(query.symbol));
     const { data, meta } = await this.get(`/v1/ownership/changes${params.size ? `?${params}` : ""}`, ownershipChangesSchema, TTL_MS.securities);
     return this.wrap(data, "HISTORICAL", meta.dataAsOf);
+  }
+
+  /**
+   * Data Engine `/v1/radar`: per stock of the newest session, the documented signals that fired, counter-evidence and
+   * each signal's data status (draft rules, no score). Freshness is re-derived from the trading date.
+   */
+  async radar() {
+    const { data, meta } = await this.get("/v1/radar", radarSchema, TTL_MS.market);
+    return this.snapshot({ ...data, stocks: data.stocks.map((stock) => ({ ...stock, changePercent: pct(stock.changePercent) })) }, meta.dataAsOf);
+  }
+
+  /** Data Engine `/v1/ownership/stealth` (E6): the newest uploaded KSEI month, dated by its position date (HISTORICAL). */
+  async stealthOwnership() {
+    const { data, meta } = await this.get("/v1/ownership/stealth", stealthOwnershipSchema, TTL_MS.securities);
+    const stocks = data.stocks.map((stock) => ({ ...stock, price: stock.price && { ...stock.price, changePercent: stock.price.changePercent * 100 } }));
+    return this.wrap({ ...data, stocks }, "HISTORICAL", meta.dataAsOf);
   }
 
   /**

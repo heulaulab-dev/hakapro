@@ -3,7 +3,7 @@ import { unsupported } from "./errors";
 import type {
   ActionCalendarItem, AnnouncementItem, BrokerAccumulation, BrokerFlow, BrokerSummary, CompanyProfile, CorporateAction, DoneDetails, FinancialStatements,
   ForeignFlow, FundamentalPeriod, History, Insiders, LastPrice, MarketCap, MarketOverview, NewsItem, ScreenRequest, ScreenResult,
-  OwnershipChanges, SearchResult, Seasonality, SectorPerformance, Security, StockAnalysis, StockOwnership, StockSnapshot, StrategyScreen,
+  OwnershipChanges, RadarSnapshot, SearchResult, Seasonality, SectorPerformance, Security, StealthOwnership, StockAnalysis, StockOwnership, StockSnapshot, StrategyScreen,
 } from "./types";
 
 export type HistoryQuery = { limit?: number; frame?: "daily" | "weekly" | "monthly"; startDate?: string; endDate?: string };
@@ -64,6 +64,10 @@ export interface MarketDataSource {
   /** The newest KSEI ≥1% list the owner uploaded for a symbol (empty form when none). */
   ownership(symbol: string): R<StockOwnership>;
   ownershipChanges(query: OwnershipChangesQuery): R<OwnershipChanges>;
+  /** Documented signals per stock of the newest session, with counter-evidence and data status; never a score. */
+  radar(): R<RadarSnapshot>;
+  /** Newest uploaded KSEI month: corporate ≥1% holders up while the close was flat or lower (empty form before any upload). */
+  stealthOwnership(): R<StealthOwnership>;
 }
 
 export type Capability = Exclude<keyof MarketDataSource, "id">;
@@ -101,4 +105,6 @@ export abstract class BaseMarketDataSource implements MarketDataSource {
   async actionsCalendar(..._args: unknown[]): R<ActionCalendarItem[]> { return this.fail("actionsCalendar"); }
   async ownership(..._args: unknown[]): R<StockOwnership> { return this.fail("ownership"); }
   async ownershipChanges(..._args: unknown[]): R<OwnershipChanges> { return this.fail("ownershipChanges"); }
+  async radar(..._args: unknown[]): R<RadarSnapshot> { return this.fail("radar"); }
+  async stealthOwnership(..._args: unknown[]): R<StealthOwnership> { return this.fail("stealthOwnership"); }
 }

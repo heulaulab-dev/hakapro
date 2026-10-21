@@ -47,6 +47,8 @@ export const useAnalysisCompare = (symbols: string[]) =>
 export const useSeasonality = (symbol: string) => useQuery({ queryKey: queryKeys.seasonality(symbol), queryFn: ({ signal }) => stockApi.seasonality(symbol, signal) });
 export const useProfile = (symbol: string) => useQuery({ queryKey: queryKeys.profile(symbol), queryFn: ({ signal }) => stockApi.profile(symbol, signal) });
 export const useSectors = () => useQuery({ queryKey: queryKeys.sectors(), queryFn: ({ signal }) => engineApi.sectors(signal) });
+export const useRadar = () => useQuery({ queryKey: queryKeys.radar(), queryFn: ({ signal }) => engineApi.radar(signal) });
+export const useStealthOwnership = () => useQuery({ queryKey: queryKeys.stealthOwnership(), queryFn: ({ signal }) => engineApi.stealthOwnership(signal) });
 export const useActionsCalendar = (range: { from?: string; to?: string } = {}) =>
   useQuery({ queryKey: queryKeys.actionsCalendar(range.from, range.to), queryFn: ({ signal }) => engineApi.actionsCalendar(range, signal) });
 export const useOwnership = (symbol: string) => useQuery({ queryKey: queryKeys.ownership(symbol), queryFn: ({ signal }) => engineApi.ownership(symbol, signal) });
