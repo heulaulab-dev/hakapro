@@ -4,7 +4,7 @@ import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query/keys";
 import {
   accumulationApi, analysisApi, engineApi, financialsApi, marketApi, overviewApi, priceApi, quotesApi, screenerApi, stockApi,
-  type BrokerSummaryQuery, type FinancialsQuery, type HistoryQuery, type MarketCapQuery, type ScreenCondition,
+  type BrokerSummaryQuery, type GroupWindow, type FinancialsQuery, type HistoryQuery, type MarketCapQuery, type ScreenCondition,
 } from "./market";
 import { shouldRetry } from "@/lib/query/client";
 import { fetchResearchBrief, ResearchUnavailableError } from "./research";
@@ -47,6 +47,7 @@ export const useAnalysisCompare = (symbols: string[]) =>
 export const useSeasonality = (symbol: string) => useQuery({ queryKey: queryKeys.seasonality(symbol), queryFn: ({ signal }) => stockApi.seasonality(symbol, signal) });
 export const useProfile = (symbol: string) => useQuery({ queryKey: queryKeys.profile(symbol), queryFn: ({ signal }) => stockApi.profile(symbol, signal) });
 export const useSectors = () => useQuery({ queryKey: queryKeys.sectors(), queryFn: ({ signal }) => engineApi.sectors(signal) });
+export const useGroups = (window: GroupWindow = "1D") => useQuery({ queryKey: queryKeys.groups(window), queryFn: ({ signal }) => engineApi.groups(window, signal) });
 export const useActionsCalendar = (range: { from?: string; to?: string } = {}) =>
   useQuery({ queryKey: queryKeys.actionsCalendar(range.from, range.to), queryFn: ({ signal }) => engineApi.actionsCalendar(range, signal) });
 export const useOwnership = (symbol: string) => useQuery({ queryKey: queryKeys.ownership(symbol), queryFn: ({ signal }) => engineApi.ownership(symbol, signal) });

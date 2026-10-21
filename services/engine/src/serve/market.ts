@@ -82,7 +82,11 @@ export async function serveStock(store: MarketStore, symbol: string, limit: numb
 
 // ── /v1/market ──────────────────────────────────────────────────────────────────────────────────────────────────
 
-type MarketRow = { symbol: string; close: number | null; changePercent: number | null; volume: number | null; value: number | null; frequency: number | null };
+export type MarketRow = {
+  symbol: string; close: number | null; changePercent: number | null; volume: number | null; value: number | null; frequency: number | null;
+  /** Shares; only on EOD rows (intraday snapshots carry no foreign flow). */
+  foreignBuy?: number | null; foreignSell?: number | null;
+};
 
 export function breadthOf(rows: MarketRow[]) {
   const breadth = { advancers: 0, decliners: 0, unchanged: 0, value: 0, volume: 0, frequency: 0 };
@@ -129,10 +133,10 @@ export function indicesOf(daily: IndexDailyRecord[], intraday: IndexIntradayReco
 
 /**
  * The rows the market views are built from: the intraday snapshot when it is from a newer session than the newest
- * daily row (DELAYED), otherwise that session (EOD/STALE). Shared by /v1/market and /v1/sectors so both show the same
- * change for a stock.
+ * daily row (DELAYED), otherwise that session (EOD/STALE). Shared by /v1/market, /v1/sectors and the 1D /v1/groups so
+ * all show the same change for a stock.
  */
-async function currentRows(store: MarketStore, now: Date): Promise<{ rows: MarketRow[]; dataAsOf: string | null; freshness: Freshness }> {
+export async function currentRows(store: MarketStore, now: Date): Promise<{ rows: MarketRow[]; dataAsOf: string | null; freshness: Freshness }> {
   const [sessionDate, snapshotTs] = await Promise.all([store.latestSessionDate(), store.latestSnapshotTs()]);
   if (snapshotTs !== null && (!sessionDate || wibDateOf(snapshotTs) > sessionDate)) {
     const snapshot = await store.snapshotRows(snapshotTs);
@@ -146,6 +150,7 @@ async function currentRows(store: MarketStore, now: Date): Promise<{ rows: Marke
   if (!sessionDate) return { rows: [], dataAsOf: null, freshness: "UNAVAILABLE" };
   const rows = (await store.sessionRows(sessionDate)).map((row: DailyRecord) => ({
     symbol: row.symbol, close: row.close, changePercent: ratio(row.close, row.previousClose), volume: row.volume, value: row.value, frequency: row.frequency,
+    foreignBuy: row.foreignBuy, foreignSell: row.foreignSell,
   }));
   return { rows, dataAsOf: sessionDate, freshness: sessionFreshness(sessionDate, now) };
 }

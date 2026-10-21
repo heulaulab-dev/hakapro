@@ -20,7 +20,7 @@ const intradayColumns = {
 const securityColumns = {
   symbol: t.securities.symbol, name: t.securities.name, sector: t.securities.sector, subsector: t.securities.subsector, board: t.securities.board,
   sharesOutstanding: t.securities.sharesOutstanding, freeFloatPct: t.securities.freeFloatPct, asOf: t.securities.asOf,
-  marketCap: t.securities.marketCap,
+  marketCap: t.securities.marketCap, active: t.securities.active,
 };
 const escapeLike = (value: string) => value.replace(/[\\%_]/g, (char) => `\\${char}`);
 
@@ -55,6 +55,18 @@ export class DbMarketStore implements MarketStore {
 
   async sessionRows(date: string): Promise<DailyRecord[]> {
     return this.db.select(dailyColumns).from(t.dailyPrices).where(eq(t.dailyPrices.date, date));
+  }
+
+  async sessionDates(endDate: string, count: number): Promise<string[]> {
+    const rows = await this.db.selectDistinct({ date: t.dailyPrices.date }).from(t.dailyPrices)
+      .where(lte(t.dailyPrices.date, endDate)).orderBy(desc(t.dailyPrices.date)).limit(count);
+    return rows.map((row) => row.date);
+  }
+
+  async dailyRowsBetween(from: string, to: string, symbols: string[]): Promise<DailyRecord[]> {
+    if (!symbols.length) return [];
+    return this.db.select(dailyColumns).from(t.dailyPrices)
+      .where(and(inArray(t.dailyPrices.symbol, symbols), gte(t.dailyPrices.date, from), lte(t.dailyPrices.date, to)));
   }
 
   async latestSnapshotTs(): Promise<Date | null> {

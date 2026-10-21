@@ -2,7 +2,7 @@ import type { WithFreshness } from "@/lib/freshness";
 import { unsupported } from "./errors";
 import type {
   ActionCalendarItem, AnnouncementItem, BrokerAccumulation, BrokerFlow, BrokerSummary, CompanyProfile, CorporateAction, DoneDetails, FinancialStatements,
-  ForeignFlow, FundamentalPeriod, History, Insiders, LastPrice, MarketCap, MarketOverview, NewsItem, ScreenRequest, ScreenResult,
+  ForeignFlow, FundamentalPeriod, GroupsView, GroupWindow, History, Insiders, LastPrice, MarketCap, MarketOverview, NewsItem, ScreenRequest, ScreenResult,
   OwnershipChanges, SearchResult, Seasonality, SectorPerformance, Security, StockAnalysis, StockOwnership, StockSnapshot, StrategyScreen,
 } from "./types";
 
@@ -16,6 +16,8 @@ export type PageQuery = { page?: number; perPage?: number };
 export type FinancialsQuery = { reportType?: "INCOME_STATEMENT" | "BALANCE_SHEET" | "CASH_FLOW"; period?: "quarterly" | "annual"; limit?: number; year?: string };
 /** Ex-date range (YYYY-MM-DD, inclusive); without it the provider picks its default window around today. */
 export type ActionsCalendarQuery = { from?: string; to?: string };
+/** The session window; 1D when omitted. */
+export type GroupsQuery = { window?: GroupWindow };
 /** Without month, the newest month the provider has. */
 export type OwnershipChangesQuery = { month?: string; symbol?: string };
 export type InsidersQuery = { page?: number; limit?: number; actionType?: "buy" | "sell" | "cross" };
@@ -60,6 +62,8 @@ export interface MarketDataSource {
   announcements(query: PageQuery & { keywords?: string }): R<AnnouncementItem[]>;
   // Data Engine lane
   sectors(): R<SectorPerformance[]>;
+  /** Curated conglomerate groups measured over a session window (measured facts, no phase or action labels). */
+  groups(query: GroupsQuery): R<GroupsView>;
   actionsCalendar(query: ActionsCalendarQuery): R<ActionCalendarItem[]>;
   /** The newest KSEI ≥1% list the owner uploaded for a symbol (empty form when none). */
   ownership(symbol: string): R<StockOwnership>;
@@ -98,6 +102,7 @@ export abstract class BaseMarketDataSource implements MarketDataSource {
   async news(..._args: unknown[]): R<NewsItem[]> { return this.fail("news"); }
   async announcements(..._args: unknown[]): R<AnnouncementItem[]> { return this.fail("announcements"); }
   async sectors(..._args: unknown[]): R<SectorPerformance[]> { return this.fail("sectors"); }
+  async groups(..._args: unknown[]): R<GroupsView> { return this.fail("groups"); }
   async actionsCalendar(..._args: unknown[]): R<ActionCalendarItem[]> { return this.fail("actionsCalendar"); }
   async ownership(..._args: unknown[]): R<StockOwnership> { return this.fail("ownership"); }
   async ownershipChanges(..._args: unknown[]): R<OwnershipChanges> { return this.fail("ownershipChanges"); }

@@ -56,6 +56,57 @@ export const sectorsSchema = z.array(z.object({
   leader: z.object({ symbol: z.string(), changePercent: num }), laggard: z.object({ symbol: z.string(), changePercent: num }),
 }));
 
+/** `/v1/groups?window=`: the session window a group view is measured over. */
+export const GROUP_WINDOWS = ["1D", "5D", "20D"] as const;
+export const groupWindowSchema = z.enum(GROUP_WINDOWS);
+export type GroupWindow = z.infer<typeof groupWindowSchema>;
+/** "sourced": a public source names the link; "unverified": the curator could not confirm it, shown as such. */
+export const groupConfidenceSchema = z.enum(["sourced", "unverified"]);
+/**
+ * Which way price and the foreign estimate disagree, when they do: a group (or stock) whose price rose while foreign
+ * investors were net sellers, or fell while they were net buyers. Null when they agree or either side is zero/unknown.
+ */
+export const groupDivergenceSchema = z.enum(["price_up_foreign_net_sell", "price_down_foreign_net_buy"]).nullable();
+const groupMoverSchema = z.object({ symbol: symbolSchema, changePercent: z.number() }).nullable();
+const count = z.number().int().nonnegative();
+
+/**
+ * Data Engine `/v1/groups`: curated conglomerate groups measured over a session window. Changes are fractions, values
+ * IDR. `netValueEstimate` is Σ (foreign buy − foreign sell shares) × close per session: an estimate, not a reported
+ * value, over `foreign.members` members whose every session in the window has foreign data.
+ */
+export const groupsSchema = z.object({
+  window: z.object({
+    id: groupWindowSchema, sessions: count, from: z.string().nullable(), to: z.string().nullable(),
+    /** "intraday": the 1D view of a session newer than the stored EOD rows (DELAYED); it has no foreign data. */
+    basis: z.enum(["daily", "intraday"]),
+  }),
+  catalog: z.object({ version: z.string(), reviewedAt: z.string() }),
+  groups: z.array(z.object({
+    id: z.string(), name: z.object({ id: z.string(), en: z.string() }), confidence: groupConfidenceSchema, note: z.string().nullable(),
+    reviewedAt: z.string(), sources: z.array(z.object({ label: z.string(), url: z.url({ protocol: /^https$/ }) })),
+    members: count, membersWithData: count,
+    /** Listed in the catalog but not in the engine's securities table (renamed, delisted, or a curation error). */
+    unknownSymbols: z.array(z.string()),
+    /** In the securities table but no longer active. */
+    inactiveSymbols: z.array(z.string()),
+    /** Known and active, but without a price row in the window. */
+    noDataSymbols: z.array(z.string()),
+    advancers: count, decliners: count, unchanged: count,
+    changePercent: num, valueWeightedChangePercent: num, value: z.number(),
+    foreign: z.object({ netValueEstimate: num, members: count, partialMembers: count }),
+    divergence: groupDivergenceSchema,
+    best: groupMoverSchema, worst: groupMoverSchema,
+    stocks: z.array(z.object({
+      symbol: symbolSchema, name: z.string().nullable(), confidence: groupConfidenceSchema, note: z.string().nullable(),
+      close: num, changePercent: num, value: num, sessions: count,
+      /** A split or other price-adjusting action in the window: its change is left out of the group's figures. */
+      corporateAction: z.boolean(),
+      netForeignValueEstimate: num, foreignSessions: count, divergence: groupDivergenceSchema,
+    })),
+  })),
+});
+
 export const foreignSignalSchema = z.object({
   symbol: symbolSchema, close: num, sessions: z.number().int().nonnegative(),
   netForeignMillionShares: num, percentFloat: num, averageValueBillionIdr: num,

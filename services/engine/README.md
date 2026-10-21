@@ -20,6 +20,7 @@ It is a separate Bun + TypeScript service with no Next.js. It shares code with t
 | `src/engine.ts` | Wiring: DB, raw store, fetcher, the production registry (sources + jobs), scheduler, HTTP handler |
 | `src/sources/` | One module per source: URL/body builders and parsers (TradingView, Yahoo, Pasardana, arjum, the news feeds, Bank Indonesia), a small RSS/Atom reader, source policies, IDX session dates |
 | `src/jobs/` | Collection jobs: `universe`, `indices-eod`, `eod-daily`, `eod-backfill`, `foreign-flow`, `intraday`, `news`, `macro-jisdor`, `macro-bi-rate`, `fundamentals`; the `ratios` and `strategy-scan-eod` derivations |
+| `src/groups/` | The curated conglomerate catalog (`groups.ts`, versioned data that needs owner review) and its structural checks (`catalog.ts`). See [Conglomerate groups](#conglomerate-groups-owner-review-required) |
 | `src/derive/` | Pure derivations: valuation ratios from statement lines (`ratios.ts`, formulas in its header) |
 | `src/strategies/` | E4 strategy rules: the versioned draft parameters (`rules.ts`), gate G, BREAKOUT, BB REVERSAL, the universe scan, the catalog of built / not-built strategies and the wording guard. Pure functions |
 | `src/db/ingest.ts`, `src/db/market-info.ts`, `src/db/fundamentals.ts`, `src/db/market-store.ts` | Idempotent upserts with source precedence (prices) and dedupe (news); statement lines and ratios; the read store behind `/v1` |
@@ -127,6 +128,19 @@ Fallbacks when a source is `BLOCKED`: universe from Pasardana (or TradingView); 
 - **Wording:** reasons are HAKA-18 `criterion` keys, worded by the app in en/id, plus English `note`s with the observed numbers and dates. There is no score. Labels, descriptions and notes go through a forbidden-wording guard (no buy/sell/entry/target/signal/potensi/win rate/drawdown/arrows) in the tests.
 - **App:** `engineStrategySource` (`src/server/strategies/engine-eod.ts`) reads `/v1/strategies` through `IdxBeiSource.engineStrategies()` and prefixes ids (`eod-breakout`, `eod-bb-reversal`). It is registered after the arjum screener only when `STRATEGY_ENGINE_ENABLED=1`. An unreachable engine contributes nothing and doesn't change the board's freshness.
 
+## Conglomerate groups (owner review required)
+
+`src/groups/groups.ts` is a hand-curated list of business groups and their listed members, each group with public `sources`, a `reviewedAt` date and a `confidence` (`sourced` or `unverified`, also per member). It is data, not derived from any feed: **the owner must review it** before relying on it, and again whenever a member changes control (rights issues, tender offers, mergers, spin-offs). Bump `version` and `reviewedAt` with every change. Only list a member when a public source names the link, and mark anything uncertain `unverified` with a `note`; the page shows both.
+
+Members are checked against `securities` on every request. Unknown, inactive and no-data symbols are reported per group instead of failing, so a renamed or delisted ticker shows up on the page.
+
+What `/v1/groups` measures (`src/serve/groups.ts`), and nothing else (no phase or action labels):
+
+- **1D**: the same rows as `/v1/market` and `/v1/sectors` (the newest EOD session, or a newer intraday snapshot, `DELAYED`, which has no foreign data).
+- **5D / 20D**: the newest 5 / 20 stored EOD sessions. A member's change is its last close over the close before the window. A member with a split (or rights/bonus) ex-date in the window is flagged `corporateAction` and left out of the change, because unadjusted closes would show a fake move.
+- **Net foreign estimate**: Σ (foreign buy − foreign sell shares) × the session close, in IDR. It is an estimate, since trades happen at other prices. Only members with foreign data on every session they traded count towards it; partially covered members are counted in `foreign.partialMembers` and left out.
+- **Divergence**: the group's price change (value-weighted, or the mean when nothing traded) and the foreign estimate have opposite non-zero signs: `price_up_foreign_net_sell` or `price_down_foreign_net_buy`. The page states it in words. It never turns a strong price day into "accumulation" while foreign investors sell.
+
 ## Scheduler
 
 - **Cron jobs** run on five-field cron in Asia/Jakarta. `tradingDaysOnly` skips weekends and IDX holidays (for EOD jobs).
@@ -149,6 +163,7 @@ Fallbacks when a source is `BLOCKED`: universe from Pasardana (or TradingView); 
 | `GET /v1/securities?q=` | API token | Active securities by symbol prefix or name (all when `q` is empty) |
 | `GET /v1/stocks/{s}?limit=` | API token | Quote from the newest daily row (`EOD`/`STALE`), or from an intraday snapshot of a newer session (`DELAYED`, WIB timestamp). Daily candles, oldest first, up to `limit` (default 500, max 5000). `404 NO_DATA` without data |
 | `GET /v1/market` | API token | Indices (intraday when newer), breadth (advancers/decliners/unchanged, value, volume, frequency) and movers (top 50 gainers, losers and most active, same liquidity rule as the app) from the latest session or intraday snapshot |
+| `GET /v1/groups?window=1D\|5D\|20D` | API token | Curated conglomerate groups (`groupsSchema`) over a session window (default `1D`): per group, members with data, mean and value-weighted change (fractions), traded value, advancers/decliners, best/worst member, a net foreign **estimate** with its coverage, a `divergence` flag, sources, confidence, and the catalog members the engine doesn't know (`unknownSymbols`), no longer lists (`inactiveSymbols`) or has no price for (`noDataSymbols`). Ranked by value-weighted change. See [Conglomerate groups](#conglomerate-groups-owner-review-required). `400` on another window |
 | `GET /v1/signals` | API token | Foreign-flow radar from arjum data: per stock, the run of same-direction net foreign sessions ending on the newest session, its total, % of free float and average value. `404 NO_DATA` until foreign data exists |
 | `GET /v1/stocks/{s}/actions` | API token | Splits and cash dividends (ex-dates) from Yahoo events |
 | `GET /v1/actions?from=&to=` | API token | Market-wide calendar by ex-date, oldest first (`actionsCalendarSchema`): symbol, date, type, description, amount, ratio. Default window: 30 days back to 60 days ahead (WIB); at most 366 days. Yahoo reports actions only after the ex-date, so upcoming dates are usually empty. `400` on bad dates |

@@ -3,7 +3,7 @@ import type { z } from "zod";
 import { classifySessionDate, withFreshness, type Freshness, type WithFreshness } from "@/lib/freshness";
 import { strategyBoardSchema } from "@/lib/strategies/contract";
 import {
-  actionsCalendarSchema, actionsSchema, announcementItemSchema, fundamentalsSchema, idxBeiEnvelope, macroSchema, marketOverviewSchema, newsItemSchema,
+  actionsCalendarSchema, actionsSchema, announcementItemSchema, fundamentalsSchema, groupsSchema, groupWindowSchema, idxBeiEnvelope, macroSchema, marketOverviewSchema, newsItemSchema,
   profileSchema, screenRequestSchema, screenResultSchema, sectorsSchema, securitySchema, signalsSchema, stockSchema, type ScreenRequest,
 } from "@/server/schemas/idx-bei";
 import { symbolSchema } from "@/server/schemas/inputs";
@@ -12,7 +12,7 @@ import { PROVIDER_USER_AGENT } from "@/server/config/provider-identity";
 import { logWarn } from "@/server/log";
 import { ProviderBackoff } from "@/server/providers/backoff";
 import { MarketDataError, unsupported } from "./errors";
-import { BaseMarketDataSource, type ActionsCalendarQuery, type OwnershipChangesQuery, type PageQuery } from "./source";
+import { BaseMarketDataSource, type ActionsCalendarQuery, type GroupsQuery, type OwnershipChangesQuery, type PageQuery } from "./source";
 import type { Candle, Quote } from "./types";
 import type { Clock } from "./arjum-source";
 
@@ -176,6 +176,34 @@ export class IdxBeiSource extends BaseMarketDataSource {
       changePercent: row.changePercent * 100, valueWeightedChangePercent: pct(row.valueWeightedChangePercent), valueIdr: row.value,
       leader: { symbol: row.leader.symbol, changePercent: pct(row.leader.changePercent) }, laggard: { symbol: row.laggard.symbol, changePercent: pct(row.laggard.changePercent) },
     })), meta.dataAsOf);
+  }
+
+  /**
+   * Data Engine `/v1/groups`: curated conglomerate groups over a 1D/5D/20D session window, in percentage points like
+   * `sectors()`. The foreign figure stays labelled an estimate; divergence is passed through, never turned into a label.
+   */
+  async groups(query: GroupsQuery) {
+    const window = groupWindowSchema.parse(query.window ?? "1D");
+    const { data, meta } = await this.get(`/v1/groups?window=${window}`, groupsSchema, TTL_MS.market);
+    return this.snapshot({
+      window: data.window, catalog: data.catalog,
+      groups: data.groups.map((group) => ({
+        id: group.id, name: group.name, confidence: group.confidence, note: group.note, reviewedAt: group.reviewedAt, sources: group.sources,
+        members: group.members, membersWithData: group.membersWithData,
+        unknownSymbols: group.unknownSymbols, inactiveSymbols: group.inactiveSymbols, noDataSymbols: group.noDataSymbols,
+        advancers: group.advancers, decliners: group.decliners, unchanged: group.unchanged,
+        changePercent: pct(group.changePercent), valueWeightedChangePercent: pct(group.valueWeightedChangePercent), valueIdr: group.value,
+        foreign: { netValueEstimateIdr: group.foreign.netValueEstimate, members: group.foreign.members, partialMembers: group.foreign.partialMembers },
+        divergence: group.divergence,
+        best: group.best && { symbol: group.best.symbol, changePercent: group.best.changePercent * 100 },
+        worst: group.worst && { symbol: group.worst.symbol, changePercent: group.worst.changePercent * 100 },
+        stocks: group.stocks.map((stock) => ({
+          symbol: stock.symbol, name: stock.name, confidence: stock.confidence, note: stock.note, close: stock.close, changePercent: pct(stock.changePercent),
+          valueIdr: stock.value, sessions: stock.sessions, corporateAction: stock.corporateAction,
+          netForeignValueEstimateIdr: stock.netForeignValueEstimate, foreignSessions: stock.foreignSessions, divergence: stock.divergence,
+        })),
+      })),
+    }, meta.dataAsOf);
   }
 
   /** Data Engine `/v1/actions`: market-wide corporate actions by ex-date (the engine's window when no range is given). */

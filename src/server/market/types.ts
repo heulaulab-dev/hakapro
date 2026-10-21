@@ -61,6 +61,34 @@ export type SectorPerformance = {
   changePercent: number; valueWeightedChangePercent: number | null; valueIdr: number;
   leader: { symbol: string; changePercent: number | null }; laggard: { symbol: string; changePercent: number | null };
 };
+/** Measured over a session window (Data Engine `/v1/groups`). */
+export type GroupWindow = "1D" | "5D" | "20D";
+export type GroupConfidence = "sourced" | "unverified";
+/** Price and the foreign estimate pointing opposite ways (null when they agree or either is zero/unknown). */
+export type GroupDivergence = "price_up_foreign_net_sell" | "price_down_foreign_net_buy" | null;
+export type GroupStock = {
+  symbol: string; name: string | null; confidence: GroupConfidence; note: string | null;
+  close: number | null; changePercent: number | null; valueIdr: number | null; sessions: number; corporateAction: boolean;
+  netForeignValueEstimateIdr: number | null; foreignSessions: number; divergence: GroupDivergence;
+};
+/** One curated conglomerate group over the window. Changes are percentage points, values IDR. */
+export type GroupPerformance = {
+  id: string; name: { id: string; en: string }; confidence: GroupConfidence; note: string | null; reviewedAt: string;
+  sources: Array<{ label: string; url: string }>;
+  members: number; membersWithData: number; unknownSymbols: string[]; inactiveSymbols: string[]; noDataSymbols: string[];
+  advancers: number; decliners: number; unchanged: number;
+  changePercent: number | null; valueWeightedChangePercent: number | null; valueIdr: number;
+  /** Σ (foreign buy − sell shares) × close: an estimate, over `members` fully covered members. */
+  foreign: { netValueEstimateIdr: number | null; members: number; partialMembers: number };
+  divergence: GroupDivergence;
+  best: { symbol: string; changePercent: number } | null; worst: { symbol: string; changePercent: number } | null;
+  stocks: GroupStock[];
+};
+export type GroupsView = {
+  window: { id: GroupWindow; sessions: number; from: string | null; to: string | null; basis: "daily" | "intraday" };
+  catalog: { version: string; reviewedAt: string };
+  groups: GroupPerformance[];
+};
 /** One market-wide corporate action by ex-date (Data Engine calendar). */
 export type ActionCalendarItem = { symbol: string; date: string; type: string; description: string | null; amount: number | null; ratio: string | null; documentUrl: string | null };
 export type { OwnershipChanges, StockOwnership } from "@/server/schemas/ownership";
