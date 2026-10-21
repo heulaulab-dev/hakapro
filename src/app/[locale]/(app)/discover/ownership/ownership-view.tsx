@@ -2,18 +2,21 @@
 
 import { useQueries } from "@tanstack/react-query";
 import { Landmark } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useState, type FormEvent } from "react";
 import { InsidersTable } from "@/components/data/insiders-table";
+import { DataState } from "@/components/feedback/data-state";
 import { EmptyState } from "@/components/feedback/empty-state";
 import { SectionHeader } from "@/components/layout/section-header";
 import type { ViewerSummary } from "@/components/layout/types";
 import { stockHref } from "@/components/layout/nav-config";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useRouter } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
+import { useOwnershipChanges } from "@/lib/api/hooks";
 import { marketApi } from "@/lib/api/market";
-import { leastFresh } from "@/lib/freshness";
+import { freshnessMeta, leastFresh } from "@/lib/freshness";
+import { formatMonthName, type Locale } from "@/lib/format";
 import { queryKeys } from "@/lib/query/keys";
 import { useWatchlist } from "@/lib/watchlist";
 
@@ -39,7 +42,7 @@ export function OwnershipView({ viewer }: { viewer: ViewerSummary }) {
   return (
     <div className="flex flex-col gap-section p-4 md:p-6" data-testid="ownership-view">
       <SectionHeader as="h1" title={t("title")} description={t("intro")} />
-      <EmptyState compact icon={<Landmark />} title={t("marketWideUnavailable")} />
+      <KseiChanges />
       <form onSubmit={go} className="flex max-w-sm items-center gap-2">
         <Input aria-label={t("checkStock")} placeholder={t("checkStock")} value={symbol} onChange={(event) => setSymbol(event.target.value)} className="ticker h-8 uppercase" data-testid="ownership-symbol" />
         <Button type="submit" size="sm">{t("go")}</Button>
@@ -51,5 +54,43 @@ export function OwnershipView({ viewer }: { viewer: ViewerSummary }) {
           : <InsidersTable rows={rows} showSymbol meta={{ freshness: ok.length ? leastFresh(ok.map(({ envelope }) => envelope.freshness)) : "UNAVAILABLE", asOf: ok.length ? asOf : null, source: ok[0]?.envelope.source ?? "none" }} />}
       </section>
     </div>
+  );
+}
+
+/** Percent strings from the engine are exact decimals ("12.345678"); shown to two places, never recomputed. */
+const pctText = (value: string | null) => (value === null ? "—" : `${Number(value).toFixed(2)}%`);
+const ppText = (value: string | null) => (value === null ? "" : `${Number(value) > 0 ? "+" : ""}${Number(value).toFixed(2)} pp`);
+
+/**
+ * Market-wide changes among KSEI ≥1% holders for the newest month the owner uploaded. Unchanged holders are left out.
+ * Before the first upload the engine answers with an empty, undated form: say exactly that.
+ */
+function KseiChanges() {
+  const t = useTranslations("ownershipChanges");
+  const locale = useLocale() as Locale;
+  const query = useOwnershipChanges();
+  const monthLabel = (month: string) => `${formatMonthName(Number(month.slice(5, 7)), locale)} ${month.slice(0, 4)}`;
+  return (
+    <section className="flex flex-col gap-3" data-testid="ksei-changes">
+      <SectionHeader title={t("kseiTitle")} description={t("kseiHint")} meta={query.data ? freshnessMeta(query.data) : undefined} />
+      <DataState query={query} compact>
+        {(envelope) => envelope.data.changes.length === 0 ? <EmptyState compact icon={<Landmark />} title={t("kseiNone")} /> : (
+          <div className="flex flex-col gap-2">
+            <p className="caption-style text-subtle">{t("kseiMonths", { month: monthLabel(envelope.data.month), previous: monthLabel(envelope.data.previousMonth) })}</p>
+            <ul className="flex flex-col divide-y divide-border rounded-xl border border-border px-4 text-sm">
+              {envelope.data.changes.filter((change) => change.kind !== "UNCHANGED").map((change) => (
+                <li key={`${change.symbol}-${change.holderKey}`} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2">
+                  <Link href={stockHref(change.symbol, "ownership")} className="ticker text-link hover:underline">{change.symbol}</Link>
+                  <span className="min-w-0 flex-1 truncate">{change.holderName}</span>
+                  <span className="caption-style text-subtle">{t(`kind.${change.kind}` as "kind.NEW")}</span>
+                  <span className="num shrink-0 text-xs">{pctText(change.percentBefore)} → {pctText(change.percentAfter)} <span className="text-muted-foreground">{ppText(change.ppDelta)}</span></span>
+                </li>
+              ))}
+            </ul>
+            {envelope.data.changes.every((change) => change.kind === "UNCHANGED") && <p className="caption-style text-subtle">{t("kseiNoChanges")}</p>}
+          </div>
+        )}
+      </DataState>
+    </section>
   );
 }

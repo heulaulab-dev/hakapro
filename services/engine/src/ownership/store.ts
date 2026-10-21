@@ -76,6 +76,8 @@ export interface OwnershipStore {
   /** Replaces the set's comparison, free-float estimate and changes. */
   saveDerivation(setId: string, derivation: Derivation): Promise<void>;
   setsInMonth(month: string, symbol?: string): Promise<SetHeader[]>;
+  /** Newest month with any stored set, or null before the first upload. */
+  latestMonth(): Promise<string | null>;
   /** Changes into `month` (ordered by symbol, then holder key). */
   changes(month: string, symbol?: string): Promise<ChangeRecord[]>;
   /** Records rows ingested on the ownership source (health). */
@@ -159,6 +161,9 @@ export class MemoryOwnershipStore implements OwnershipStore {
     set.freeFloat = derivation.freeFloat;
     for (let i = this.changeRows.length - 1; i >= 0; i -= 1) if (this.changeRows[i].toSetId === setId) this.changeRows.splice(i, 1);
     this.changeRows.push(...derivation.changes);
+  }
+  async latestMonth() {
+    return this.sets.map((set) => set.month).sort().at(-1) ?? null;
   }
   async setsInMonth(month: string, symbol?: string) {
     return this.sets.filter((set) => set.month === month && (!symbol || set.symbol === symbol)).sort((a, b) => a.symbol.localeCompare(b.symbol))

@@ -64,14 +64,15 @@
     "breadth": "{adv} naik · {dec} turun · {unch} tetap",
     "movers": "Penggerak pasar",
     "sectors": "Sektor aktif",
-    "sectorsUnavailable": "Kinerja per sektor belum tersedia dari sumber data saat ini.",
     "strategies": "Peluang strategi",
     "strategiesHint": "Saham yang memenuhi kriteria strategi pada screen terbaru. Lihat alasan cocok sebelum meriset.",
     "viewAll": "Lihat semua",
     "watchlist": "Aktivitas daftar pantau",
     "watchlistSignIn": "Masuk untuk melihat daftar pantau Anda.",
     "watchlistEmpty": "Daftar pantau masih kosong.",
-    "news": "Berita & peristiwa penting"
+    "news": "Berita & peristiwa penting",
+    "sectorsHint": "Rata-rata perubahan harga saham per sektor pada sesi terakhir.",
+    "sectorBreadth": "▲{up} ▼{down} dari {stocks} saham"
   },
   "dev": {
     "primitivesTitle": "Komponen dasar",
@@ -562,19 +563,37 @@
     "intro": "Berita pasar dan keterbukaan informasi emiten.",
     "news": "Berita",
     "announcements": "Keterbukaan informasi",
-    "calendarNote": "Kalender aksi korporasi lintas pasar belum tersedia dari sumber data; aksi korporasi per saham akan tampil di halaman saham.",
     "open": "Buka dokumen",
-    "keywords": "Cari keterbukaan (kode atau kata)"
+    "keywords": "Cari keterbukaan (kode atau kata)",
+    "calendar": "Kalender aksi korporasi",
+    "calendarHint": "Dividen dan stock split lintas pasar berdasarkan tanggal ex, dari data riwayat harga. Cek jadwal resminya di keterbukaan informasi emiten.",
+    "actionDividend": "Dividen tunai",
+    "actionSplit": "Stock split",
+    "dividendAmount": "Rp{amount} per saham",
+    "announcementsNote": "Keterbukaan informasi hanya diterbitkan di situs IDX, yang belum dapat diakses oleh sumber data HAKA PRO. Dokumen resminya tersedia di idx.co.id."
   },
   "ownershipChanges": {
     "title": "Perubahan Kepemilikan",
     "intro": "Transaksi orang dalam (direksi, komisaris, pemegang besar) yang dilaporkan.",
-    "marketWideUnavailable": "Umpan perubahan kepemilikan lintas pasar belum tersedia dari sumber data saat ini.",
     "checkStock": "Lihat transaksi insider untuk saham",
     "go": "Lihat",
     "watchlistTitle": "Insider di daftar pantau Anda",
     "watchlistSignIn": "Masuk untuk melihat transaksi insider pada saham yang Anda pantau.",
-    "watchlistEmpty": "Tambahkan saham ke daftar pantau untuk melihat transaksi insider-nya."
+    "watchlistEmpty": "Tambahkan saham ke daftar pantau untuk melihat transaksi insider-nya.",
+    "kseiTitle": "Perubahan pemegang saham ≥1% (KSEI)",
+    "kseiHint": "Perubahan antar bulan dari daftar pemegang saham ≥1% KSEI yang diunggah admin.",
+    "kseiMonths": "{month} dibanding {previous}",
+    "kseiNone": "Belum ada daftar pemegang saham ≥1% KSEI yang diunggah. Perubahan lintas pasar akan muncul setelah admin mengunggah daftar bulanannya.",
+    "kseiNoChanges": "Tidak ada perubahan porsi pada bulan ini.",
+    "kind": {
+      "NEW": "Baru",
+      "INCREASE": "Bertambah",
+      "DECREASE": "Berkurang",
+      "EXIT": "Keluar",
+      "UNCHANGED": "Tetap",
+      "BELOW_THRESHOLD": "Di bawah 1%",
+      "AMBIGUOUS": "Tidak pasti"
+    }
   },
   "stockChart": {
     "title": "Grafik harga",
@@ -627,7 +646,11 @@
     "share": "Porsi",
     "role": "Jabatan",
     "profileNote": "Struktur kepemilikan dari snapshot profil emiten IDX. Snapshot ini tidak mencantumkan tanggal keterbukaan informasi, sehingga ditampilkan tanpa tanggal data.",
-    "retrieved": "Diambil {date} · sumber: {dataset}"
+    "retrieved": "Diambil {date} · sumber: {dataset}",
+    "kseiTitle": "Pemegang saham ≥1% (KSEI)",
+    "kseiNote": "Dari daftar bulanan pemegang saham ≥1% KSEI. Pemegang di bawah 1% tidak diungkapkan, bukan berarti nol.",
+    "kseiNone": "Belum ada daftar pemegang saham ≥1% untuk saham ini. Data muncul setelah admin mengunggah daftar KSEI bulanan.",
+    "kseiAsOf": "Posisi {date} · sumber: {source}"
   },
   "errors": {
     "title": "Terjadi kesalahan",

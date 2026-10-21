@@ -134,6 +134,11 @@ export class DbOwnershipStore implements OwnershipStore {
     });
   }
 
+  async latestMonth() {
+    const [row] = await this.db.select({ month: t.ownershipSnapshotSets.month }).from(t.ownershipSnapshotSets).orderBy(desc(t.ownershipSnapshotSets.month)).limit(1);
+    return row?.month ?? null;
+  }
+
   async setsInMonth(month: string, symbol?: string) {
     const rows = await this.db.select().from(t.ownershipSnapshotSets)
       .where(symbol ? and(eq(t.ownershipSnapshotSets.month, month), eq(t.ownershipSnapshotSets.symbol, symbol)) : eq(t.ownershipSnapshotSets.month, month))

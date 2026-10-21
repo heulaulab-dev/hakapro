@@ -5,9 +5,11 @@ import { useLocale, useTranslations } from "next-intl";
 import { DataState } from "@/components/feedback/data-state";
 import { Panel } from "@/components/layout/panel";
 import { SectionHeader } from "@/components/layout/section-header";
-import { useCorporateActions, useProfile } from "@/lib/api/hooks";
+import { EmptyState } from "@/components/feedback/empty-state";
+import { ApiError } from "@/lib/api/envelope";
+import { useCorporateActions, useOwnership, useProfile } from "@/lib/api/hooks";
 import { freshnessMeta } from "@/lib/freshness";
-import { formatDate, type Locale } from "@/lib/format";
+import { formatDate, formatNumber, type Locale } from "@/lib/format";
 
 /** Reads only the verified IDX company-detail keys (Nama, Jabatan, Persentase, Kategori); anything else is ignored. */
 function field(record: Record<string, unknown>, ...keys: string[]): string | null {
@@ -24,7 +26,10 @@ export function StockOwnershipView({ symbol }: { symbol: string }) {
   const t = useTranslations("stockOwnership");
   const locale = useLocale() as Locale;
   const profile = useProfile(symbol);
+  const ownership = useOwnership(symbol);
   const actions = useCorporateActions(symbol);
+  // No current source has issuer profiles (IDX blocks the engine): leave the section out instead of an outage message.
+  const profileUnsupported = profile.error instanceof ApiError && profile.error.code === "UNSUPPORTED";
   const people = (title: string, records: Array<Record<string, unknown>>, kind: "holder" | "person") => (
     <Panel title={title}>
       <ul className="p-style flex flex-col divide-y divide-border">
@@ -42,7 +47,34 @@ export function StockOwnershipView({ symbol }: { symbol: string }) {
   );
   return (
     <div className="flex flex-col gap-section p-4 md:p-6" data-testid="stock-ownership-view">
-      <DataState query={profile}>
+      <DataState query={ownership}>
+        {(envelope) => (
+          <section className="flex flex-col gap-3" data-testid="ksei-holders">
+            <SectionHeader title={t("kseiTitle")} description={t("kseiNote")} meta={freshnessMeta(envelope)} />
+            {envelope.data.holders.length === 0 ? <EmptyState compact title={t("kseiNone")} /> : (
+              <>
+                <p className="caption-style text-subtle">
+                  {t("kseiAsOf", { date: formatDate(envelope.data.snapshotDate, locale), source: envelope.data.source?.dataset ?? envelope.source })}
+                </p>
+                <ul className="flex flex-col divide-y divide-border rounded-xl border border-border px-4 text-sm">
+                  {envelope.data.holders.map((holder) => (
+                    <li key={holder.holderKey} className="flex items-center justify-between gap-3 py-2">
+                      <span className="flex min-w-0 flex-col">
+                        <span className="truncate">{holder.holderName}</span>
+                        {holder.localForeign && <span className="text-[11px] text-muted-foreground">{holder.localForeign}</span>}
+                      </span>
+                      <span className="num shrink-0 text-xs text-muted-foreground">
+                        {holder.shares !== null && `${formatNumber(Number(holder.shares), locale)} · `}{holder.percent === null ? "—" : `${Number(holder.percent).toFixed(2)}%`}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </section>
+        )}
+      </DataState>
+      {!profileUnsupported && <DataState query={profile}>
         {(envelope) => (
           <div className="flex flex-col gap-4">
             <SectionHeader title={t("title")} description={t("profileNote")} meta={freshnessMeta(envelope)} />
@@ -58,7 +90,7 @@ export function StockOwnershipView({ symbol }: { symbol: string }) {
             </div>
           </div>
         )}
-      </DataState>
+      </DataState>}
       <DataState query={actions} compact isEmpty={(envelope) => envelope.data.length === 0}>
         {(envelope) => (
           <section className="flex flex-col gap-2">

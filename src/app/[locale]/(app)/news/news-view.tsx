@@ -9,9 +9,9 @@ import { FilterBar, FilterSearch } from "@/components/layout/filter-bar";
 import { SectionHeader } from "@/components/layout/section-header";
 import { UrlTabs } from "@/components/layout/url-tabs";
 import { Link } from "@/i18n/navigation";
-import { useAnnouncements, useNews } from "@/lib/api/hooks";
+import { useActionsCalendar, useAnnouncements, useNews } from "@/lib/api/hooks";
 import { freshnessMeta } from "@/lib/freshness";
-import { formatDate, type Locale } from "@/lib/format";
+import { formatDate, formatNumber, type Locale } from "@/lib/format";
 
 /** Only http(s) links from the provider are rendered as links. */
 const safeUrl = (url: string | null) => (url && /^https?:\/\//i.test(url) ? url : null);
@@ -51,6 +51,7 @@ function AnnouncementList() {
   return (
     <div className="flex flex-col gap-3" data-testid="announcement-list">
       <SectionHeader title={t("announcements")} meta={query.data ? freshnessMeta(query.data) : undefined} />
+      {query.data?.freshness === "UNAVAILABLE" && <p className="caption-style text-subtle" data-testid="announcements-note">{t("announcementsNote")}</p>}
       <FilterBar><FilterSearch placeholder={t("keywords")} /></FilterBar>
       <DataState query={query} compact isEmpty={(envelope) => envelope.data.length === 0}>
         {(envelope) => (
@@ -75,13 +76,47 @@ function AnnouncementList() {
   );
 }
 
+/** Market-wide corporate actions by ex-date, from the Data Engine's calendar (its default window around today). */
+function ActionsCalendar() {
+  const t = useTranslations("news");
+  const locale = useLocale() as Locale;
+  const query = useActionsCalendar();
+  return (
+    <div className="flex flex-col gap-3" data-testid="actions-calendar">
+      <SectionHeader title={t("calendar")} description={t("calendarHint")} meta={query.data ? freshnessMeta(query.data) : undefined} />
+      <DataState query={query} compact isEmpty={(envelope) => envelope.data.length === 0}>
+        {(envelope) => (
+          <ul className="flex flex-col divide-y divide-border rounded-xl border border-border px-4">
+            {envelope.data.map((item, index) => {
+              const url = safeUrl(item.documentUrl);
+              return (
+                <li key={`${item.symbol}-${item.date}-${item.type}-${index}`} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2 text-sm">
+                  <span className="num text-xs text-muted-foreground">{formatDate(item.date, locale)}</span>
+                  <Link href={stockHref(item.symbol)} className="ticker text-link hover:underline">{item.symbol}</Link>
+                  <span className="font-medium">{item.type === "DIVIDEND" ? t("actionDividend") : item.type === "SPLIT" ? t("actionSplit") : item.type}</span>
+                  {item.amount !== null && <span className="num text-muted-foreground">{t("dividendAmount", { amount: formatNumber(item.amount, locale, { decimals: 2 }) })}</span>}
+                  {item.ratio && <span className="num text-muted-foreground">{item.ratio}</span>}
+                  {url && <a href={url} target="_blank" rel="noopener noreferrer" className="ml-auto text-xs text-link hover:underline"><ExternalLink className="size-3" /></a>}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </DataState>
+    </div>
+  );
+}
+
 export function NewsView() {
   const t = useTranslations("news");
   return (
     <div className="flex flex-col gap-section p-4 md:p-6" data-testid="news-view">
       <SectionHeader as="h1" title={t("title")} description={t("intro")} />
-      <UrlTabs label={t("title")} tabs={[{ value: "news", label: t("news"), content: <NewsList /> }, { value: "disclosures", label: t("announcements"), content: <AnnouncementList /> }]} />
-      <p className="text-xs text-muted-foreground">{t("calendarNote")}</p>
+      <UrlTabs label={t("title")} tabs={[
+        { value: "news", label: t("news"), content: <NewsList /> },
+        { value: "calendar", label: t("calendar"), content: <ActionsCalendar /> },
+        { value: "disclosures", label: t("announcements"), content: <AnnouncementList /> },
+      ]} />
     </div>
   );
 }

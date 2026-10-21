@@ -64,14 +64,15 @@
     "breadth": "{adv} up · {dec} down · {unch} unchanged",
     "movers": "Movers",
     "sectors": "Active sectors",
-    "sectorsUnavailable": "Sector performance isn't available from the current data source yet.",
     "strategies": "Strategy opportunities",
     "strategiesHint": "Stocks meeting a strategy's criteria in the latest screen. Check why they matched before researching.",
     "viewAll": "View all",
     "watchlist": "Watchlist activity",
     "watchlistSignIn": "Sign in to see your watchlist.",
     "watchlistEmpty": "Your watchlist is empty.",
-    "news": "Key news & events"
+    "news": "Key news & events",
+    "sectorsHint": "Average price change of each sector's stocks in the latest session.",
+    "sectorBreadth": "▲{up} ▼{down} of {stocks} stocks"
   },
   "dev": {
     "primitivesTitle": "Primitives",
@@ -562,19 +563,37 @@
     "intro": "Market news and issuer disclosures.",
     "news": "News",
     "announcements": "Disclosures",
-    "calendarNote": "A market-wide corporate-action calendar isn't available from the data sources yet; per-stock corporate actions will appear on stock pages.",
     "open": "Open document",
-    "keywords": "Search disclosures (ticker or keyword)"
+    "keywords": "Search disclosures (ticker or keyword)",
+    "calendar": "Corporate action calendar",
+    "calendarHint": "Market-wide cash dividends and stock splits by ex-date, from price-history data. Check the issuer's disclosures for the official schedule.",
+    "actionDividend": "Cash dividend",
+    "actionSplit": "Stock split",
+    "dividendAmount": "IDR {amount} per share",
+    "announcementsNote": "Issuer disclosures are published only on the IDX website, which HAKA PRO's data sources can't access yet. The official documents are on idx.co.id."
   },
   "ownershipChanges": {
     "title": "Ownership Changes",
     "intro": "Reported insider transactions (directors, commissioners, major holders).",
-    "marketWideUnavailable": "A market-wide ownership-change feed isn't available from the current data source.",
     "checkStock": "See insider transactions for a stock",
     "go": "Go",
     "watchlistTitle": "Insiders in your watchlist",
     "watchlistSignIn": "Sign in to see insider transactions for the stocks you watch.",
-    "watchlistEmpty": "Add stocks to your watchlist to see their insider transactions."
+    "watchlistEmpty": "Add stocks to your watchlist to see their insider transactions.",
+    "kseiTitle": "≥1% shareholder changes (KSEI)",
+    "kseiHint": "Month-over-month changes from the KSEI ≥1% shareholder lists uploaded by an admin.",
+    "kseiMonths": "{month} vs {previous}",
+    "kseiNone": "No KSEI ≥1% shareholder list has been uploaded yet. Market-wide changes appear once an admin uploads the monthly list.",
+    "kseiNoChanges": "No holding changed this month.",
+    "kind": {
+      "NEW": "New",
+      "INCREASE": "Increased",
+      "DECREASE": "Decreased",
+      "EXIT": "Exited",
+      "UNCHANGED": "Unchanged",
+      "BELOW_THRESHOLD": "Below 1%",
+      "AMBIGUOUS": "Ambiguous"
+    }
   },
   "stockChart": {
     "title": "Price chart",
@@ -627,7 +646,11 @@
     "share": "Share",
     "role": "Role",
     "profileNote": "Ownership structure from the IDX issuer profile snapshot. The snapshot carries no disclosure date, so it is shown as undated.",
-    "retrieved": "Retrieved {date} · source: {dataset}"
+    "retrieved": "Retrieved {date} · source: {dataset}",
+    "kseiTitle": "≥1% shareholders (KSEI)",
+    "kseiNote": "From the monthly KSEI list of ≥1% shareholders. Holders below 1% are not disclosed, which is not the same as zero.",
+    "kseiNone": "No ≥1% shareholder list for this stock yet. It appears once an admin uploads the monthly KSEI list.",
+    "kseiAsOf": "Position {date} · source: {source}"
   },
   "errors": {
     "title": "Something went wrong",
