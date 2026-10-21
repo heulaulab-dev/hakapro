@@ -56,6 +56,44 @@ export const sectorsSchema = z.array(z.object({
   leader: z.object({ symbol: z.string(), changePercent: num }), laggard: z.object({ symbol: z.string(), changePercent: num }),
 }));
 
+/** `/v1/heatmap?limit=`: how many of the most-traded stocks (by value) the heatmap covers. */
+export const HEATMAP_LIMITS = [30, 50, 100] as const;
+export const HEATMAP_DEFAULT_LIMIT = 100;
+/** A limit from a query string ("30" → 30); anything else fails. */
+export const heatmapLimitSchema = z.coerce.number().pipe(z.literal(HEATMAP_LIMITS));
+
+/**
+ * Data Engine `/v1/heatmap`: the most-traded stocks of the newest view (the same rows as `/v1/market`), by traded
+ * value, with per-sector totals. Changes are fractions, value and close in IDR, volume in shares.
+ * `sector` is null for a stock not yet in the stored universe: never an invented bucket.
+ */
+export const heatmapStockSchema = z.object({
+  symbol: symbolSchema, name: z.string().nullable(), sector: z.string().nullable(),
+  close: num, changePercent: num, value: num, volume: num,
+  /**
+   * ESTIMATE in IDR, not a reported figure: (foreign buy shares − foreign sell shares) × close. Foreign data covers
+   * only the stocks the arjum budget reached, and only end-of-day rows (never an intraday snapshot); null otherwise.
+   */
+  netForeignValueEstimate: num,
+});
+export const heatmapSectorSchema = z.object({
+  sector: z.string().nullable(), stocks: z.number().int().nonnegative(),
+  advancers: z.number().int().nonnegative(), decliners: z.number().int().nonnegative(), unchanged: z.number().int().nonnegative(),
+  /** Sum of the members' traded value (IDR). */
+  value: z.number(),
+  /** Mean change of the members with a change (fraction); null when none has one. */
+  changePercent: num,
+  /** Sum of the members' net foreign ESTIMATES (IDR); null when no member has foreign data. */
+  netForeignValueEstimate: num,
+});
+export const heatmapSchema = z.object({
+  limit: z.number().int().positive(),
+  /** Most-traded first. */
+  stocks: z.array(heatmapStockSchema),
+  /** Largest traded value first; the null sector (if any) is listed like any other. */
+  sectors: z.array(heatmapSectorSchema),
+});
+
 export const foreignSignalSchema = z.object({
   symbol: symbolSchema, close: num, sessions: z.number().int().nonnegative(),
   netForeignMillionShares: num, percentFloat: num, averageValueBillionIdr: num,
@@ -128,6 +166,8 @@ export type Quote = z.infer<typeof quoteSchema>;
 export type Candle = z.infer<typeof candleSchema>;
 export type Stock = z.infer<typeof stockSchema>;
 export type MarketOverview = z.infer<typeof marketOverviewSchema>;
+export type HeatmapLimit = (typeof HEATMAP_LIMITS)[number];
+export type HeatmapPayload = z.infer<typeof heatmapSchema>;
 export type Signals = z.infer<typeof signalsSchema>;
 export type Fundamentals = z.infer<typeof fundamentalsSchema>;
 export type Profile = z.infer<typeof profileSchema>;

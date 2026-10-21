@@ -3,8 +3,8 @@
 import { timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 import {
-  actionsCalendarSchema, actionsSchema, announcementItemSchema, fundamentalsSchema, macroSchema, marketOverviewSchema, newsItemSchema, sectorsSchema,
-  screenRequestSchema, screenResultSchema, securitySchema, signalsSchema, stockSchema,
+  actionsCalendarSchema, actionsSchema, announcementItemSchema, fundamentalsSchema, HEATMAP_DEFAULT_LIMIT, HEATMAP_LIMITS, heatmapLimitSchema, heatmapSchema,
+  macroSchema, marketOverviewSchema, newsItemSchema, sectorsSchema, screenRequestSchema, screenResultSchema, securitySchema, signalsSchema, stockSchema,
 } from "@/server/schemas/idx-bei";
 import { dateSchema, symbolSchema } from "@/server/schemas/inputs";
 import { ownershipChangesSchema, ownershipMonthSchema, stockOwnershipSchema } from "@/server/schemas/ownership";
@@ -14,7 +14,7 @@ import type { PauseGuard } from "../schedule/pause";
 import type { JobStatus, Scheduler } from "../schedule/scheduler";
 import type { Logger } from "../log";
 import { nullLogger } from "../log";
-import { DEFAULT_CANDLES, MAX_CANDLES, serveActions, serveMarket, serveSectors, serveSecurities, serveSignals, serveStock, type Served } from "../serve/market";
+import { DEFAULT_CANDLES, MAX_CANDLES, serveActions, serveHeatmap, serveMarket, serveSectors, serveSecurities, serveSignals, serveStock, type Served } from "../serve/market";
 import {
   ACTIONS_MAX_RANGE_DAYS, defaultActionsRange, NEWS_DEFAULT_PAGE_SIZE, NEWS_MAX_PAGE, NEWS_MAX_PAGE_SIZE, serveActionsCalendar, serveMacro, serveNews,
 } from "../serve/market-info";
@@ -180,6 +180,11 @@ export function createApp(deps: AppDeps): (request: Request) => Promise<Response
       return respond(marketOverviewSchema, market ? await serveMarket(market, at) : null, { indices: [], breadth: { advancers: 0, decliners: 0, unchanged: 0, value: 0, volume: 0, frequency: 0 }, movers: [] });
     }
     if (path === "/v1/sectors") return respond(sectorsSchema, market ? await serveSectors(market, at) : null, []);
+    if (path === "/v1/heatmap") {
+      const limit = heatmapLimitSchema.safeParse(param(url, "limit") ?? HEATMAP_DEFAULT_LIMIT);
+      if (!limit.success) return error(400, "BAD_REQUEST", `limit must be one of ${HEATMAP_LIMITS.join(", ")}`);
+      return respond(heatmapSchema, market ? await serveHeatmap(market, limit.data, at) : null, { limit: limit.data, stocks: [], sectors: [] });
+    }
     if (path === "/v1/securities") {
       return respond(securitySchema.array(), market ? await serveSecurities(market, (url.searchParams.get("q") ?? "").slice(0, 64), at) : null, []);
     }

@@ -201,6 +201,18 @@ export const sectorPerformanceSchema = z.object({
   leader: z.object({ symbol: z.string(), changePercent: nn }), laggard: z.object({ symbol: z.string(), changePercent: nn }),
 });
 export type SectorPerformance = z.infer<typeof sectorPerformanceSchema>;
+/** Heatmap (Data Engine): changes in percentage points; `netForeignValueEstimateIdr` is an ESTIMATE, null without foreign data. */
+export const heatmapStockSchema = z.object({
+  symbol: z.string(), name: z.string().nullable(), sector: z.string().nullable(), close: nn, changePercent: nn,
+  valueIdr: nn, volumeShares: nn, netForeignValueEstimateIdr: nn,
+});
+export const heatmapSectorSchema = z.object({
+  sector: z.string().nullable(), stocks: n, advancers: n, decliners: n, unchanged: n, valueIdr: n, changePercent: nn, netForeignValueEstimateIdr: nn,
+});
+export const heatmapSchema = z.object({ limit: n, stocks: z.array(heatmapStockSchema), sectors: z.array(heatmapSectorSchema) });
+export type HeatmapStock = z.infer<typeof heatmapStockSchema>;
+export type HeatmapSector = z.infer<typeof heatmapSectorSchema>;
+export type Heatmap = z.infer<typeof heatmapSchema>;
 export const actionCalendarItemSchema = z.object({
   symbol: z.string(), date: z.string(), type: z.string(), description: z.string().nullable(), amount: nn, ratio: z.string().nullable(), documentUrl: z.string().nullable(),
 });
@@ -226,6 +238,7 @@ export type OwnershipChange = z.infer<typeof ownershipChangeSchema>;
 
 export const engineApi = {
   sectors: (signal?: AbortSignal) => fetchEnvelope("/api/sectors", z.array(sectorPerformanceSchema), { signal }),
+  heatmap: (limit: number, signal?: AbortSignal) => fetchEnvelope(`/api/heatmap${qs({ limit })}`, heatmapSchema, { signal }),
   actionsCalendar: (range: { from?: string; to?: string } = {}, signal?: AbortSignal) => fetchEnvelope(`/api/actions${qs(range)}`, z.array(actionCalendarItemSchema), { signal }),
   ownership: (symbol: string, signal?: AbortSignal) => fetchEnvelope(`/api/stocks/${encodeURIComponent(symbol.toUpperCase())}/ownership`, stockOwnershipSchema, { signal }),
   ownershipChanges: (query: { month?: string; symbol?: string } = {}, signal?: AbortSignal) => fetchEnvelope(`/api/ownership/changes${qs(query)}`, ownershipChangesSchema, { signal }),
