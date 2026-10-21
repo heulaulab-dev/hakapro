@@ -53,6 +53,26 @@ const insiders = async () => ok({ symbol: "TEST", total: 1, page: 1, pageSize: 1
 const complete: Impl = { price: price("2026-10-21", 1_590), history: history(), search, brokerSummary: broker((flow) => (flow === "foreign" ? -3e9 : 3e9)), insiders } as Impl;
 
 describe("research brief builder", () => {
+  test("KSEI ≥1%: the newest uploaded list fills the component; an empty list is NOT_UPLOADED, not a failure", async () => {
+    const holder = (key: string, percent: string) => ({ holderKey: key, holderName: key, holderKind: "organisation" as const, shares: "1000", percent, investorType: null, localForeign: "L", reference: "upload:x#p1.l1" });
+    const listed = async () => ok({
+      symbol: "TEST", issuerName: "Test Tbk.", month: "2026-09", snapshotDate: "2026-09-30", thresholdPercent: "1.000000", issuedShares: "100000", source: { dataset: "ksei-1pct", reference: "PENG-1", retrievedAt: "2026-10-21T08:00:00Z", uploadId: "u1" },
+      holders: [holder("A", "51.000000"), holder("B", "4.500000")],
+      comparison: { status: "COMPARED" as const, fromMonth: "2026-08", fromDate: "2026-08-31", toDate: "2026-09-30", counts: { NEW: 1, INCREASE: 0, DECREASE: 1, EXIT: 0, UNCHANGED: 0, BELOW_THRESHOLD: 0, AMBIGUOUS: 0 }, issuedShares: null, detail: null },
+      freeFloat: null,
+    }, "2026-09-30");
+    const brief = await buildResearchBrief(stub({ ...complete, ownership: listed } as Impl), "TEST", { now: NOW });
+    const ksei = brief.components.find((item) => item.key === "ksei")!;
+    expect(ksei).toMatchObject({ status: "ok", reason: null, source: { asOf: "2026-09-30" }, raw: { month: "2026-09", holders: 2, largestHolderPct: 51, disclosedPct: 55.5, comparedWith: "2026-08", newHolders: 1, decreased: 1 } });
+    expect(brief.score.confidence).toBe(1);
+    expect(researchBriefSchema.safeParse(brief).success).toBe(true);
+
+    const empty = async () => ok({ symbol: "TEST", issuerName: null, month: null, snapshotDate: null, thresholdPercent: null, issuedShares: null, source: null, holders: [], comparison: null, freeFloat: null }, null);
+    const none = await buildResearchBrief(stub({ ...complete, ownership: empty } as Impl), "TEST", { now: NOW });
+    expect(none.components.find((item) => item.key === "ksei")).toMatchObject({ status: "missing", reason: "NOT_UPLOADED" });
+    expect(none.checks).toBeDefined();
+  });
+
   test("phase 1: no score, weights 0, points null; KSEI is a missing slot; confidence = share of ok components", async () => {
     const brief = await buildResearchBrief(stub(complete), "TEST", { now: NOW });
     expect(brief.score).toEqual({ value: null, confidence: 0.83, version: "none" });

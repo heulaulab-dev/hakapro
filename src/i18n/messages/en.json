@@ -1203,7 +1203,8 @@
       "NOT_AVAILABLE": "This data isn't available in HAKAPRO yet.",
       "ksei": "≥1% ownership data isn't available yet.",
       "NO_CATEGORY_BREAKDOWN": "The source doesn't break figures down by investor category.",
-      "INSUFFICIENT_HISTORY": "Not enough price history yet."
+      "INSUFFICIENT_HISTORY": "Not enough price history yet.",
+      "NOT_UPLOADED": "No KSEI ≥1% list has been uploaded for this stock yet."
     },
     "momentum": {
       "title": "Price momentum",
@@ -1229,7 +1230,14 @@
     "ownership": {
       "title": "Ownership",
       "missing": "≥1% ownership data isn't available yet",
-      "missingDescription": "This section will fill in once KSEI ≥1% shareholder data is connected."
+      "missingDescription": "This section will fill in once KSEI ≥1% shareholder data is connected.",
+      "notUploaded": "No ≥1% shareholder list has been uploaded for this stock yet.",
+      "position": "Position",
+      "holders": "≥1% holders",
+      "largest": "Largest holding",
+      "disclosed": "Total disclosed",
+      "changes": "Changes since {month}",
+      "changeCounts": "{added} new · {up} up · {down} down · {exited} exited"
     },
     "insider": {
       "title": "Insiders",

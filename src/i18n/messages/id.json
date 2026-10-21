@@ -1203,7 +1203,8 @@
       "NOT_AVAILABLE": "Data ini belum tersedia di HAKAPRO.",
       "ksei": "Data kepemilikan ≥1% belum tersedia.",
       "NO_CATEGORY_BREAKDOWN": "Sumber tidak memberi rincian per kategori investor.",
-      "INSUFFICIENT_HISTORY": "Riwayat harga belum cukup panjang."
+      "INSUFFICIENT_HISTORY": "Riwayat harga belum cukup panjang.",
+      "NOT_UPLOADED": "Belum ada daftar KSEI ≥1% yang diunggah untuk saham ini."
     },
     "momentum": {
       "title": "Momentum harga",
@@ -1229,7 +1230,14 @@
     "ownership": {
       "title": "Kepemilikan",
       "missing": "Data kepemilikan ≥1% belum tersedia",
-      "missingDescription": "Bagian ini akan terisi setelah data pemegang saham ≥1% dari KSEI tersambung."
+      "missingDescription": "Bagian ini akan terisi setelah data pemegang saham ≥1% dari KSEI tersambung.",
+      "notUploaded": "Belum ada daftar pemegang saham ≥1% yang diunggah untuk saham ini.",
+      "position": "Posisi",
+      "holders": "Pemegang ≥1%",
+      "largest": "Porsi terbesar",
+      "disclosed": "Total porsi terungkap",
+      "changes": "Perubahan sejak {month}",
+      "changeCounts": "{added} baru · {up} naik · {down} turun · {exited} keluar"
     },
     "insider": {
       "title": "Orang dalam",

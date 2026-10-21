@@ -5,7 +5,7 @@ import { mergeLastPrice } from "@/lib/last-price";
 import { logWarn } from "@/server/log";
 import { MarketDataError } from "@/server/market/errors";
 import type { MarketDataSource } from "@/server/market/source";
-import type { BrokerSummary, History, Insiders, LastPrice, SearchResult, Security } from "@/server/market/types";
+import type { BrokerSummary, History, Insiders, LastPrice, SearchResult, Security, StockOwnership } from "@/server/market/types";
 import {
   counterEvidence, insiderFacts, momentumFacts, priceChangeSince, sessionWindows, volumeFacts, WINDOWS,
   type CounterEvidence, type SessionWindow, type WindowKey,
@@ -147,8 +147,9 @@ export async function buildResearchBrief(source: MarketDataSource, code: string,
   const brokerWindows: Array<{ key: WindowKey; start?: string; end?: string }> = latest
     ? WINDOWS.filter((key) => windows[key]).map((key) => ({ key, start: windows[key]!.start, end: windows[key]!.end }))
     : [{ key: "1D" }];
-  const [insiders, brokerResults] = await Promise.all([
+  const [insiders, ownership, brokerResults] = await Promise.all([
     load<Insiders>(() => source.insiders(code, { limit: ARJUM_LIMITS.insiders }, signal)),
+    load<StockOwnership>(() => source.ownership(code)),
     pooled(brokerWindows.flatMap((window) => BROKER_FLOWS.map((flow) => async () => ({
       window, flow,
       result: await load<BrokerSummary>(() => source.brokerSummary(code, { startDate: window.start, endDate: window.end, flow, brokerLimit: ARJUM_LIMITS.brokerSummaryRows, levelLimit: 1 }, signal)),
@@ -200,8 +201,25 @@ export async function buildResearchBrief(source: MarketDataSource, code: string,
   if (brokerCells > 0) components.push({ key: "broker", weight: 0, raw: brokerRaw, points: null, status: sessionStatus(brokerAsOf, now), reason: null, source: { table: brokerTable, asOf: brokerAsOf } });
   else components.push(missing("broker", brokerOk > 0 ? "NO_CATEGORY_BREAKDOWN" : brokerError ?? "NOT_AVAILABLE", brokerTable));
 
-  // ksei (≥1% ownership): no capability provides it yet; the slot stays so it can be filled later.
-  components.push(missing("ksei", "NOT_AVAILABLE", "ksei_ownership"));
+  // ksei (≥1% ownership): the newest monthly list the owner uploaded. Uploaded monthly, so "stale" past ~2 months.
+  if (!ownership.ok) components.push(missing("ksei", ownership.error === "UNSUPPORTED" ? "NOT_AVAILABLE" : ownership.error, "ksei_ownership"));
+  else if (!ownership.envelope.data.holders.length || !ownership.envelope.data.snapshotDate) components.push(missing("ksei", "NOT_UPLOADED", table(ownership.envelope, "ksei_ownership")));
+  else {
+    const data = ownership.envelope.data;
+    const percents = data.holders.map((holder) => (holder.percent === null ? null : Number(holder.percent))).filter((value): value is number => value !== null);
+    const counts = data.comparison?.status === "COMPARED" ? data.comparison.counts : null;
+    const ageDays = (now.getTime() - Date.parse(`${data.snapshotDate}T00:00:00+07:00`)) / 86_400_000;
+    components.push({
+      key: "ksei", weight: 0, points: null, reason: null, status: ageDays <= 62 ? "ok" : "stale",
+      raw: {
+        month: data.month, snapshotDate: data.snapshotDate, holders: data.holders.length,
+        largestHolderPct: percents.length ? Math.max(...percents) : null, disclosedPct: percents.length ? percents.reduce((sum, value) => sum + value, 0) : null,
+        comparedWith: data.comparison?.status === "COMPARED" ? data.comparison.fromMonth : null,
+        newHolders: counts?.NEW ?? null, increased: counts?.INCREASE ?? null, decreased: counts?.DECREASE ?? null, exited: counts?.EXIT ?? null,
+      },
+      source: { table: table(ownership.envelope, "ksei_ownership"), asOf: data.snapshotDate },
+    });
+  }
 
   // insider (reported transactions within the lookback, relative to the brief's session)
   const anchorDate = merged.date;
@@ -290,7 +308,7 @@ export function clearResearchCache(): void {
 }
 
 /** Missing for a reason other than the data not existing anywhere yet (e.g. a provider error). */
-const failedSource = (brief: ResearchBrief) => brief.components.some((item) => item.status === "missing" && item.reason !== "NOT_AVAILABLE" && item.reason !== "INSUFFICIENT_HISTORY" && item.reason !== "NO_CATEGORY_BREAKDOWN");
+const failedSource = (brief: ResearchBrief) => brief.components.some((item) => item.status === "missing" && item.reason !== "NOT_AVAILABLE" && item.reason !== "NOT_UPLOADED" && item.reason !== "INSUFFICIENT_HISTORY" && item.reason !== "NO_CATEGORY_BREAKDOWN");
 
 /**
  * Cached per source, ticker, lookback and Jakarta trading day. Concurrent requests share one build,

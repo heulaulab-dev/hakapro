@@ -2,7 +2,7 @@
 
 import { AlertTriangle, ArrowLeft, CalendarClock, Database, SearchX } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import type { ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 import { DataState } from "@/components/feedback/data-state";
 import { EmptyState } from "@/components/feedback/empty-state";
 import { ResearchDisclaimer } from "@/components/feedback/research-disclaimer";
@@ -21,7 +21,7 @@ import { formatDate, formatIdr, formatNumber, formatPercent, formatVolume, type 
 
 const STATUS_TONE: Record<BriefComponent["status"], StatusTone> = { ok: "info", stale: "warning", missing: "neutral" };
 /** Reasons owned by the brief; provider error codes reuse the shared data-state wording. */
-const BRIEF_REASONS = new Set(["NOT_AVAILABLE", "NO_CATEGORY_BREAKDOWN", "INSUFFICIENT_HISTORY"]);
+const BRIEF_REASONS = new Set(["NOT_AVAILABLE", "NOT_UPLOADED", "NO_CATEGORY_BREAKDOWN", "INSUFFICIENT_HISTORY"]);
 const PROVIDER_REASONS = new Set(["NOT_RECORDED", "UNSUPPORTED", "NOT_CONFIGURED", "RATE_LIMITED", "PROVIDER_UNAVAILABLE", "PROVIDER_UNAUTHORIZED", "MALFORMED_PROVIDER_RESPONSE", "INVALID_REQUEST"]);
 
 const num = (raw: BriefComponent["raw"], key: string): number | null => (typeof raw[key] === "number" ? (raw[key] as number) : null);
@@ -143,11 +143,11 @@ function Brief({ brief }: { brief: ResearchBrief }) {
       </Panel>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        {/* 4. Ownership (KSEI ≥1%): kept as a slot until the data is connected. */}
+        {/* 4. Ownership (KSEI ≥1%): the newest monthly list uploaded by the owner. */}
         <Panel title={t("research.ownership.title")} testId="research-ownership">
           {component("ksei").status === "missing"
-            ? <EmptyState compact icon={<Database />} title={t("research.ownership.missing")} description={t("research.ownership.missingDescription")} />
-            : null}
+            ? <EmptyState compact icon={<Database />} title={component("ksei").reason === "NOT_UPLOADED" ? t("research.ownership.notUploaded") : t("research.ownership.missing")} description={t("research.ownership.missingDescription")} />
+            : <KseiFacts item={component("ksei")} />}
         </Panel>
         {/* 5. Insider. */}
         <InsiderPanel brief={brief} item={component("insider")} reason={reason} />
@@ -239,6 +239,24 @@ function reasonText(item: BriefComponent, t: T): string {
   if (item.key === "ksei" && code === "NOT_AVAILABLE") return t("research.reasons.ksei");
   if (BRIEF_REASONS.has(code)) return t(`research.reasons.${code}`);
   return t(`dataState.reasons.${PROVIDER_REASONS.has(code) ? code : "default"}`);
+}
+
+function KseiFacts({ item }: { item: BriefComponent }) {
+  const t = useTranslations();
+  const raw = item.raw;
+  const pct = (value: unknown) => (typeof value === "number" ? `${value.toFixed(2)}%` : "—");
+  const rows: Array<[string, string]> = [
+    [t("research.ownership.position"), String(raw.snapshotDate ?? "—")],
+    [t("research.ownership.holders"), String(raw.holders ?? "—")],
+    [t("research.ownership.largest"), pct(raw.largestHolderPct)],
+    [t("research.ownership.disclosed"), pct(raw.disclosedPct)],
+  ];
+  if (raw.comparedWith) rows.push([t("research.ownership.changes", { month: String(raw.comparedWith) }), t("research.ownership.changeCounts", { added: Number(raw.newHolders ?? 0), up: Number(raw.increased ?? 0), down: Number(raw.decreased ?? 0), exited: Number(raw.exited ?? 0) })]);
+  return (
+    <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm" data-testid="research-ksei">
+      {rows.map(([label, value]) => (<Fragment key={label}><dt className="text-muted-foreground">{label}</dt><dd className="num text-right">{value}</dd></Fragment>))}
+    </dl>
+  );
 }
 
 function Missing({ item, reason }: { item: BriefComponent; reason: Reason }) {
