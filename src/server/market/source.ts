@@ -1,9 +1,9 @@
 import type { WithFreshness } from "@/lib/freshness";
 import { unsupported } from "./errors";
 import type {
-  AnnouncementItem, BrokerAccumulation, BrokerFlow, BrokerSummary, CompanyProfile, CorporateAction, DoneDetails, FinancialStatements,
+  ActionCalendarItem, AnnouncementItem, BrokerAccumulation, BrokerFlow, BrokerSummary, CompanyProfile, CorporateAction, DoneDetails, FinancialStatements,
   ForeignFlow, FundamentalPeriod, History, Insiders, LastPrice, MarketCap, MarketOverview, NewsItem, ScreenRequest, ScreenResult,
-  SearchResult, Seasonality, Security, StockAnalysis, StockSnapshot, StrategyScreen,
+  OwnershipChanges, SearchResult, Seasonality, SectorPerformance, Security, StockAnalysis, StockOwnership, StockSnapshot, StrategyScreen,
 } from "./types";
 
 export type HistoryQuery = { limit?: number; frame?: "daily" | "weekly" | "monthly"; startDate?: string; endDate?: string };
@@ -14,6 +14,10 @@ export type MarketCapQuery = { page?: number; perPage?: number; date?: string; s
 export type BrokerAccumulationQuery = { startDate?: string; endDate?: string; top?: number; brokers?: string[] };
 export type PageQuery = { page?: number; perPage?: number };
 export type FinancialsQuery = { reportType?: "INCOME_STATEMENT" | "BALANCE_SHEET" | "CASH_FLOW"; period?: "quarterly" | "annual"; limit?: number; year?: string };
+/** Ex-date range (YYYY-MM-DD, inclusive); without it the provider picks its default window around today. */
+export type ActionsCalendarQuery = { from?: string; to?: string };
+/** Without month, the newest month the provider has. */
+export type OwnershipChangesQuery = { month?: string; symbol?: string };
 export type InsidersQuery = { page?: number; limit?: number; actionType?: "buy" | "sell" | "cross" };
 
 type R<T> = Promise<WithFreshness<T>>;
@@ -54,6 +58,12 @@ export interface MarketDataSource {
   screen(request: ScreenRequest): R<ScreenResult>;
   news(query: PageQuery): R<NewsItem[]>;
   announcements(query: PageQuery & { keywords?: string }): R<AnnouncementItem[]>;
+  // Data Engine lane
+  sectors(): R<SectorPerformance[]>;
+  actionsCalendar(query: ActionsCalendarQuery): R<ActionCalendarItem[]>;
+  /** The newest KSEI ≥1% list the owner uploaded for a symbol (empty form when none). */
+  ownership(symbol: string): R<StockOwnership>;
+  ownershipChanges(query: OwnershipChangesQuery): R<OwnershipChanges>;
 }
 
 export type Capability = Exclude<keyof MarketDataSource, "id">;
@@ -87,4 +97,8 @@ export abstract class BaseMarketDataSource implements MarketDataSource {
   async screen(..._args: unknown[]): R<ScreenResult> { return this.fail("screen"); }
   async news(..._args: unknown[]): R<NewsItem[]> { return this.fail("news"); }
   async announcements(..._args: unknown[]): R<AnnouncementItem[]> { return this.fail("announcements"); }
+  async sectors(..._args: unknown[]): R<SectorPerformance[]> { return this.fail("sectors"); }
+  async actionsCalendar(..._args: unknown[]): R<ActionCalendarItem[]> { return this.fail("actionsCalendar"); }
+  async ownership(..._args: unknown[]): R<StockOwnership> { return this.fail("ownership"); }
+  async ownershipChanges(..._args: unknown[]): R<OwnershipChanges> { return this.fail("ownershipChanges"); }
 }

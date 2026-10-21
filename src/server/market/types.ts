@@ -54,3 +54,13 @@ export type CompanyProfile = {
 };
 export type CorporateAction = { date: string | null; type: string | null; description: string | null; documentUrl: string | null };
 export type ScreenResult = { rows: Array<{ symbol: string; name: string | null } & Record<string, number | string | null>>; total: number; supportedFields: string[] };
+
+/** Per-sector performance of the newest session (Data Engine). Changes are percentage points, value in IDR. */
+export type SectorPerformance = {
+  sector: string; stocks: number; advancers: number; decliners: number; unchanged: number;
+  changePercent: number; valueWeightedChangePercent: number | null; valueIdr: number;
+  leader: { symbol: string; changePercent: number | null }; laggard: { symbol: string; changePercent: number | null };
+};
+/** One market-wide corporate action by ex-date (Data Engine calendar). */
+export type ActionCalendarItem = { symbol: string; date: string; type: string; description: string | null; amount: number | null; ratio: string | null; documentUrl: string | null };
+export type { OwnershipChanges, StockOwnership } from "@/server/schemas/ownership";

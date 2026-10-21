@@ -37,14 +37,24 @@ function clientKey(request: Request, endpoint: string): string {
   return `${endpoint}:${ip}`;
 }
 
-function failure(code: string, status: number, requestId: string, headers?: HeadersInit) {
+/** Uniform error body. `extra` adds route-specific fields (e.g. which components are missing). */
+export function failure(code: string, status: number, requestId: string, headers?: HeadersInit, extra?: Record<string, unknown>) {
   return NextResponse.json(
-    { error: code, requestId, data: null, freshness: "UNAVAILABLE", asOf: null, source: "none" },
+    { error: code, requestId, data: null, freshness: "UNAVAILABLE", asOf: null, source: "none", ...extra },
     { status, headers: { "cache-control": "no-store", "x-request-id": requestId, ...headers } },
   );
 }
 
 type RouteOptions = { endpoint: string; limit?: number; cacheControl?: string };
+
+/** Rate limit → auth (fails closed). Returns the error response to send, or null when the request may proceed. */
+export async function guardRequest(request: Request, options: Pick<RouteOptions, "endpoint" | "limit">, requestId: string): Promise<NextResponse | null> {
+  if (!allowRequest(clientKey(request, options.endpoint), (options.limit ?? 60) * rateLimitScale())) return failure("RATE_LIMITED", 429, requestId);
+  const access = await checkAccess().catch(() => "unauthorized" as const);
+  if (access === "not_configured") return failure("AUTH_NOT_CONFIGURED", 503, requestId);
+  if (access !== "allow") return failure("UNAUTHORIZED", 401, requestId);
+  return null;
+}
 
 /** Wraps a market route: rate limit → auth (fails closed) → run → freshness envelope JSON, with uniform error mapping. */
 export async function marketRoute(
@@ -53,10 +63,8 @@ export async function marketRoute(
   run: (source: MarketDataSource) => Promise<WithFreshness<unknown>>,
 ) {
   const requestId = crypto.randomUUID();
-  if (!allowRequest(clientKey(request, options.endpoint), (options.limit ?? 60) * rateLimitScale())) return failure("RATE_LIMITED", 429, requestId);
-  const access = await checkAccess().catch(() => "unauthorized" as const);
-  if (access === "not_configured") return failure("AUTH_NOT_CONFIGURED", 503, requestId);
-  if (access !== "allow") return failure("UNAUTHORIZED", 401, requestId);
+  const denied = await guardRequest(request, options, requestId);
+  if (denied) return denied;
   try {
     const body = await run(getMarketDataSource());
     return NextResponse.json(body, { headers: { "cache-control": options.cacheControl ?? "private, no-store", "x-request-id": requestId } });

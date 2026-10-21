@@ -22,7 +22,12 @@ export const queryKeys = {
   seasonality: (symbol: string) => ["market", "seasonality", symbol.toUpperCase()] as const,
   profile: (symbol: string) => ["market", "profile", symbol.toUpperCase()] as const,
   actions: (symbol: string) => ["market", "actions", symbol.toUpperCase()] as const,
+  sectors: () => ["market", "sectors"] as const,
+  actionsCalendar: (from?: string, to?: string) => ["market", "actions-calendar", from ?? null, to ?? null] as const,
+  ownership: (symbol: string) => ["market", "ownership", symbol.toUpperCase()] as const,
+  ownershipChanges: (month?: string, symbol?: string) => ["market", "ownership-changes", month ?? null, symbol?.toUpperCase() ?? null] as const,
   insidersPage: (symbol: string, page: number, limit: number, action: string | null) => ["market", "insiders", symbol.toUpperCase(), page, limit, action] as const,
   insiderDisclosures: (symbol: string, limit: number) => ["market", "insiders", symbol.toUpperCase(), "disclosures", limit] as const,
+  research: (code: string) => ["market", "research", code.toUpperCase()] as const,
   savedScreens: (userId: string) => ["user", "saved-screens", userId] as const,
 };

@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Bookmark, BookmarkCheck } from "lucide-react";
+import { Bell, Bookmark, BookmarkCheck, FileSearch } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { ViewerSummary } from "@/components/layout/types";
 import { Button } from "@/components/ui/button";
@@ -42,6 +42,16 @@ export function AlertLink({ symbol }: { symbol: string }) {
   return (
     <Button variant="ghost" size="sm" asChild>
       <Link href={`/alerts?symbol=${symbol}`} data-testid="alert-link"><Bell />{t("setAlert")}</Link>
+    </Button>
+  );
+}
+
+/** Opens the per-ticker Research Brief. */
+export function ResearchLink({ symbol }: { symbol: string }) {
+  const t = useTranslations("research");
+  return (
+    <Button variant="ghost" size="sm" asChild>
+      <Link href={`/research/${symbol}`} data-testid="research-link" aria-label={t("linkLabel", { code: symbol })}><FileSearch />{t("link")}</Link>
     </Button>
   );
 }
