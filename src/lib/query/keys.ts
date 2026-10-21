@@ -23,6 +23,7 @@ export const queryKeys = {
   profile: (symbol: string) => ["market", "profile", symbol.toUpperCase()] as const,
   actions: (symbol: string) => ["market", "actions", symbol.toUpperCase()] as const,
   sectors: () => ["market", "sectors"] as const,
+  groups: (window: string) => ["market", "groups", window] as const,
   actionsCalendar: (from?: string, to?: string) => ["market", "actions-calendar", from ?? null, to ?? null] as const,
   ownership: (symbol: string) => ["market", "ownership", symbol.toUpperCase()] as const,
   ownershipChanges: (month?: string, symbol?: string) => ["market", "ownership-changes", month ?? null, symbol?.toUpperCase() ?? null] as const,

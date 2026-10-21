@@ -47,6 +47,10 @@ describe("engine /v1 stubs via IdxBeiSource", () => {
     expect((await source.corporateActions("BBCA")).data).toEqual([]);
     expect((await source.screen({ conditions: [], limit: 10 })).data.rows).toEqual([]);
     expect(await source.macro()).toMatchObject({ freshness: "UNAVAILABLE", data: { series: [] } });
+    // Groups: the empty form with the catalog version, never invented figures.
+    const groups = await source.groups({ window: "5D" });
+    expect(groups).toMatchObject({ freshness: "UNAVAILABLE", asOf: null, data: { window: { id: "5D", sessions: 0, from: null, to: null }, groups: [] } });
+    expect(groups.data.catalog.version).toMatch(/^\d{4}-\d{2}-\d{2}/);
     // Strategy scans off (the default): the empty board.
     expect(await source.engineStrategies()).toMatchObject({ freshness: "UNAVAILABLE", asOf: null, data: { contexts: [], strategies: [], candidates: [] } });
     // No price data yet: a typed provider error, never a fake quote.
@@ -135,6 +139,27 @@ describe("engine /v1 real responses via IdxBeiSource", () => {
     expect(sectors.data.map((row) => [row.sector, row.stocks, row.decliners])).toEqual([["Technology Services", 1, 1], ["Finance", 1, 1]]);
     expect(sectors.data[1].changePercent).toBeCloseTo((5225 / 6075 - 1) * 100, 6);
     expect(sectors.data[1].leader.changePercent).toBeCloseTo(market.data.movers.find((row) => row.symbol === "BBCA")!.changePercent!, 6);
+
+    // Conglomerate groups (curated catalog): the same 1D change as the movers, in percentage points; the foreign
+    // figure is Σ (buy − sell shares) × close; catalog members the engine doesn't know are reported, not dropped.
+    const groups = await source.groups({ window: "1D" });
+    expect(groups).toMatchObject({ freshness: "EOD", asOf: "2026-10-16", data: { window: { id: "1D", sessions: 1, from: "2026-10-16", to: "2026-10-16", basis: "daily" } } });
+    const djarum = groups.data.groups.find((group) => group.id === "djarum")!;
+    expect(djarum).toMatchObject({ membersWithData: 1, decliners: 1, valueIdr: 5196076490000, best: { symbol: "BBCA" }, foreign: { members: 1, partialMembers: 0 } });
+    expect(djarum.valueWeightedChangePercent).toBeCloseTo(market.data.movers.find((row) => row.symbol === "BBCA")!.changePercent!, 6);
+    expect(djarum.foreign.netValueEstimateIdr).toBe((310e6 - 420e6) * 5225);
+    // Price down and foreign net selling agree: no divergence.
+    expect(djarum.divergence).toBeNull();
+    expect(djarum.unknownSymbols).toEqual(expect.arrayContaining(["TOWR", "BELI"]));
+    expect(djarum.stocks[0]).toMatchObject({ symbol: "BBCA", name: "PT Bank Central Asia Tbk", sessions: 1, foreignSessions: 1 });
+    // Groups without any stored member come last, with null figures.
+    expect(groups.data.groups.at(-1)).toMatchObject({ membersWithData: 0, changePercent: null, valueWeightedChangePercent: null });
+
+    const fiveDay = await source.groups({ window: "5D" });
+    expect(fiveDay.data.window).toEqual({ id: "5D", sessions: 2, from: "2026-10-15", to: "2026-10-16", basis: "daily" });
+    const djarum5 = fiveDay.data.groups.find((group) => group.id === "djarum")!;
+    expect(djarum5.changePercent).toBeCloseTo((5225 / 6125 - 1) * 100, 6);
+    expect(djarum5.foreign.netValueEstimateIdr).toBe((70e6 - 90e6) * 6075 + (310e6 - 420e6) * 5225);
 
     // The market-wide calendar over an explicit range; the engine has no issuer profiles, so profile is unsupported.
     const calendar = await source.actionsCalendar({ from: "2021-10-01", to: "2021-10-31" });

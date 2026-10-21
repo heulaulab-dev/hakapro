@@ -3,8 +3,8 @@
 import { timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 import {
-  actionsCalendarSchema, actionsSchema, announcementItemSchema, fundamentalsSchema, macroSchema, marketOverviewSchema, newsItemSchema, sectorsSchema,
-  screenRequestSchema, screenResultSchema, securitySchema, signalsSchema, stockSchema,
+  actionsCalendarSchema, actionsSchema, announcementItemSchema, fundamentalsSchema, groupWindowSchema, groupsSchema, macroSchema, marketOverviewSchema,
+  newsItemSchema, sectorsSchema, screenRequestSchema, screenResultSchema, securitySchema, signalsSchema, stockSchema,
 } from "@/server/schemas/idx-bei";
 import { dateSchema, symbolSchema } from "@/server/schemas/inputs";
 import { ownershipChangesSchema, ownershipMonthSchema, stockOwnershipSchema } from "@/server/schemas/ownership";
@@ -19,6 +19,9 @@ import {
   ACTIONS_MAX_RANGE_DAYS, defaultActionsRange, NEWS_DEFAULT_PAGE_SIZE, NEWS_MAX_PAGE, NEWS_MAX_PAGE_SIZE, serveActionsCalendar, serveMacro, serveNews,
 } from "../serve/market-info";
 import { serveFundamentals, serveScreener } from "../serve/fundamentals";
+import { serveGroups } from "../serve/groups";
+import type { GroupCatalog } from "../groups/catalog";
+import { GROUP_CATALOG } from "../groups/groups";
 import { previousMonth as previousMonthOf } from "../ownership/numbers";
 import { emptyStockOwnership, serveOwnershipChanges, serveStockOwnership } from "../serve/ownership";
 import type { MarketStore } from "../serve/store";
@@ -48,6 +51,8 @@ export type AppDeps = {
   ownership?: OwnershipDeps;
   /** E4 strategy scans (ENGINE_STRATEGY_SCANS_ENABLED). Absent or disabled → /v1/strategies serves the empty board. */
   strategies?: { enabled: boolean; store: StrategyStore | null; rules?: StrategyRules };
+  /** The curated conglomerate groups behind /v1/groups (tests pass their own). */
+  groups?: GroupCatalog;
   now?: () => Date;
   log?: Logger;
 };
@@ -180,6 +185,14 @@ export function createApp(deps: AppDeps): (request: Request) => Promise<Response
       return respond(marketOverviewSchema, market ? await serveMarket(market, at) : null, { indices: [], breadth: { advancers: 0, decliners: 0, unchanged: 0, value: 0, volume: 0, frequency: 0 }, movers: [] });
     }
     if (path === "/v1/sectors") return respond(sectorsSchema, market ? await serveSectors(market, at) : null, []);
+    if (path === "/v1/groups") {
+      const window = groupWindowSchema.safeParse(param(url, "window")?.toUpperCase() ?? "1D");
+      if (!window.success) return error(400, "BAD_REQUEST", "window must be 1D, 5D or 20D");
+      const catalog = deps.groups ?? GROUP_CATALOG;
+      return respond(groupsSchema, market ? await serveGroups(market, window.data, at, catalog) : null, {
+        window: { id: window.data, sessions: 0, from: null, to: null, basis: "daily" }, catalog: { version: catalog.version, reviewedAt: catalog.reviewedAt }, groups: [],
+      });
+    }
     if (path === "/v1/securities") {
       return respond(securitySchema.array(), market ? await serveSecurities(market, (url.searchParams.get("q") ?? "").slice(0, 64), at) : null, []);
     }
