@@ -176,7 +176,9 @@ describe.skipIf(!enabled)("engine sources (docker postgres + fixtures)", { timeo
     expect(ihsg.length).toBeGreaterThanOrEqual(4);
     expect(ihsg.every((row) => row.source === "yahoo-chart")).toBe(true);
     let [session] = await h.db.select().from(t.eodSessions).where(eq(t.eodSessions.date, "2026-10-16"));
-    expect(session).toMatchObject({ status: "PARTIAL", expected: 8, present: 5, attempts: 1, finalizedAt: null });
+    // EOD coverage reports Yahoo rows only; TradingView fallback rows remain
+    // available to serve the session but do not count as Yahoo coverage.
+    expect(session).toMatchObject({ status: "PARTIAL", expected: 8, present: 1, attempts: 1, finalizedAt: null });
 
     // 20:45 attempt: only the symbols still missing a Yahoo row are requested; the session is then final and STALE.
     world.hits.length = 0;
@@ -184,7 +186,7 @@ describe.skipIf(!enabled)("engine sources (docker postgres + fixtures)", { timeo
     await h.run("eod-daily");
     expect(world.hits.some((hit) => hit.path.includes("BBCA.JK"))).toBe(false);
     [session] = await h.db.select().from(t.eodSessions).where(eq(t.eodSessions.date, "2026-10-16"));
-    expect(session).toMatchObject({ status: "STALE", expected: 8, present: 5, attempts: 2 });
+    expect(session).toMatchObject({ status: "STALE", expected: 8, present: 1, attempts: 2 });
     expect(session.finalizedAt).not.toBeNull();
   });
 
@@ -197,9 +199,10 @@ describe.skipIf(!enabled)("engine sources (docker postgres + fixtures)", { timeo
     expect(world.hits.filter((hit) => hit.source === "yahoo")).toHaveLength(1);
     const [yahoo] = await h.db.select().from(t.sources).where(eq(t.sources.id, "yahoo-chart"));
     expect(yahoo.status).toBe("BLOCKED");
-    // TradingView's fallback rows still serve the session.
+    // TradingView's fallback rows still serve the session, but count as zero
+    // Yahoo EOD coverage because the source was blocked.
     const [session] = await h.db.select().from(t.eodSessions);
-    expect(session).toMatchObject({ status: "PARTIAL", present: 5 });
+    expect(session).toMatchObject({ status: "PARTIAL", present: 0 });
   });
 
   it("eod-daily does not count fallback rows as Yahoo coverage", async () => {
