@@ -1,6 +1,7 @@
 // Polite fetcher (DATA-ENGINE.md §2): honest UA, per-host rate limit, conditional requests, URL+sha256 dedupe,
 // raw copy of every new document, block detection. There is deliberately no bypass of any kind: one fixed UA,
-// no proxies, no challenge solving, no browser automation, no retry after a block or 429.
+// no proxies, no challenge solving, no browser automation, no retry after a block. A 429 only rests the source for
+// its cooldown (block.ts), after which the next scheduled run may fetch again.
 import { createHash } from "node:crypto";
 import { detectBlock, evidenceHeaders, type BlockDetection } from "./block";
 import { DEFAULT_HOST_POLICY, LimiterRegistry, realClock, type Clock, type HostPolicy } from "./rate-limit";
@@ -209,8 +210,7 @@ export class Fetcher {
       reason: detection.reason, url, status: response.status, markers: detection.markers,
       headers: evidenceHeaders(response.headers), detectedAt: new Date(this.clock.now()).toISOString(),
     };
-    await this.deps.sourceState.markBlocked(source.id, evidence);
-    throw new SourceBlockedError(source.id, evidence);
+    throw new SourceBlockedError(source.id, await this.deps.sourceState.markBlocked(source.id, evidence));
   }
 
   private result(kind: FetchResult["kind"], document: RawDocumentRecord, body: Uint8Array | null, headers: Headers): FetchResult {

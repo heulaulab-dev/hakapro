@@ -17,7 +17,11 @@ export const RUN_STATUSES = ["RUNNING", "SUCCEEDED", "FAILED", "BLOCKED", "YIELD
 export const SESSION_STATUSES = ["PENDING", "PARTIAL", "COMPLETE", "STALE"] as const;
 
 export type SourcePolicy = { minIntervalMs: number; concurrency: number; schedule?: string };
-export type BlockEvidence = { reason: string; url: string; status: number | null; markers: string[]; headers: Record<string, string>; detectedAt: string };
+export type BlockEvidence = {
+  reason: string; url: string; status: number | null; markers: string[]; headers: Record<string, string>; detectedAt: string;
+  /** RATE_LIMITED only: n-th rate limit in a row (src/fetch/block.ts), and when the source may try again (null: never). */
+  strike?: number; retryAt?: string | null;
+};
 
 export const sources = pgTable("sources", {
   id: text("id").primaryKey(),
