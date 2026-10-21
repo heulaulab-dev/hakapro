@@ -103,7 +103,7 @@ describe("serveSectors", () => {
   it("groups the session by sector: breadth, mean and value-weighted change, leader and laggard, best first", async () => {
     const store = new MemoryMarketStore({
       securities: [
-        security("AAAA", "Alpha"), security("BBBB", "Beta"), security("CCCC", "Gamma", { sector: "Energy" }),
+        security("AAAA", "Alpha"), security("BBBB", "Beta", { sector: "Keuangan" }), security("CCCC", "Gamma", { sector: "Energy" }),
         security("DDDD", "Delta", { sector: "Energy" }), security("EEEE", "Eps", { sector: null }),
       ],
       daily: [
