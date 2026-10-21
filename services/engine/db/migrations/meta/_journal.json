@@ -43,6 +43,13 @@
       "when": 1792143564555,
       "tag": "20261016093924_strategy_scans",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792573341413,
+      "tag": "20261021090221_insider_transactions",
+      "breakpoints": true
     }
   ]
 }

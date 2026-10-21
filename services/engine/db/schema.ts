@@ -509,3 +509,51 @@ export const scanCandidates = pgTable("scan_candidates", {
   primaryKey({ name: "scan_candidates_pk", columns: [t.runId, t.strategyId, t.symbol] }),
   index("scan_candidates_session_strategy").on(t.sessionDate, t.strategyId),
 ]);
+
+export const INSIDER_ACTIONS = ["BUY", "SELL", "CROSS", "OTHER"] as const;
+/** Percent units as arjum publishes them (0.0061 = 0.0061%, 17.62 = 17.62%), not fractions. */
+const percentUnits = (name: string) => numeric(name, { precision: 12, scale: 6, mode: "number" });
+
+/**
+ * Insider transactions (arjum `/api/insiders/{code}` page 1, the `insider-feed` job). One row per reported transaction;
+ * a re-fetch of the same page updates the row in place (natural key below, NULLs compared as equal) instead of adding one.
+ */
+export const insiderTransactions = pgTable("insider_transactions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  symbol: text("symbol").notNull(),
+  person: text("person").notNull(),
+  /** Role badges as published (e.g. KOMISARIS, DIREKTUR); empty when none. */
+  roles: jsonb("roles").$type<string[]>().notNull().default([]),
+  action: text("action", { enum: INSIDER_ACTIONS }).notNull(),
+  date: date("date").notNull(),
+  /** Signed share change (+ bought, − sold); shares before/after and percents only when the source gives them. */
+  sharesChange: count("shares_change"),
+  sharesBefore: count("shares_before"),
+  sharesAfter: count("shares_after"),
+  percentBefore: percentUnits("percent_before"),
+  percentAfter: percentUnits("percent_after"),
+  percentChange: percentUnits("percent_change"),
+  /** Transaction price in IDR; null when the source reports none (it publishes "0" for those). */
+  price: price("price"),
+  broker: text("broker"),
+  nationality: text("nationality"),
+  ...provenance,
+  firstSeenAt: ts("first_seen_at").notNull().defaultNow(),
+}, (t) => [
+  unique("insider_transactions_natural").on(t.symbol, t.date, t.person, t.action, t.sharesChange, t.sharesAfter).nullsNotDistinct(),
+  index("insider_transactions_date").on(t.date),
+]);
+
+/**
+ * When the `insider-feed` job last read each symbol's newest insider page: the job's rotation (oldest check first) and
+ * the coverage `/v1/insiders/recent` states. An unknown code (404) is recorded too, with no raw document.
+ */
+export const insiderChecks = pgTable("insider_checks", {
+  symbol: text("symbol").primaryKey(),
+  /** WIB calendar date of the check. */
+  checkedDate: date("checked_date").notNull(),
+  /** Transactions on the page read (at most 15), and the provider's total for the symbol (null for an unknown code). */
+  rows: integer("rows").notNull().default(0),
+  total: integer("total"),
+  ...provenance,
+}, (t) => [index("insider_checks_checked_date").on(t.checkedDate)]);
