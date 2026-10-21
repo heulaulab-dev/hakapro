@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { detectBlock, evidenceHeaders } from "./block";
+import type { BlockEvidence } from "../../db/schema";
+import { blockRetryAt, cooldownOver, detectBlock, evidenceHeaders, retryAfterMs, withCooldown } from "./block";
 
 const URL_ = "https://data.example.test/v1/summary";
 const html = (extra: Record<string, string> = {}) => new Headers({ "content-type": "text/html; charset=UTF-8", ...extra });
@@ -65,5 +66,53 @@ describe("detectBlock", () => {
   it("keeps only allow-listed response headers as evidence", () => {
     const kept = evidenceHeaders(new Headers({ "cf-ray": "abc", "set-cookie": "__cf_bm=secret", server: "cloudflare" }));
     expect(kept).toEqual({ "cf-ray": "abc", server: "cloudflare" });
+  });
+});
+
+describe("rate-limit cooldown", () => {
+  const limited = (detectedAt: string, headers: Record<string, string> = {}): BlockEvidence => ({ reason: "RATE_LIMITED", url: URL_, status: 429, markers: ["status:429"], headers, detectedAt });
+  const HOUR = 3_600_000;
+  const at = (iso: string, plusMs: number) => new Date(Date.parse(iso) + plusMs).toISOString();
+
+  it("reads Retry-After as seconds or an HTTP date", () => {
+    const now = Date.parse("2026-10-18T12:00:00Z");
+    expect(retryAfterMs("30", now)).toBe(30_000);
+    expect(retryAfterMs("Sun, 18 Oct 2026 15:00:00 GMT", now)).toBe(3 * HOUR);
+    expect(retryAfterMs(undefined, now)).toBeNull();
+    expect(retryAfterMs("soon", now)).toBeNull();
+  });
+
+  it("rests 2 h, then 6 h, 24 h and 72 h for rate limits in a row, then stops for good", () => {
+    const first = withCooldown(limited("2026-10-18T12:00:00.000Z"), null);
+    expect(first).toMatchObject({ strike: 1, retryAt: "2026-10-18T14:00:00.000Z" });
+    let previous = first;
+    const expected = [6, 24, 72];
+    for (const [i, hours] of expected.entries()) {
+      const detectedAt = at("2026-10-18T14:00:00.000Z", i * HOUR);
+      previous = withCooldown(limited(detectedAt), previous);
+      expect(previous).toMatchObject({ strike: i + 2, retryAt: at(detectedAt, hours * HOUR) });
+    }
+    const last = withCooldown(limited("2026-10-18T20:00:00.000Z"), previous);
+    expect(last).toMatchObject({ strike: 5, retryAt: null });
+    expect(blockRetryAt(last)).toBeNull();
+    expect(cooldownOver(last, new Date("2027-01-01T00:00:00Z"))).toBe(false);
+  });
+
+  it("starts the ladder again after a quiet week, and honours a longer Retry-After", () => {
+    const old = withCooldown(limited("2026-10-01T00:00:00.000Z"), null);
+    expect(withCooldown(limited("2026-10-18T12:00:00.000Z"), old).strike).toBe(1);
+    expect(withCooldown(limited("2026-10-18T12:00:00.000Z", { "retry-after": "18000" }), null).retryAt).toBe("2026-10-18T17:00:00.000Z");
+  });
+
+  it("never retries other blocks; keeps propagated evidence; treats a stored pre-cooldown 429 as a first strike", () => {
+    const forbidden = withCooldown({ ...limited("2026-10-18T12:00:00.000Z"), reason: "FORBIDDEN", status: 403 }, null);
+    expect(forbidden.retryAt).toBeNull();
+    expect(cooldownOver(forbidden, new Date("2027-01-01T00:00:00Z"))).toBe(false);
+    const propagated = { ...limited("2026-10-18T12:00:00.000Z"), strike: 3, retryAt: "2026-10-19T12:00:00.000Z" };
+    expect(withCooldown(propagated, limited("2026-10-18T11:00:00.000Z"))).toBe(propagated);
+    const legacy = limited("2026-10-18T12:00:00.000Z");
+    expect(blockRetryAt(legacy)).toBe("2026-10-18T14:00:00.000Z");
+    expect(cooldownOver(legacy, new Date("2026-10-18T13:59:59Z"))).toBe(false);
+    expect(cooldownOver(legacy, new Date("2026-10-18T14:00:00Z"))).toBe(true);
   });
 });

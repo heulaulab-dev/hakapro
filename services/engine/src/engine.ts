@@ -114,7 +114,7 @@ export async function createEngine(config: EngineConfig, options: EngineOptions 
   const { db, ping, close } = createDb(config.databaseUrl);
   const rawStore = createRawStore(config.rawS3, config.dataDir);
   const documents = new DbRawDocumentIndex(db);
-  const sourceState = new DbSourceStateStore(db);
+  const sourceState = new DbSourceStateStore(db, now);
   const fetcher = new Fetcher({ rawStore, documents, sourceState, limiters: options.limiters ?? new LimiterRegistry(), fetch: options.fetch });
   const services: EngineServices = { config, db, fetcher, rawStore, documents, sourceState, log, now };
 
@@ -130,7 +130,7 @@ export async function createEngine(config: EngineConfig, options: EngineOptions 
   const scheduler = new Scheduler({ jobs: registry.jobs, pause, runs: new DbRunRecorder(db), cursors: new DbCursorStore(db), sourceState, log, now });
   const app = createApp({
     apiToken: config.apiToken, adminToken: config.adminToken, ping, pause, scheduler, rawStoreKind: rawStore.kind, log, now,
-    sourceHealth: () => sourceHealth(db), unblockSource: (id) => sourceState.unblock(id), jobHistory: () => recentJobHistory(db),
+    sourceHealth: () => sourceHealth(db, now()), unblockSource: (id) => sourceState.unblock(id), jobHistory: () => recentJobHistory(db),
     market: new DbMarketStore(db),
     ownership: { service: ownership, maxUploadBytes: config.ownership.maxUploadBytes, freeFloatEnabled: config.ownership.freeFloatEnabled },
     strategies: { enabled: config.strategyScans.enabled, store: new DbStrategyStore(db) },

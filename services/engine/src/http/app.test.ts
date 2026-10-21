@@ -31,7 +31,7 @@ describe("engine HTTP app", () => {
     });
     const handler = createApp({
       ping: async () => dbUp, pause, scheduler, rawStoreKind: "local",
-      sourceHealth: async () => [{ id: "fixture", host: "127.0.0.1", status: "BLOCKED", blocked: true, blockedAt: "2026-10-14T09:00:00.000Z", blockReason: "CLOUDFLARE_CHALLENGE", lastSuccessAt: null, lastErrorAt: null, lastError: null, rowsIngested: 0 }],
+      sourceHealth: async () => [{ id: "fixture", host: "127.0.0.1", status: "BLOCKED", blocked: true, blockedAt: "2026-10-14T09:00:00.000Z", blockReason: "CLOUDFLARE_CHALLENGE", retryAt: null, strike: null, lastSuccessAt: null, lastErrorAt: null, lastError: null, rowsIngested: 0 }],
       unblockSource: async () => true,
       now: () => new Date("2026-10-14T10:00:00Z"),
       ...overrides,

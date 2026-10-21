@@ -1,4 +1,6 @@
-// Block detection (DATA-ENGINE.md §2). A detected block stops the source; it is never bypassed or auto-retried.
+// Block detection (DATA-ENGINE.md §2). A detected block stops the source; it is never bypassed. A rate limit (429)
+// rests the source on a cooldown ladder and then lets it try again; every other block waits for an admin unblock.
+import type { BlockEvidence } from "../../db/schema";
 
 export type BlockReason = "RATE_LIMITED" | "CLOUDFLARE_CHALLENGE" | "CDN_FORBIDDEN" | "FORBIDDEN" | "CAPTCHA" | "LOGIN_REQUIRED";
 export type BlockDetection = { reason: BlockReason; markers: string[] };
@@ -68,4 +70,48 @@ export function detectBlock(input: BlockInput): BlockDetection | null {
   // Any other 403 is a refusal too: the source stops instead of retrying (§2), until an admin unblocks it.
   if (status === 403) return { reason: "FORBIDDEN", markers: ["status:403"] };
   return null;
+}
+
+/** Rest after the 1st, 2nd, … rate limit in a row. One more than the ladder stops the source until an admin unblocks it. */
+export const RATE_LIMIT_COOLDOWNS_MS = [2, 6, 24, 72].map((hours) => hours * 3_600_000);
+/** A rate limit more than this long after the previous one starts the ladder again. */
+export const RATE_LIMIT_STRIKE_WINDOW_MS = 7 * 86_400_000;
+
+/** `Retry-After` in ms from `now` (delta seconds or an HTTP date); null when absent or unreadable. */
+export function retryAfterMs(value: string | undefined, now: number): number | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (/^\d+$/.test(trimmed)) return Number(trimmed) * 1000;
+  const at = Date.parse(trimmed);
+  return Number.isNaN(at) ? null : Math.max(0, at - now);
+}
+
+/**
+ * Adds the cooldown to a new block: for a rate limit, the strike count (continuing the previous rate limit's when it
+ * was within the strike window) and the time it may try again, the ladder step or the server's Retry-After, whichever
+ * is later. Past the ladder, `retryAt` is null: the source stays blocked. Evidence that already carries a strike
+ * (propagated from another source on the same host) is kept as is. Other blocks never retry.
+ */
+export function withCooldown(evidence: BlockEvidence, previous: BlockEvidence | null): BlockEvidence {
+  if (evidence.reason !== "RATE_LIMITED") return { ...evidence, retryAt: null };
+  if (evidence.strike !== undefined) return evidence;
+  const detectedAt = Date.parse(evidence.detectedAt);
+  const continues = previous?.reason === "RATE_LIMITED" && detectedAt - Date.parse(previous.detectedAt) <= RATE_LIMIT_STRIKE_WINDOW_MS;
+  const strike = continues ? (previous.strike ?? 1) + 1 : 1;
+  const step = RATE_LIMIT_COOLDOWNS_MS[strike - 1];
+  if (step === undefined) return { ...evidence, strike, retryAt: null };
+  const wait = Math.max(step, retryAfterMs(evidence.headers["retry-after"], detectedAt) ?? 0);
+  return { ...evidence, strike, retryAt: new Date(detectedAt + wait).toISOString() };
+}
+
+/** When a block may try again, or null if only an admin unblock lifts it. Rate limits stored before the cooldown existed count as a first strike. */
+export function blockRetryAt(evidence: BlockEvidence | null): string | null {
+  if (evidence?.reason !== "RATE_LIMITED") return null;
+  if (evidence.strike === undefined) return new Date(Date.parse(evidence.detectedAt) + RATE_LIMIT_COOLDOWNS_MS[0]).toISOString();
+  return evidence.retryAt ?? null;
+}
+
+export function cooldownOver(evidence: BlockEvidence | null, now: Date): boolean {
+  const retryAt = blockRetryAt(evidence);
+  return retryAt !== null && now.getTime() >= Date.parse(retryAt);
 }

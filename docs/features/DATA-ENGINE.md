@@ -28,7 +28,12 @@ The product is internal for now, and the owner loosened the rules for this exper
 - scraping login or paywalled pages;
 - tight retry loops after a 429 or a block.
 
-A blocked source stops and raises a `SOURCE_BLOCKED` alert for the owner.
+A blocked source stops and raises a `SOURCE_BLOCKED` alert for the owner. A rate limit (429) is not a refusal: the
+source rests on a cooldown ladder (2 h, 6 h, 24 h, 72 h for rate limits within a week of each other, or the server's
+`Retry-After` if later), then its next scheduled run may fetch again. A fifth rate limit in a row, and every other
+block (403, challenge, captcha, login), stays blocked until an admin unblock. (Added 2026-10-21: one 429 on
+2026-10-18 had stopped Yahoo for good; the same requests worked from another network, so it was a rate limit, not a
+ban.)
 
 **Always:**
 - send an honest user agent: `HAKAPRO-DataEngine/0.1 (+https://hakapro.heulaulab.xyz)`;
@@ -266,7 +271,7 @@ Store headline + link + time + outlet only (§2).
 data, but IDX's published terms prohibit web scraping/crawling and require prior written permission for commercial
 use or distribution. Do not crawl that page or its underlying requests. The existing Yahoo, TradingView, and
 Pasardana integrations are experimental sources; their presence in code or public accessibility does not grant
-HAKAPRO collection, storage, or redistribution rights. Keep Yahoo blocked after a provider block. No free, current,
+HAKAPRO collection, storage, or redistribution rights. Yahoo stays an internal source under the §2 block rules. No free, current,
 full-market EOD source with verified terms for HAKAPRO production was established. BPS provides older annual market
 statistics, OJK aggregate statistics, and BI FX data, but none replaces per-stock daily OHLCV. Ask the provider or
 rights holder for terms covering server-side collection, storage, history, app display, and redistribution before

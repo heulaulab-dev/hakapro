@@ -21,7 +21,7 @@ function setup(dir: string, handlers: Handler[]) {
     return handler(request);
   }) as typeof fetch;
   const documents = new MemoryRawDocumentIndex();
-  const sourceState = new MemorySourceStateStore();
+  const sourceState = new MemorySourceStateStore(() => new Date(clock.now()));
   const rawStore = new LocalRawStore(dir);
   const fetcher = new Fetcher({ rawStore, documents, sourceState, clock, fetch: fetchImpl, limiters: new LimiterRegistry(clock) });
   return { fetcher, requests, documents, sourceState, rawStore, clock, handlers };
@@ -86,10 +86,19 @@ describe("Fetcher", () => {
     expect(t.clock.sleeps).toEqual([]);
   });
 
-  it("treats 429 as a block, not a retry", async () => {
-    const t = setup(dir.path, [() => new Response("slow down", { status: 429, headers: { "retry-after": "30" } })]);
+  it("treats 429 as a block with a cooldown, not a retry; the source fetches again only after the cooldown", async () => {
+    const t = setup(dir.path, [() => new Response("slow down", { status: 429, headers: { "retry-after": "30" } }), csv("a,b\n1,2\n")]);
+    const error = await t.fetcher.fetch(SOURCE, URL_).catch((caught) => caught);
+    expect(error).toBeInstanceOf(SourceBlockedError);
+    expect(error.evidence).toMatchObject({ reason: "RATE_LIMITED", strike: 1, retryAt: "2026-10-14T12:00:00.000Z" });
+    expect(t.requests).toHaveLength(1);
+    expect(t.clock.sleeps).toEqual([]);
+    t.clock.advance(2 * 3_600_000 - 1);
     await expect(t.fetcher.fetch(SOURCE, URL_)).rejects.toBeInstanceOf(SourceBlockedError);
     expect(t.requests).toHaveLength(1);
+    t.clock.advance(1);
+    expect((await t.fetcher.fetch(SOURCE, URL_)).kind).toBe("new");
+    expect(t.requests).toHaveLength(2);
   });
 
   it("blocks on a redirect to a login page", async () => {

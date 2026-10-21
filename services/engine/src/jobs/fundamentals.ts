@@ -6,8 +6,8 @@
 //   October to early November), from Thursday to Sunday, symbols whose newest stored quarter is older than the
 //   expected one are fetched once more after the week's full pass is done. Cheap: only lagging symbols.
 // Yahoo chart and fundamentals share one host: the fetcher's per-host limiter spaces both (one request in flight,
-// 3 s apart). A 429 on the fundamentals path also stops the chart source (one host-wide rate limit), and the job does
-// not start while the chart source is blocked.
+// 5 s apart). A 429 on the fundamentals path also rests the chart source for the same cooldown (one host-wide rate
+// limit), and the job does not start while the chart source is blocked.
 import { z } from "zod";
 import { symbolsByLiquidity } from "../db/ingest";
 import { latestQuarterEnds, upsertFinancials } from "../db/fundamentals";
@@ -20,7 +20,8 @@ import { fetchFor, parseDocument, provenanceOf, type JobServices, type SourceRef
 
 /** Every 10 minutes at :05, 19:00–05:59 WIB: between the EOD backfill's runs (:00, :10, …). */
 export const FUNDAMENTALS_CRON = "5-55/10 19-23,0-5 * * *";
-export const FUNDAMENTALS_BATCH = 20;
+/** Symbols per run: 10 × 66 night runs covers the ~900-symbol week in about two nights at a pace Yahoo tolerates. */
+export const FUNDAMENTALS_BATCH = 10;
 /** Consecutive per-symbol failures (not blocks) that end a run: the endpoint has probably changed. */
 export const MAX_CONSECUTIVE_FAILURES = 25;
 /** A quarter is expected once this many days have passed since its end (IDX quarterly filings are due in 30). */
@@ -118,7 +119,7 @@ export function fundamentalsJob(services: JobServices, source: SourceRef, option
           failures = 0;
         } catch (error) {
           if (error instanceof SourceBlockedError && error.evidence?.reason === "RATE_LIMITED") {
-            // A 429 is the host's limit, not the path's: stop the chart source as well (no retry, §2).
+            // A 429 is the host's limit, not the path's: rest the chart source for the same cooldown (§2).
             for (const other of hostSources) await services.sourceState.markBlocked(other, { ...error.evidence, reason: "RATE_LIMITED" });
           }
           if (!skippable(error)) throw error;
