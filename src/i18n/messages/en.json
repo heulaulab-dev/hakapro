@@ -593,7 +593,8 @@
       "UNCHANGED": "Unchanged",
       "BELOW_THRESHOLD": "Below 1%",
       "AMBIGUOUS": "Ambiguous"
-    }
+    },
+    "kseiUpload": "Upload KSEI list"
   },
   "stockChart": {
     "title": "Price chart",
@@ -1133,6 +1134,33 @@
       "tagline": "Indonesian equity research by Heulau Lab.",
       "disclaimer": "For research and education only, not investment advice. Past results don't predict future ones.",
       "app": "Open the app"
+    }
+  },
+  "ownershipUpload": {
+    "title": "Upload the ≥1% shareholder list",
+    "intro": "KSEI's monthly ≥1% shareholder list is published only as an announcement on the IDX website, which blocks the engine. Download the file in your browser and upload it here; the engine parses it, stores it and compares it with the previous month.",
+    "steps": "Steps",
+    "step1": "Open the IDX announcements, find the latest above-1% shareholder list and download the PDF:",
+    "step2": "Pick the month of the list's position (not the upload date) and, if there is one, enter the announcement number as the reference.",
+    "step3": "Upload the file. What was read and the per-holder changes appear on Ownership Changes and on each stock's Ownership tab.",
+    "month": "Position month",
+    "reference": "Reference (optional)",
+    "referencePlaceholder": "e.g. the IDX announcement number",
+    "file": "File",
+    "fileHint": "PDF, CSV or XLSX, up to 20 MB. The same file is never processed twice.",
+    "upload": "Upload",
+    "uploading": "Uploading…",
+    "parsed": "Read {issuers} issuers, {rows} rows.",
+    "duplicate": "This file was already uploaded.",
+    "viewChanges": "See changes",
+    "recent": "Recent uploads",
+    "loading": "Loading…",
+    "none": "No uploads yet.",
+    "issues": "{count} row notes",
+    "status": {
+      "RECEIVED": "Received",
+      "PARSED": "Parsed",
+      "FAILED": "Could not be read"
     }
   }
 }

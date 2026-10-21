@@ -164,6 +164,8 @@ Freshness note: old code has two enums. Lane A emits `EOD` / `STALE` (>7 calenda
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | public | Supabase clients |
 | `MARKET_API_URL` | server | Lane A |
 | `STRATEGY_ENGINE_ENABLED` | server | `1` adds the Data Engine's EOD strategy scans (`/v1/strategies` over Lane A) to `/api/strategies`; off by default (draft rules, HAKA-17) |
+| `HAKAPRO_ADMIN_EMAILS` | server | Comma-separated sign-in emails allowed on admin pages (`/admin/ownership`: KSEI ≥1% list uploads). Unset: no admins |
+| `ENGINE_ADMIN_TOKEN` | server (secret) | The Data Engine's admin token (same value as the engine's), used only to forward ownership uploads to `MARKET_API_URL` |
 | `HEULATRADE_MARKET_API_BASE_URL` | server | Lane B |
 | `HEULATRADE_MARKET_API_KEY` | server (secret) | Lane B |
 | `SUPABASE_SERVICE_ROLE_KEY` | server (secret) | alert job only |

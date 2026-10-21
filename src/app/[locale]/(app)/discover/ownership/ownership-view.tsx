@@ -22,7 +22,7 @@ import { useWatchlist } from "@/lib/watchlist";
 
 const TICKER = /^[A-Z0-9]{1,12}$/;
 
-export function OwnershipView({ viewer }: { viewer: ViewerSummary }) {
+export function OwnershipView({ viewer, canUpload = false }: { viewer: ViewerSummary; canUpload?: boolean }) {
   const t = useTranslations("ownershipChanges");
   const router = useRouter();
   const [symbol, setSymbol] = useState("");
@@ -42,7 +42,7 @@ export function OwnershipView({ viewer }: { viewer: ViewerSummary }) {
   return (
     <div className="flex flex-col gap-section p-4 md:p-6" data-testid="ownership-view">
       <SectionHeader as="h1" title={t("title")} description={t("intro")} />
-      <KseiChanges />
+      <KseiChanges canUpload={canUpload} />
       <form onSubmit={go} className="flex max-w-sm items-center gap-2">
         <Input aria-label={t("checkStock")} placeholder={t("checkStock")} value={symbol} onChange={(event) => setSymbol(event.target.value)} className="ticker h-8 uppercase" data-testid="ownership-symbol" />
         <Button type="submit" size="sm">{t("go")}</Button>
@@ -65,14 +65,15 @@ const ppText = (value: string | null) => (value === null ? "" : `${Number(value)
  * Market-wide changes among KSEI ≥1% holders for the newest month the owner uploaded. Unchanged holders are left out.
  * Before the first upload the engine answers with an empty, undated form: say exactly that.
  */
-function KseiChanges() {
+function KseiChanges({ canUpload }: { canUpload: boolean }) {
   const t = useTranslations("ownershipChanges");
   const locale = useLocale() as Locale;
   const query = useOwnershipChanges();
   const monthLabel = (month: string) => `${formatMonthName(Number(month.slice(5, 7)), locale)} ${month.slice(0, 4)}`;
   return (
     <section className="flex flex-col gap-3" data-testid="ksei-changes">
-      <SectionHeader title={t("kseiTitle")} description={t("kseiHint")} meta={query.data ? freshnessMeta(query.data) : undefined} />
+      <SectionHeader title={t("kseiTitle")} description={t("kseiHint")} meta={query.data ? freshnessMeta(query.data) : undefined}
+        actions={canUpload ? <Link href="/admin/ownership" className="caption-style text-link hover:underline" data-testid="ksei-upload-link">{t("kseiUpload")}</Link> : undefined} />
       <DataState query={query} compact>
         {(envelope) => envelope.data.changes.length === 0 ? <EmptyState compact icon={<Landmark />} title={t("kseiNone")} /> : (
           <div className="flex flex-col gap-2">

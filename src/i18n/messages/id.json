@@ -593,7 +593,8 @@
       "UNCHANGED": "Tetap",
       "BELOW_THRESHOLD": "Di bawah 1%",
       "AMBIGUOUS": "Tidak pasti"
-    }
+    },
+    "kseiUpload": "Unggah daftar KSEI"
   },
   "stockChart": {
     "title": "Grafik harga",
@@ -1133,6 +1134,33 @@
       "tagline": "Riset saham Indonesia oleh Heulau Lab.",
       "disclaimer": "Hanya untuk riset dan edukasi, bukan saran investasi. Hasil masa lalu tidak menjamin hasil mendatang.",
       "app": "Buka aplikasi"
+    }
+  },
+  "ownershipUpload": {
+    "title": "Unggah daftar pemegang saham ≥1%",
+    "intro": "Daftar bulanan pemegang saham ≥1% KSEI hanya terbit sebagai pengumuman di situs IDX, yang memblokir engine. Unduh berkasnya di browser lalu unggah di sini; engine membaca, menyimpan, dan membandingkannya dengan bulan sebelumnya.",
+    "steps": "Langkah",
+    "step1": "Buka pengumuman IDX dan cari daftar pemegang saham di atas 1% untuk bulan terakhir, lalu unduh PDF-nya:",
+    "step2": "Pilih bulan posisi daftar itu (bukan tanggal unggah) dan, bila ada, isi nomor pengumumannya sebagai referensi.",
+    "step3": "Unggah berkasnya. Hasil baca dan perubahan per pemegang muncul di halaman Perubahan Kepemilikan dan tab Kepemilikan tiap saham.",
+    "month": "Bulan posisi",
+    "reference": "Referensi (opsional)",
+    "referencePlaceholder": "mis. nomor pengumuman IDX",
+    "file": "Berkas",
+    "fileHint": "PDF, CSV, atau XLSX, maksimal 20 MB. Berkas yang sama tidak diproses dua kali.",
+    "upload": "Unggah",
+    "uploading": "Mengunggah…",
+    "parsed": "Terbaca {issuers} emiten, {rows} baris.",
+    "duplicate": "Berkas ini sudah pernah diunggah.",
+    "viewChanges": "Lihat perubahan",
+    "recent": "Unggahan terakhir",
+    "loading": "Memuat…",
+    "none": "Belum ada unggahan.",
+    "issues": "{count} catatan baris",
+    "status": {
+      "RECEIVED": "Diterima",
+      "PARSED": "Terbaca",
+      "FAILED": "Gagal dibaca"
     }
   }
 }
