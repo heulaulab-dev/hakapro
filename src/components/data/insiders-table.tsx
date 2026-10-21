@@ -11,10 +11,13 @@ import type { FreshnessMeta } from "@/lib/freshness";
 import { formatDate, formatIdr, formatPercent, formatVolume, type Locale } from "@/lib/format";
 import { DataTable } from "./data-table";
 
-export type InsiderTableRow = InsiderRow & { symbol?: string };
+export type InsiderTableRow = InsiderRow & { symbol?: string; valueIdr?: number | null };
 
-/** Reported insider transactions; numbers come parsed from provider strings (never raw text). */
-export function InsidersTable({ rows, meta, showSymbol, toolbar, testId = "insiders-table" }: { rows: InsiderTableRow[]; meta: FreshnessMeta; showSymbol?: boolean; toolbar?: ReactNode; testId?: string }) {
+/**
+ * Reported insider transactions; numbers come parsed from provider strings (never raw text).
+ * `showValue` adds |shares| × price (IDR) for feeds that send it; a missing price shows a dash, never 0.
+ */
+export function InsidersTable({ rows, meta, showSymbol, showValue, toolbar, testId = "insiders-table" }: { rows: InsiderTableRow[]; meta: FreshnessMeta; showSymbol?: boolean; showValue?: boolean; toolbar?: ReactNode; testId?: string }) {
   const t = useTranslations("insiders");
   const locale = useLocale() as Locale;
   const columns = useMemo<ColumnDef<InsiderTableRow, unknown>[]>(() => [
@@ -25,6 +28,7 @@ export function InsidersTable({ rows, meta, showSymbol, toolbar, testId = "insid
     { accessorKey: "changeShares", header: t("change"), meta: { numeric: true }, cell: ({ getValue }) => formatVolume(getValue<number | null>(), locale, { compact: true }) },
     { accessorKey: "currentShares", header: t("holding"), meta: { numeric: true }, cell: ({ row }) => <span className="flex flex-col items-end"><span>{formatVolume(row.original.currentShares, locale, { compact: true })}</span><span className="text-[11px] text-muted-foreground">{formatPercent(row.original.currentPercent, locale, { decimals: 4, signed: false })}</span></span> },
     { accessorKey: "priceIdr", header: t("price"), meta: { numeric: true }, cell: ({ getValue }) => formatIdr(getValue<number | null>(), locale) },
-  ], [t, locale, showSymbol]);
+    ...(showValue ? [{ id: "valueIdr", accessorFn: (row) => row.valueIdr ?? null, header: t("value"), meta: { numeric: true }, cell: ({ getValue }) => formatIdr(getValue<number | null>(), locale, { compact: true }) } satisfies ColumnDef<InsiderTableRow, unknown>] : []),
+  ], [t, locale, showSymbol, showValue]);
   return <DataTable testId={testId} columns={columns} data={rows} meta={meta} caption={t("title")} toolbar={toolbar} initialSorting={[{ id: "date", desc: true }]} />;
 }

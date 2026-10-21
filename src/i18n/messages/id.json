@@ -279,7 +279,23 @@
       "SELL": "Jual",
       "CROSS": "Crossing",
       "OTHER": "Lainnya"
-    }
+    },
+    "value": "Nilai"
+  },
+  "insiderFeed": {
+    "title": "Transaksi insider 7 hari",
+    "hint": "Transaksi orang dalam yang dilaporkan di seluruh pasar. Halaman insider tiap saham dibaca bergiliran, jadi daftar ini hanya memuat saham yang sudah dibaca.",
+    "coverage": "Mencakup {checked} dari {active} saham; diperbarui bergiliran.",
+    "oldest": "Pembacaan tertua dalam {days} hari terakhir: {date}.",
+    "window": "Tanggal transaksi {from} – {to}",
+    "filter": "Saring aksi",
+    "all": "Semua",
+    "notRunning": "Umpan insider lintas pasar belum berjalan. Transaksi akan muncul setelah mesin data mulai membaca halaman insider per saham.",
+    "none": "Tidak ada transaksi insider bertanggal {days} hari terakhir pada saham yang sudah dibaca.",
+    "previewTitle": "Pembelian insider terbesar · 7 hari",
+    "previewHint": "Diurutkan menurut nilai (lembar × harga). Mencakup {checked} dari {active} saham; diperbarui bergiliran.",
+    "previewNone": "Belum ada pembelian insider bernilai dalam 7 hari terakhir pada saham yang sudah dibaca.",
+    "seeAll": "Lihat semua"
   },
   "broker": {
     "title": "Broker Summary",
