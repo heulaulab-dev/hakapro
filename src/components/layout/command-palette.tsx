@@ -107,6 +107,10 @@ export function CommandPalette({ viewer }: { viewer: ViewerSummary }) {
                   {t(`stockTabs.${tab}`)}
                 </CommandItem>
               ))}
+              <CommandItem value={`${tabsSymbol} ${t("research.link")} research`} onSelect={() => go(`/research/${tabsSymbol}`)} data-testid={`palette-research-${tabsSymbol}`}>
+                <span className="ticker w-14 shrink-0 text-muted-foreground">{tabsSymbol}</span>
+                {t("research.link")}
+              </CommandItem>
             </CommandGroup>
           )}
 

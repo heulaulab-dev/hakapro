@@ -72,7 +72,8 @@
     "watchlistEmpty": "Daftar pantau masih kosong.",
     "news": "Berita & peristiwa penting",
     "sectorsHint": "Rata-rata perubahan harga saham per sektor pada sesi terakhir.",
-    "sectorBreadth": "▲{up} ▼{down} dari {stocks} saham"
+    "sectorBreadth": "▲{up} ▼{down} dari {stocks} saham",
+    "sectorsUnavailable": "Kinerja per sektor belum tersedia dari sumber data saat ini."
   },
   "dev": {
     "primitivesTitle": "Komponen dasar",
@@ -570,7 +571,8 @@
     "actionDividend": "Dividen tunai",
     "actionSplit": "Stock split",
     "dividendAmount": "Rp{amount} per saham",
-    "announcementsNote": "Keterbukaan informasi hanya diterbitkan di situs IDX, yang belum dapat diakses oleh sumber data HAKA PRO. Dokumen resminya tersedia di idx.co.id."
+    "announcementsNote": "Keterbukaan informasi hanya diterbitkan di situs IDX, yang belum dapat diakses oleh sumber data HAKA PRO. Dokumen resminya tersedia di idx.co.id.",
+    "calendarNote": "Kalender aksi korporasi lintas pasar belum tersedia dari sumber data; aksi korporasi per saham akan tampil di halaman saham."
   },
   "ownershipChanges": {
     "title": "Perubahan Kepemilikan",
@@ -594,7 +596,8 @@
       "BELOW_THRESHOLD": "Di bawah 1%",
       "AMBIGUOUS": "Tidak pasti"
     },
-    "kseiUpload": "Unggah daftar KSEI"
+    "kseiUpload": "Unggah daftar KSEI",
+    "marketWideUnavailable": "Umpan perubahan kepemilikan lintas pasar belum tersedia dari sumber data saat ini."
   },
   "stockChart": {
     "title": "Grafik harga",
@@ -1161,6 +1164,148 @@
       "RECEIVED": "Diterima",
       "PARSED": "Terbaca",
       "FAILED": "Gagal dibaca"
+    }
+  },
+  "research": {
+    "link": "Riset",
+    "linkLabel": "Buka brief riset {code}",
+    "metaTitle": "Riset {code}",
+    "title": "Brief riset",
+    "openStock": "Halaman saham",
+    "asOf": "Data per {date}",
+    "generatedAt": "Disusun {date}",
+    "sector": "Sektor: {sector}",
+    "briefFreshness": {
+      "fresh": "Terkini",
+      "stale": "Usang",
+      "missing": "Tidak tersedia"
+    },
+    "staleNote": "Data harga lebih lama dari sesi perdagangan terakhir. Angka di halaman ini menggambarkan sesi {date}.",
+    "summary": {
+      "title": "Ringkasan sinyal",
+      "noScore": "Belum ada skor. Halaman ini hanya menyajikan bukti; skor baru ditampilkan setelah metodologi dan uji historisnya dipublikasikan.",
+      "confidence": "Kelengkapan data: {ok} dari {total} komponen tersedia ({pct})"
+    },
+    "components": {
+      "momentum": "Momentum harga",
+      "foreign": "Arus asing",
+      "broker": "Kategori investor (broker)",
+      "ksei": "Kepemilikan ≥1% (KSEI)",
+      "insider": "Orang dalam",
+      "volume": "Volume"
+    },
+    "status": {
+      "ok": "Tersedia",
+      "stale": "Usang",
+      "missing": "Tidak tersedia"
+    },
+    "reasons": {
+      "NOT_AVAILABLE": "Data ini belum tersedia di HAKAPRO.",
+      "ksei": "Data kepemilikan ≥1% belum tersedia.",
+      "NO_CATEGORY_BREAKDOWN": "Sumber tidak memberi rincian per kategori investor.",
+      "INSUFFICIENT_HISTORY": "Riwayat harga belum cukup panjang.",
+      "NOT_UPLOADED": "Belum ada daftar KSEI ≥1% yang diunggah untuk saham ini."
+    },
+    "momentum": {
+      "title": "Momentum harga",
+      "smaAbove": "Penutupan {date} di atas rata-rata 20 sesi ({sma}).",
+      "smaBelow": "Penutupan {date} di bawah rata-rata 20 sesi ({sma}).",
+      "smaAt": "Penutupan {date} sama dengan rata-rata 20 sesi ({sma})."
+    },
+    "flow": {
+      "title": "Arus asing dan broker",
+      "description": "Jendela dihitung dalam sesi perdagangan hingga {date}. Perubahan harga dan arus asing mencakup sesi yang sama.",
+      "window": "Jendela",
+      "price": "Harga",
+      "foreignNet": "Asing bersih",
+      "foreignValue": "Investor asing (nilai bersih)",
+      "domesticValue": "Investor domestik (nilai bersih)",
+      "localInstitution": "Institusi lokal",
+      "retail": "Ritel",
+      "categoriesNote": "Sumber hanya membedakan investor asing dan domestik. Institusi lokal dan ritel tidak tersedia, sehingga tidak ditampilkan sebagai angka.",
+      "brokerMissing": "Rincian kategori investor tidak tersedia: {reason}",
+      "foreignMissing": "Arus asing harian tidak tersedia: {reason}",
+      "sessionsSummary": "Dalam {sessions} sesi terakhir: {buy} sesi beli bersih, {sell} sesi jual bersih."
+    },
+    "ownership": {
+      "title": "Kepemilikan",
+      "missing": "Data kepemilikan ≥1% belum tersedia",
+      "missingDescription": "Bagian ini akan terisi setelah data pemegang saham ≥1% dari KSEI tersambung.",
+      "notUploaded": "Belum ada daftar pemegang saham ≥1% yang diunggah untuk saham ini.",
+      "position": "Posisi",
+      "holders": "Pemegang ≥1%",
+      "largest": "Porsi terbesar",
+      "disclosed": "Total porsi terungkap",
+      "changes": "Perubahan sejak {month}",
+      "changeCounts": "{added} baru · {up} naik · {down} turun · {exited} keluar"
+    },
+    "insider": {
+      "title": "Orang dalam",
+      "summary": "{count} transaksi dilaporkan dalam {days} hari hingga {date}: {buys} pembelian, {sells} penjualan.",
+      "net": "Selisih saham yang dibeli dan dijual: {net}.",
+      "none": "Tidak ada transaksi yang dilaporkan dalam {days} hari hingga {date}.",
+      "latest": "Laporan terbaru yang dimuat: {date}.",
+      "truncated": "Hanya laporan terbaru yang dimuat; transaksi lebih lama dalam periode ini mungkin belum terlihat.",
+      "actions": {
+        "BUY": "Pembelian",
+        "SELL": "Penjualan",
+        "CROSS": "Crossing",
+        "OTHER": "Lainnya"
+      }
+    },
+    "volume": {
+      "title": "Anomali volume",
+      "description": "Sesi {date} dibanding rata-rata {count} sesi sebelumnya.",
+      "volume": "Volume",
+      "value": "Nilai transaksi",
+      "orderSize": "Rata-rata nilai per transaksi",
+      "baseline": "Rata-rata: {value}",
+      "ratio": "{ratio}× rata-rata"
+    },
+    "counter": {
+      "title": "Bukti yang berlawanan",
+      "description": "Dicantumkan otomatis setiap kali arah harga dan arus bersih berbeda pada jendela yang sama.",
+      "none": "Tidak ada arus yang berlawanan dengan arah harga pada jendela yang tersedia.",
+      "noData": "Belum dapat dinilai karena data arus tidak tersedia."
+    },
+    "quality": {
+      "title": "Kualitas data",
+      "component": "Komponen",
+      "status": "Status",
+      "note": "Keterangan",
+      "source": "Sumber",
+      "asOf": "Per tanggal",
+      "checks": "Pemeriksaan silang",
+      "checkNames": {
+        "price_history": "Harga terakhir vs penutupan harian pada sesi yang sama",
+        "foreign_sources": "Arah arus asing: riwayat harian vs ringkasan broker (1 sesi)",
+        "broker_windows": "Rentang tanggal ringkasan broker sesuai jendela yang diminta"
+      },
+      "results": {
+        "match": "Sesuai",
+        "mismatch": "Berbeda",
+        "not_applicable": "Tidak dapat diperiksa"
+      }
+    },
+    "sources": {
+      "title": "Sumber dan metode",
+      "table": "Sumber",
+      "asOf": "Per tanggal",
+      "rows": "Baris",
+      "range": "Rentang",
+      "methodTitle": "Metode",
+      "windows": "Jendela 1D–30D dihitung dalam sesi perdagangan; perubahan harga memakai penutupan tepat sebelum jendela.",
+      "baseline": "Volume, nilai, dan rata-rata nilai per transaksi dibanding rata-rata 20 sesi sebelum sesi terakhir.",
+      "insider": "Transaksi orang dalam: {days} hari kalender hingga tanggal data.",
+      "price": "Harga terakhir dan perubahannya dihitung dengan cara yang sama seperti di halaman saham.",
+      "version": "Versi skor: none (tanpa skor)"
+    },
+    "errors": {
+      "notFound": "Kode saham tidak dikenal",
+      "notFoundDescription": "Tidak ada saham dengan kode {code}.",
+      "unavailable": "Harga belum tersedia",
+      "unavailableDescription": "Brief tidak dapat disusun tanpa harga. Belum tersedia: {list}.",
+      "price": "Harga"
     }
   }
 }

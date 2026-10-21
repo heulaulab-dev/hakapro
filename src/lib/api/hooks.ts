@@ -6,6 +6,8 @@ import {
   accumulationApi, analysisApi, engineApi, financialsApi, marketApi, overviewApi, priceApi, quotesApi, screenerApi, stockApi,
   type BrokerSummaryQuery, type FinancialsQuery, type HistoryQuery, type MarketCapQuery, type ScreenCondition,
 } from "./market";
+import { shouldRetry } from "@/lib/query/client";
+import { fetchResearchBrief, ResearchUnavailableError } from "./research";
 
 /** Keeps the previous result on screen while a filter changes, but never across symbols. */
 function keepSameSymbol<E extends { data: { symbol: string } }>(previous: E | undefined, symbol: string): E | undefined {
@@ -64,3 +66,11 @@ export const useInsiderDisclosures = (symbol: string, limit: number) =>
   });
 export const useInsidersPage = (symbol: string, page: number, limit: number, action: string | null) =>
   useQuery({ queryKey: queryKeys.insidersPage(symbol, page, limit, action), queryFn: ({ signal }) => stockApi.insiders(symbol, { page, limit, action }, signal), placeholderData: (previous) => keepSameSymbol(previous, symbol) });
+/** Research Brief: computed server-side once per ticker per trading day. */
+export const useResearchBrief = (code: string) =>
+  useQuery({
+    queryKey: queryKeys.research(code),
+    queryFn: ({ signal }) => fetchResearchBrief(code, signal),
+    // A missing price won't appear on an immediate retry; the page explains what is missing instead.
+    retry: (failureCount, error) => !(error instanceof ResearchUnavailableError) && shouldRetry(failureCount, error),
+  });

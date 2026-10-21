@@ -72,7 +72,8 @@
     "watchlistEmpty": "Your watchlist is empty.",
     "news": "Key news & events",
     "sectorsHint": "Average price change of each sector's stocks in the latest session.",
-    "sectorBreadth": "▲{up} ▼{down} of {stocks} stocks"
+    "sectorBreadth": "▲{up} ▼{down} of {stocks} stocks",
+    "sectorsUnavailable": "Sector performance isn't available from the current data source yet."
   },
   "dev": {
     "primitivesTitle": "Primitives",
@@ -570,7 +571,8 @@
     "actionDividend": "Cash dividend",
     "actionSplit": "Stock split",
     "dividendAmount": "IDR {amount} per share",
-    "announcementsNote": "Issuer disclosures are published only on the IDX website, which HAKA PRO's data sources can't access yet. The official documents are on idx.co.id."
+    "announcementsNote": "Issuer disclosures are published only on the IDX website, which HAKA PRO's data sources can't access yet. The official documents are on idx.co.id.",
+    "calendarNote": "A market-wide corporate-action calendar isn't available from the data sources yet; per-stock corporate actions will appear on stock pages."
   },
   "ownershipChanges": {
     "title": "Ownership Changes",
@@ -594,7 +596,8 @@
       "BELOW_THRESHOLD": "Below 1%",
       "AMBIGUOUS": "Ambiguous"
     },
-    "kseiUpload": "Upload KSEI list"
+    "kseiUpload": "Upload KSEI list",
+    "marketWideUnavailable": "A market-wide ownership-change feed isn't available from the current data source."
   },
   "stockChart": {
     "title": "Price chart",
@@ -1161,6 +1164,148 @@
       "RECEIVED": "Received",
       "PARSED": "Parsed",
       "FAILED": "Could not be read"
+    }
+  },
+  "research": {
+    "link": "Research",
+    "linkLabel": "Open the {code} research brief",
+    "metaTitle": "Research {code}",
+    "title": "Research brief",
+    "openStock": "Stock page",
+    "asOf": "Data as of {date}",
+    "generatedAt": "Compiled {date}",
+    "sector": "Sector: {sector}",
+    "briefFreshness": {
+      "fresh": "Current",
+      "stale": "Stale",
+      "missing": "Unavailable"
+    },
+    "staleNote": "The price data is older than the last trading session. Figures on this page describe the {date} session.",
+    "summary": {
+      "title": "Signal summary",
+      "noScore": "No score yet. This page presents evidence only; a score will be shown once its methodology and backtest are published.",
+      "confidence": "Data completeness: {ok} of {total} components available ({pct})"
+    },
+    "components": {
+      "momentum": "Price momentum",
+      "foreign": "Foreign flow",
+      "broker": "Investor category (broker)",
+      "ksei": "≥1% ownership (KSEI)",
+      "insider": "Insiders",
+      "volume": "Volume"
+    },
+    "status": {
+      "ok": "Available",
+      "stale": "Stale",
+      "missing": "Missing"
+    },
+    "reasons": {
+      "NOT_AVAILABLE": "This data isn't available in HAKAPRO yet.",
+      "ksei": "≥1% ownership data isn't available yet.",
+      "NO_CATEGORY_BREAKDOWN": "The source doesn't break figures down by investor category.",
+      "INSUFFICIENT_HISTORY": "Not enough price history yet.",
+      "NOT_UPLOADED": "No KSEI ≥1% list has been uploaded for this stock yet."
+    },
+    "momentum": {
+      "title": "Price momentum",
+      "smaAbove": "The {date} close is above the 20-session average ({sma}).",
+      "smaBelow": "The {date} close is below the 20-session average ({sma}).",
+      "smaAt": "The {date} close equals the 20-session average ({sma})."
+    },
+    "flow": {
+      "title": "Foreign and broker flow",
+      "description": "Windows are counted in trading sessions up to {date}. Price change and foreign flow cover the same sessions.",
+      "window": "Window",
+      "price": "Price",
+      "foreignNet": "Net foreign",
+      "foreignValue": "Foreign investors (net value)",
+      "domesticValue": "Domestic investors (net value)",
+      "localInstitution": "Local institutions",
+      "retail": "Retail",
+      "categoriesNote": "The source only separates foreign and domestic investors. Local institutions and retail aren't available, so they aren't shown as numbers.",
+      "brokerMissing": "Investor category breakdown unavailable: {reason}",
+      "foreignMissing": "Daily foreign flow unavailable: {reason}",
+      "sessionsSummary": "Over the last {sessions} sessions: {buy} net-buy sessions, {sell} net-sell sessions."
+    },
+    "ownership": {
+      "title": "Ownership",
+      "missing": "≥1% ownership data isn't available yet",
+      "missingDescription": "This section will fill in once KSEI ≥1% shareholder data is connected.",
+      "notUploaded": "No ≥1% shareholder list has been uploaded for this stock yet.",
+      "position": "Position",
+      "holders": "≥1% holders",
+      "largest": "Largest holding",
+      "disclosed": "Total disclosed",
+      "changes": "Changes since {month}",
+      "changeCounts": "{added} new · {up} up · {down} down · {exited} exited"
+    },
+    "insider": {
+      "title": "Insiders",
+      "summary": "{count, plural, one {# transaction} other {# transactions}} reported in the {days} days to {date}: {buys} purchases, {sells} sales.",
+      "net": "Shares bought minus shares sold: {net}.",
+      "none": "No transactions reported in the {days} days to {date}.",
+      "latest": "Latest loaded report: {date}.",
+      "truncated": "Only the most recent reports are loaded; older transactions in this period may not be shown.",
+      "actions": {
+        "BUY": "Purchase",
+        "SELL": "Sale",
+        "CROSS": "Crossing",
+        "OTHER": "Other"
+      }
+    },
+    "volume": {
+      "title": "Volume anomaly",
+      "description": "The {date} session against the average of the {count} sessions before it.",
+      "volume": "Volume",
+      "value": "Traded value",
+      "orderSize": "Average value per trade",
+      "baseline": "Average: {value}",
+      "ratio": "{ratio}× average"
+    },
+    "counter": {
+      "title": "Counter-evidence",
+      "description": "Listed automatically whenever price direction and net flow disagree over the same window.",
+      "none": "No flow points against the price direction in the available windows.",
+      "noData": "Can't be assessed: flow data is unavailable."
+    },
+    "quality": {
+      "title": "Data quality",
+      "component": "Component",
+      "status": "Status",
+      "note": "Note",
+      "source": "Source",
+      "asOf": "As of",
+      "checks": "Cross-checks",
+      "checkNames": {
+        "price_history": "Last price vs daily close for the same session",
+        "foreign_sources": "Foreign flow direction: daily history vs broker summary (1 session)",
+        "broker_windows": "Broker summary date range matches the requested window"
+      },
+      "results": {
+        "match": "Consistent",
+        "mismatch": "Differs",
+        "not_applicable": "Can't be checked"
+      }
+    },
+    "sources": {
+      "title": "Sources and method",
+      "table": "Source",
+      "asOf": "As of",
+      "rows": "Rows",
+      "range": "Range",
+      "methodTitle": "Method",
+      "windows": "1D–30D windows are counted in trading sessions; price change uses the close right before the window.",
+      "baseline": "Volume, value and average value per trade are compared with the average of the 20 sessions before the latest one.",
+      "insider": "Insider transactions: {days} calendar days up to the data date.",
+      "price": "The last price and its change are computed the same way as on the stock page.",
+      "version": "Score version: none (no score)"
+    },
+    "errors": {
+      "notFound": "Unknown ticker",
+      "notFoundDescription": "There's no stock with the code {code}.",
+      "unavailable": "Price not available",
+      "unavailableDescription": "A brief can't be compiled without a price. Not available: {list}.",
+      "price": "Price"
     }
   }
 }

@@ -28,5 +28,6 @@ export const queryKeys = {
   ownershipChanges: (month?: string, symbol?: string) => ["market", "ownership-changes", month ?? null, symbol?.toUpperCase() ?? null] as const,
   insidersPage: (symbol: string, page: number, limit: number, action: string | null) => ["market", "insiders", symbol.toUpperCase(), page, limit, action] as const,
   insiderDisclosures: (symbol: string, limit: number) => ["market", "insiders", symbol.toUpperCase(), "disclosures", limit] as const,
+  research: (code: string) => ["market", "research", code.toUpperCase()] as const,
   savedScreens: (userId: string) => ["user", "saved-screens", userId] as const,
 };
