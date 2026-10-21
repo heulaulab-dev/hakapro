@@ -111,13 +111,16 @@ test.describe("slice 5: Movers, News & Calendar, Ownership Changes", () => {
     await expect(list.getByRole("link", { name: "Safe headline" })).toHaveAttribute("href", "https://example.com/a");
     await expect(list.getByText("Unsafe headline")).toBeVisible();
     await expect(list.getByRole("link", { name: "Unsafe headline" })).toHaveCount(0);
+    await page.getByTestId("tab-calendar").click();
+    await expect(page.getByTestId("actions-calendar").getByTestId("data-state-code")).toHaveText("UNSUPPORTED");
     await page.getByTestId("tab-disclosures").click();
     await expect(page.getByTestId("announcement-list").getByTestId("data-state-code")).toHaveText("UNSUPPORTED");
   });
 
   test("ownership changes: honest about market-wide data; stock lookup navigates", async ({ page }) => {
     await page.goto("/id/discover/ownership");
-    await expect(page.getByTestId("ownership-view")).toContainText("Umpan perubahan kepemilikan lintas pasar belum tersedia");
+    // The fixture source has no KSEI ≥1% lists: the market-wide feed says the source lacks it, never an empty "no changes".
+    await expect(page.getByTestId("ksei-changes").getByTestId("data-state-code")).toHaveText("UNSUPPORTED");
     await page.getByTestId("ownership-symbol").fill("bbca");
     await page.keyboard.press("Enter");
     await expect(page).toHaveURL(/\/id\/stock\/BBCA\/insiders$/);

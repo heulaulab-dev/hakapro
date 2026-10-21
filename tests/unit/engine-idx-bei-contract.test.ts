@@ -128,6 +128,19 @@ describe("engine /v1 real responses via IdxBeiSource", () => {
     ]);
     expect((await source.news({ page: 2, perPage: 30 })).data).toEqual([]);
 
+    // Sectors over the same session rows as the movers, in percentage points like the rest of the app.
+    const sectors = await source.sectors();
+    expect(sectors).toMatchObject({ freshness: "EOD", asOf: "2026-10-16" });
+    // Best change first: GOTO (−11.1%) before BBCA (−14.0%).
+    expect(sectors.data.map((row) => [row.sector, row.stocks, row.decliners])).toEqual([["Technology Services", 1, 1], ["Finance", 1, 1]]);
+    expect(sectors.data[1].changePercent).toBeCloseTo((5225 / 6075 - 1) * 100, 6);
+    expect(sectors.data[1].leader.changePercent).toBeCloseTo(market.data.movers.find((row) => row.symbol === "BBCA")!.changePercent!, 6);
+
+    // The market-wide calendar over an explicit range; the engine has no issuer profiles, so profile is unsupported.
+    const calendar = await source.actionsCalendar({ from: "2021-10-01", to: "2021-10-31" });
+    expect(calendar.data).toEqual([{ symbol: "BBCA", date: "2021-10-13", type: "SPLIT", description: "Stock split 5:1", amount: null, ratio: null, documentUrl: null }]);
+    await expect(source.profile("BBCA")).rejects.toMatchObject({ code: "UNSUPPORTED" });
+
     const macro = await source.macro();
     expect(macro).toMatchObject({ freshness: "EOD", asOf: "2026-10-16" });
     expect(macro.data.series.map((row) => [row.id, row.value])).toEqual([["BI_RATE", 5.75], ["JISDOR", 17948]]);
@@ -224,7 +237,8 @@ describe("engine ownership routes via IdxBeiSource (E6, synthetic uploads)", () 
     const { IdxBeiSource: FreshSource } = await import("@/server/market/idx-bei-source");
     const source = new FreshSource(BASE, () => NOW, await ownershipFetch(NOW, false));
     expect(await source.ownership("TEST1")).toMatchObject({ freshness: "UNAVAILABLE", asOf: null, data: { symbol: "TEST1", holders: [] } });
-    expect(await source.ownershipChanges("2026-03")).toMatchObject({ freshness: "UNAVAILABLE", data: { changes: [] } });
+    expect(await source.ownershipChanges({ month: "2026-03" })).toMatchObject({ freshness: "UNAVAILABLE", data: { changes: [] } });
+    expect(await source.ownershipChanges({})).toMatchObject({ freshness: "UNAVAILABLE", data: { changes: [] } });
   });
 
   it("parses stored months and changes as HISTORICAL, dated by the position date", async () => {
@@ -234,9 +248,11 @@ describe("engine ownership routes via IdxBeiSource (E6, synthetic uploads)", () 
     const ownership = await source.ownership("TEST1");
     expect(ownership).toMatchObject({ freshness: "HISTORICAL", asOf: "2026-03-31", data: { month: "2026-03", freeFloat: null, source: { reference: "SYNTHETIC 2026-03" } } });
     expect(ownership.data.holders).toHaveLength(5);
-    const changes = await source.ownershipChanges("2026-03", "TEST2");
+    const changes = await source.ownershipChanges({ month: "2026-03", symbol: "TEST2" });
+    // Without a month: the newest stored month.
+    expect((await source.ownershipChanges({})).data).toMatchObject({ month: "2026-03", previousMonth: "2026-02" });
     expect(changes).toMatchObject({ freshness: "HISTORICAL", asOf: "2026-03-31" });
     expect(changes.data.changes.find((change) => change.holderName === "PT FIKTIF HOLDCO")).toMatchObject({ kind: "DECREASE", shareDelta: "-10000000" });
-    await expect(source.ownershipChanges("2026-3")).rejects.toThrow();
+    await expect(source.ownershipChanges({ month: "2026-3" })).rejects.toThrow();
   });
 });

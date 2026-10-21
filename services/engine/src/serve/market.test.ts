@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { wib } from "../../test/support";
-import { foreignSignals, indicesOf, moversOf, serveActions, serveMarket, serveSecurities, serveSignals, serveStock } from "./market";
+import { foreignSignals, indicesOf, moversOf, serveActions, serveMarket, serveSectors, serveSecurities, serveSignals, serveStock } from "./market";
 import { MemoryMarketStore, type DailyRecord, type SecurityRecord } from "./store";
 
 const day = (symbol: string, date: string, close: number, previousClose: number | null, extra: Partial<DailyRecord> = {}): DailyRecord => ({
@@ -96,6 +96,37 @@ describe("serveMarket", () => {
   it("returns null with no data at all", async () => {
     expect(await serveMarket(new MemoryMarketStore(), AFTER_CLOSE)).toBeNull();
     expect(moversOf([], new Map())).toEqual([]);
+  });
+});
+
+describe("serveSectors", () => {
+  it("groups the session by sector: breadth, mean and value-weighted change, leader and laggard, best first", async () => {
+    const store = new MemoryMarketStore({
+      securities: [
+        security("AAAA", "Alpha"), security("BBBB", "Beta"), security("CCCC", "Gamma", { sector: "Energy" }),
+        security("DDDD", "Delta", { sector: "Energy" }), security("EEEE", "Eps", { sector: null }),
+      ],
+      daily: [
+        day("AAAA", "2026-10-16", 110, 100, { value: 3_000 }), day("BBBB", "2026-10-16", 95, 100, { value: 1_000 }),
+        day("CCCC", "2026-10-16", 102, 100), day("DDDD", "2026-10-16", 100, 100), day("EEEE", "2026-10-16", 150, 100),
+      ],
+    });
+    const served = (await serveSectors(store, AFTER_CLOSE))!;
+    expect(served).toMatchObject({ dataAsOf: "2026-10-16", freshness: "EOD" });
+    expect(served.data.map((row) => row.sector)).toEqual(["Finance", "Energy"]);
+    const [finance, energy] = served.data;
+    expect(finance).toMatchObject({ stocks: 2, advancers: 1, decliners: 1, unchanged: 0, value: 4_000, leader: { symbol: "AAAA" }, laggard: { symbol: "BBBB" } });
+    expect(finance.changePercent).toBeCloseTo(0.025, 10);
+    expect(finance.valueWeightedChangePercent).toBeCloseTo((0.1 * 3_000 - 0.05 * 1_000) / 4_000, 10);
+    expect(energy).toMatchObject({ stocks: 2, advancers: 1, unchanged: 1 });
+  });
+
+  it("matches /v1/market's change for each stock and returns null without sectors or rows", async () => {
+    const store = new MemoryMarketStore({ securities: [security("AAAA", "Alpha")], daily: [day("AAAA", "2026-10-16", 110, 100)] });
+    const [sectors, market] = await Promise.all([serveSectors(store, AFTER_CLOSE), serveMarket(store, AFTER_CLOSE)]);
+    expect(sectors!.data[0].leader.changePercent).toBe(market!.data.movers[0].changePercent);
+    expect(await serveSectors(new MemoryMarketStore(), AFTER_CLOSE)).toBeNull();
+    expect(await serveSectors(new MemoryMarketStore({ securities: [security("AAAA", "Alpha", { sector: null })], daily: [day("AAAA", "2026-10-16", 110, 100)] }), AFTER_CLOSE)).toBeNull();
   });
 });
 

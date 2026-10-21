@@ -165,6 +165,10 @@ describe("ownership routes", () => {
     expect(changes.data.previousMonth).toBe("2026-02");
     expect(changes.data.comparisons.map((comparison) => [comparison.symbol, comparison.status])).toEqual([["TEST1", "COMPARED"], ["TEST2", "COMPARED"], ["TEST4", "NO_PREVIOUS"]]);
     expect(changes.data.changes).toHaveLength(9);
+    // Without month: the newest stored month.
+    const latest = idxBeiEnvelope(ownershipChangesSchema).parse(await (await call("/v1/ownership/changes")).json());
+    expect(latest.data).toMatchObject({ month: "2026-03", previousMonth: "2026-02" });
+    expect(latest.data.changes).toHaveLength(9);
     const filtered = idxBeiEnvelope(ownershipChangesSchema).parse(await (await call("/v1/ownership/changes?month=2026-03&symbol=test2")).json());
     expect(filtered.data.changes.map((change) => [change.holderName, change.kind])).toEqual([
       // Ordered by holder key: "name:SITI CONTOH", "org:DANA PENSIUN CONTOH", "org:FIKTIF HOLDCO".
@@ -185,7 +189,9 @@ describe("ownership routes", () => {
     expect(empty).toMatchObject({ data: { symbol: "TEST9", month: null, holders: [], freeFloat: null }, meta: { freshness: "UNAVAILABLE", dataAsOf: null } });
     const none = idxBeiEnvelope(ownershipChangesSchema).parse(await (await call("/v1/ownership/changes?month=2026-01")).json());
     expect(none).toMatchObject({ data: { month: "2026-01", previousMonth: "2025-12", comparisons: [], changes: [] }, meta: { freshness: "UNAVAILABLE" } });
-    expect((await call("/v1/ownership/changes")).status).toBe(400);
+    // No month and nothing stored: this month's empty form (the market-wide feed before the first upload).
+    const latestNone = idxBeiEnvelope(ownershipChangesSchema).parse(await (await call("/v1/ownership/changes")).json());
+    expect(latestNone).toMatchObject({ data: { comparisons: [], changes: [] }, meta: { freshness: "UNAVAILABLE" } });
     expect((await call("/v1/ownership/changes?month=2026-1")).status).toBe(400);
     expect((await call("/v1/ownership/changes?month=2026-01&symbol=bad$")).status).toBe(400);
     expect((await call("/v1/stocks/bad$/ownership")).status).toBe(400);

@@ -6,6 +6,7 @@ test("desktop: Home → Strategies → why matched → stock research", async ({
   await page.goto("/id/dashboard");
   await expect(page.getByTestId("home-condition")).toContainText("FLAT MARKET");
   await expect(page.getByTestId("home-movers").getByTestId("data-state-code")).toHaveText("UNSUPPORTED");
+  await expect(page.getByTestId("home-sectors").getByTestId("data-state-code")).toHaveText("UNSUPPORTED");
   await expect(page.getByTestId("home-strategies").getByTestId("research-disclaimer")).toBeVisible();
 
   await page.getByTestId("home-strategies-all").click();

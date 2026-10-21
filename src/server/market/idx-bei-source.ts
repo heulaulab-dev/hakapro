@@ -3,16 +3,16 @@ import type { z } from "zod";
 import { classifySessionDate, withFreshness, type Freshness, type WithFreshness } from "@/lib/freshness";
 import { strategyBoardSchema } from "@/lib/strategies/contract";
 import {
-  actionsSchema, announcementItemSchema, fundamentalsSchema, idxBeiEnvelope, macroSchema, marketOverviewSchema, newsItemSchema,
-  profileSchema, screenRequestSchema, screenResultSchema, securitySchema, signalsSchema, stockSchema, type ScreenRequest,
+  actionsCalendarSchema, actionsSchema, announcementItemSchema, fundamentalsSchema, idxBeiEnvelope, macroSchema, marketOverviewSchema, newsItemSchema,
+  profileSchema, screenRequestSchema, screenResultSchema, sectorsSchema, securitySchema, signalsSchema, stockSchema, type ScreenRequest,
 } from "@/server/schemas/idx-bei";
 import { symbolSchema } from "@/server/schemas/inputs";
 import { ownershipChangesSchema, ownershipMonthSchema, stockOwnershipSchema } from "@/server/schemas/ownership";
 import { PROVIDER_USER_AGENT } from "@/server/config/provider-identity";
 import { logWarn } from "@/server/log";
 import { ProviderBackoff } from "@/server/providers/backoff";
-import { MarketDataError } from "./errors";
-import { BaseMarketDataSource, type PageQuery } from "./source";
+import { MarketDataError, unsupported } from "./errors";
+import { BaseMarketDataSource, type ActionsCalendarQuery, type OwnershipChangesQuery, type PageQuery } from "./source";
 import type { Candle, Quote } from "./types";
 import type { Clock } from "./arjum-source";
 
@@ -46,7 +46,8 @@ export class IdxBeiSource extends BaseMarketDataSource {
     return new IdxBeiSource(url);
   }
 
-  private async get<T extends z.ZodType>(path: string, data: T, ttl?: number, init?: RequestInit) {
+  /** `notFound`: the error for a 404 (a route the service has but no data behind); otherwise PROVIDER_UNAVAILABLE. */
+  private async get<T extends z.ZodType>(path: string, data: T, ttl?: number, init?: RequestInit, notFound?: () => Error) {
     const key = init?.body ? null : path;
     const hit = key && ttl ? cache.get(key) : undefined;
     if (hit && Date.now() - hit.at < ttl!) return { ...(hit.value as z.infer<ReturnType<typeof idxBeiEnvelope<T>>>), retrievedAt: new Date(hit.at).toISOString() };
@@ -62,6 +63,7 @@ export class IdxBeiSource extends BaseMarketDataSource {
       logWarn("provider_rate_limited", { source: this.id, path, cooldownSeconds: seconds });
       throw new MarketDataError("RATE_LIMITED", "Market service rate limit reached", 429, seconds);
     }
+    if (response.status === 404 && notFound) throw notFound();
     if (!response.ok) throw new MarketDataError("PROVIDER_UNAVAILABLE", `Market service returned ${response.status}`, response.status === 400 ? 400 : 503);
     const parsed = idxBeiEnvelope(data).safeParse(await response.json().catch(() => undefined));
     if (!parsed.success) throw new MarketDataError("MALFORMED_PROVIDER_RESPONSE", "Market response format changed", 502);
@@ -112,7 +114,8 @@ export class IdxBeiSource extends BaseMarketDataSource {
   async profile(symbol: string) {
     // The upstream company details carry no disclosure date, so asOf stays null (→ UNAVAILABLE). The UI labels
     // the data with when we retrieved it and from which dataset instead — never as a data date.
-    const { data, meta, retrievedAt } = await this.get(`/v1/stocks/${encodeURIComponent(symbolSchema.parse(symbol))}/profile`, profileSchema, TTL_MS.profile);
+    // The Data Engine has no profiles (IDX, their only source, blocks it) and answers 404: unsupported, not an outage.
+    const { data, meta, retrievedAt } = await this.get(`/v1/stocks/${encodeURIComponent(symbolSchema.parse(symbol))}/profile`, profileSchema, TTL_MS.profile, undefined, () => unsupported(this.id, "profile"));
     return this.wrap({ ...data, retrievedAt, dataset: meta.source }, "HISTORICAL", meta.dataAsOf);
   }
 
@@ -165,20 +168,40 @@ export class IdxBeiSource extends BaseMarketDataSource {
     return this.snapshot(data, meta.dataAsOf);
   }
 
+  /** Data Engine `/v1/sectors`: per-sector performance of the newest session, the same rows as the movers. */
+  async sectors() {
+    const { data, meta } = await this.get("/v1/sectors", sectorsSchema, TTL_MS.market);
+    return this.snapshot(data.map((row) => ({
+      sector: row.sector, stocks: row.stocks, advancers: row.advancers, decliners: row.decliners, unchanged: row.unchanged,
+      changePercent: row.changePercent * 100, valueWeightedChangePercent: pct(row.valueWeightedChangePercent), valueIdr: row.value,
+      leader: { symbol: row.leader.symbol, changePercent: pct(row.leader.changePercent) }, laggard: { symbol: row.laggard.symbol, changePercent: pct(row.laggard.changePercent) },
+    })), meta.dataAsOf);
+  }
+
+  /** Data Engine `/v1/actions`: market-wide corporate actions by ex-date (the engine's window when no range is given). */
+  async actionsCalendar(query: ActionsCalendarQuery) {
+    const params = new URLSearchParams();
+    if (query.from) params.set("from", query.from);
+    if (query.to) params.set("to", query.to);
+    const { data, meta } = await this.get(`/v1/actions${params.size ? `?${params}` : ""}`, actionsCalendarSchema, TTL_MS.news);
+    return this.wrap(data.map((row) => ({ ...row, amount: row.amount ?? null })), "HISTORICAL", meta.dataAsOf);
+  }
+
   /**
-   * Data Engine only (`/v1/stocks/{s}/ownership`, E6): the newest uploaded KSEI ≥1% list month for a symbol, dated by
-   * its position date (HISTORICAL). No UI uses it yet; the data is not licensed for a public HAKAPRO.
+   * Data Engine `/v1/stocks/{s}/ownership` (E6): the newest uploaded KSEI ≥1% list month for a symbol, dated by its
+   * position date (HISTORICAL). Internal use only: the data is not licensed for a public HAKAPRO.
    */
   async ownership(symbol: string) {
     const { data, meta } = await this.get(`/v1/stocks/${encodeURIComponent(symbolSchema.parse(symbol))}/ownership`, stockOwnershipSchema, TTL_MS.securities);
     return this.wrap(data, "HISTORICAL", meta.dataAsOf);
   }
 
-  /** Data Engine only (`/v1/ownership/changes`, E6): per-holder changes into `month` from the previous month. */
-  async ownershipChanges(month: string, symbol?: string) {
-    const params = new URLSearchParams({ month: ownershipMonthSchema.parse(month) });
-    if (symbol) params.set("symbol", symbolSchema.parse(symbol));
-    const { data, meta } = await this.get(`/v1/ownership/changes?${params}`, ownershipChangesSchema, TTL_MS.securities);
+  /** Data Engine `/v1/ownership/changes` (E6): per-holder changes into `month` (the newest stored month without one). */
+  async ownershipChanges(query: OwnershipChangesQuery) {
+    const params = new URLSearchParams();
+    if (query.month) params.set("month", ownershipMonthSchema.parse(query.month));
+    if (query.symbol) params.set("symbol", symbolSchema.parse(query.symbol));
+    const { data, meta } = await this.get(`/v1/ownership/changes${params.size ? `?${params}` : ""}`, ownershipChangesSchema, TTL_MS.securities);
     return this.wrap(data, "HISTORICAL", meta.dataAsOf);
   }
 

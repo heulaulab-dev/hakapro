@@ -195,6 +195,42 @@ export const profileSchema = z.object({
 export type CompanyProfile = z.infer<typeof profileSchema>;
 export const corporateActionSchema = z.object({ date: z.string().nullable(), type: z.string().nullable(), description: z.string().nullable(), documentUrl: z.string().nullable() });
 
+// --- Data Engine: sectors, corporate-action calendar, KSEI ≥1% ownership ----------------------------------------
+export const sectorPerformanceSchema = z.object({
+  sector: z.string(), stocks: n, advancers: n, decliners: n, unchanged: n, changePercent: n, valueWeightedChangePercent: nn, valueIdr: n,
+  leader: z.object({ symbol: z.string(), changePercent: nn }), laggard: z.object({ symbol: z.string(), changePercent: nn }),
+});
+export type SectorPerformance = z.infer<typeof sectorPerformanceSchema>;
+export const actionCalendarItemSchema = z.object({
+  symbol: z.string(), date: z.string(), type: z.string(), description: z.string().nullable(), amount: nn, ratio: z.string().nullable(), documentUrl: z.string().nullable(),
+});
+export type ActionCalendarItem = z.infer<typeof actionCalendarItemSchema>;
+/** Shares and percents arrive as decimal strings (exact); they are formatted, never summed, on the client. */
+const ownershipHolderSchema = z.object({
+  holderKey: z.string(), holderName: z.string(), holderKind: z.string(), shares: z.string().nullable(), percent: z.string().nullable(),
+  investorType: z.string().nullable(), localForeign: z.string().nullable(),
+});
+export const stockOwnershipSchema = z.object({
+  symbol: z.string(), issuerName: z.string().nullable(), month: z.string().nullable(), snapshotDate: z.string().nullable(), thresholdPercent: z.string().nullable(),
+  issuedShares: z.string().nullable(), source: z.object({ dataset: z.string(), reference: z.string(), retrievedAt: z.string() }).nullable(),
+  holders: z.array(ownershipHolderSchema),
+});
+export type StockOwnership = z.infer<typeof stockOwnershipSchema>;
+export const ownershipChangeSchema = z.object({
+  symbol: z.string(), holderKey: z.string(), holderName: z.string(), holderKind: z.string(), kind: z.string(),
+  sharesBefore: z.string().nullable(), sharesAfter: z.string().nullable(), shareDelta: z.string().nullable(),
+  percentBefore: z.string().nullable(), percentAfter: z.string().nullable(), ppDelta: z.string().nullable(), toDate: z.string(),
+});
+export const ownershipChangesSchema = z.object({ month: z.string(), previousMonth: z.string(), changes: z.array(ownershipChangeSchema) });
+export type OwnershipChange = z.infer<typeof ownershipChangeSchema>;
+
+export const engineApi = {
+  sectors: (signal?: AbortSignal) => fetchEnvelope("/api/sectors", z.array(sectorPerformanceSchema), { signal }),
+  actionsCalendar: (range: { from?: string; to?: string } = {}, signal?: AbortSignal) => fetchEnvelope(`/api/actions${qs(range)}`, z.array(actionCalendarItemSchema), { signal }),
+  ownership: (symbol: string, signal?: AbortSignal) => fetchEnvelope(`/api/stocks/${encodeURIComponent(symbol.toUpperCase())}/ownership`, stockOwnershipSchema, { signal }),
+  ownershipChanges: (query: { month?: string; symbol?: string } = {}, signal?: AbortSignal) => fetchEnvelope(`/api/ownership/changes${qs(query)}`, ownershipChangesSchema, { signal }),
+};
+
 export const stockApi = {
   doneDetails: (symbol: string, query: { date?: string | null; page?: number } = {}, signal?: AbortSignal) =>
     fetchEnvelope(`/api/done-details${qs({ code: symbol.toUpperCase(), date: query.date, page: query.page, per_page: 100 })}`, doneDetailsSchema, { signal }),
