@@ -48,6 +48,14 @@ export const marketOverviewSchema = z.object({
   movers: z.array(z.object({ symbol: z.string().nullable(), name: z.string().nullable(), close: num, changePercent: num, volume: num, value: num, frequency: num })),
 });
 
+/** Data Engine `/v1/sectors`: per-sector performance of the newest session (changes are fractions, value in IDR). */
+export const sectorsSchema = z.array(z.object({
+  sector: z.string(), stocks: z.number().int().nonnegative(),
+  advancers: z.number().int().nonnegative(), decliners: z.number().int().nonnegative(), unchanged: z.number().int().nonnegative(),
+  changePercent: z.number(), valueWeightedChangePercent: num, value: z.number(),
+  leader: z.object({ symbol: z.string(), changePercent: num }), laggard: z.object({ symbol: z.string(), changePercent: num }),
+}));
+
 export const foreignSignalSchema = z.object({
   symbol: symbolSchema, close: num, sessions: z.number().int().nonnegative(),
   netForeignMillionShares: num, percentFloat: num, averageValueBillionIdr: num,

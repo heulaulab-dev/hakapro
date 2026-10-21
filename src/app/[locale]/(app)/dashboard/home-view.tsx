@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, Bookmark, ChevronRight, LogIn } from "lucide-react";
+import { Bookmark, ChevronRight, LogIn } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { CriteriaList } from "@/components/data/screener-table";
 import { StockRow } from "@/components/data/stock-row";
@@ -14,11 +14,11 @@ import { ChangeValue } from "@/components/market/change-value";
 import { InsightCard } from "@/components/market/insight-card";
 import { screenContextObservations, screenContextVersion } from "@/components/market/screen-context";
 import { Link } from "@/i18n/navigation";
-import { useMarketOverview, useNews, useQuotes, useStrategies } from "@/lib/api/hooks";
+import { useMarketOverview, useNews, useQuotes, useSectors, useStrategies } from "@/lib/api/hooks";
 import { useWatchlist } from "@/lib/watchlist";
 import { QuoteList } from "@/components/data/quote-list";
 import { freshnessMeta } from "@/lib/freshness";
-import { formatDate, formatValue, type Locale } from "@/lib/format";
+import { formatDate, formatIdr, formatValue, type Locale } from "@/lib/format";
 import { candidatesFor } from "@/lib/strategies/contract";
 
 /** Home answers "what matters now" — each block shows its own freshness or why it can't. */
@@ -28,6 +28,7 @@ export function HomeView({ viewer }: { viewer: ViewerSummary }) {
   const strategies = useStrategies();
   const market = useMarketOverview();
   const news = useNews();
+  const sectors = useSectors();
 
   return (
     <div className="flex flex-col gap-section p-4 md:p-6" data-testid="home">
@@ -94,9 +95,24 @@ export function HomeView({ viewer }: { viewer: ViewerSummary }) {
             )}
           </DataState>
         </Panel>
-        <Panel testId="home-sectors" title={t("home.sectors")}>
-          {/* No Phase 1 source provides per-sector performance; say so rather than invent it. */}
-          <EmptyState compact icon={<BarChart3 />} title={t("home.sectorsUnavailable")} />
+        <Panel testId="home-sectors" title={t("home.sectors")} description={t("home.sectorsHint")} meta={sectors.data ? freshnessMeta(sectors.data) : undefined}>
+          <DataState query={sectors} compact isEmpty={(envelope) => envelope.data.length === 0}>
+            {(envelope) => (
+              <ul className="flex flex-col divide-y divide-border" data-testid="home-sectors-list">
+                {envelope.data.slice(0, 8).map((sector) => (
+                  <li key={sector.sector} className="flex items-center justify-between gap-3 py-2">
+                    <span className="flex min-w-0 flex-col">
+                      <span className="truncate text-sm">{sector.sector}</span>
+                      <span className="caption-style text-subtle">
+                        {t("home.sectorBreadth", { up: sector.advancers, down: sector.decliners, stocks: sector.stocks })} · {formatIdr(sector.valueIdr, locale, { compact: true })}
+                      </span>
+                    </span>
+                    <ChangeValue percent={sector.changePercent} className="shrink-0 text-sm" />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </DataState>
         </Panel>
         <Panel testId="home-watchlist" title={t("home.watchlist")}>
           <WatchlistActivity viewer={viewer} />

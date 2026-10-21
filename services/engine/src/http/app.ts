@@ -3,7 +3,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 import {
-  actionsCalendarSchema, actionsSchema, announcementItemSchema, fundamentalsSchema, macroSchema, marketOverviewSchema, newsItemSchema,
+  actionsCalendarSchema, actionsSchema, announcementItemSchema, fundamentalsSchema, macroSchema, marketOverviewSchema, newsItemSchema, sectorsSchema,
   screenRequestSchema, screenResultSchema, securitySchema, signalsSchema, stockSchema,
 } from "@/server/schemas/idx-bei";
 import { dateSchema, symbolSchema } from "@/server/schemas/inputs";
@@ -14,7 +14,7 @@ import type { PauseGuard } from "../schedule/pause";
 import type { JobStatus, Scheduler } from "../schedule/scheduler";
 import type { Logger } from "../log";
 import { nullLogger } from "../log";
-import { DEFAULT_CANDLES, MAX_CANDLES, serveActions, serveMarket, serveSecurities, serveSignals, serveStock, type Served } from "../serve/market";
+import { DEFAULT_CANDLES, MAX_CANDLES, serveActions, serveMarket, serveSectors, serveSecurities, serveSignals, serveStock, type Served } from "../serve/market";
 import {
   ACTIONS_MAX_RANGE_DAYS, defaultActionsRange, NEWS_DEFAULT_PAGE_SIZE, NEWS_MAX_PAGE, NEWS_MAX_PAGE_SIZE, serveActionsCalendar, serveMacro, serveNews,
 } from "../serve/market-info";
@@ -179,6 +179,7 @@ export function createApp(deps: AppDeps): (request: Request) => Promise<Response
     if (path === "/v1/market") {
       return respond(marketOverviewSchema, market ? await serveMarket(market, at) : null, { indices: [], breadth: { advancers: 0, decliners: 0, unchanged: 0, value: 0, volume: 0, frequency: 0 }, movers: [] });
     }
+    if (path === "/v1/sectors") return respond(sectorsSchema, market ? await serveSectors(market, at) : null, []);
     if (path === "/v1/securities") {
       return respond(securitySchema.array(), market ? await serveSecurities(market, (url.searchParams.get("q") ?? "").slice(0, 64), at) : null, []);
     }
@@ -216,10 +217,13 @@ export function createApp(deps: AppDeps): (request: Request) => Promise<Response
     }
 
     if (path === "/v1/ownership/changes") {
-      const month = ownershipMonthSchema.safeParse(param(url, "month"));
+      // Without month: the newest stored month (the market-wide feed), or this month's empty form before any upload.
+      const store = deps.ownership?.service.store;
+      const requested = param(url, "month") ?? (await store?.latestMonth()) ?? at.toISOString().slice(0, 7);
+      const month = ownershipMonthSchema.safeParse(requested);
       const symbol = symbolSchema.optional().safeParse(param(url, "symbol"));
-      if (!month.success || !symbol.success) return error(400, "BAD_REQUEST", "month=YYYY-MM is required; symbol is optional");
-      const served = deps.ownership ? await serveOwnershipChanges(deps.ownership.service.store, month.data, symbol.data) : null;
+      if (!month.success || !symbol.success) return error(400, "BAD_REQUEST", "month must be YYYY-MM; symbol is optional");
+      const served = store ? await serveOwnershipChanges(store, month.data, symbol.data) : null;
       return respond(ownershipChangesSchema, served, { month: month.data, previousMonth: previousMonthOf(month.data), comparisons: [], changes: [] });
     }
 

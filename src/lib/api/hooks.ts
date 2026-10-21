@@ -3,9 +3,11 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query/keys";
 import {
-  accumulationApi, analysisApi, financialsApi, marketApi, overviewApi, priceApi, quotesApi, screenerApi, stockApi,
+  accumulationApi, analysisApi, engineApi, financialsApi, marketApi, overviewApi, priceApi, quotesApi, screenerApi, stockApi,
   type BrokerSummaryQuery, type FinancialsQuery, type HistoryQuery, type MarketCapQuery, type ScreenCondition,
 } from "./market";
+import { shouldRetry } from "@/lib/query/client";
+import { fetchResearchBrief, ResearchUnavailableError } from "./research";
 
 /** Keeps the previous result on screen while a filter changes, but never across symbols. */
 function keepSameSymbol<E extends { data: { symbol: string } }>(previous: E | undefined, symbol: string): E | undefined {
@@ -44,6 +46,12 @@ export const useAnalysisCompare = (symbols: string[]) =>
   useQuery({ queryKey: queryKeys.analysisCompare(symbols), queryFn: ({ signal }) => analysisApi.compare(symbols, signal), enabled: symbols.length > 0 });
 export const useSeasonality = (symbol: string) => useQuery({ queryKey: queryKeys.seasonality(symbol), queryFn: ({ signal }) => stockApi.seasonality(symbol, signal) });
 export const useProfile = (symbol: string) => useQuery({ queryKey: queryKeys.profile(symbol), queryFn: ({ signal }) => stockApi.profile(symbol, signal) });
+export const useSectors = () => useQuery({ queryKey: queryKeys.sectors(), queryFn: ({ signal }) => engineApi.sectors(signal) });
+export const useActionsCalendar = (range: { from?: string; to?: string } = {}) =>
+  useQuery({ queryKey: queryKeys.actionsCalendar(range.from, range.to), queryFn: ({ signal }) => engineApi.actionsCalendar(range, signal) });
+export const useOwnership = (symbol: string) => useQuery({ queryKey: queryKeys.ownership(symbol), queryFn: ({ signal }) => engineApi.ownership(symbol, signal) });
+export const useOwnershipChanges = (query: { month?: string; symbol?: string } = {}) =>
+  useQuery({ queryKey: queryKeys.ownershipChanges(query.month, query.symbol), queryFn: ({ signal }) => engineApi.ownershipChanges(query, signal) });
 export const useCorporateActions = (symbol: string) => useQuery({ queryKey: queryKeys.actions(symbol), queryFn: ({ signal }) => stockApi.actions(symbol, signal) });
 /**
  * Newest-first insider disclosures, one provider page per user "load older" action (no background crawling).
@@ -58,3 +66,11 @@ export const useInsiderDisclosures = (symbol: string, limit: number) =>
   });
 export const useInsidersPage = (symbol: string, page: number, limit: number, action: string | null) =>
   useQuery({ queryKey: queryKeys.insidersPage(symbol, page, limit, action), queryFn: ({ signal }) => stockApi.insiders(symbol, { page, limit, action }, signal), placeholderData: (previous) => keepSameSymbol(previous, symbol) });
+/** Research Brief: computed server-side once per ticker per trading day. */
+export const useResearchBrief = (code: string) =>
+  useQuery({
+    queryKey: queryKeys.research(code),
+    queryFn: ({ signal }) => fetchResearchBrief(code, signal),
+    // A missing price won't appear on an immediate retry; the page explains what is missing instead.
+    retry: (failureCount, error) => !(error instanceof ResearchUnavailableError) && shouldRetry(failureCount, error),
+  });

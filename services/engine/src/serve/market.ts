@@ -7,7 +7,7 @@ import type { z } from "zod";
 import { classifySessionDate } from "@/lib/freshness/session";
 import { rankMovers } from "@/lib/movers";
 import type { Freshness } from "@/lib/freshness";
-import type { actionsSchema, foreignSignalSchema, marketOverviewSchema, securitySchema, stockSchema } from "@/server/schemas/idx-bei";
+import type { actionsSchema, foreignSignalSchema, marketOverviewSchema, sectorsSchema, securitySchema, stockSchema } from "@/server/schemas/idx-bei";
 import { wibDateOf, wibIso } from "../sources/session";
 import type { DailyRecord, IndexDailyRecord, IndexIntradayRecord, IntradayRecord, MarketStore } from "./store";
 
@@ -127,29 +127,33 @@ export function indicesOf(daily: IndexDailyRecord[], intraday: IndexIntradayReco
   return [...byCode.values()].sort((a, b) => rank(a.code) - rank(b.code) || a.code.localeCompare(b.code));
 }
 
-export async function serveMarket(store: MarketStore, now: Date): Promise<Served<z.input<typeof marketOverviewSchema>> | null> {
-  const [sessionDate, snapshotTs, indexDaily, indexIntraday] = await Promise.all([store.latestSessionDate(), store.latestSnapshotTs(), store.latestIndexDaily(), store.latestIndexIntraday()]);
-  const intradayNewer = snapshotTs !== null && (!sessionDate || wibDateOf(snapshotTs) > sessionDate);
-  let rows: MarketRow[] = [];
-  let dataAsOf: string | null = null;
-  let freshness: Freshness = "UNAVAILABLE";
-
-  if (intradayNewer) {
+/**
+ * The rows the market views are built from: the intraday snapshot when it is from a newer session than the newest
+ * daily row (DELAYED), otherwise that session (EOD/STALE). Shared by /v1/market and /v1/sectors so both show the same
+ * change for a stock.
+ */
+async function currentRows(store: MarketStore, now: Date): Promise<{ rows: MarketRow[]; dataAsOf: string | null; freshness: Freshness }> {
+  const [sessionDate, snapshotTs] = await Promise.all([store.latestSessionDate(), store.latestSnapshotTs()]);
+  if (snapshotTs !== null && (!sessionDate || wibDateOf(snapshotTs) > sessionDate)) {
     const snapshot = await store.snapshotRows(snapshotTs);
     const previous = await store.closesBefore(wibDateOf(snapshotTs), snapshot.map((row) => row.symbol));
-    rows = snapshot.map((row: IntradayRecord) => {
+    const rows = snapshot.map((row: IntradayRecord) => {
       const prev = previous.get(row.symbol) ?? null;
       return { symbol: row.symbol, close: row.last, changePercent: prev ? ratio(row.last, prev) : row.changePercent, volume: row.volume, value: row.value, frequency: null };
     });
-    dataAsOf = wibIso(snapshotTs);
-    freshness = "DELAYED";
-  } else if (sessionDate) {
-    rows = (await store.sessionRows(sessionDate)).map((row: DailyRecord) => ({
-      symbol: row.symbol, close: row.close, changePercent: ratio(row.close, row.previousClose), volume: row.volume, value: row.value, frequency: row.frequency,
-    }));
-    dataAsOf = sessionDate;
-    freshness = sessionFreshness(sessionDate, now);
+    return { rows, dataAsOf: wibIso(snapshotTs), freshness: "DELAYED" };
   }
+  if (!sessionDate) return { rows: [], dataAsOf: null, freshness: "UNAVAILABLE" };
+  const rows = (await store.sessionRows(sessionDate)).map((row: DailyRecord) => ({
+    symbol: row.symbol, close: row.close, changePercent: ratio(row.close, row.previousClose), volume: row.volume, value: row.value, frequency: row.frequency,
+  }));
+  return { rows, dataAsOf: sessionDate, freshness: sessionFreshness(sessionDate, now) };
+}
+
+export async function serveMarket(store: MarketStore, now: Date): Promise<Served<z.input<typeof marketOverviewSchema>> | null> {
+  const [current, indexDaily, indexIntraday] = await Promise.all([currentRows(store, now), store.latestIndexDaily(), store.latestIndexIntraday()]);
+  const { rows } = current;
+  let { dataAsOf, freshness } = current;
 
   const indices = indicesOf(indexDaily, indexIntraday);
   if (!rows.length && !indices.length) return null;
@@ -167,6 +171,40 @@ export async function serveMarket(store: MarketStore, now: Date): Promise<Served
     },
     dataAsOf, freshness,
   };
+}
+
+// ── /v1/sectors ─────────────────────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Per-sector performance over the same rows as /v1/market: members with a change, advancers/decliners/unchanged,
+ * the mean and the value-weighted change (fractions), traded value, and the sector's best and worst stock. Stocks
+ * without a sector (not in the universe yet) are left out, never put in an invented bucket. Best change first.
+ */
+export async function serveSectors(store: MarketStore, now: Date): Promise<Served<z.input<typeof sectorsSchema>> | null> {
+  const { rows, dataAsOf, freshness } = await currentRows(store, now);
+  const priced = rows.filter((row) => row.changePercent !== null);
+  if (!priced.length) return null;
+  const sectorOf = new Map((await store.securities(priced.map((row) => row.symbol))).map((row) => [row.symbol, row.sector]));
+  const groups = new Map<string, MarketRow[]>();
+  for (const row of priced) {
+    const sector = sectorOf.get(row.symbol);
+    if (!sector) continue;
+    groups.set(sector, [...(groups.get(sector) ?? []), row]);
+  }
+  if (!groups.size) return null;
+  const sectors = [...groups.entries()].map(([sector, members]) => {
+    const changes = members.map((row) => row.changePercent!);
+    const value = members.reduce((sum, row) => sum + (row.value ?? 0), 0);
+    const weighted = value > 0 ? members.reduce((sum, row) => sum + row.changePercent! * (row.value ?? 0), 0) / value : null;
+    const sorted = [...members].sort((a, b) => b.changePercent! - a.changePercent!);
+    return {
+      sector, stocks: members.length,
+      advancers: changes.filter((change) => change > 0).length, decliners: changes.filter((change) => change < 0).length, unchanged: changes.filter((change) => change === 0).length,
+      changePercent: changes.reduce((sum, change) => sum + change, 0) / changes.length, valueWeightedChangePercent: weighted, value,
+      leader: { symbol: sorted[0].symbol, changePercent: sorted[0].changePercent }, laggard: { symbol: sorted.at(-1)!.symbol, changePercent: sorted.at(-1)!.changePercent },
+    };
+  }).sort((a, b) => b.changePercent - a.changePercent);
+  return { data: sectors, dataAsOf, freshness };
 }
 
 // ── /v1/signals ─────────────────────────────────────────────────────────────────────────────────────────────────
