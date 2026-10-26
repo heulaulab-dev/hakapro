@@ -2,7 +2,7 @@ import type { WithFreshness } from "@/lib/freshness";
 import { unsupported } from "./errors";
 import type {
   ActionCalendarItem, AnnouncementItem, BrokerAccumulation, BrokerFlow, BrokerSummary, CompanyProfile, CorporateAction, DoneDetails, FinancialStatements,
-  ForeignFlow, FundamentalPeriod, History, Insiders, LastPrice, MarketCap, MarketOverview, NewsItem, ScreenRequest, ScreenResult,
+  ForeignFlow, FundamentalPeriod, Heatmap, History, Insiders, LastPrice, MarketCap, MarketOverview, NewsItem, ScreenRequest, ScreenResult,
   OwnershipChanges, RecentInsiders, SearchResult, Seasonality, SectorPerformance, Security, StockAnalysis, StockOwnership, StockSnapshot, StrategyScreen,
 } from "./types";
 
@@ -18,6 +18,8 @@ export type FinancialsQuery = { reportType?: "INCOME_STATEMENT" | "BALANCE_SHEET
 export type ActionsCalendarQuery = { from?: string; to?: string };
 /** Without month, the newest month the provider has. */
 export type OwnershipChangesQuery = { month?: string; symbol?: string };
+/** How many of the most-traded stocks to cover (30, 50 or 100; the provider's default is 100). */
+export type HeatmapQuery = { limit?: 30 | 50 | 100 };
 export type InsidersQuery = { page?: number; limit?: number; actionType?: "buy" | "sell" | "cross" };
 /** Market-wide feed: transactions dated within the last `days` (provider default 7), optionally one action, at most `limit`. */
 export type RecentInsidersQuery = { days?: number; action?: "buy" | "sell" | "cross"; limit?: number };
@@ -62,6 +64,8 @@ export interface MarketDataSource {
   announcements(query: PageQuery & { keywords?: string }): R<AnnouncementItem[]>;
   // Data Engine lane
   sectors(): R<SectorPerformance[]>;
+  /** The most-traded stocks of the newest view with per-sector totals (net foreign value is an estimate). */
+  heatmap(query: HeatmapQuery): R<Heatmap>;
   actionsCalendar(query: ActionsCalendarQuery): R<ActionCalendarItem[]>;
   /** The newest KSEI ≥1% list the owner uploaded for a symbol (empty form when none). */
   ownership(symbol: string): R<StockOwnership>;
@@ -102,6 +106,7 @@ export abstract class BaseMarketDataSource implements MarketDataSource {
   async news(..._args: unknown[]): R<NewsItem[]> { return this.fail("news"); }
   async announcements(..._args: unknown[]): R<AnnouncementItem[]> { return this.fail("announcements"); }
   async sectors(..._args: unknown[]): R<SectorPerformance[]> { return this.fail("sectors"); }
+  async heatmap(..._args: unknown[]): R<Heatmap> { return this.fail("heatmap"); }
   async actionsCalendar(..._args: unknown[]): R<ActionCalendarItem[]> { return this.fail("actionsCalendar"); }
   async ownership(..._args: unknown[]): R<StockOwnership> { return this.fail("ownership"); }
   async ownershipChanges(..._args: unknown[]): R<OwnershipChanges> { return this.fail("ownershipChanges"); }

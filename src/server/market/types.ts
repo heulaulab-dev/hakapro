@@ -62,6 +62,20 @@ export type SectorPerformance = {
   changePercent: number; valueWeightedChangePercent: number | null; valueIdr: number;
   leader: { symbol: string; changePercent: number | null }; laggard: { symbol: string; changePercent: number | null };
 };
+/**
+ * The most-traded stocks of the newest view with per-sector totals (Data Engine heatmap). Changes are percentage
+ * points, values IDR, volume shares. `netForeignValueEstimateIdr` is an ESTIMATE ((foreign buy − sell) shares × close),
+ * null when the stock has no foreign data (outside the provider budget, or an intraday view). `sector` null = unknown.
+ */
+export type HeatmapStock = {
+  symbol: string; name: string | null; sector: string | null; close: number | null; changePercent: number | null;
+  valueIdr: number | null; volumeShares: number | null; netForeignValueEstimateIdr: number | null;
+};
+export type HeatmapSector = {
+  sector: string | null; stocks: number; advancers: number; decliners: number; unchanged: number;
+  valueIdr: number; changePercent: number | null; netForeignValueEstimateIdr: number | null;
+};
+export type Heatmap = { limit: number; stocks: HeatmapStock[]; sectors: HeatmapSector[] };
 /** One market-wide corporate action by ex-date (Data Engine calendar). */
 export type ActionCalendarItem = { symbol: string; date: string; type: string; description: string | null; amount: number | null; ratio: string | null; documentUrl: string | null };
 export type { OwnershipChanges, StockOwnership } from "@/server/schemas/ownership";

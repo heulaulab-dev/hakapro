@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
-  actionsCalendarSchema, actionsSchema, announcementItemSchema, fundamentalsSchema, idxBeiEnvelope, macroSchema, marketOverviewSchema, newsItemSchema,
+  actionsCalendarSchema, actionsSchema, announcementItemSchema, fundamentalsSchema, heatmapSchema, idxBeiEnvelope, macroSchema, marketOverviewSchema, newsItemSchema,
   screenResultSchema, securitySchema, signalsSchema, stockSchema,
 } from "@/server/schemas/idx-bei";
 import { tempDir } from "../../test/support";
@@ -63,6 +63,8 @@ describe("engine HTTP app", () => {
       ["/v1/stocks/BBCA/actions", actionsSchema],
       ["/v1/macro", macroSchema],
       ["/v1/actions", actionsCalendarSchema],
+      ["/v1/heatmap", heatmapSchema],
+      ["/v1/heatmap?limit=30", heatmapSchema],
     ];
     for (const [path, schema] of cases) {
       const response = await call(path);
@@ -77,6 +79,10 @@ describe("engine HTTP app", () => {
     expect((await call("/v1/stocks/BBCA/profile")).status).toBe(404);
     expect((await call("/v1/stocks/bad$sym")).status).toBe(400);
     expect((await call("/v1/unknown")).status).toBe(404);
+    // The heatmap's empty form keeps the requested limit; any other limit is rejected.
+    expect(idxBeiEnvelope(heatmapSchema).parse(await (await call("/v1/heatmap?limit=50")).json()).data).toEqual({ limit: 50, stocks: [], sectors: [] });
+    expect(idxBeiEnvelope(heatmapSchema).parse(await (await call("/v1/heatmap?limit=")).json()).data.limit).toBe(100);
+    for (const bad of ["limit=10", "limit=abc", "limit=1000", "limit=30.5"]) expect((await call(`/v1/heatmap?${bad}`)).status, bad).toBe(400);
   });
 
   it("requires the API bearer token on /v1/* when configured, never on /health", async () => {

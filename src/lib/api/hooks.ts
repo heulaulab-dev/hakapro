@@ -47,7 +47,10 @@ export const useAnalysisCompare = (symbols: string[]) =>
 export const useSeasonality = (symbol: string) => useQuery({ queryKey: queryKeys.seasonality(symbol), queryFn: ({ signal }) => stockApi.seasonality(symbol, signal) });
 export const useProfile = (symbol: string) => useQuery({ queryKey: queryKeys.profile(symbol), queryFn: ({ signal }) => stockApi.profile(symbol, signal) });
 export const useSectors = () => useQuery({ queryKey: queryKeys.sectors(), queryFn: ({ signal }) => engineApi.sectors(signal) });
-export const useActionsCalendar = (range: { from?: string; to?: string } = {}) =>
+/** The most-traded `limit` stocks with sector totals; the previous limit's map stays on screen while the next loads. */
+export const useHeatmap = (limit: number) =>
+  useQuery({ queryKey: queryKeys.heatmap(limit), queryFn: ({ signal }) => engineApi.heatmap(limit, signal), placeholderData: (previous) => previous });
+export const useActionsCalendar =(range: { from?: string; to?: string } = {}) =>
   useQuery({ queryKey: queryKeys.actionsCalendar(range.from, range.to), queryFn: ({ signal }) => engineApi.actionsCalendar(range, signal) });
 export const useOwnership = (symbol: string) => useQuery({ queryKey: queryKeys.ownership(symbol), queryFn: ({ signal }) => engineApi.ownership(symbol, signal) });
 export const useOwnershipChanges = (query: { month?: string; symbol?: string } = {}) =>

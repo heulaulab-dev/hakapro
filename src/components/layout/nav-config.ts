@@ -1,6 +1,6 @@
-import { ArrowUpDown, Bell, Bookmark, Compass, House, Info, Landmark, ListChecks, Newspaper, SlidersHorizontal, type LucideIcon } from "lucide-react";
+import { ArrowUpDown, Bell, Bookmark, Compass, House, Info, Landmark, LayoutGrid, ListChecks, Newspaper, SlidersHorizontal, type LucideIcon } from "lucide-react";
 
-export type NavKey = "home" | "discover" | "screener" | "strategies" | "movers" | "ownership" | "watchlist" | "news" | "alerts" | "about";
+export type NavKey = "home" | "discover" | "screener" | "strategies" | "movers" | "heatmap" | "ownership" | "watchlist" | "news" | "alerts" | "about";
 export type NavItem = { key: NavKey; href: string; icon: LucideIcon; children?: NavItem[] };
 
 /** The four primary destinations ("/" is the public landing page; the research home is /dashboard). Stock pages are reached via search, Cmd+K or lists, never the nav. */
@@ -14,6 +14,7 @@ export const NAV: NavItem[] = [
       { key: "screener", href: "/discover/screener", icon: SlidersHorizontal },
       { key: "strategies", href: "/discover/strategies", icon: ListChecks },
       { key: "movers", href: "/discover/movers", icon: ArrowUpDown },
+      { key: "heatmap", href: "/discover/heatmap", icon: LayoutGrid },
       { key: "ownership", href: "/discover/ownership", icon: Landmark },
     ],
   },

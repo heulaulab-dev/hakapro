@@ -3,7 +3,8 @@ import type { z } from "zod";
 import { classifySessionDate, withFreshness, type Freshness, type WithFreshness } from "@/lib/freshness";
 import { strategyBoardSchema } from "@/lib/strategies/contract";
 import {
-  actionsCalendarSchema, actionsSchema, announcementItemSchema, fundamentalsSchema, idxBeiEnvelope, insidersRecentSchema, macroSchema, marketOverviewSchema, newsItemSchema,
+  actionsCalendarSchema, actionsSchema, announcementItemSchema, fundamentalsSchema, HEATMAP_DEFAULT_LIMIT, heatmapLimitSchema, heatmapSchema, idxBeiEnvelope, insidersRecentSchema, macroSchema,
+  marketOverviewSchema, newsItemSchema,
   profileSchema, screenRequestSchema, screenResultSchema, sectorsSchema, securitySchema, signalsSchema, stockSchema, type ScreenRequest,
 } from "@/server/schemas/idx-bei";
 import { symbolSchema } from "@/server/schemas/inputs";
@@ -12,7 +13,7 @@ import { PROVIDER_USER_AGENT } from "@/server/config/provider-identity";
 import { logWarn } from "@/server/log";
 import { ProviderBackoff } from "@/server/providers/backoff";
 import { MarketDataError, unsupported } from "./errors";
-import { BaseMarketDataSource, type ActionsCalendarQuery, type OwnershipChangesQuery, type PageQuery, type RecentInsidersQuery } from "./source";
+import { BaseMarketDataSource, type ActionsCalendarQuery, type HeatmapQuery, type OwnershipChangesQuery, type PageQuery, type RecentInsidersQuery } from "./source";
 import type { Candle, Quote } from "./types";
 import type { Clock } from "./arjum-source";
 
@@ -176,6 +177,26 @@ export class IdxBeiSource extends BaseMarketDataSource {
       changePercent: row.changePercent * 100, valueWeightedChangePercent: pct(row.valueWeightedChangePercent), valueIdr: row.value,
       leader: { symbol: row.leader.symbol, changePercent: pct(row.leader.changePercent) }, laggard: { symbol: row.laggard.symbol, changePercent: pct(row.laggard.changePercent) },
     })), meta.dataAsOf);
+  }
+
+  /**
+   * Data Engine `/v1/heatmap`: the most-traded stocks of the newest view (the same rows as the movers) with per-sector
+   * totals. Fractions become percentage points; the net foreign value stays an estimate and keeps its nulls.
+   */
+  async heatmap(query: HeatmapQuery) {
+    const limit = heatmapLimitSchema.parse(query.limit ?? HEATMAP_DEFAULT_LIMIT);
+    const { data, meta } = await this.get(`/v1/heatmap?limit=${limit}`, heatmapSchema, TTL_MS.market);
+    return this.snapshot({
+      limit: data.limit,
+      stocks: data.stocks.map((row) => ({
+        symbol: row.symbol, name: row.name, sector: row.sector, close: row.close, changePercent: pct(row.changePercent),
+        valueIdr: row.value, volumeShares: row.volume, netForeignValueEstimateIdr: row.netForeignValueEstimate,
+      })),
+      sectors: data.sectors.map((row) => ({
+        sector: row.sector, stocks: row.stocks, advancers: row.advancers, decliners: row.decliners, unchanged: row.unchanged,
+        valueIdr: row.value, changePercent: pct(row.changePercent), netForeignValueEstimateIdr: row.netForeignValueEstimate,
+      })),
+    }, meta.dataAsOf);
   }
 
   /** Data Engine `/v1/actions`: market-wide corporate actions by ex-date (the engine's window when no range is given). */

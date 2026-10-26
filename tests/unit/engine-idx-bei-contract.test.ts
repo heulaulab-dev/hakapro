@@ -49,6 +49,9 @@ describe("engine /v1 stubs via IdxBeiSource", () => {
     expect((await source.corporateActions("BBCA")).data).toEqual([]);
     expect((await source.screen({ conditions: [], limit: 10 })).data.rows).toEqual([]);
     expect(await source.macro()).toMatchObject({ freshness: "UNAVAILABLE", data: { series: [] } });
+    expect(await source.heatmap({ limit: 30 })).toMatchObject({ freshness: "UNAVAILABLE", asOf: null, data: { limit: 30, stocks: [], sectors: [] } });
+    // Only the engine's limits are ever sent.
+    await expect(source.heatmap({ limit: 10 as never })).rejects.toThrow();
     // Strategy scans off (the default): the empty board.
     expect(await source.engineStrategies()).toMatchObject({ freshness: "UNAVAILABLE", asOf: null, data: { contexts: [], strategies: [], candidates: [] } });
     // Insider feed off (budget 0) or not run yet: the empty form, still parseable.
@@ -143,6 +146,20 @@ describe("engine /v1 real responses via IdxBeiSource", () => {
     expect(sectors.data[1].changePercent).toBeCloseTo((5225 / 6075 - 1) * 100, 6);
     expect(sectors.data[1].leader.changePercent).toBeCloseTo(market.data.movers.find((row) => row.symbol === "BBCA")!.changePercent!, 6);
 
+    // Heatmap over the same rows: most-traded first, percentage points, and the net foreign ESTIMATE only where the
+    // session row has foreign buy/sell (BBCA), null otherwise (GOTO), never zero.
+    const heatmap = await source.heatmap({});
+    expect(heatmap).toMatchObject({ freshness: "EOD", asOf: "2026-10-16", source: "idx-bei", data: { limit: 100 } });
+    expect(heatmap.data.stocks.map((row) => [row.symbol, row.sector, row.valueIdr])).toEqual([["BBCA", "Finance", 5196076490000], ["GOTO", "Technology Services", 532358145600]]);
+    expect(heatmap.data.stocks[0]).toMatchObject({ name: "PT Bank Central Asia Tbk", close: 5225, volumeShares: 999771300, netForeignValueEstimateIdr: (310e6 - 420e6) * 5225 });
+    expect(heatmap.data.stocks[0].changePercent).toBeCloseTo(market.data.movers.find((row) => row.symbol === "BBCA")!.changePercent!, 9);
+    expect(heatmap.data.stocks[1].netForeignValueEstimateIdr).toBeNull();
+    expect(heatmap.data.sectors.map((row) => [row.sector, row.stocks, row.valueIdr, row.netForeignValueEstimateIdr])).toEqual([
+      ["Finance", 1, 5196076490000, (310e6 - 420e6) * 5225], ["Technology Services", 1, 532358145600, null],
+    ]);
+    expect(heatmap.data.sectors[1].changePercent).toBeCloseTo((24 / 27 - 1) * 100, 6);
+    expect((await source.heatmap({ limit: 30 })).data.limit).toBe(30);
+
     // The market-wide calendar over an explicit range; the engine has no issuer profiles, so profile is unsupported.
     const calendar = await source.actionsCalendar({ from: "2021-10-01", to: "2021-10-31" });
     expect(calendar.data).toEqual([{ symbol: "BBCA", date: "2021-10-13", type: "SPLIT", description: "Stock split 5:1", amount: null, ratio: null, documentUrl: null }]);
@@ -226,9 +243,14 @@ describe("engine /v1 real responses via IdxBeiSource", () => {
     vi.resetModules();
     const { IdxBeiSource: FreshSource } = await import("@/server/market/idx-bei-source");
     const now = new Date("2026-10-19T03:05:00Z"); // Monday 10:05 WIB, in session
-    const stock = await new FreshSource(BASE, () => now, engineFetch(dir, now, store(true))).stock("BBCA");
+    const source = new FreshSource(BASE, () => now, engineFetch(dir, now, store(true)));
+    const stock = await source.stock("BBCA");
     expect(stock).toMatchObject({ freshness: "DELAYED", asOf: "2026-10-19T09:55:00+07:00" });
     expect(stock.data.quote).toMatchObject({ date: "2026-10-19", close: 5400, previousClose: 5225, change: 175 });
+    // The heatmap follows the snapshot too; a snapshot has no foreign data, so no estimate.
+    const heatmap = await source.heatmap({ limit: 50 });
+    expect(heatmap).toMatchObject({ freshness: "DELAYED", asOf: "2026-10-19T09:55:00+07:00" });
+    expect(heatmap.data.stocks).toEqual([{ symbol: "BBCA", name: "PT Bank Central Asia Tbk", sector: "Finance", close: 5400, changePercent: expect.closeTo((5400 / 5225 - 1) * 100, 9), valueIdr: 270e9, volumeShares: 50_000_000, netForeignValueEstimateIdr: null }]);
   });
 
   it("parses the strategy board (/v1/strategies) and the app's engine strategy source merges it after arjum", async () => {
