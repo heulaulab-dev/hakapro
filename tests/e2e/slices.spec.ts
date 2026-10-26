@@ -97,6 +97,8 @@ test.describe("slice 5: Movers, News & Calendar, Ownership Changes", () => {
       ] }, freshness: "EOD", asOf: "2026-09-18", source: "test-intercept" } }));
     await page.goto("/en/discover/movers");
     const view = page.getByTestId("movers-view");
+    await expect(view.getByTestId("breadth")).toContainText("2");
+    await expect(view.getByRole("img", { name: /2 up, 1 down, 0 unchanged/ })).toBeVisible();
     await expect(view.getByTestId("stock-row-AAAA")).toContainText("+12.50%");
     await expect(view.getByTestId("stock-row-BBBB")).toHaveCount(0);
     await view.getByTestId("movers-losers").click();
@@ -105,16 +107,35 @@ test.describe("slice 5: Movers, News & Calendar, Ownership Changes", () => {
   });
 
   test("news & disclosures render safely (intercepted, test-only)", async ({ page }) => {
-    await page.route("**/api/news**", (route) => route.fulfill({ json: { data: [{ date: "2026-09-18", title: "Safe headline", summary: "Summary", url: "https://example.com/a" }, { date: "2026-09-17", title: "Unsafe headline", summary: null, url: "javascript:alert(1)" }], freshness: "HISTORICAL", asOf: "2026-09-18", source: "test-intercept" } }));
+    await page.route("**/api/news**", (route) => route.fulfill({ json: { data: [{ date: "2026-09-18", title: "Safe headline", summary: "Summary", url: "https://example.com/a", symbols: ["BBCA"] }, { date: "2026-09-17", title: "Unsafe headline", summary: null, url: "javascript:alert(1)" }], freshness: "HISTORICAL", asOf: "2026-09-18", source: "test-intercept" } }));
     await page.goto("/en/news");
     const list = page.getByTestId("news-list");
     await expect(list.getByRole("link", { name: "Safe headline" })).toHaveAttribute("href", "https://example.com/a");
     await expect(list.getByText("Unsafe headline")).toBeVisible();
     await expect(list.getByRole("link", { name: "Unsafe headline" })).toHaveCount(0);
+    await expect(list.getByTestId("day-header")).toHaveCount(2);
+    await expect(list.getByText("example.com").first()).toBeVisible();
+    await expect(list.getByRole("link", { name: "BBCA" })).toHaveAttribute("href", /\/stock\/BBCA/);
     await page.getByTestId("tab-calendar").click();
     await expect(page.getByTestId("actions-calendar").getByTestId("data-state-code")).toHaveText("UNSUPPORTED");
     await page.getByTestId("tab-disclosures").click();
     await expect(page.getByTestId("announcement-list").getByTestId("data-state-code")).toHaveText("UNSUPPORTED");
+  });
+
+  test("calendar agenda groups by ex-date with countdowns (intercepted, test-only)", async ({ page }) => {
+    const day = (offset: number) => new Date(Date.now() + 7 * 3_600_000 + offset * 86_400_000).toISOString().slice(0, 10);
+    await page.route("**/api/actions**", (route) => route.fulfill({ json: { data: [
+      { symbol: "BBCA", date: day(3), type: "DIVIDEND", description: null, amount: 125, ratio: null, documentUrl: null },
+      { symbol: "GOTO", date: day(3), type: "SPLIT", description: null, amount: null, ratio: "1:5", documentUrl: null },
+      { symbol: "TLKM", date: day(-2), type: "DIVIDEND", description: null, amount: 80.5, ratio: null, documentUrl: null },
+    ], freshness: "HISTORICAL", asOf: day(0), source: "test-intercept" } }));
+    await page.goto("/en/news?tab=calendar");
+    const calendar = page.getByTestId("actions-calendar");
+    await expect(calendar.getByTestId("day-header")).toHaveCount(2);
+    await expect(calendar.getByTestId("week-strip")).toBeVisible();
+    await expect(calendar.getByText("in 3 days")).toHaveCount(2);
+    await expect(calendar.getByText("2 days ago")).toBeVisible();
+    await expect(calendar.getByText("1:5")).toBeVisible();
   });
 
   test("ownership changes: honest about market-wide data; stock lookup navigates", async ({ page }) => {
