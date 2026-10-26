@@ -5,6 +5,7 @@ import type {
   ActionCalendarRecord, ActionRecord, DailyRecord, FundamentalRecord, IndexDailyRecord, IndexIntradayRecord, IntradayRecord, MacroRecord, MarketStore, NewsQuery, NewsRecord,
   RatioRecord, SecurityRecord,
 } from "../serve/store";
+import { normalizeSectorLabel } from "../serve/store";
 import type { EngineDb } from "./client";
 
 const dailyColumns = {
@@ -30,12 +31,14 @@ export class DbMarketStore implements MarketStore {
   async searchSecurities(query: string, limit: number): Promise<SecurityRecord[]> {
     const q = query.trim();
     const match = q ? or(like(t.securities.symbol, `${escapeLike(q.toUpperCase())}%`), ilike(t.securities.name, `%${escapeLike(q)}%`)) : undefined;
-    return this.db.select(securityColumns).from(t.securities).where(and(eq(t.securities.active, true), match)).orderBy(asc(t.securities.symbol)).limit(limit);
+    const rows = await this.db.select(securityColumns).from(t.securities).where(and(eq(t.securities.active, true), match)).orderBy(asc(t.securities.symbol)).limit(limit);
+    return rows.map((row) => ({ ...row, sector: normalizeSectorLabel(row.sector) }));
   }
 
   async securities(symbols: string[]): Promise<SecurityRecord[]> {
     if (!symbols.length) return [];
-    return this.db.select(securityColumns).from(t.securities).where(inArray(t.securities.symbol, symbols));
+    const rows = await this.db.select(securityColumns).from(t.securities).where(inArray(t.securities.symbol, symbols));
+    return rows.map((row) => ({ ...row, sector: normalizeSectorLabel(row.sector) }));
   }
 
   async dailyHistory(symbol: string, limit: number): Promise<DailyRecord[]> {

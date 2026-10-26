@@ -8,6 +8,12 @@ export type SecurityRecord = {
   marketCap?: number | null;
 };
 
+/** Normalize Indonesian aliases to the engine's existing public sector label. */
+export function normalizeSectorLabel(sector: string | null): string | null {
+  if (!sector) return sector;
+  return sector.trim().toLocaleLowerCase("id-ID") === "keuangan" ? "Finance" : sector.trim();
+}
+
 export type FundamentalRecord = {
   periodEnd: string; periodType: "annual" | "quarterly"; metric: string; value: number; unit: "amount" | "per_share" | "shares";
   currency: string | null; source: string;
@@ -92,9 +98,11 @@ export class MemoryMarketStore implements MarketStore {
   async searchSecurities(query: string, limit: number) {
     const q = query.trim();
     return (this.data.securities ?? []).filter((row) => !q || row.symbol.startsWith(q.toUpperCase()) || contains(row.name, q))
-      .sort((a, b) => a.symbol.localeCompare(b.symbol)).slice(0, limit);
+      .sort((a, b) => a.symbol.localeCompare(b.symbol)).slice(0, limit).map((row) => ({ ...row, sector: normalizeSectorLabel(row.sector) }));
   }
-  async securities(symbols: string[]) { return (this.data.securities ?? []).filter((row) => symbols.includes(row.symbol)); }
+  async securities(symbols: string[]) {
+    return (this.data.securities ?? []).filter((row) => symbols.includes(row.symbol)).map((row) => ({ ...row, sector: normalizeSectorLabel(row.sector) }));
+  }
   async dailyHistory(symbol: string, limit: number) {
     return this.daily.filter((row) => row.symbol === symbol).sort((a, b) => a.date.localeCompare(b.date)).slice(-limit);
   }
