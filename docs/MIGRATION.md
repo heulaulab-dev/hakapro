@@ -166,6 +166,10 @@ Freshness note: old code has two enums. Lane A emits `EOD` / `STALE` (>7 calenda
 | `STRATEGY_ENGINE_ENABLED` | server | `1` adds the Data Engine's EOD strategy scans (`/v1/strategies` over Lane A) to `/api/strategies`; off by default (draft rules, HAKA-17) |
 | `HAKAPRO_ADMIN_EMAILS` | server | Comma-separated sign-in emails allowed on admin pages (`/admin/ownership`: KSEI ≥1% list uploads). Unset: no admins |
 | `ENGINE_ADMIN_TOKEN` | server (secret) | The Data Engine's admin token (same value as the engine's), used only to forward ownership uploads to `MARKET_API_URL` |
+| `AI_FEATURES_ENABLED` | server | `1` turns on AI features (Research Brief narrative, copilot prototype) when `ANTHROPIC_API_KEY` is also set; off by default |
+| `ANTHROPIC_API_KEY` | server (secret, runtime only) | Claude API key for the AI features; never a build argument or `NEXT_PUBLIC_*`. `/api/ai/health` (admin) reports whether it is set, never its value |
+| `AI_MODEL_NARRATIVE`, `AI_MODEL_COPILOT` | server | Optional model ids (default `claude-opus-5-5`) |
+| `AI_DAILY_REQUEST_LIMIT` | server | Optional AI requests per user per Jakarta day (default 20; in-memory per process, failures not charged) |
 | `HEULATRADE_MARKET_API_BASE_URL` | server | Lane B |
 | `HEULATRADE_MARKET_API_KEY` | server (secret) | Lane B |
 | `SUPABASE_SERVICE_ROLE_KEY` | server (secret) | alert job only |

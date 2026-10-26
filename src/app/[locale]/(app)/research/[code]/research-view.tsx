@@ -18,6 +18,7 @@ import { ApiError } from "@/lib/api/envelope";
 import { useResearchBrief } from "@/lib/api/hooks";
 import { ResearchUnavailableError, type BriefComponent, type ComponentKey, type ResearchBrief } from "@/lib/api/research";
 import { formatDate, formatIdr, formatNumber, formatPercent, formatVolume, type Locale } from "@/lib/format";
+import { NarrativePanel } from "./narrative-panel";
 
 const STATUS_TONE: Record<BriefComponent["status"], StatusTone> = { ok: "info", stale: "warning", missing: "neutral" };
 /** Reasons owned by the brief; provider error codes reuse the shared data-state wording. */
@@ -30,8 +31,11 @@ const str = (raw: BriefComponent["raw"], key: string): string | null => (typeof 
 const th = "caption-style h-[38px] border-b border-border px-3 font-normal whitespace-nowrap text-subtle";
 const td = "border-b border-border px-3 py-cell-y";
 
-/** Research Brief (spec §3.4): evidence for and against, every figure with its source and as-of date. */
-export function ResearchView({ code }: { code: string }) {
+/**
+ * Research Brief (spec §3.4): evidence for and against, every figure with its source and as-of date.
+ * `aiEnabled` comes from the server (AI_FEATURES_ENABLED plus a key); when false no AI request is ever made.
+ */
+export function ResearchView({ code, aiEnabled = false }: { code: string; aiEnabled?: boolean }) {
   const t = useTranslations("research");
   const query = useResearchBrief(code);
 
@@ -55,7 +59,7 @@ export function ResearchView({ code }: { code: string }) {
   return (
     <Shell code={code}>
       <DataState query={query} skeleton={<Skeleton className="h-64 w-full" />}>
-        {(brief) => <Brief brief={brief} />}
+        {(brief) => <Brief brief={brief} aiEnabled={aiEnabled} />}
       </DataState>
     </Shell>
   );
@@ -79,7 +83,7 @@ function Shell({ code, children }: { code: string; children: ReactNode }) {
   );
 }
 
-function Brief({ brief }: { brief: ResearchBrief }) {
+function Brief({ brief, aiEnabled }: { brief: ResearchBrief; aiEnabled: boolean }) {
   const t = useTranslations();
   const locale = useLocale() as Locale;
   const component = (key: ComponentKey) => brief.components.find((item) => item.key === key)!;
@@ -100,6 +104,9 @@ function Brief({ brief }: { brief: ResearchBrief }) {
         </div>
         {brief.freshness !== "fresh" && <p className="caption-style text-warning">{t("research.staleNote", { date: formatDate(brief.price.session, locale) })}</p>}
       </section>
+
+      {/* Optional AI summary (spec §3.8): only when AI is on and the text passed number validation. */}
+      {aiEnabled && <NarrativePanel code={brief.code} />}
 
       {/* 2. Signal summary: no score yet, only completeness. */}
       <Panel title={t("research.summary.title")} testId="research-summary" description={t("research.summary.noScore")}>
