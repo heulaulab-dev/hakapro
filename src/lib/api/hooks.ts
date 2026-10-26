@@ -48,6 +48,7 @@ export const useAnalysisCompare = (symbols: string[]) =>
 export const useSeasonality = (symbol: string) => useQuery({ queryKey: queryKeys.seasonality(symbol), queryFn: ({ signal }) => stockApi.seasonality(symbol, signal) });
 export const useProfile = (symbol: string) => useQuery({ queryKey: queryKeys.profile(symbol), queryFn: ({ signal }) => stockApi.profile(symbol, signal) });
 export const useSectors = () => useQuery({ queryKey: queryKeys.sectors(), queryFn: ({ signal }) => engineApi.sectors(signal) });
+export const useMacro = () => useQuery({ queryKey: queryKeys.macro(), queryFn: ({ signal }) => engineApi.macro(signal) });
 /** The most-traded `limit` stocks with sector totals; the previous limit's map stays on screen while the next loads. */
 export const useHeatmap = (limit: number) =>
   useQuery({ queryKey: queryKeys.heatmap(limit), queryFn: ({ signal }) => engineApi.heatmap(limit, signal), placeholderData: (previous) => previous });

@@ -113,7 +113,18 @@
     "groups": "Conglomerate Groups",
     "radar": "Signal Radar",
     "stealth": "KSEI Corporate",
+    "macro": "Rates & Commodities",
     "methodology": "Methodology"
+  },
+  "macro": {
+    "title": "Rates & commodities",
+    "note": "Macro backdrop for the Indonesian market: policy rate, the rupiah, and the global commodity prices that move IDX sectors.",
+    "rates": "Rates & currency",
+    "ratesNote": "Bank Indonesia policy rate and the JISDOR USD/IDR reference.",
+    "commodities": "Commodities",
+    "commoditiesNote": "Monthly world prices for the commodities that drive IDX coal, palm-oil, metals and energy names.",
+    "commoditiesEmpty": "Commodity prices update monthly; the next release has not been collected yet.",
+    "worldBankAttribution": "Commodity prices: World Bank Commodity Price Data (The Pink Sheet), CC BY 4.0."
   },
   "stockTabs": {
     "label": "Stock sections",
