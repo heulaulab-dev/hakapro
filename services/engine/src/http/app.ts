@@ -3,8 +3,9 @@
 import { timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 import {
-  actionsCalendarSchema, actionsSchema, announcementItemSchema, fundamentalsSchema, HEATMAP_DEFAULT_LIMIT, HEATMAP_LIMITS, heatmapLimitSchema, heatmapSchema, insidersRecentSchema,
-  macroSchema, marketOverviewSchema, newsItemSchema, sectorsSchema, screenRequestSchema, screenResultSchema, securitySchema, signalsSchema, stockSchema,
+  actionsCalendarSchema, actionsSchema, announcementItemSchema, fundamentalsSchema, HEATMAP_DEFAULT_LIMIT, HEATMAP_LIMITS, heatmapLimitSchema,
+  heatmapSchema, insidersRecentSchema, macroSchema, marketOverviewSchema, newsItemSchema, sectorsSchema, screenRequestSchema, screenResultSchema,
+  securitySchema, signalsSchema, stockSchema, groupWindowSchema, groupsSchema,
 } from "@/server/schemas/idx-bei";
 import { dateSchema, symbolSchema } from "@/server/schemas/inputs";
 import { ownershipChangesSchema, ownershipMonthSchema, stockOwnershipSchema } from "@/server/schemas/ownership";
@@ -14,14 +15,21 @@ import type { PauseGuard } from "../schedule/pause";
 import type { JobStatus, Scheduler } from "../schedule/scheduler";
 import type { Logger } from "../log";
 import { nullLogger } from "../log";
-import { DEFAULT_CANDLES, MAX_CANDLES, serveActions, serveHeatmap, serveMarket, serveSectors, serveSecurities, serveSignals, serveStock, type Served } from "../serve/market";
 import {
-  ACTIONS_MAX_RANGE_DAYS, defaultActionsRange, NEWS_DEFAULT_PAGE_SIZE, NEWS_MAX_PAGE, NEWS_MAX_PAGE_SIZE, serveActionsCalendar, serveMacro, serveNews,
+  DEFAULT_CANDLES, MAX_CANDLES, serveActions, serveHeatmap, serveMarket, serveSectors, serveSecurities, serveSignals, serveStock, type Served,
+} from "../serve/market";
+import {
+  ACTIONS_MAX_RANGE_DAYS, defaultActionsRange, NEWS_DEFAULT_PAGE_SIZE, NEWS_MAX_PAGE, NEWS_MAX_PAGE_SIZE, serveActionsCalendar, serveMacro,
+  serveNews,
 } from "../serve/market-info";
 import { serveFundamentals, serveScreener } from "../serve/fundamentals";
+import { serveGroups } from "../serve/groups";
+import type { GroupCatalog } from "../groups/catalog";
+import { GROUP_CATALOG } from "../groups/groups";
 import { previousMonth as previousMonthOf } from "../ownership/numbers";
 import {
-  DEFAULT_INSIDER_REVISIT_DAYS, emptyRecentInsiders, INSIDER_ACTION_FILTERS, INSIDERS_DEFAULT_DAYS, INSIDERS_DEFAULT_LIMIT, INSIDERS_MAX_DAYS, INSIDERS_MAX_LIMIT, serveRecentInsiders, type InsiderStore,
+  DEFAULT_INSIDER_REVISIT_DAYS, emptyRecentInsiders, INSIDER_ACTION_FILTERS, INSIDERS_DEFAULT_DAYS, INSIDERS_DEFAULT_LIMIT, INSIDERS_MAX_DAYS,
+  INSIDERS_MAX_LIMIT, serveRecentInsiders, type InsiderStore,
 } from "../serve/insiders";
 import { emptyStockOwnership, serveOwnershipChanges, serveStockOwnership } from "../serve/ownership";
 import type { MarketStore } from "../serve/store";
@@ -53,6 +61,8 @@ export type AppDeps = {
   strategies?: { enabled: boolean; store: StrategyStore | null; rules?: StrategyRules };
   /** The insider feed's stored reads and the revisit window its coverage is measured over. Absent → the empty form. */
   insiders?: { store: InsiderStore; revisitDays: number };
+  /** The curated conglomerate groups behind /v1/groups (tests pass their own). */
+  groups?: GroupCatalog;
   now?: () => Date;
   log?: Logger;
 };
@@ -192,6 +202,59 @@ export function createApp(deps: AppDeps): (request: Request) => Promise<Response
       const limit = heatmapLimitSchema.safeParse(param(url, "limit") ?? HEATMAP_DEFAULT_LIMIT);
       if (!limit.success) return error(400, "BAD_REQUEST", `limit must be one of ${HEATMAP_LIMITS.join(", ")}`);
       return respond(heatmapSchema, market ? await serveHeatmap(market, limit.data, at) : null, { limit: limit.data, stocks: [], sectors: [] });
+    }
+    if (path === "/v1/securities") {
+      return respond(securitySchema.array(), market ? await serveSecurities(market, (url.searchParams.get("q") ?? "").slice(0, 64), at) : null, []);
+    }
+    if (path === "/v1/news") {
+      const query = newsQuerySchema.safeParse({ page: param(url, "page"), page_size: param(url, "page_size"), symbol: param(url, "symbol") });
+      if (!query.success) return error(400, "BAD_REQUEST", "Invalid page, page_size or symbol");
+      const { page, page_size: pageSize, symbol } = query.data;
+      return respond(newsItemSchema.array(), market ? await serveNews(market, { page, pageSize, symbol }, at) : null, []);
+    }
+    // Blocked at the source (see UNAVAILABLE_ROUTES): always the contract's empty form, whatever the query.
+    if (path === "/v1/announcements") return json(envelope(announcementItemSchema.array(), [], unavailableMeta(at)));
+    if (path === "/v1/macro") {
+      const served = market ? await serveMacro(market, at) : null;
+      return respond(macroSchema, served, { series: [] });
+    }
+    if (path === "/v1/actions") {
+      const fallback = defaultActionsRange(at);
+      const from = dateSchema.safeParse(param(url, "from") ?? fallback.from);
+      const to = dateSchema.safeParse(param(url, "to") ?? fallback.to);
+      if (!from.success || !to.success || !realDate(from.data) || !realDate(to.data)) return error(400, "BAD_REQUEST", "from and to must be YYYY-MM-DD dates");
+      const span = (Date.parse(to.data) - Date.parse(from.data)) / DAY_MS;
+      if (span < 0 || span > ACTIONS_MAX_RANGE_DAYS) return error(400, "BAD_REQUEST", `from must not be after to, and the range is at most ${ACTIONS_MAX_RANGE_DAYS} days`);
+      return respond(actionsCalendarSchema, market ? await serveActionsCalendar(market, { from: from.data, to: to.data }, at) : null, []);
+    }
+    if (path === "/v1/insiders/recent") {
+      const query = insidersQuerySchema.safeParse({ days: param(url, "days"), limit: param(url, "limit"), action: param(url, "action") });
+      if (!query.success) return error(400, "BAD_REQUEST", `days must be 1–${INSIDERS_MAX_DAYS}, limit 1–${INSIDERS_MAX_LIMIT}, action buy, sell or cross`);
+      const request = { days: query.data.days, limit: query.data.limit, action: query.data.action };
+      const revisitDays = deps.insiders?.revisitDays ?? DEFAULT_INSIDER_REVISIT_DAYS;
+      // Before the feed's first read (or without it): the empty form, UNAVAILABLE.
+      const result = deps.insiders ? await serveRecentInsiders(deps.insiders.store, request, revisitDays, at) : null;
+      return respond(insidersRecentSchema, result?.served ?? null, result?.empty ?? emptyRecentInsiders(at, request, revisitDays));
+    }
+    if (path === "/v1/strategies") {
+      // HAKA-18 board of the latest scan. Disabled (default) or no run yet: the contract's empty form, UNAVAILABLE.
+      const store = scansEnabled ? deps.strategies?.store : null;
+      return respond(strategyBoardSchema, store ? await serveStrategies(store, rules, at) : null, EMPTY_BOARD);
+    }
+    if (path === "/v1/signals") {
+      const served = market ? await serveSignals(market, at) : null;
+      // No trading date can be vouched for without foreign data; the schema has no empty form, so this is a typed miss.
+      if (!served) return error(404, "NO_DATA", "No signals available yet");
+      return json(envelope(signalsSchema, served.data, servedMeta(served, at)));
+    }
+
+    if (path === "/v1/groups") {
+      const window = groupWindowSchema.safeParse(param(url, "window")?.toUpperCase() ?? "1D");
+      if (!window.success) return error(400, "BAD_REQUEST", "window must be 1D, 5D or 20D");
+      const catalog = deps.groups ?? GROUP_CATALOG;
+      return respond(groupsSchema, market ? await serveGroups(market, window.data, at, catalog) : null, {
+        window: { id: window.data, sessions: 0, from: null, to: null, basis: "daily" }, catalog: { version: catalog.version, reviewedAt: catalog.reviewedAt }, groups: [],
+      });
     }
     if (path === "/v1/securities") {
       return respond(securitySchema.array(), market ? await serveSecurities(market, (url.searchParams.get("q") ?? "").slice(0, 64), at) : null, []);

@@ -52,6 +52,10 @@ describe("engine /v1 stubs via IdxBeiSource", () => {
     expect(await source.heatmap({ limit: 30 })).toMatchObject({ freshness: "UNAVAILABLE", asOf: null, data: { limit: 30, stocks: [], sectors: [] } });
     // Only the engine's limits are ever sent.
     await expect(source.heatmap({ limit: 10 as never })).rejects.toThrow();
+    // Groups: the empty form with the catalog version, never invented figures.
+    const groups = await source.groups({ window: "5D" });
+    expect(groups).toMatchObject({ freshness: "UNAVAILABLE", asOf: null, data: { window: { id: "5D", sessions: 0, from: null, to: null }, groups: [] } });
+    expect(groups.data.catalog.version).toMatch(/^\d{4}-\d{2}-\d{2}/);
     // Strategy scans off (the default): the empty board.
     expect(await source.engineStrategies()).toMatchObject({ freshness: "UNAVAILABLE", asOf: null, data: { contexts: [], strategies: [], candidates: [] } });
     // Insider feed off (budget 0) or not run yet: the empty form, still parseable.
@@ -159,6 +163,26 @@ describe("engine /v1 real responses via IdxBeiSource", () => {
     ]);
     expect(heatmap.data.sectors[1].changePercent).toBeCloseTo((24 / 27 - 1) * 100, 6);
     expect((await source.heatmap({ limit: 30 })).data.limit).toBe(30);
+    // Conglomerate groups (curated catalog): the same 1D change as the movers, in percentage points; the foreign
+    // figure is Σ (buy − sell shares) × close; catalog members the engine doesn't know are reported, not dropped.
+    const groups = await source.groups({ window: "1D" });
+    expect(groups).toMatchObject({ freshness: "EOD", asOf: "2026-10-16", data: { window: { id: "1D", sessions: 1, from: "2026-10-16", to: "2026-10-16", basis: "daily" } } });
+    const djarum = groups.data.groups.find((group) => group.id === "djarum")!;
+    expect(djarum).toMatchObject({ membersWithData: 1, decliners: 1, valueIdr: 5196076490000, best: { symbol: "BBCA" }, foreign: { members: 1, partialMembers: 0 } });
+    expect(djarum.valueWeightedChangePercent).toBeCloseTo(market.data.movers.find((row) => row.symbol === "BBCA")!.changePercent!, 6);
+    expect(djarum.foreign.netValueEstimateIdr).toBe((310e6 - 420e6) * 5225);
+    // Price down and foreign net selling agree: no divergence.
+    expect(djarum.divergence).toBeNull();
+    expect(djarum.unknownSymbols).toEqual(expect.arrayContaining(["TOWR", "BELI"]));
+    expect(djarum.stocks[0]).toMatchObject({ symbol: "BBCA", name: "PT Bank Central Asia Tbk", sessions: 1, foreignSessions: 1 });
+    // Groups without any stored member come last, with null figures.
+    expect(groups.data.groups.at(-1)).toMatchObject({ membersWithData: 0, changePercent: null, valueWeightedChangePercent: null });
+
+    const fiveDay = await source.groups({ window: "5D" });
+    expect(fiveDay.data.window).toEqual({ id: "5D", sessions: 2, from: "2026-10-15", to: "2026-10-16", basis: "daily" });
+    const djarum5 = fiveDay.data.groups.find((group) => group.id === "djarum")!;
+    expect(djarum5.changePercent).toBeCloseTo((5225 / 6125 - 1) * 100, 6);
+    expect(djarum5.foreign.netValueEstimateIdr).toBe((70e6 - 90e6) * 6075 + (310e6 - 420e6) * 5225);
 
     // The market-wide calendar over an explicit range; the engine has no issuer profiles, so profile is unsupported.
     const calendar = await source.actionsCalendar({ from: "2021-10-01", to: "2021-10-31" });

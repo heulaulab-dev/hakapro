@@ -213,6 +213,33 @@ export const heatmapSchema = z.object({ limit: n, stocks: z.array(heatmapStockSc
 export type HeatmapStock = z.infer<typeof heatmapStockSchema>;
 export type HeatmapSector = z.infer<typeof heatmapSectorSchema>;
 export type Heatmap = z.infer<typeof heatmapSchema>;
+export const GROUP_WINDOWS = ["1D", "5D", "20D"] as const;
+export type GroupWindow = (typeof GROUP_WINDOWS)[number];
+const groupConfidence = z.enum(["sourced", "unverified"]);
+const groupDivergence = z.enum(["price_up_foreign_net_sell", "price_down_foreign_net_buy"]).nullable();
+export const groupStockSchema = z.object({
+  symbol: z.string(), name: z.string().nullable(), confidence: groupConfidence, note: z.string().nullable(),
+  close: nn, changePercent: nn, valueIdr: nn, sessions: n, corporateAction: z.boolean(),
+  netForeignValueEstimateIdr: nn, foreignSessions: n, divergence: groupDivergence,
+});
+export const groupPerformanceSchema = z.object({
+  id: z.string(), name: z.object({ id: z.string(), en: z.string() }), confidence: groupConfidence, note: z.string().nullable(), reviewedAt: z.string(),
+  sources: z.array(z.object({ label: z.string(), url: z.string() })),
+  members: n, membersWithData: n, unknownSymbols: z.array(z.string()), inactiveSymbols: z.array(z.string()), noDataSymbols: z.array(z.string()),
+  advancers: n, decliners: n, unchanged: n, changePercent: nn, valueWeightedChangePercent: nn, valueIdr: n,
+  foreign: z.object({ netValueEstimateIdr: nn, members: n, partialMembers: n }),
+  divergence: groupDivergence,
+  best: z.object({ symbol: z.string(), changePercent: n }).nullable(), worst: z.object({ symbol: z.string(), changePercent: n }).nullable(),
+  stocks: z.array(groupStockSchema),
+});
+export const groupsViewSchema = z.object({
+  window: z.object({ id: z.enum(GROUP_WINDOWS), sessions: n, from: z.string().nullable(), to: z.string().nullable(), basis: z.enum(["daily", "intraday"]) }),
+  catalog: z.object({ version: z.string(), reviewedAt: z.string() }),
+  groups: z.array(groupPerformanceSchema),
+});
+export type GroupStock = z.infer<typeof groupStockSchema>;
+export type GroupPerformance = z.infer<typeof groupPerformanceSchema>;
+export type GroupsView = z.infer<typeof groupsViewSchema>;
 export const actionCalendarItemSchema = z.object({
   symbol: z.string(), date: z.string(), type: z.string(), description: z.string().nullable(), amount: nn, ratio: z.string().nullable(), documentUrl: z.string().nullable(),
 });
@@ -249,6 +276,7 @@ export type RecentInsidersQuery = { days?: number; action?: "buy" | "sell"; limi
 export const engineApi = {
   sectors: (signal?: AbortSignal) => fetchEnvelope("/api/sectors", z.array(sectorPerformanceSchema), { signal }),
   heatmap: (limit: number, signal?: AbortSignal) => fetchEnvelope(`/api/heatmap${qs({ limit })}`, heatmapSchema, { signal }),
+  groups: (window: GroupWindow, signal?: AbortSignal) => fetchEnvelope(`/api/groups${qs({ window })}`, groupsViewSchema, { signal }),
   actionsCalendar: (range: { from?: string; to?: string } = {}, signal?: AbortSignal) => fetchEnvelope(`/api/actions${qs(range)}`, z.array(actionCalendarItemSchema), { signal }),
   ownership: (symbol: string, signal?: AbortSignal) => fetchEnvelope(`/api/stocks/${encodeURIComponent(symbol.toUpperCase())}/ownership`, stockOwnershipSchema, { signal }),
   ownershipChanges: (query: { month?: string; symbol?: string } = {}, signal?: AbortSignal) => fetchEnvelope(`/api/ownership/changes${qs(query)}`, ownershipChangesSchema, { signal }),

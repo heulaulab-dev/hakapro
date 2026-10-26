@@ -5,6 +5,7 @@ import { queryKeys } from "@/lib/query/keys";
 import {
   accumulationApi, analysisApi, engineApi, financialsApi, marketApi, overviewApi, priceApi, quotesApi, screenerApi, stockApi,
   type BrokerSummaryQuery, type FinancialsQuery, type HistoryQuery, type MarketCapQuery, type RecentInsidersQuery, type ScreenCondition,
+  type GroupWindow,
 } from "./market";
 import { shouldRetry } from "@/lib/query/client";
 import { fetchResearchBrief, ResearchUnavailableError } from "./research";
@@ -50,7 +51,8 @@ export const useSectors = () => useQuery({ queryKey: queryKeys.sectors(), queryF
 /** The most-traded `limit` stocks with sector totals; the previous limit's map stays on screen while the next loads. */
 export const useHeatmap = (limit: number) =>
   useQuery({ queryKey: queryKeys.heatmap(limit), queryFn: ({ signal }) => engineApi.heatmap(limit, signal), placeholderData: (previous) => previous });
-export const useActionsCalendar =(range: { from?: string; to?: string } = {}) =>
+export const useGroups = (window: GroupWindow = "1D") => useQuery({ queryKey: queryKeys.groups(window), queryFn: ({ signal }) => engineApi.groups(window, signal) });
+export const useActionsCalendar = (range: { from?: string; to?: string } = {}) =>
   useQuery({ queryKey: queryKeys.actionsCalendar(range.from, range.to), queryFn: ({ signal }) => engineApi.actionsCalendar(range, signal) });
 export const useOwnership = (symbol: string) => useQuery({ queryKey: queryKeys.ownership(symbol), queryFn: ({ signal }) => engineApi.ownership(symbol, signal) });
 export const useOwnershipChanges = (query: { month?: string; symbol?: string } = {}) =>

@@ -6,6 +6,8 @@ export type SecurityRecord = {
   sharesOutstanding: number | null; freeFloatPct: number | null; asOf: Date;
   /** Snapshot capitalisation from the universe sources (IDR), used only when shares are unknown. */
   marketCap?: number | null;
+  /** False once the universe sources no longer list the symbol (delisted); absent means active. */
+  active?: boolean;
 };
 
 /** Normalize Indonesian aliases to the engine's existing public sector label. */
@@ -53,6 +55,10 @@ export interface MarketStore {
   /** Newest session date in daily_prices. */
   latestSessionDate(): Promise<string | null>;
   sessionRows(date: string): Promise<DailyRecord[]>;
+  /** The newest `count` session dates in daily_prices up to `endDate` (market-wide), newest first. */
+  sessionDates(endDate: string, count: number): Promise<string[]>;
+  /** Daily rows of `symbols` with a date in [from, to]. */
+  dailyRowsBetween(from: string, to: string, symbols: string[]): Promise<DailyRecord[]>;
   latestSnapshotTs(): Promise<Date | null>;
   snapshotRows(ts: Date): Promise<IntradayRecord[]>;
   /** Close of each symbol's newest session before `date` (previous close for intraday rows). */
@@ -111,6 +117,12 @@ export class MemoryMarketStore implements MarketStore {
   }
   async latestSessionDate() { return this.daily.map((row) => row.date).sort().at(-1) ?? null; }
   async sessionRows(date: string) { return this.daily.filter((row) => row.date === date); }
+  async sessionDates(endDate: string, count: number) {
+    return [...new Set(this.daily.map((row) => row.date).filter((date) => date <= endDate))].sort().reverse().slice(0, count);
+  }
+  async dailyRowsBetween(from: string, to: string, symbols: string[]) {
+    return this.daily.filter((row) => row.date >= from && row.date <= to && symbols.includes(row.symbol));
+  }
   async latestSnapshotTs() { return (this.data.intraday ?? []).map((row) => row.ts).sort((a, b) => b.getTime() - a.getTime())[0] ?? null; }
   async snapshotRows(ts: Date) { return (this.data.intraday ?? []).filter((row) => row.ts.getTime() === ts.getTime()); }
   async closesBefore(date: string, symbols: string[]) {

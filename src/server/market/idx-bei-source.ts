@@ -3,9 +3,9 @@ import type { z } from "zod";
 import { classifySessionDate, withFreshness, type Freshness, type WithFreshness } from "@/lib/freshness";
 import { strategyBoardSchema } from "@/lib/strategies/contract";
 import {
-  actionsCalendarSchema, actionsSchema, announcementItemSchema, fundamentalsSchema, HEATMAP_DEFAULT_LIMIT, heatmapLimitSchema, heatmapSchema, idxBeiEnvelope, insidersRecentSchema, macroSchema,
-  marketOverviewSchema, newsItemSchema,
-  profileSchema, screenRequestSchema, screenResultSchema, sectorsSchema, securitySchema, signalsSchema, stockSchema, type ScreenRequest,
+  actionsCalendarSchema, actionsSchema, announcementItemSchema, fundamentalsSchema, HEATMAP_DEFAULT_LIMIT, heatmapLimitSchema, heatmapSchema,
+  idxBeiEnvelope, insidersRecentSchema, macroSchema, marketOverviewSchema, newsItemSchema, groupsSchema, groupWindowSchema, profileSchema,
+  screenRequestSchema, screenResultSchema, sectorsSchema, securitySchema, signalsSchema, stockSchema, type ScreenRequest,
 } from "@/server/schemas/idx-bei";
 import { symbolSchema } from "@/server/schemas/inputs";
 import { ownershipChangesSchema, ownershipMonthSchema, stockOwnershipSchema } from "@/server/schemas/ownership";
@@ -13,7 +13,10 @@ import { PROVIDER_USER_AGENT } from "@/server/config/provider-identity";
 import { logWarn } from "@/server/log";
 import { ProviderBackoff } from "@/server/providers/backoff";
 import { MarketDataError, unsupported } from "./errors";
-import { BaseMarketDataSource, type ActionsCalendarQuery, type HeatmapQuery, type OwnershipChangesQuery, type PageQuery, type RecentInsidersQuery } from "./source";
+import {
+  BaseMarketDataSource, type ActionsCalendarQuery, type HeatmapQuery, type OwnershipChangesQuery, type PageQuery, type RecentInsidersQuery,
+  type GroupsQuery,
+} from "./source";
 import type { Candle, Quote } from "./types";
 import type { Clock } from "./arjum-source";
 
@@ -195,6 +198,34 @@ export class IdxBeiSource extends BaseMarketDataSource {
       sectors: data.sectors.map((row) => ({
         sector: row.sector, stocks: row.stocks, advancers: row.advancers, decliners: row.decliners, unchanged: row.unchanged,
         valueIdr: row.value, changePercent: pct(row.changePercent), netForeignValueEstimateIdr: row.netForeignValueEstimate,
+      })),
+    }, meta.dataAsOf);
+  }
+
+  /**
+   * Data Engine `/v1/groups`: curated conglomerate groups over a 1D/5D/20D session window, in percentage points like
+   * `sectors()`. The foreign figure stays labelled an estimate; divergence is passed through, never turned into a label.
+   */
+  async groups(query: GroupsQuery) {
+    const window = groupWindowSchema.parse(query.window ?? "1D");
+    const { data, meta } = await this.get(`/v1/groups?window=${window}`, groupsSchema, TTL_MS.market);
+    return this.snapshot({
+      window: data.window, catalog: data.catalog,
+      groups: data.groups.map((group) => ({
+        id: group.id, name: group.name, confidence: group.confidence, note: group.note, reviewedAt: group.reviewedAt, sources: group.sources,
+        members: group.members, membersWithData: group.membersWithData,
+        unknownSymbols: group.unknownSymbols, inactiveSymbols: group.inactiveSymbols, noDataSymbols: group.noDataSymbols,
+        advancers: group.advancers, decliners: group.decliners, unchanged: group.unchanged,
+        changePercent: pct(group.changePercent), valueWeightedChangePercent: pct(group.valueWeightedChangePercent), valueIdr: group.value,
+        foreign: { netValueEstimateIdr: group.foreign.netValueEstimate, members: group.foreign.members, partialMembers: group.foreign.partialMembers },
+        divergence: group.divergence,
+        best: group.best && { symbol: group.best.symbol, changePercent: group.best.changePercent * 100 },
+        worst: group.worst && { symbol: group.worst.symbol, changePercent: group.worst.changePercent * 100 },
+        stocks: group.stocks.map((stock) => ({
+          symbol: stock.symbol, name: stock.name, confidence: stock.confidence, note: stock.note, close: stock.close, changePercent: pct(stock.changePercent),
+          valueIdr: stock.value, sessions: stock.sessions, corporateAction: stock.corporateAction,
+          netForeignValueEstimateIdr: stock.netForeignValueEstimate, foreignSessions: stock.foreignSessions, divergence: stock.divergence,
+        })),
       })),
     }, meta.dataAsOf);
   }
