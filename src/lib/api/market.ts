@@ -98,7 +98,7 @@ export const marketOverviewSchema = z.object({
   breadth: z.object({ advancers: n, decliners: n, unchanged: n, valueIdr: n, volumeShares: n, frequency: n }),
   movers: z.array(z.object({ symbol: z.string().nullable(), name: z.string().nullable(), close: nn, changePercent: nn, volumeShares: nn, valueIdr: nn, frequency: nn })),
 });
-export const newsItemSchema = z.object({ date: z.string().nullable(), title: z.string().nullable(), summary: z.string().nullable(), url: z.string().nullable() });
+export const newsItemSchema = z.object({ date: z.string().nullable(), title: z.string().nullable(), summary: z.string().nullable(), url: z.string().nullable(), symbols: z.array(z.string()).optional() });
 
 export const announcementSchema = z.object({ date: z.string().nullable(), symbol: z.string().nullable(), title: z.string().nullable(), documentUrl: z.string().nullable() });
 
