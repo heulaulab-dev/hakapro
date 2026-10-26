@@ -4,7 +4,8 @@
 //   Macro and actions: dated by their newest data and classified with the IDX session clock.
 import type { z } from "zod";
 import type { actionsCalendarSchema, macroSchema, newsItemSchema } from "@/server/schemas/idx-bei";
-import { MACRO_SERIES, type MacroSeriesId } from "../sources/bi";
+import { MACRO_SERIES } from "../sources/bi";
+import { WORLD_BANK_COMMODITIES } from "../sources/worldbank";
 import { addDays, wibDateOf, wibIso, wibToday } from "../sources/session";
 import { sessionFreshness, type Served } from "./market";
 import type { MarketStore } from "./store";
@@ -12,8 +13,14 @@ import type { MarketStore } from "./store";
 export const NEWS_DEFAULT_PAGE_SIZE = 20;
 export const NEWS_MAX_PAGE_SIZE = 100;
 export const NEWS_MAX_PAGE = 500;
-/** Observations per macro series in /v1/macro (the first BI table page holds 10). */
+/** Observations per macro series in /v1/macro (BI: first table page = 10 rows; commodities: 10 months). */
 export const MACRO_OBSERVATIONS = 10;
+
+/** Display metadata for every macro series, in served order: Bank Indonesia first, then World Bank commodities. */
+export const MACRO_SERIES_META: { id: string; name: string; unit: string }[] = [
+  ...Object.entries(MACRO_SERIES).map(([id, meta]) => ({ id, name: meta.name, unit: meta.unit })),
+  ...Object.entries(WORLD_BANK_COMMODITIES).map(([id, meta]) => ({ id, name: meta.name, unit: meta.unit })),
+];
 export const ACTIONS_LOOKBACK_DAYS = 30;
 export const ACTIONS_LOOKAHEAD_DAYS = 60;
 export const ACTIONS_MAX_RANGE_DAYS = 366;
@@ -40,12 +47,12 @@ export async function serveNews(store: MarketStore, query: { page: number; pageS
 export async function serveMacro(store: MarketStore, now: Date): Promise<Served<z.input<typeof macroSchema>> | null> {
   const rows = await store.macro(MACRO_OBSERVATIONS);
   if (!rows.length) return null;
-  const series = (Object.keys(MACRO_SERIES) as MacroSeriesId[]).flatMap((id) => {
-    const observations = rows.filter((row) => row.series === id).sort((a, b) => b.date.localeCompare(a.date));
+  const series = MACRO_SERIES_META.flatMap((meta) => {
+    const observations = rows.filter((row) => row.series === meta.id).sort((a, b) => b.date.localeCompare(a.date));
     if (!observations.length) return [];
     const [latest, previous] = observations;
     return [{
-      id, name: MACRO_SERIES[id].name, unit: MACRO_SERIES[id].unit, date: latest.date, value: latest.value,
+      id: meta.id, name: meta.name, unit: meta.unit, date: latest.date, value: latest.value,
       previousDate: previous?.date ?? null, previousValue: previous?.value ?? null, link: latest.link,
       observations: observations.map((row) => ({ date: row.date, value: row.value })),
     }];

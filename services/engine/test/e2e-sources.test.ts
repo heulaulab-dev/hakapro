@@ -85,6 +85,7 @@ describe.skipIf(!enabled)("engine sources (docker postgres + fixtures)", { timeo
       ["news-investortrust", "investortrust.id", { minIntervalMs: 5000, concurrency: 1 }],
       ["bank-indonesia", "www.bi.go.id", { minIntervalMs: 5000, concurrency: 1 }],
       ["yahoo-fundamentals", "query1.finance.yahoo.com", { minIntervalMs: 5000, concurrency: 1 }],
+      ["world-bank-pinksheet", "thedocs.worldbank.org", { minIntervalMs: 2000, concurrency: 1 }],
     ]);
     expect(Object.fromEntries(h.engine.scheduler.status().map((job) => [job.id, job.trigger]))).toEqual({
       universe: { kind: "cron", spec: "35 16 * * *", tradingDaysOnly: true },
@@ -98,6 +99,7 @@ describe.skipIf(!enabled)("engine sources (docker postgres + fixtures)", { timeo
       "news-retention": { kind: "cron", spec: "45 2 * * *" },
       "macro-jisdor": { kind: "cron", spec: "0 17 * * *" },
       "macro-bi-rate": { kind: "cron", spec: "5 17 * * *" },
+      "macro-commodities": { kind: "cron", spec: "30 6 4 * *" },
       fundamentals: { kind: "cron", spec: "5-55/10 19-23,0-5 * * *" },
       ratios: { kind: "cron", spec: "15 6,17,21 * * *" },
     });
@@ -705,7 +707,7 @@ describe.skipIf(!enabled)("engine sources (docker postgres + fixtures)", { timeo
     expect(Object.fromEntries(health.data.sources.map((row) => [row.id, row.status]))).toEqual({
       arjum: "OK", pasardana: "OK", "tradingview-scanner": "OK", "yahoo-chart": "OK",
       "bank-indonesia": "NEVER_RUN", "news-antara": "NEVER_RUN", "news-cnbcindonesia": "NEVER_RUN", "news-detik": "NEVER_RUN", "news-investortrust": "NEVER_RUN",
-      "yahoo-fundamentals": "NEVER_RUN",
+      "yahoo-fundamentals": "NEVER_RUN", "world-bank-pinksheet": "NEVER_RUN",
     });
     expect(health.data.unavailable.map((row) => row.route)).toEqual(["/v1/announcements", "/v1/stocks/{s}/profile", "/v1/strategies"]);
     expect(health.data.unavailable.find((row) => row.route === "/v1/strategies")?.status).toBe("DISABLED");

@@ -184,7 +184,8 @@ export const announcementItemSchema = z.object({ date: z.string().nullable(), sy
 
 /** Data Engine `/v1/macro` (E3): Bank Indonesia series, observations newest first. BI-Rate in percent units. */
 export const macroSeriesSchema = z.object({
-  id: z.enum(["BI_RATE", "JISDOR"]), name: z.string(), unit: z.string(),
+  // Open-ended series id: Bank Indonesia series are uppercase (BI_RATE, JISDOR); World Bank commodities are `wb.*`.
+  id: z.string().min(1), name: z.string(), unit: z.string(),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), value: z.number(),
   previousDate: z.string().nullable(), previousValue: num, link: z.string().nullable(),
   observations: z.array(z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), value: z.number() })),
