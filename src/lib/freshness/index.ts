@@ -21,6 +21,21 @@ export function withFreshness<T>(
   return { data, freshness, asOf: meta.asOf, source: meta.source, ...(meta.period ? { period: meta.period } : {}) };
 }
 
+/** Lane ids the HAKA PRO engine serves data through; users see the one brand, never the upstream lane. */
+const ENGINE_LANES = new Set(["arjum", "idx-bei"]);
+
+/** The product name for the data engine, shown wherever a dataset's source reaches the user. */
+export const ENGINE_SOURCE_LABEL = "HAKA PRO Engine";
+
+/**
+ * User-facing label for a provider/lane id. Engine lanes collapse to {@link ENGINE_SOURCE_LABEL};
+ * fixture lanes (dev/test only) and any other value — real dataset names, "none" — pass through
+ * unchanged. Only the displayed text changes; the stored `source` id that logic keys on is untouched.
+ */
+export function sourceLabel(source: string): string {
+  return ENGINE_LANES.has(source) ? ENGINE_SOURCE_LABEL : source;
+}
+
 export { classifySessionDate, jakartaClock, marketPhase, previousTradingDay, isTradingDay } from "./session";
 
 /** The freshness part of an envelope, as passed to data-bearing components. */
