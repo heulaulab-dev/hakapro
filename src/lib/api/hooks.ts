@@ -4,7 +4,7 @@ import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query/keys";
 import {
   accumulationApi, analysisApi, engineApi, financialsApi, marketApi, overviewApi, priceApi, quotesApi, screenerApi, stockApi,
-  type BrokerSummaryQuery, type FinancialsQuery, type HistoryQuery, type MarketCapQuery, type ScreenCondition,
+  type BrokerSummaryQuery, type FinancialsQuery, type HistoryQuery, type MarketCapQuery, type RecentInsidersQuery, type ScreenCondition,
 } from "./market";
 import { shouldRetry } from "@/lib/query/client";
 import { fetchResearchBrief, ResearchUnavailableError } from "./research";
@@ -52,7 +52,10 @@ export const useActionsCalendar = (range: { from?: string; to?: string } = {}) =
 export const useOwnership = (symbol: string) => useQuery({ queryKey: queryKeys.ownership(symbol), queryFn: ({ signal }) => engineApi.ownership(symbol, signal) });
 export const useOwnershipChanges = (query: { month?: string; symbol?: string } = {}) =>
   useQuery({ queryKey: queryKeys.ownershipChanges(query.month, query.symbol), queryFn: ({ signal }) => engineApi.ownershipChanges(query, signal) });
-export const useCorporateActions = (symbol: string) => useQuery({ queryKey: queryKeys.actions(symbol), queryFn: ({ signal }) => stockApi.actions(symbol, signal) });
+/** Market-wide insider feed; keeps the previous list on screen while the action filter changes. */
+export const useRecentInsiders = (query: RecentInsidersQuery = {}) =>
+  useQuery({ queryKey: queryKeys.recentInsiders(query.days, query.action ?? null, query.limit), queryFn: ({ signal }) => engineApi.recentInsiders(query, signal), placeholderData: (previous) => previous });
+export const useCorporateActions =(symbol: string) => useQuery({ queryKey: queryKeys.actions(symbol), queryFn: ({ signal }) => stockApi.actions(symbol, signal) });
 /**
  * Newest-first insider disclosures, one provider page per user "load older" action (no background crawling).
  * Stops when the provider answers with a different page than requested (e.g. a recording that ignores `page`).

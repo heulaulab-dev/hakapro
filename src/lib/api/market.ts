@@ -223,12 +223,23 @@ export const ownershipChangeSchema = z.object({
 });
 export const ownershipChangesSchema = z.object({ month: z.string(), previousMonth: z.string(), changes: z.array(ownershipChangeSchema) });
 export type OwnershipChange = z.infer<typeof ownershipChangeSchema>;
+/** Market-wide insider feed (Data Engine rotation): the per-stock row plus symbol and value, and the crawl's coverage. */
+export const recentInsiderSchema = insiderRowSchema.extend({ symbol: z.string(), valueIdr: nn });
+export const recentInsidersSchema = z.object({
+  days: n, from: z.string(), to: z.string(), action: z.enum(["buy", "sell", "cross"]).nullable(),
+  coverage: z.object({ checked: n, active: n, revisitDays: n, oldestCheck: z.string().nullable() }),
+  transactions: z.array(recentInsiderSchema),
+});
+export type RecentInsider = z.infer<typeof recentInsiderSchema>;
+export type RecentInsiders = z.infer<typeof recentInsidersSchema>;
+export type RecentInsidersQuery = { days?: number; action?: "buy" | "sell"; limit?: number };
 
 export const engineApi = {
   sectors: (signal?: AbortSignal) => fetchEnvelope("/api/sectors", z.array(sectorPerformanceSchema), { signal }),
   actionsCalendar: (range: { from?: string; to?: string } = {}, signal?: AbortSignal) => fetchEnvelope(`/api/actions${qs(range)}`, z.array(actionCalendarItemSchema), { signal }),
   ownership: (symbol: string, signal?: AbortSignal) => fetchEnvelope(`/api/stocks/${encodeURIComponent(symbol.toUpperCase())}/ownership`, stockOwnershipSchema, { signal }),
   ownershipChanges: (query: { month?: string; symbol?: string } = {}, signal?: AbortSignal) => fetchEnvelope(`/api/ownership/changes${qs(query)}`, ownershipChangesSchema, { signal }),
+  recentInsiders: (query: RecentInsidersQuery = {}, signal?: AbortSignal) => fetchEnvelope(`/api/insiders/recent${qs(query)}`, recentInsidersSchema, { signal }),
 };
 
 export const stockApi = {

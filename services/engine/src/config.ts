@@ -30,6 +30,10 @@ const envSchema = z.object({
   ENGINE_ARJUM_API_KEY: optionalSecret,
   ENGINE_ARJUM_DAILY_BUDGET: z.coerce.number().int().min(0).max(1000).default(600),
   ENGINE_ARJUM_RESERVE: z.coerce.number().int().min(0).max(1000).default(400),
+  // Market-wide insider feed (one /api/insiders call per symbol): 0 (the default) leaves the job unregistered. Every
+  // call comes out of the same 1000/day key quota, so it competes with foreign flow and the app (see README).
+  ENGINE_ARJUM_INSIDER_BUDGET: z.coerce.number().int().min(0).max(1000).default(0),
+  ENGINE_ARJUM_INSIDER_REVISIT_DAYS: z.coerce.number().int().min(1).max(90).default(7),
   // When explicitly enabled, the existing authenticated history endpoint is also the engine's EOD OHLCV source.
   // Keep off until the provider plan permits this collection, storage, and app display use.
   ENGINE_ARJUM_EOD_ENABLED: flag(false),
@@ -40,7 +44,14 @@ const envSchema = z.object({
   ENGINE_STRATEGY_SCANS_ENABLED: flag(false),
 });
 
-export type ArjumConfig = { baseUrl: string; apiKey: string; dailyBudget: number; reserve: number; eodEnabled: boolean };
+/** arjum's daily request quota for one key, shared by the engine (foreign flow, insider feed) and the app environments. */
+export const ARJUM_DAILY_QUOTA = 1000;
+
+export type ArjumConfig = {
+  baseUrl: string; apiKey: string; dailyBudget: number; reserve: number; eodEnabled: boolean;
+  /** Insider-feed calls per WIB day (0 = job not registered) and the days before a symbol is read again. */
+  insiderBudget: number; insiderRevisitDays: number;
+};
 
 export type EngineConfig = {
   port: number;
@@ -56,7 +67,7 @@ export type EngineConfig = {
   migrateOnStart: boolean;
   /** Null → local-directory fallback under `${dataDir}/raw`. */
   rawS3: { endpoint: string; bucket: string; accessKeyId: string; secretAccessKey: string; region: string } | null;
-  /** Null → the foreign-flow job is not registered and foreignBuy/foreignSell stay null. */
+  /** Null → the foreign-flow and insider-feed jobs are not registered and foreignBuy/foreignSell stay null. */
   arjum: ArjumConfig | null;
   /** Ownership uploads: largest accepted file, and whether the free-float draft estimate is served. */
   ownership: { maxUploadBytes: number; freeFloatEnabled: boolean };
@@ -82,6 +93,15 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
   if (e.ENGINE_ARJUM_BASE_URL && !/^https?:\/\/[^/]/.test(e.ENGINE_ARJUM_BASE_URL)) {
     throw new Error("Invalid engine configuration: ENGINE_ARJUM_BASE_URL must be an http(s) URL");
   }
+  // The two engine budgets together must fit in what the reserve leaves of the shared quota. Checked only when the
+  // insider feed is on, so configurations from before it existed keep loading unchanged.
+  const aboveReserve = ARJUM_DAILY_QUOTA - e.ENGINE_ARJUM_RESERVE;
+  if (e.ENGINE_ARJUM_INSIDER_BUDGET > 0 && e.ENGINE_ARJUM_DAILY_BUDGET + e.ENGINE_ARJUM_INSIDER_BUDGET > aboveReserve) {
+    throw new Error(
+      `Invalid engine configuration: ENGINE_ARJUM_DAILY_BUDGET + ENGINE_ARJUM_INSIDER_BUDGET (${e.ENGINE_ARJUM_DAILY_BUDGET} + ${e.ENGINE_ARJUM_INSIDER_BUDGET}) `
+      + `must not exceed ${ARJUM_DAILY_QUOTA} - ENGINE_ARJUM_RESERVE (${aboveReserve}); lower a budget or the reserve`,
+    );
+  }
   return {
     port: e.PORT,
     databaseUrl: e.ENGINE_DATABASE_URL,
@@ -98,7 +118,10 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
       ? { endpoint: e.ENGINE_RAW_S3_ENDPOINT!, bucket: e.ENGINE_RAW_S3_BUCKET!, accessKeyId: e.ENGINE_RAW_S3_ACCESS_KEY_ID!, secretAccessKey: e.ENGINE_RAW_S3_SECRET_ACCESS_KEY!, region: e.ENGINE_RAW_S3_REGION }
       : null,
     arjum: e.ENGINE_ARJUM_BASE_URL && e.ENGINE_ARJUM_API_KEY
-      ? { baseUrl: e.ENGINE_ARJUM_BASE_URL.replace(/\/+$/, ""), apiKey: e.ENGINE_ARJUM_API_KEY, dailyBudget: e.ENGINE_ARJUM_DAILY_BUDGET, reserve: e.ENGINE_ARJUM_RESERVE, eodEnabled: e.ENGINE_ARJUM_EOD_ENABLED }
+      ? {
+        baseUrl: e.ENGINE_ARJUM_BASE_URL.replace(/\/+$/, ""), apiKey: e.ENGINE_ARJUM_API_KEY, dailyBudget: e.ENGINE_ARJUM_DAILY_BUDGET, reserve: e.ENGINE_ARJUM_RESERVE,
+        eodEnabled: e.ENGINE_ARJUM_EOD_ENABLED, insiderBudget: e.ENGINE_ARJUM_INSIDER_BUDGET, insiderRevisitDays: e.ENGINE_ARJUM_INSIDER_REVISIT_DAYS,
+      }
       : null,
     ownership: { maxUploadBytes: e.ENGINE_OWNERSHIP_MAX_UPLOAD_MB * 1024 * 1024, freeFloatEnabled: e.ENGINE_FREE_FLOAT_ENABLED },
     strategyScans: { enabled: e.ENGINE_STRATEGY_SCANS_ENABLED },

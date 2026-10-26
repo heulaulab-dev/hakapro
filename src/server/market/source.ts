@@ -3,7 +3,7 @@ import { unsupported } from "./errors";
 import type {
   ActionCalendarItem, AnnouncementItem, BrokerAccumulation, BrokerFlow, BrokerSummary, CompanyProfile, CorporateAction, DoneDetails, FinancialStatements,
   ForeignFlow, FundamentalPeriod, History, Insiders, LastPrice, MarketCap, MarketOverview, NewsItem, ScreenRequest, ScreenResult,
-  OwnershipChanges, SearchResult, Seasonality, SectorPerformance, Security, StockAnalysis, StockOwnership, StockSnapshot, StrategyScreen,
+  OwnershipChanges, RecentInsiders, SearchResult, Seasonality, SectorPerformance, Security, StockAnalysis, StockOwnership, StockSnapshot, StrategyScreen,
 } from "./types";
 
 export type HistoryQuery = { limit?: number; frame?: "daily" | "weekly" | "monthly"; startDate?: string; endDate?: string };
@@ -19,6 +19,8 @@ export type ActionsCalendarQuery = { from?: string; to?: string };
 /** Without month, the newest month the provider has. */
 export type OwnershipChangesQuery = { month?: string; symbol?: string };
 export type InsidersQuery = { page?: number; limit?: number; actionType?: "buy" | "sell" | "cross" };
+/** Market-wide feed: transactions dated within the last `days` (provider default 7), optionally one action, at most `limit`. */
+export type RecentInsidersQuery = { days?: number; action?: "buy" | "sell" | "cross"; limit?: number };
 
 type R<T> = Promise<WithFreshness<T>>;
 
@@ -64,6 +66,8 @@ export interface MarketDataSource {
   /** The newest KSEI ≥1% list the owner uploaded for a symbol (empty form when none). */
   ownership(symbol: string): R<StockOwnership>;
   ownershipChanges(query: OwnershipChangesQuery): R<OwnershipChanges>;
+  /** Market-wide insider transactions from a rotating crawl, with how much of the market it covers (empty form before the first read). */
+  recentInsiders(query: RecentInsidersQuery): R<RecentInsiders>;
 }
 
 export type Capability = Exclude<keyof MarketDataSource, "id">;
@@ -101,4 +105,5 @@ export abstract class BaseMarketDataSource implements MarketDataSource {
   async actionsCalendar(..._args: unknown[]): R<ActionCalendarItem[]> { return this.fail("actionsCalendar"); }
   async ownership(..._args: unknown[]): R<StockOwnership> { return this.fail("ownership"); }
   async ownershipChanges(..._args: unknown[]): R<OwnershipChanges> { return this.fail("ownershipChanges"); }
+  async recentInsiders(..._args: unknown[]): R<RecentInsiders> { return this.fail("recentInsiders"); }
 }

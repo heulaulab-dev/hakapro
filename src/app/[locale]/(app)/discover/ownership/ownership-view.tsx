@@ -4,6 +4,7 @@ import { useQueries } from "@tanstack/react-query";
 import { Landmark } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useState, type FormEvent } from "react";
+import { InsiderFeedSection } from "@/components/data/insider-feed";
 import { InsidersTable } from "@/components/data/insiders-table";
 import { DataState } from "@/components/feedback/data-state";
 import { EmptyState } from "@/components/feedback/empty-state";
@@ -43,6 +44,7 @@ export function OwnershipView({ viewer, canUpload = false }: { viewer: ViewerSum
     <div className="flex flex-col gap-section p-4 md:p-6" data-testid="ownership-view">
       <SectionHeader as="h1" title={t("title")} description={t("intro")} />
       <KseiChanges canUpload={canUpload} />
+      <InsiderFeedSection />
       <form onSubmit={go} className="flex max-w-sm items-center gap-2">
         <Input aria-label={t("checkStock")} placeholder={t("checkStock")} value={symbol} onChange={(event) => setSymbol(event.target.value)} className="ticker h-8 uppercase" data-testid="ownership-symbol" />
         <Button type="submit" size="sm">{t("go")}</Button>

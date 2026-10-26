@@ -3,6 +3,7 @@
  * shares vs lots, IDR, and percent units (1.25 = 1.25%), never fractions.
  */
 import type { NewsItem, AnnouncementItem, ScreenRequest } from "@/server/schemas/idx-bei";
+import type { InsiderRow } from "@/server/services/arjum-normalize";
 export type {
   BrokerAccumulation, BrokerFlow, BrokerSummary, DoneDetails, FinancialStatements, History, Insiders, LastPrice, MarketCap, SearchResult, Seasonality,
 } from "@/server/services/arjum-normalize";
@@ -64,3 +65,14 @@ export type SectorPerformance = {
 /** One market-wide corporate action by ex-date (Data Engine calendar). */
 export type ActionCalendarItem = { symbol: string; date: string; type: string; description: string | null; amount: number | null; ratio: string | null; documentUrl: string | null };
 export type { OwnershipChanges, StockOwnership } from "@/server/schemas/ownership";
+/** One insider transaction in the market-wide feed: the per-stock row plus its symbol and |shares| × price (IDR). */
+export type RecentInsiderTransaction = InsiderRow & { symbol: string; valueIdr: number | null };
+/**
+ * Market-wide insider transactions dated `from`–`to` (Data Engine rotation over arjum). `coverage`: `checked` of `active`
+ * stocks were read within the last `revisitDays` days, the oldest such read on `oldestCheck`.
+ */
+export type RecentInsiders = {
+  days: number; from: string; to: string; action: "buy" | "sell" | "cross" | null;
+  coverage: { checked: number; active: number; revisitDays: number; oldestCheck: string | null };
+  transactions: RecentInsiderTransaction[];
+};

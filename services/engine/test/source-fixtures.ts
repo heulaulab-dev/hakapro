@@ -75,6 +75,8 @@ export type SourceWorld = {
     newsUpdate: boolean;
     /** Yahoo's fundamentals path answers 429 (the host's rate limit); the chart path keeps answering. */
     fundamentalsRateLimited: boolean;
+    /** arjum's insider pages gain one newer transaction on top (a new filing since the last read). */
+    insidersUpdate: boolean;
   };
   fetch: typeof fetch;
   close(): Promise<void>;
@@ -95,7 +97,7 @@ function scaledScan(text: string, factor: number): string {
 
 export async function startSourceWorld(): Promise<SourceWorld> {
   const hits: Hit[] = [];
-  const state: SourceWorld["state"] = { blocked: new Set(), tvPriceFactor: 1, arjumRemaining: 1000, newsUpdate: false, fundamentalsRateLimited: false };
+  const state: SourceWorld["state"] = { blocked: new Set(), tvPriceFactor: 1, arjumRemaining: 1000, newsUpdate: false, fundamentalsRateLimited: false, insidersUpdate: false };
 
   const handle = async (req: IncomingMessage, res: ServerResponse) => {
     const chunks: Buffer[] = [];
@@ -160,6 +162,18 @@ export async function startSourceWorld(): Promise<SourceWorld> {
       if (code === "ABBA") return send(res, 404, '{"detail":"not found"}', quota);
       // Same rows for every code (the fake BBCA history), re-labelled with the requested code.
       return send(res, 200, fixture("arjum-history-BBCA.fake.json").replace('"stock_code": "BBCA"', `"stock_code": "${code}"`), quota);
+    }
+    if (source === "arjum" && path.startsWith("/api/insiders/")) {
+      if (req.headers["x-api-key"] !== ARJUM_TEST_KEY) return send(res, 401, '{"detail":"invalid key"}');
+      const code = path.slice("/api/insiders/".length);
+      state.arjumRemaining -= 1;
+      const quota = { "x-ratelimit-limit": "1000", "x-ratelimit-remaining": String(state.arjumRemaining) };
+      if (code === "ABBA") return send(res, 404, '{"detail":"not found"}', quota);
+      // The same fake page for every code, re-labelled; with `insidersUpdate`, one newer filing on top.
+      const page = JSON.parse(fixture("arjum-insiders-BBCA.fake.json")) as { stock_code: string; items: Array<Record<string, unknown>> };
+      page.stock_code = code;
+      if (state.insidersUpdate) page.items.unshift({ ...page.items[0], name: "BARU CONTOH", date: "2026-10-22", changes_value: "+1,000", current_value: "1,001,000" });
+      return send(res, 200, JSON.stringify(page), quota);
     }
     send(res, 404, '{"error":"no fixture"}');
   };
