@@ -312,7 +312,7 @@ export const stealthOwnershipSchema = z.object({
   stocks: z.array(stealthStockSchema),
 });
 
-export const SCREEN_FIELDS = ["price", "volume", "value", "frequency", "foreignNetShares", "marketCap", "per", "pbv", "roe", "roa", "eps", "der", "dividendYield", "change1D"] as const;
+export const SCREEN_FIELDS = ["price", "volume", "value", "frequency", "foreignNetShares", "foreignNetValue", "marketCap", "per", "pbv", "roe", "roa", "eps", "der", "dividendYield", "change1D"] as const;
 export const screenFieldSchema = z.enum(SCREEN_FIELDS);
 export const screenConditionSchema = z.object({
   field: screenFieldSchema,

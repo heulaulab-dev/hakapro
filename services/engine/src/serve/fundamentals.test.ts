@@ -4,7 +4,7 @@ import { conditionHolds, matchesConditions, pickRatio, serveFundamentals, serveS
 import { MemoryMarketStore, type DailyRecord, type RatioRecord } from "./store";
 
 const values = (overrides: Partial<ScreenValues>): ScreenValues => ({
-  price: null, volume: null, value: null, frequency: null, foreignNetShares: null, marketCap: null, per: null, pbv: null, roe: null, roa: null,
+  price: null, volume: null, value: null, frequency: null, foreignNetShares: null, foreignNetValue: null, marketCap: null, per: null, pbv: null, roe: null, roa: null,
   eps: null, der: null, dividendYield: null, change1D: null, ...overrides,
 });
 const cond = (field: keyof ScreenValues, operator: "GT" | "GTE" | "LT" | "LTE" | "EQ", value: number, connective: "AND" | "OR" = "AND") => ({ field, operator, value, connective });
@@ -99,7 +99,7 @@ describe("serveScreener", () => {
     // AADI: no derived rows, so Pasardana's; no previous close, so no change.
     expect(aadi).toMatchObject({ per: 6.17137, roe: 0.2408, change1D: null, value: null });
     expect(served.data.ratioSources).toEqual({ BBCA: { per: "derived", roe: "derived" }, GOTO: { per: "derived" }, AADI: { per: "pasardana", roe: "pasardana" } });
-    expect(served.data.supportedFields).toEqual(["price", "volume", "value", "frequency", "foreignNetShares", "marketCap", "per", "roe", "change1D"]);
+    expect(served.data.supportedFields).toEqual(["price", "volume", "value", "frequency", "foreignNetShares", "foreignNetValue", "marketCap", "per", "roe", "change1D"]);
   });
 
   it("applies conditions and the limit; total counts every match", async () => {
