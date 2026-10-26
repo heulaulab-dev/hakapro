@@ -8,7 +8,7 @@ import { StatusBadge } from "@/components/feedback/status-badge";
 import { FreshnessBadge } from "@/components/feedback/freshness-badge";
 import { Button } from "@/components/ui/button";
 import type { HolderGroup, HolderKind } from "@/lib/insider-holders";
-import type { FreshnessMeta } from "@/lib/freshness";
+import { type FreshnessMeta, sourceLabel } from "@/lib/freshness";
 import { formatDate, formatIdr, formatPercent, formatVolume, type Locale } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -116,7 +116,7 @@ export function InsiderHolders({ groups, meta, coverage }: { groups: HolderGroup
                             </li>
                           ))}
                         </ul>
-                        <p className="caption-style mt-2 text-subtle">{t("source", { source: meta.source, first: formatDate(group.firstDate, locale), last: formatDate(group.latest.date, locale) })}</p>
+                        <p className="caption-style mt-2 text-subtle">{t("source", { source: sourceLabel(meta.source), first: formatDate(group.firstDate, locale), last: formatDate(group.latest.date, locale) })}</p>
                       </td>
                     </tr>
                   )}

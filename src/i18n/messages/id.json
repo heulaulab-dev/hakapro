@@ -1664,14 +1664,14 @@
       "what": "Yang dipakai",
       "when": "Kapan tersedia",
       "arjum": {
-        "name": "arjum (penyedia data berlisensi kunci API)",
+        "name": "HAKA PRO Engine (data arus asing, broker & insider)",
         "what": "Beli dan jual asing per saham, riwayat harga, ringkasan broker, transaksi orang dalam untuk halaman saham.",
         "when": "Setelah bursa tutup. Mesin data mengambil arus asing pukul 19.00 dan 21.00 WIB pada hari bursa, dari saham paling likuid, dalam batas kuota harian. Saham yang tidak terjangkau kuota tidak punya data asing untuk sesi itu, sehingga sinyal asingnya \"belum tersedia\"."
       },
       "prices": {
         "name": "Harga harian mesin data (Yahoo Finance, TradingView, Pasardana)",
         "what": "Harga pembukaan, tertinggi, terendah, penutupan, volume dan nilai; daftar emiten aktif dan sektor; frekuensi transaksi sesi sebelumnya.",
-        "when": "Mulai sekitar 16.35–16.45 WIB pada hari bursa, dengan pengambilan ulang sampai 20.45 WIB. Frekuensi transaksi sering baru tersedia sesi berikutnya atau dari arjum, sehingga sinyal nilai per transaksi bisa \"belum tersedia\"."
+        "when": "Mulai sekitar 16.35–16.45 WIB pada hari bursa, dengan pengambilan ulang sampai 20.45 WIB. Frekuensi transaksi sering baru tersedia sesi berikutnya atau dari HAKA PRO Engine, sehingga sinyal nilai per transaksi bisa \"belum tersedia\"."
       },
       "ksei": {
         "name": "Daftar pemegang saham ≥1% (KSEI, diunggah admin)",
