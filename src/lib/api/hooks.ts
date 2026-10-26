@@ -4,7 +4,8 @@ import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query/keys";
 import {
   accumulationApi, analysisApi, engineApi, financialsApi, marketApi, overviewApi, priceApi, quotesApi, screenerApi, stockApi,
-  type BrokerSummaryQuery, type FinancialsQuery, type HistoryQuery, type MarketCapQuery, type ScreenCondition,
+  type BrokerSummaryQuery, type FinancialsQuery, type HistoryQuery, type MarketCapQuery, type RecentInsidersQuery, type ScreenCondition,
+  type GroupWindow,
 } from "./market";
 import { shouldRetry } from "@/lib/query/client";
 import { fetchResearchBrief, ResearchUnavailableError } from "./research";
@@ -47,12 +48,21 @@ export const useAnalysisCompare = (symbols: string[]) =>
 export const useSeasonality = (symbol: string) => useQuery({ queryKey: queryKeys.seasonality(symbol), queryFn: ({ signal }) => stockApi.seasonality(symbol, signal) });
 export const useProfile = (symbol: string) => useQuery({ queryKey: queryKeys.profile(symbol), queryFn: ({ signal }) => stockApi.profile(symbol, signal) });
 export const useSectors = () => useQuery({ queryKey: queryKeys.sectors(), queryFn: ({ signal }) => engineApi.sectors(signal) });
+/** The most-traded `limit` stocks with sector totals; the previous limit's map stays on screen while the next loads. */
+export const useHeatmap = (limit: number) =>
+  useQuery({ queryKey: queryKeys.heatmap(limit), queryFn: ({ signal }) => engineApi.heatmap(limit, signal), placeholderData: (previous) => previous });
+export const useGroups = (window: GroupWindow = "1D") => useQuery({ queryKey: queryKeys.groups(window), queryFn: ({ signal }) => engineApi.groups(window, signal) });
+export const useRadar = () => useQuery({ queryKey: queryKeys.radar(), queryFn: ({ signal }) => engineApi.radar(signal) });
+export const useStealthOwnership = () => useQuery({ queryKey: queryKeys.stealthOwnership(), queryFn: ({ signal }) => engineApi.stealthOwnership(signal) });
 export const useActionsCalendar = (range: { from?: string; to?: string } = {}) =>
   useQuery({ queryKey: queryKeys.actionsCalendar(range.from, range.to), queryFn: ({ signal }) => engineApi.actionsCalendar(range, signal) });
 export const useOwnership = (symbol: string) => useQuery({ queryKey: queryKeys.ownership(symbol), queryFn: ({ signal }) => engineApi.ownership(symbol, signal) });
 export const useOwnershipChanges = (query: { month?: string; symbol?: string } = {}) =>
   useQuery({ queryKey: queryKeys.ownershipChanges(query.month, query.symbol), queryFn: ({ signal }) => engineApi.ownershipChanges(query, signal) });
-export const useCorporateActions = (symbol: string) => useQuery({ queryKey: queryKeys.actions(symbol), queryFn: ({ signal }) => stockApi.actions(symbol, signal) });
+/** Market-wide insider feed; keeps the previous list on screen while the action filter changes. */
+export const useRecentInsiders = (query: RecentInsidersQuery = {}) =>
+  useQuery({ queryKey: queryKeys.recentInsiders(query.days, query.action ?? null, query.limit), queryFn: ({ signal }) => engineApi.recentInsiders(query, signal), placeholderData: (previous) => previous });
+export const useCorporateActions =(symbol: string) => useQuery({ queryKey: queryKeys.actions(symbol), queryFn: ({ signal }) => stockApi.actions(symbol, signal) });
 /**
  * Newest-first insider disclosures, one provider page per user "load older" action (no background crawling).
  * Stops when the provider answers with a different page than requested (e.g. a recording that ignores `page`).

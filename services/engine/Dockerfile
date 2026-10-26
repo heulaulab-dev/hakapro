@@ -17,7 +17,13 @@ COPY src/lib/format/index.ts ./src/lib/format/index.ts
 COPY src/lib/api/provider-limits.ts ./src/lib/api/provider-limits.ts
 COPY src/lib/ownership ./src/lib/ownership
 COPY src/lib/insider-holders.ts ./src/lib/insider-holders.ts
+# Radar rules (thresholds and signal keys) shared with the app's methodology page.
+COPY src/lib/radar ./src/lib/radar
 COPY src/server/providers/arjum/queries.ts ./src/server/providers/arjum/queries.ts
+# The app's arjum insider normalizer (insider feed) and what it imports.
+COPY src/server/services/arjum-normalize.ts ./src/server/services/arjum-normalize.ts
+COPY src/server/services/parse-number.ts ./src/server/services/parse-number.ts
+COPY src/server/config/reporting.ts ./src/server/config/reporting.ts
 COPY services/engine/tsconfig.json ./services/engine/tsconfig.json
 COPY services/engine/db ./services/engine/db
 COPY services/engine/src ./services/engine/src

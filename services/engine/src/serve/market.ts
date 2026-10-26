@@ -7,7 +7,9 @@ import type { z } from "zod";
 import { classifySessionDate } from "@/lib/freshness/session";
 import { rankMovers } from "@/lib/movers";
 import type { Freshness } from "@/lib/freshness";
-import type { actionsSchema, foreignSignalSchema, marketOverviewSchema, sectorsSchema, securitySchema, stockSchema } from "@/server/schemas/idx-bei";
+import type {
+  actionsSchema, foreignSignalSchema, HeatmapLimit, heatmapSchema, marketOverviewSchema, sectorsSchema, securitySchema, stockSchema,
+} from "@/server/schemas/idx-bei";
 import { wibDateOf, wibIso } from "../sources/session";
 import type { DailyRecord, IndexDailyRecord, IndexIntradayRecord, IntradayRecord, MarketStore } from "./store";
 
@@ -82,7 +84,13 @@ export async function serveStock(store: MarketStore, symbol: string, limit: numb
 
 // ── /v1/market ──────────────────────────────────────────────────────────────────────────────────────────────────
 
-type MarketRow = { symbol: string; close: number | null; changePercent: number | null; volume: number | null; value: number | null; frequency: number | null };
+/** A market row plus the session's foreign buy/sell shares (EOD rows only; an intraday snapshot has none). */
+type CurrentRow = MarketRow & { foreignBuy: number | null; foreignSell: number | null };
+export type MarketRow = {
+  symbol: string; close: number | null; changePercent: number | null; volume: number | null; value: number | null; frequency: number | null;
+  /** Shares; only on EOD rows (intraday snapshots carry no foreign flow). */
+  foreignBuy?: number | null; foreignSell?: number | null;
+};
 
 export function breadthOf(rows: MarketRow[]) {
   const breadth = { advancers: 0, decliners: 0, unchanged: 0, value: 0, volume: 0, frequency: 0 };
@@ -129,23 +137,24 @@ export function indicesOf(daily: IndexDailyRecord[], intraday: IndexIntradayReco
 
 /**
  * The rows the market views are built from: the intraday snapshot when it is from a newer session than the newest
- * daily row (DELAYED), otherwise that session (EOD/STALE). Shared by /v1/market and /v1/sectors so both show the same
- * change for a stock.
+ * daily row (DELAYED), otherwise that session (EOD/STALE). Shared by /v1/market, /v1/sectors and the 1D /v1/groups so
+ * all show the same change for a stock.
  */
-async function currentRows(store: MarketStore, now: Date): Promise<{ rows: MarketRow[]; dataAsOf: string | null; freshness: Freshness }> {
+export async function currentRows(store: MarketStore, now: Date): Promise<{ rows: CurrentRow[]; dataAsOf: string | null; freshness: Freshness }> {
   const [sessionDate, snapshotTs] = await Promise.all([store.latestSessionDate(), store.latestSnapshotTs()]);
   if (snapshotTs !== null && (!sessionDate || wibDateOf(snapshotTs) > sessionDate)) {
     const snapshot = await store.snapshotRows(snapshotTs);
     const previous = await store.closesBefore(wibDateOf(snapshotTs), snapshot.map((row) => row.symbol));
     const rows = snapshot.map((row: IntradayRecord) => {
       const prev = previous.get(row.symbol) ?? null;
-      return { symbol: row.symbol, close: row.last, changePercent: prev ? ratio(row.last, prev) : row.changePercent, volume: row.volume, value: row.value, frequency: null };
+      return { symbol: row.symbol, close: row.last, changePercent: prev ? ratio(row.last, prev) : row.changePercent, volume: row.volume, value: row.value, frequency: null, foreignBuy: null, foreignSell: null };
     });
     return { rows, dataAsOf: wibIso(snapshotTs), freshness: "DELAYED" };
   }
   if (!sessionDate) return { rows: [], dataAsOf: null, freshness: "UNAVAILABLE" };
   const rows = (await store.sessionRows(sessionDate)).map((row: DailyRecord) => ({
     symbol: row.symbol, close: row.close, changePercent: ratio(row.close, row.previousClose), volume: row.volume, value: row.value, frequency: row.frequency,
+    foreignBuy: row.foreignBuy, foreignSell: row.foreignSell,
   }));
   return { rows, dataAsOf: sessionDate, freshness: sessionFreshness(sessionDate, now) };
 }
@@ -205,6 +214,61 @@ export async function serveSectors(store: MarketStore, now: Date): Promise<Serve
     };
   }).sort((a, b) => b.changePercent - a.changePercent);
   return { data: sectors, dataAsOf, freshness };
+}
+
+// ── /v1/heatmap ─────────────────────────────────────────────────────────────────────────────────────────────────
+
+type HeatmapStock = z.input<typeof heatmapSchema>["stocks"][number];
+
+/**
+ * (foreign buy − foreign sell) shares × close, in IDR. An ESTIMATE: it prices the whole net at the session close, not
+ * at the trade prices. Null without foreign data (stocks outside the arjum budget, and every intraday snapshot).
+ */
+export function netForeignValueEstimate(row: Pick<CurrentRow, "close" | "foreignBuy" | "foreignSell">): number | null {
+  if (row.close === null || row.foreignBuy === null || row.foreignSell === null) return null;
+  return (row.foreignBuy - row.foreignSell) * row.close;
+}
+
+const NULL_SECTOR_LAST = "￿";
+
+/** Per-sector totals over heatmap stocks, largest traded value first. Stocks without a sector stay under null. */
+export function heatmapSectors(stocks: HeatmapStock[]) {
+  const groups = new Map<string | null, HeatmapStock[]>();
+  for (const stock of stocks) groups.set(stock.sector, [...(groups.get(stock.sector) ?? []), stock]);
+  return [...groups.entries()].map(([sector, members]) => {
+    const changes = members.flatMap((row) => (row.changePercent === null ? [] : [row.changePercent]));
+    const foreign = members.flatMap((row) => (row.netForeignValueEstimate === null ? [] : [row.netForeignValueEstimate]));
+    return {
+      sector, stocks: members.length,
+      advancers: changes.filter((change) => change > 0).length, decliners: changes.filter((change) => change < 0).length, unchanged: changes.filter((change) => change === 0).length,
+      value: members.reduce((sum, row) => sum + (row.value ?? 0), 0),
+      changePercent: changes.length ? changes.reduce((sum, change) => sum + change, 0) / changes.length : null,
+      netForeignValueEstimate: foreign.length ? foreign.reduce((sum, value) => sum + value, 0) : null,
+    };
+  }).sort((a, b) => b.value - a.value || (a.sector ?? NULL_SECTOR_LAST).localeCompare(b.sector ?? NULL_SECTOR_LAST));
+}
+
+/**
+ * The `limit` most-traded stocks (by value) of the same rows as /v1/market and /v1/sectors, with name, sector and the
+ * net foreign ESTIMATE where the session row has foreign data, plus per-sector totals. Rows without a traded value
+ * are left out; ties are broken by symbol so the cut is stable.
+ */
+export async function serveHeatmap(store: MarketStore, limit: HeatmapLimit, now: Date): Promise<Served<z.input<typeof heatmapSchema>> | null> {
+  const { rows, dataAsOf, freshness } = await currentRows(store, now);
+  const traded = rows.filter((row) => row.value !== null && row.value > 0)
+    .sort((a, b) => b.value! - a.value! || a.symbol.localeCompare(b.symbol))
+    .slice(0, limit);
+  if (!traded.length) return null;
+  const securities = new Map((await store.securities(traded.map((row) => row.symbol))).map((row) => [row.symbol, row]));
+  const stocks: HeatmapStock[] = traded.map((row) => {
+    const security = securities.get(row.symbol);
+    return {
+      symbol: row.symbol, name: security?.name ?? null, sector: security?.sector ?? null,
+      close: row.close, changePercent: row.changePercent, value: row.value, volume: row.volume,
+      netForeignValueEstimate: netForeignValueEstimate(row),
+    };
+  });
+  return { data: { limit, stocks, sectors: heatmapSectors(stocks) }, dataAsOf, freshness };
 }
 
 // ── /v1/signals ─────────────────────────────────────────────────────────────────────────────────────────────────

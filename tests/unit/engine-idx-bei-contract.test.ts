@@ -6,6 +6,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { RADAR_RULES_V0, STEALTH_RULES_V0 } from "@/lib/radar/rules";
 import { MarketDataError } from "@/server/market/errors";
 import { IdxBeiSource } from "@/server/market/idx-bei-source";
 import { LocalRawStore } from "../../services/engine/src/fetch/raw-store";
@@ -15,17 +16,19 @@ import { OwnershipService } from "../../services/engine/src/ownership/service";
 import { MemoryOwnershipStore } from "../../services/engine/src/ownership/store";
 import { PauseGuard } from "../../services/engine/src/schedule/pause";
 import { Scheduler } from "../../services/engine/src/schedule/scheduler";
+import { MemoryInsiderStore } from "../../services/engine/src/serve/insiders";
 import { MemoryMarketStore } from "../../services/engine/src/serve/store";
+import { recentInsidersSchema } from "@/lib/api/market";
 import { fixtureStrategyStore } from "../../services/engine/test/strategy-fixtures";
 
 const BASE = "http://engine.test";
 const NOW = new Date("2026-10-14T10:00:00Z");
 
-function engineFetch(dir: string, now: Date, market?: AppDeps["market"], strategies?: AppDeps["strategies"]) {
+function engineFetch(dir: string, now: Date, market?: AppDeps["market"], strategies?: AppDeps["strategies"], insiders?: AppDeps["insiders"]) {
   const pause = new PauseGuard(dir, 85, { cacheMs: 0, measure: async () => 10 });
   const sourceState = new MemorySourceStateStore();
   const scheduler = new Scheduler({ jobs: [], pause, runs: new MemoryRunRecorder(), cursors: new MemoryCursorStore(), sourceState });
-  const app = createApp({ ping: async () => true, pause, scheduler, rawStoreKind: "local", sourceHealth: async () => [], unblockSource: async () => false, now: () => now, market, strategies });
+  const app = createApp({ ping: async () => true, pause, scheduler, rawStoreKind: "local", sourceHealth: async () => [], unblockSource: async () => false, now: () => now, market, strategies, insiders });
   return ((input: string | URL | Request, init?: RequestInit) => app(new Request(input, init))) as typeof fetch;
 }
 
@@ -47,8 +50,25 @@ describe("engine /v1 stubs via IdxBeiSource", () => {
     expect((await source.corporateActions("BBCA")).data).toEqual([]);
     expect((await source.screen({ conditions: [], limit: 10 })).data.rows).toEqual([]);
     expect(await source.macro()).toMatchObject({ freshness: "UNAVAILABLE", data: { series: [] } });
+    expect(await source.heatmap({ limit: 30 })).toMatchObject({ freshness: "UNAVAILABLE", asOf: null, data: { limit: 30, stocks: [], sectors: [] } });
+    // Only the engine's limits are ever sent.
+    await expect(source.heatmap({ limit: 10 as never })).rejects.toThrow();
+    // Groups: the empty form with the catalog version, never invented figures.
+    const groups = await source.groups({ window: "5D" });
+    expect(groups).toMatchObject({ freshness: "UNAVAILABLE", asOf: null, data: { window: { id: "5D", sessions: 0, from: null, to: null }, groups: [] } });
+    expect(groups.data.catalog.version).toMatch(/^\d{4}-\d{2}-\d{2}/);
     // Strategy scans off (the default): the empty board.
     expect(await source.engineStrategies()).toMatchObject({ freshness: "UNAVAILABLE", asOf: null, data: { contexts: [], strategies: [], candidates: [] } });
+    // Insider feed off (budget 0) or not run yet: the empty form, still parseable.
+    expect(await source.recentInsiders({ days: 7, action: "buy" })).toMatchObject({
+      freshness: "UNAVAILABLE", asOf: null,
+      data: { days: 7, from: "2026-10-07", to: "2026-10-14", action: "buy", coverage: { checked: 0, active: 0, revisitDays: 7, oldestCheck: null }, transactions: [] },
+    });
+    // Radar and the KSEI corporate-holder view: empty forms with the rules echoed, never invented rows.
+    const radar = await source.radar();
+    expect(radar).toMatchObject({ freshness: "UNAVAILABLE", asOf: null, data: { tradingDate: null, stocks: [], kseiMonth: null, coverage: { stocks: 0 } } });
+    expect(radar.data.rulesVersion).toBe(RADAR_RULES_V0.version);
+    expect(await source.stealthOwnership()).toMatchObject({ freshness: "UNAVAILABLE", asOf: null, data: { month: null, stocks: [], rulesVersion: STEALTH_RULES_V0.version } });
     // No price data yet: a typed provider error, never a fake quote.
     await expect(source.stock("BBCA")).rejects.toBeInstanceOf(MarketDataError);
     await expect(source.foreignFlow()).rejects.toBeInstanceOf(MarketDataError);
@@ -136,6 +156,40 @@ describe("engine /v1 real responses via IdxBeiSource", () => {
     expect(sectors.data[1].changePercent).toBeCloseTo((5225 / 6075 - 1) * 100, 6);
     expect(sectors.data[1].leader.changePercent).toBeCloseTo(market.data.movers.find((row) => row.symbol === "BBCA")!.changePercent!, 6);
 
+    // Heatmap over the same rows: most-traded first, percentage points, and the net foreign ESTIMATE only where the
+    // session row has foreign buy/sell (BBCA), null otherwise (GOTO), never zero.
+    const heatmap = await source.heatmap({});
+    expect(heatmap).toMatchObject({ freshness: "EOD", asOf: "2026-10-16", source: "idx-bei", data: { limit: 100 } });
+    expect(heatmap.data.stocks.map((row) => [row.symbol, row.sector, row.valueIdr])).toEqual([["BBCA", "Finance", 5196076490000], ["GOTO", "Technology Services", 532358145600]]);
+    expect(heatmap.data.stocks[0]).toMatchObject({ name: "PT Bank Central Asia Tbk", close: 5225, volumeShares: 999771300, netForeignValueEstimateIdr: (310e6 - 420e6) * 5225 });
+    expect(heatmap.data.stocks[0].changePercent).toBeCloseTo(market.data.movers.find((row) => row.symbol === "BBCA")!.changePercent!, 9);
+    expect(heatmap.data.stocks[1].netForeignValueEstimateIdr).toBeNull();
+    expect(heatmap.data.sectors.map((row) => [row.sector, row.stocks, row.valueIdr, row.netForeignValueEstimateIdr])).toEqual([
+      ["Finance", 1, 5196076490000, (310e6 - 420e6) * 5225], ["Technology Services", 1, 532358145600, null],
+    ]);
+    expect(heatmap.data.sectors[1].changePercent).toBeCloseTo((24 / 27 - 1) * 100, 6);
+    expect((await source.heatmap({ limit: 30 })).data.limit).toBe(30);
+    // Conglomerate groups (curated catalog): the same 1D change as the movers, in percentage points; the foreign
+    // figure is Σ (buy − sell shares) × close; catalog members the engine doesn't know are reported, not dropped.
+    const groups = await source.groups({ window: "1D" });
+    expect(groups).toMatchObject({ freshness: "EOD", asOf: "2026-10-16", data: { window: { id: "1D", sessions: 1, from: "2026-10-16", to: "2026-10-16", basis: "daily" } } });
+    const djarum = groups.data.groups.find((group) => group.id === "djarum")!;
+    expect(djarum).toMatchObject({ membersWithData: 1, decliners: 1, valueIdr: 5196076490000, best: { symbol: "BBCA" }, foreign: { members: 1, partialMembers: 0 } });
+    expect(djarum.valueWeightedChangePercent).toBeCloseTo(market.data.movers.find((row) => row.symbol === "BBCA")!.changePercent!, 6);
+    expect(djarum.foreign.netValueEstimateIdr).toBe((310e6 - 420e6) * 5225);
+    // Price down and foreign net selling agree: no divergence.
+    expect(djarum.divergence).toBeNull();
+    expect(djarum.unknownSymbols).toEqual(expect.arrayContaining(["TOWR", "BELI"]));
+    expect(djarum.stocks[0]).toMatchObject({ symbol: "BBCA", name: "PT Bank Central Asia Tbk", sessions: 1, foreignSessions: 1 });
+    // Groups without any stored member come last, with null figures.
+    expect(groups.data.groups.at(-1)).toMatchObject({ membersWithData: 0, changePercent: null, valueWeightedChangePercent: null });
+
+    const fiveDay = await source.groups({ window: "5D" });
+    expect(fiveDay.data.window).toEqual({ id: "5D", sessions: 2, from: "2026-10-15", to: "2026-10-16", basis: "daily" });
+    const djarum5 = fiveDay.data.groups.find((group) => group.id === "djarum")!;
+    expect(djarum5.changePercent).toBeCloseTo((5225 / 6125 - 1) * 100, 6);
+    expect(djarum5.foreign.netValueEstimateIdr).toBe((70e6 - 90e6) * 6075 + (310e6 - 420e6) * 5225);
+
     // The market-wide calendar over an explicit range; the engine has no issuer profiles, so profile is unsupported.
     const calendar = await source.actionsCalendar({ from: "2021-10-01", to: "2021-10-31" });
     expect(calendar.data).toEqual([{ symbol: "BBCA", date: "2021-10-13", type: "SPLIT", description: "Stock split 5:1", amount: null, ratio: null, documentUrl: null }]);
@@ -161,6 +215,40 @@ describe("engine /v1 real responses via IdxBeiSource", () => {
     expect((await source.fundamentals("GOTO")).data).toEqual([]);
   });
 
+  it("parses the market-wide insider feed into the app's insider rows, with coverage and the newest read as as-of", async () => {
+    vi.resetModules();
+    const { IdxBeiSource: FreshSource } = await import("@/server/market/idx-bei-source");
+    const now = new Date("2026-10-16T15:00:00Z"); // 22:00 WIB
+    const readAt = new Date("2026-10-16T14:40:00Z");
+    const insiders = new MemoryInsiderStore({
+      active: ["BBCA", "GOTO", "TLKM"],
+      checks: [{ symbol: "BBCA", checkedDate: "2026-10-16", asOf: readAt }, { symbol: "GOTO", checkedDate: "2026-10-12", asOf: new Date("2026-10-12T14:40:00Z") }],
+      transactions: [
+        { symbol: "BBCA", person: "BUDI CONTOH", roles: ["DIREKTUR"], action: "BUY", date: "2026-10-15", sharesChange: 500_000, sharesBefore: 1_000_000, sharesAfter: 1_500_000, percentBefore: 0.0008, percentAfter: 0.0012, percentChange: 0.0004, price: 6000, broker: null, nationality: "local", source: "arjum", asOf: readAt },
+        { symbol: "GOTO", person: "PT INDUK", roles: [], action: "SELL", date: "2026-10-12", sharesChange: -1_000, sharesBefore: null, sharesAfter: null, percentBefore: null, percentAfter: null, percentChange: null, price: null, broker: "DH", nationality: null, source: "arjum", asOf: readAt },
+      ],
+    });
+    const source = new FreshSource(BASE, () => now, engineFetch(dir, now, undefined, undefined, { store: insiders, revisitDays: 7 }));
+    const feed = await source.recentInsiders({ days: 7 });
+    expect(feed).toMatchObject({ freshness: "HISTORICAL", asOf: readAt.toISOString(), source: "idx-bei" });
+    expect(feed.data).toMatchObject({ days: 7, from: "2026-10-09", to: "2026-10-16", action: null, coverage: { checked: 2, active: 3, revisitDays: 7, oldestCheck: "2026-10-12" } });
+    expect(feed.data.transactions).toEqual([
+      {
+        symbol: "BBCA", person: "BUDI CONTOH", date: "2026-10-15", action: "BUY", roles: ["DIREKTUR"], broker: null, nationality: "local",
+        previousShares: 1_000_000, currentShares: 1_500_000, changeShares: 500_000, previousPercent: 0.0008, currentPercent: 0.0012, changePercent: 0.0004,
+        priceIdr: 6000, valueIdr: 3_000_000_000,
+      },
+      {
+        symbol: "GOTO", person: "PT INDUK", date: "2026-10-12", action: "SELL", roles: [], broker: "DH", nationality: "",
+        previousShares: null, currentShares: null, changeShares: -1000, previousPercent: null, currentPercent: null, changePercent: null, priceIdr: null, valueIdr: null,
+      },
+    ]);
+    // The client schema accepts what the app serves.
+    expect(recentInsidersSchema.parse(feed.data)).toEqual(feed.data);
+    const sells = await source.recentInsiders({ days: 7, action: "sell", limit: 1 });
+    expect(sells.data.transactions.map((row) => row.symbol)).toEqual(["GOTO"]);
+  });
+
   it("screens the newest session (E5): change1D in percent both ways, ratios with their source, nulls kept", async () => {
     vi.resetModules();
     const { IdxBeiSource: FreshSource } = await import("@/server/market/idx-bei-source");
@@ -181,13 +269,43 @@ describe("engine /v1 real responses via IdxBeiSource", () => {
     expect(all.data.ratioSources).toEqual({ BBCA: { per: "derived", roe: "derived" }, GOTO: { per: "derived", pbv: "pasardana" } });
   });
 
+  it("parses the radar (/v1/radar): signals with thresholds, counter-evidence, data status, the 1-day change in percent", async () => {
+    vi.resetModules();
+    const { IdxBeiSource: FreshSource } = await import("@/server/market/idx-bei-source");
+    // 21 sessions to 2026-10-16: foreign investors net sell 10 % of volume while the close rises; the newest session trades 3× the volume.
+    const dates = Array.from({ length: 21 }, (_, index) => `2026-09-${String(index + 8).padStart(2, "0")}`).slice(0, 20).concat("2026-10-16");
+    const rows = dates.map((date, index) => ({
+      symbol: "BBCA", date, open: null, high: null, low: null, close: 6000 + index * 10, previousClose: 6000 + (index - 1) * 10,
+      volume: index === 20 ? 3_000_000 : 1_000_000, value: 6e9, frequency: null, foreignBuy: 0, foreignSell: index === 20 ? 300_000 : 100_000,
+    }));
+    const radarStore = new MemoryMarketStore({
+      securities: [{ symbol: "BBCA", name: "PT Bank Central Asia Tbk", sector: "Finance", subsector: null, board: null, sharesOutstanding: null, freeFloatPct: null, asOf }],
+      daily: rows,
+    });
+    const now = new Date("2026-10-16T11:00:00Z");
+    const radar = await new FreshSource(BASE, () => now, engineFetch(dir, now, radarStore)).radar();
+    expect(radar).toMatchObject({ freshness: "EOD", asOf: "2026-10-16", data: { tradingDate: "2026-10-16", rulesVersion: RADAR_RULES_V0.version, coverage: { stocks: 1, listed: 1 } } });
+    const [stock] = radar.data.stocks;
+    expect(stock).toMatchObject({ symbol: "BBCA", name: "PT Bank Central Asia Tbk", sector: "Finance", close: 6200, firedCount: 1 });
+    expect(stock.changePercent).toBeCloseTo((6200 / 6190 - 1) * 100, 6);
+    expect(stock.fired).toEqual([{ key: "volumeSpike", observed: 3, threshold: RADAR_RULES_V0.signals.volumeSpike.threshold, window: "1D", detail: { volume: 3_000_000 } }]);
+    expect(stock.counter.map((item) => item.key)).toEqual(["priceVsForeign5", "priceVsForeign20"]);
+    expect(stock.status).toMatchObject({ foreignNetBuy5: "ok", orderSizeSpike: "missing", kseiHolderIncrease: "missing" });
+    expect(radar.data.rules.foreignNetBuy5).toEqual({ window: 5, baseline: null, threshold: 0.05, unit: "fraction" });
+  });
+
   it("parses an intraday quote from a newer session as DELAYED", async () => {
     vi.resetModules();
     const { IdxBeiSource: FreshSource } = await import("@/server/market/idx-bei-source");
     const now = new Date("2026-10-19T03:05:00Z"); // Monday 10:05 WIB, in session
-    const stock = await new FreshSource(BASE, () => now, engineFetch(dir, now, store(true))).stock("BBCA");
+    const source = new FreshSource(BASE, () => now, engineFetch(dir, now, store(true)));
+    const stock = await source.stock("BBCA");
     expect(stock).toMatchObject({ freshness: "DELAYED", asOf: "2026-10-19T09:55:00+07:00" });
     expect(stock.data.quote).toMatchObject({ date: "2026-10-19", close: 5400, previousClose: 5225, change: 175 });
+    // The heatmap follows the snapshot too; a snapshot has no foreign data, so no estimate.
+    const heatmap = await source.heatmap({ limit: 50 });
+    expect(heatmap).toMatchObject({ freshness: "DELAYED", asOf: "2026-10-19T09:55:00+07:00" });
+    expect(heatmap.data.stocks).toEqual([{ symbol: "BBCA", name: "PT Bank Central Asia Tbk", sector: "Finance", close: 5400, changePercent: expect.closeTo((5400 / 5225 - 1) * 100, 9), valueIdr: 270e9, volumeShares: 50_000_000, netForeignValueEstimateIdr: null }]);
   });
 
   it("parses the strategy board (/v1/strategies) and the app's engine strategy source merges it after arjum", async () => {
@@ -216,7 +334,7 @@ describe("engine ownership routes via IdxBeiSource (E6, synthetic uploads)", () 
 
   const fixture = (name: string) => new Uint8Array(readFileSync(join(process.cwd(), "services/engine/test/fixtures/ownership", name)));
 
-  async function ownershipFetch(now: Date, upload: boolean) {
+  async function ownershipFetch(now: Date, upload: boolean, market?: AppDeps["market"]) {
     const service = new OwnershipService({ store: new MemoryOwnershipStore(), rawStore: new LocalRawStore(join(dir, "raw")), documents: new MemoryRawDocumentIndex(), now: () => now });
     if (upload) {
       for (const [name, month] of [["synthetic-1pct-2026-02.pdf", "2026-02"], ["synthetic-1pct-2026-03.pdf", "2026-03"]] as const) {
@@ -227,7 +345,7 @@ describe("engine ownership routes via IdxBeiSource (E6, synthetic uploads)", () 
     const scheduler = new Scheduler({ jobs: [], pause, runs: new MemoryRunRecorder(), cursors: new MemoryCursorStore(), sourceState: new MemorySourceStateStore() });
     const app = createApp({
       ping: async () => true, pause, scheduler, rawStoreKind: "local", sourceHealth: async () => [], unblockSource: async () => false, now: () => now,
-      ownership: { service, maxUploadBytes: 20 * 1024 * 1024, freeFloatEnabled: false },
+      ownership: { service, maxUploadBytes: 20 * 1024 * 1024, freeFloatEnabled: false }, market,
     });
     return ((input: string | URL | Request, init?: RequestInit) => app(new Request(input, init))) as typeof fetch;
   }
@@ -254,5 +372,17 @@ describe("engine ownership routes via IdxBeiSource (E6, synthetic uploads)", () 
     expect(changes).toMatchObject({ freshness: "HISTORICAL", asOf: "2026-03-31" });
     expect(changes.data.changes.find((change) => change.holderName === "PT FIKTIF HOLDCO")).toMatchObject({ kind: "DECREASE", shareDelta: "-10000000" });
     await expect(source.ownershipChanges({ month: "2026-3" })).rejects.toThrow();
+  });
+
+  it("parses the corporate-holder view: TEST1's CP parent added shares while the close slipped (percentage points)", async () => {
+    vi.resetModules();
+    const { IdxBeiSource: FreshSource } = await import("@/server/market/idx-bei-source");
+    const bar = (date: string, close: number) => ({ symbol: "TEST1", date, open: null, high: null, low: null, close, previousClose: null, volume: null, value: null, frequency: null, foreignBuy: null, foreignSell: null });
+    const market = new MemoryMarketStore({ daily: [bar("2026-02-27", 1000), bar("2026-03-31", 990)] });
+    const stealth = await new FreshSource(BASE, () => NOW, await ownershipFetch(NOW, true, market)).stealthOwnership();
+    expect(stealth).toMatchObject({ freshness: "HISTORICAL", asOf: "2026-03-31", data: { month: "2026-03", coverage: { issuers: 3, corporateIncrease: 1 } } });
+    expect(stealth.data.stocks).toHaveLength(1);
+    expect(stealth.data.stocks[0]).toMatchObject({ symbol: "TEST1", combinedShareDelta: "10000000", holders: [{ holderName: "PT CONTOH INDUK FIKTIF", investorType: "CP", kind: "INCREASE" }] });
+    expect(stealth.data.stocks[0].price!.changePercent).toBeCloseTo(-1, 9);
   });
 });

@@ -6,7 +6,15 @@ export type SecurityRecord = {
   sharesOutstanding: number | null; freeFloatPct: number | null; asOf: Date;
   /** Snapshot capitalisation from the universe sources (IDR), used only when shares are unknown. */
   marketCap?: number | null;
+  /** False once the universe sources no longer list the symbol (delisted); absent means active. */
+  active?: boolean;
 };
+
+/** Normalize Indonesian aliases to the engine's existing public sector label. */
+export function normalizeSectorLabel(sector: string | null): string | null {
+  if (!sector) return sector;
+  return sector.trim().toLocaleLowerCase("id-ID") === "keuangan" ? "Finance" : sector.trim();
+}
 
 export type FundamentalRecord = {
   periodEnd: string; periodType: "annual" | "quarterly"; metric: string; value: number; unit: "amount" | "per_share" | "shares";
@@ -47,10 +55,18 @@ export interface MarketStore {
   /** Newest session date in daily_prices. */
   latestSessionDate(): Promise<string | null>;
   sessionRows(date: string): Promise<DailyRecord[]>;
+  /** The newest `count` session dates in daily_prices up to `endDate` (market-wide), newest first. */
+  sessionDates(endDate: string, count: number): Promise<string[]>;
+  /** Daily rows of `symbols` with a date in [from, to]. */
+  dailyRowsBetween(from: string, to: string, symbols: string[]): Promise<DailyRecord[]>;
   latestSnapshotTs(): Promise<Date | null>;
   snapshotRows(ts: Date): Promise<IntradayRecord[]>;
   /** Close of each symbol's newest session before `date` (previous close for intraday rows). */
   closesBefore(date: string, symbols: string[]): Promise<Map<string, number>>;
+  /** Each symbol's newest session on or before `date`, with its close. */
+  closesOnOrBefore(date: string, symbols: string[]): Promise<Map<string, { date: string; close: number }>>;
+  /** Every daily row in the newest `sessions` session dates up to `endDate` (any symbol, with or without foreign data). */
+  sessionHistory(endDate: string, sessions: number): Promise<DailyRecord[]>;
   /** Newest index_daily row per code. */
   latestIndexDaily(): Promise<IndexDailyRecord[]>;
   /** Newest index_intraday row per code. */
@@ -92,9 +108,11 @@ export class MemoryMarketStore implements MarketStore {
   async searchSecurities(query: string, limit: number) {
     const q = query.trim();
     return (this.data.securities ?? []).filter((row) => !q || row.symbol.startsWith(q.toUpperCase()) || contains(row.name, q))
-      .sort((a, b) => a.symbol.localeCompare(b.symbol)).slice(0, limit);
+      .sort((a, b) => a.symbol.localeCompare(b.symbol)).slice(0, limit).map((row) => ({ ...row, sector: normalizeSectorLabel(row.sector) }));
   }
-  async securities(symbols: string[]) { return (this.data.securities ?? []).filter((row) => symbols.includes(row.symbol)); }
+  async securities(symbols: string[]) {
+    return (this.data.securities ?? []).filter((row) => symbols.includes(row.symbol)).map((row) => ({ ...row, sector: normalizeSectorLabel(row.sector) }));
+  }
   async dailyHistory(symbol: string, limit: number) {
     return this.daily.filter((row) => row.symbol === symbol).sort((a, b) => a.date.localeCompare(b.date)).slice(-limit);
   }
@@ -103,6 +121,12 @@ export class MemoryMarketStore implements MarketStore {
   }
   async latestSessionDate() { return this.daily.map((row) => row.date).sort().at(-1) ?? null; }
   async sessionRows(date: string) { return this.daily.filter((row) => row.date === date); }
+  async sessionDates(endDate: string, count: number) {
+    return [...new Set(this.daily.map((row) => row.date).filter((date) => date <= endDate))].sort().reverse().slice(0, count);
+  }
+  async dailyRowsBetween(from: string, to: string, symbols: string[]) {
+    return this.daily.filter((row) => row.date >= from && row.date <= to && symbols.includes(row.symbol));
+  }
   async latestSnapshotTs() { return (this.data.intraday ?? []).map((row) => row.ts).sort((a, b) => b.getTime() - a.getTime())[0] ?? null; }
   async snapshotRows(ts: Date) { return (this.data.intraday ?? []).filter((row) => row.ts.getTime() === ts.getTime()); }
   async closesBefore(date: string, symbols: string[]) {
@@ -111,6 +135,17 @@ export class MemoryMarketStore implements MarketStore {
       if (row.date < date && symbols.includes(row.symbol)) out.set(row.symbol, row.close);
     }
     return out;
+  }
+  async closesOnOrBefore(date: string, symbols: string[]) {
+    const out = new Map<string, { date: string; close: number }>();
+    for (const row of [...this.daily].sort((a, b) => a.date.localeCompare(b.date))) {
+      if (row.date <= date && symbols.includes(row.symbol)) out.set(row.symbol, { date: row.date, close: row.close });
+    }
+    return out;
+  }
+  async sessionHistory(endDate: string, sessions: number) {
+    const dates = [...new Set(this.daily.filter((row) => row.date <= endDate).map((row) => row.date))].sort().slice(-sessions);
+    return this.daily.filter((row) => dates.includes(row.date));
   }
   async latestIndexDaily() {
     const latest = new Map<string, IndexDailyRecord>();

@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { wib } from "../../test/support";
-import { foreignSignals, indicesOf, moversOf, serveActions, serveMarket, serveSectors, serveSecurities, serveSignals, serveStock } from "./market";
+import {
+  foreignSignals, heatmapSectors, indicesOf, moversOf, netForeignValueEstimate, serveActions, serveHeatmap, serveMarket, serveSectors, serveSecurities, serveSignals, serveStock,
+} from "./market";
 import { MemoryMarketStore, type DailyRecord, type SecurityRecord } from "./store";
 
 const day = (symbol: string, date: string, close: number, previousClose: number | null, extra: Partial<DailyRecord> = {}): DailyRecord => ({
@@ -103,7 +105,7 @@ describe("serveSectors", () => {
   it("groups the session by sector: breadth, mean and value-weighted change, leader and laggard, best first", async () => {
     const store = new MemoryMarketStore({
       securities: [
-        security("AAAA", "Alpha"), security("BBBB", "Beta"), security("CCCC", "Gamma", { sector: "Energy" }),
+        security("AAAA", "Alpha"), security("BBBB", "Beta", { sector: "Keuangan" }), security("CCCC", "Gamma", { sector: "Energy" }),
         security("DDDD", "Delta", { sector: "Energy" }), security("EEEE", "Eps", { sector: null }),
       ],
       daily: [
@@ -127,6 +129,82 @@ describe("serveSectors", () => {
     expect(sectors!.data[0].leader.changePercent).toBe(market!.data.movers[0].changePercent);
     expect(await serveSectors(new MemoryMarketStore(), AFTER_CLOSE)).toBeNull();
     expect(await serveSectors(new MemoryMarketStore({ securities: [security("AAAA", "Alpha", { sector: null })], daily: [day("AAAA", "2026-10-16", 110, 100)] }), AFTER_CLOSE)).toBeNull();
+  });
+});
+
+describe("serveHeatmap", () => {
+  const store = () => new MemoryMarketStore({
+    securities: [
+      security("AAAA", "Alpha"), security("BBBB", "Beta"), security("CCCC", "Gamma", { sector: "Energy" }), security("DDDD", "Delta", { sector: null }),
+    ],
+    daily: [
+      day("AAAA", "2026-10-16", 110, 100, { value: 5_000, volume: 50, foreignBuy: 30, foreignSell: 10 }),
+      day("BBBB", "2026-10-16", 95, 100, { value: 4_000 }),
+      day("CCCC", "2026-10-16", 100, 100, { value: 3_000, foreignBuy: 5, foreignSell: 25 }),
+      day("DDDD", "2026-10-16", 120, 100, { value: 2_000 }),
+      day("EEEE", "2026-10-16", 50, 100, { value: 1_000 }),
+      day("FFFF", "2026-10-16", 10, 10, { value: 0 }),
+      day("GGGG", "2026-10-16", 10, 10, { value: null }),
+    ],
+  });
+
+  it("serves the most-traded stocks by value, with sector, change and the net foreign estimate", async () => {
+    const served = (await serveHeatmap(store(), 100, AFTER_CLOSE))!;
+    expect(served).toMatchObject({ dataAsOf: "2026-10-16", freshness: "EOD", data: { limit: 100 } });
+    // No traded value: left out. Ordered by value.
+    expect(served.data.stocks.map((row) => row.symbol)).toEqual(["AAAA", "BBBB", "CCCC", "DDDD", "EEEE"]);
+    expect(served.data.stocks[0]).toEqual({ symbol: "AAAA", name: "Alpha", sector: "Finance", close: 110, changePercent: expect.closeTo(0.1, 10), value: 5_000, volume: 50, netForeignValueEstimate: 20 * 110 });
+    expect(served.data.stocks[2].netForeignValueEstimate).toBe(-20 * 100);
+    // No foreign data on the row: null, never zero.
+    expect(served.data.stocks[1].netForeignValueEstimate).toBeNull();
+    // No sector in the universe (DDDD) and not in the universe at all (EEEE): a literal null, never a made-up bucket.
+    expect(served.data.stocks.slice(3).map((row) => [row.symbol, row.name, row.sector])).toEqual([["DDDD", "Delta", null], ["EEEE", null, null]]);
+  });
+
+  it("totals each sector (null included), largest value first", async () => {
+    const { sectors } = (await serveHeatmap(store(), 100, AFTER_CLOSE))!.data;
+    expect(sectors.map((row) => [row.sector, row.stocks, row.value])).toEqual([["Finance", 2, 9_000], ["Energy", 1, 3_000], [null, 2, 3_000]]);
+    const [finance, energy, unknown] = sectors;
+    expect(finance).toMatchObject({ advancers: 1, decliners: 1, unchanged: 0, netForeignValueEstimate: 2_200 });
+    expect(finance.changePercent).toBeCloseTo((0.1 - 0.05) / 2, 10);
+    expect(energy).toMatchObject({ unchanged: 1, changePercent: 0, netForeignValueEstimate: -2_000 });
+    expect(unknown).toMatchObject({ advancers: 1, decliners: 1, netForeignValueEstimate: null });
+    expect(unknown.changePercent).toBeCloseTo((0.2 - 0.5) / 2, 10);
+  });
+
+  it("cuts at the limit and matches /v1/market's change for each stock", async () => {
+    const served = (await serveHeatmap(store(), 30, AFTER_CLOSE))!;
+    expect(served.data.limit).toBe(30);
+    const many = new MemoryMarketStore({ daily: Array.from({ length: 40 }, (_, index) => day(`S${String(index).padStart(3, "0")}`, "2026-10-16", 100 + index, 100, { value: 1_000 + index })) });
+    const top = (await serveHeatmap(many, 30, AFTER_CLOSE))!.data.stocks;
+    expect(top).toHaveLength(30);
+    expect(top[0].symbol).toBe("S039");
+    const market = (await serveMarket(store(), AFTER_CLOSE))!;
+    const shared = market.data.movers.filter((mover) => served.data.stocks.some((row) => row.symbol === mover.symbol));
+    expect(shared.length).toBeGreaterThan(0);
+    for (const mover of shared) expect(served.data.stocks.find((row) => row.symbol === mover.symbol)!.changePercent).toBe(mover.changePercent);
+  });
+
+  it("has no foreign estimate on an intraday snapshot (DELAYED)", async () => {
+    const intradayStore = store();
+    const ts = wib("2026-10-19", "09:55");
+    intradayStore.data.intraday = [{ symbol: "AAAA", ts, last: 121, open: 110, high: 121, low: 110, changePercent: 0.1, volume: 5, value: 605 }];
+    const served = (await serveHeatmap(intradayStore, 100, IN_SESSION_NEXT))!;
+    expect(served).toMatchObject({ freshness: "DELAYED", dataAsOf: "2026-10-19T09:55:00+07:00" });
+    expect(served.data.stocks).toEqual([{ symbol: "AAAA", name: "Alpha", sector: "Finance", close: 121, changePercent: expect.closeTo(0.1, 10), value: 605, volume: 5, netForeignValueEstimate: null }]);
+    expect(served.data.sectors[0].netForeignValueEstimate).toBeNull();
+  });
+
+  it("returns null without traded rows", async () => {
+    expect(await serveHeatmap(new MemoryMarketStore(), 100, AFTER_CLOSE)).toBeNull();
+    expect(await serveHeatmap(new MemoryMarketStore({ daily: [day("AAAA", "2026-10-16", 1, 1, { value: 0 })] }), 100, AFTER_CLOSE)).toBeNull();
+  });
+
+  it("estimates net foreign value only with buy, sell and close", () => {
+    expect(netForeignValueEstimate({ close: 1000, foreignBuy: 300, foreignSell: 100 })).toBe(200_000);
+    expect(netForeignValueEstimate({ close: null, foreignBuy: 300, foreignSell: 100 })).toBeNull();
+    expect(netForeignValueEstimate({ close: 1000, foreignBuy: null, foreignSell: 100 })).toBeNull();
+    expect(heatmapSectors([])).toEqual([]);
   });
 });
 
