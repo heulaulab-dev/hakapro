@@ -120,11 +120,30 @@
     "overview": "Ringkasan",
     "chart": "Grafik",
     "flow": "Flow",
+    "running": "Running Trade",
     "financials": "Keuangan",
     "ownership": "Kepemilikan",
     "insiders": "Insider",
     "history": "Riwayat",
     "analysis": "Analisis"
+  },
+  "runningTrade": {
+    "title": "Running trade",
+    "note": "Semua transaksi hari ini, terbaru dulu, dari penyedia data. Asing (F) dan domestik (D) menandai tipe investor tiap sisi. Akhir hari, bukan real-time.",
+    "time": "Waktu",
+    "board": "Papan",
+    "price": "Harga",
+    "lots": "Lot",
+    "value": "Nilai",
+    "buyer": "Pembeli",
+    "seller": "Penjual",
+    "aggressor": "Sisi",
+    "foreign": "F",
+    "domestic": "D",
+    "actions": { "BUY": "Beli", "SELL": "Jual" },
+    "page": "Halaman {page} dari {total}",
+    "previous": "Sebelumnya",
+    "next": "Berikutnya"
   },
   "header": {
     "search": "Cari saham atau halaman…",
@@ -357,6 +376,7 @@
     "hints": {
       "chart": "Candlestick, volume, dan rentang waktu",
       "flow": "Broker Summary dan Foreign Flow",
+      "running": "Transaksi hari ini, per tick",
       "financials": "Laporan laba rugi, neraca, arus kas",
       "ownership": "Struktur pemegang saham",
       "insiders": "Transaksi direksi, komisaris, dan pemegang besar",
