@@ -8,7 +8,7 @@ import { SectionHeader } from "@/components/layout/section-header";
 import { EmptyState } from "@/components/feedback/empty-state";
 import { ApiError } from "@/lib/api/envelope";
 import { useCorporateActions, useOwnership, useProfile } from "@/lib/api/hooks";
-import { freshnessMeta } from "@/lib/freshness";
+import { freshnessMeta, sourceLabel } from "@/lib/freshness";
 import { formatDate, formatNumber, type Locale } from "@/lib/format";
 
 /** Reads only the verified IDX company-detail keys (Nama, Jabatan, Persentase, Kategori); anything else is ignored. */
@@ -54,7 +54,7 @@ export function StockOwnershipView({ symbol }: { symbol: string }) {
             {envelope.data.holders.length === 0 ? <EmptyState compact title={t("kseiNone")} /> : (
               <>
                 <p className="caption-style text-subtle">
-                  {t("kseiAsOf", { date: formatDate(envelope.data.snapshotDate, locale), source: envelope.data.source?.dataset ?? envelope.source })}
+                  {t("kseiAsOf", { date: formatDate(envelope.data.snapshotDate, locale), source: sourceLabel(envelope.data.source?.dataset ?? envelope.source) })}
                 </p>
                 <ul className="flex flex-col divide-y divide-border rounded-xl border border-border px-4 text-sm">
                   {envelope.data.holders.map((holder) => (
@@ -79,7 +79,7 @@ export function StockOwnershipView({ symbol }: { symbol: string }) {
           <div className="flex flex-col gap-4">
             <SectionHeader title={t("title")} description={t("profileNote")} meta={freshnessMeta(envelope)} />
             <p className="caption-style text-subtle" data-testid="profile-provenance">
-              {t("retrieved", { date: formatDate(envelope.data.retrievedAt, locale), dataset: envelope.data.dataset ?? envelope.source })}
+              {t("retrieved", { date: formatDate(envelope.data.retrievedAt, locale), dataset: sourceLabel(envelope.data.dataset ?? envelope.source) })}
             </p>
             {envelope.data.description && <p className="text-sm text-muted-foreground">{envelope.data.description}</p>}
             {safeUrl(envelope.data.website) && <a href={safeUrl(envelope.data.website)!} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-link hover:underline">{t("website")}<ExternalLink className="size-3" /></a>}

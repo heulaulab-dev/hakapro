@@ -1664,14 +1664,14 @@
       "what": "What we use",
       "when": "When it is available",
       "arjum": {
-        "name": "arjum (API-key data provider)",
+        "name": "HAKA PRO Engine (foreign flow, broker & insider data)",
         "what": "Foreign buying and selling per stock, price history, broker summaries, insider transactions for the stock pages.",
         "when": "After the close. The data engine collects foreign flow at 19:00 and 21:00 WIB on trading days, most liquid stocks first, within a daily quota. Stocks the quota does not reach have no foreign data for that session, so their foreign signals are \"not available yet\"."
       },
       "prices": {
         "name": "Data engine daily prices (Yahoo Finance, TradingView, Pasardana)",
         "what": "Open, high, low, close, volume and value; the list of active issuers and their sectors; the previous session's trade count.",
-        "when": "From about 16:35–16:45 WIB on trading days, with refetches until 20:45 WIB. Trade counts often arrive only the next session or from arjum, so the value-per-trade signal can be \"not available yet\"."
+        "when": "From about 16:35–16:45 WIB on trading days, with refetches until 20:45 WIB. Trade counts often arrive only the next session or from the HAKA PRO Engine, so the value-per-trade signal can be \"not available yet\"."
       },
       "ksei": {
         "name": "≥1% shareholder list (KSEI, uploaded by an admin)",

@@ -2,7 +2,7 @@
 
 import { useLocale, useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
-import type { Freshness } from "@/lib/freshness";
+import { type Freshness, sourceLabel } from "@/lib/freshness";
 import { formatDate, formatPeriod, type Locale } from "@/lib/format";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -50,7 +50,7 @@ export function FreshnessBadge({ freshness, asOf, period, source, className, com
       <span className="opacity-80">{t(`states.${freshness}.description`)}</span>
       <span className="num">{asOf ? t("asOf", { date: formatDate(asOf, locale) }) : t("noAsOf")}</span>
       {period && <span className="num">{t("period", { period: formatPeriod(period, locale) })}</span>}
-      {source && <span className="opacity-80">{t("source", { source })}</span>}
+      {source && <span className="opacity-80">{t("source", { source: sourceLabel(source) })}</span>}
     </div>
   );
 

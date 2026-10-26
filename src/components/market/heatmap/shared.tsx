@@ -4,7 +4,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import type { HeatmapStock } from "@/lib/api/market";
 import { formatDate, formatIdr, formatPercent, formatVolume, type Locale } from "@/lib/format";
-import type { FreshnessMeta } from "@/lib/freshness";
+import { type FreshnessMeta, sourceLabel } from "@/lib/freshness";
 
 /**
  * Diverging market color for a signed intensity in [−1, 1]: --chart-down … neutral … --chart-up, mixed in OKLCH over
@@ -83,7 +83,7 @@ export function AsOfLine({ meta, className }: { meta: FreshnessMeta; className?:
   return (
     <p className={className ?? "caption-style text-subtle"} data-testid="heatmap-asof">
       <span className="num">{t("asOf", { date: formatDate(meta.asOf, locale) })}</span>
-      {meta.source ? <> · {t("source", { source: meta.source })}</> : null}
+      {meta.source ? <> · {t("source", { source: sourceLabel(meta.source) })}</> : null}
     </p>
   );
 }
