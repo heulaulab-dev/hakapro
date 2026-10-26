@@ -28,7 +28,7 @@ export function StealthView({ canUpload = false }: { canUpload?: boolean }) {
   return (
     <div className="flex flex-col gap-section p-4 md:p-6" data-testid="stealth-view">
       <SectionHeader as="h1" title={t("title")} description={t("intro")} meta={query.data ? freshnessMeta(query.data) : undefined}
-        actions={<Link href="/methodology" className="caption-style text-link hover:underline">{t("methodologyLink")}</Link>} />
+        actions={<Link href="/methodology" className="caption-style text-link hover:underline touch-target">{t("methodologyLink")}</Link>} />
       <DataState query={query}>
         {(envelope) => envelope.data.month === null ? <StealthNotUploaded canUpload={canUpload} /> : <StealthBody data={envelope.data} />}
       </DataState>
@@ -70,7 +70,7 @@ function StealthItem({ stock }: { stock: StealthStock }) {
   return (
     <li className="flex flex-col gap-2 rounded-xl border border-border p-3" data-testid={`stealth-row-${stock.symbol}`}>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <Link href={stockHref(stock.symbol, "ownership")} className="ticker font-medium text-link hover:underline">{stock.symbol}</Link>
+        <Link href={stockHref(stock.symbol, "ownership")} className="ticker font-medium text-link hover:underline touch-target">{stock.symbol}</Link>
         <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground">{stock.name}</span>
         <span className="caption-style num text-subtle">{t("period", { from: formatDate(stock.fromDate, locale), to: formatDate(stock.toDate, locale) })}</span>
       </div>

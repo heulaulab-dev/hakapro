@@ -34,11 +34,13 @@ export function HomeView({ viewer }: { viewer: ViewerSummary }) {
     <div className="flex flex-col gap-section p-4 md:p-6" data-testid="home">
       <SectionHeader as="h1" title={t("home.title")} description={t("home.subtitle")} />
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="contents lg:grid lg:grid-cols-2 lg:gap-4">
+        <div className="max-lg:order-5 lg:contents">
         <DataState query={strategies} compact>
           {(envelope) => <div data-testid="home-condition"><InsightCard className="h-full" title={t("home.marketCondition")} description={screenContextVersion(envelope.data.contexts)} observations={screenContextObservations(envelope.data.contexts, t, locale)} meta={freshnessMeta(envelope)} /></div>}
         </DataState>
-        <Panel testId="home-indices" title={t("home.indices")} meta={market.data ? freshnessMeta(market.data) : undefined}>
+        </div>
+        <Panel testId="home-indices" className="max-lg:order-1" title={t("home.indices")} meta={market.data ? freshnessMeta(market.data) : undefined}>
           <DataState query={market} compact>
             {(envelope) => (
               <div className="flex flex-col gap-2">
@@ -58,8 +60,8 @@ export function HomeView({ viewer }: { viewer: ViewerSummary }) {
         </Panel>
       </div>
 
-      <Panel testId="home-strategies" title={t("home.strategies")} description={t("home.strategiesHint")} meta={strategies.data ? freshnessMeta(strategies.data) : undefined}
-        actions={<Link href="/discover/strategies" className="caption-style flex items-center gap-1 text-subtle transition-colors hover:text-foreground" data-testid="home-strategies-all">{t("home.viewAll")}<ChevronRight className="size-3" /></Link>}>
+      <Panel testId="home-strategies" className="max-lg:order-4" title={t("home.strategies")} description={t("home.strategiesHint")} meta={strategies.data ? freshnessMeta(strategies.data) : undefined}
+        actions={<Link href="/discover/strategies" className="caption-style flex items-center gap-1 text-subtle transition-colors hover:text-foreground pointer-coarse:min-h-10" data-testid="home-strategies-all">{t("home.viewAll")}<ChevronRight className="size-3" /></Link>}>
         <DataState query={strategies} compact isEmpty={(envelope) => envelope.data.strategies.length === 0}>
           {(envelope) => (
             <div className="flex flex-col gap-4">
@@ -67,7 +69,7 @@ export function HomeView({ viewer }: { viewer: ViewerSummary }) {
                 const candidates = candidatesFor(envelope.data, strategy.id);
                 return (
                   <div key={strategy.id} className="flex flex-col gap-1">
-                    <Link href={`/discover/strategies/${strategy.id}`} className="lead-style flex items-center justify-between gap-2 font-medium hover:underline" data-testid={`home-strategy-${strategy.id}`}>
+                    <Link href={`/discover/strategies/${strategy.id}`} className="lead-style flex items-center justify-between gap-2 font-medium hover:underline pointer-coarse:min-h-10" data-testid={`home-strategy-${strategy.id}`}>
                       {strategy.label}
                       <span className="caption-style font-normal text-subtle">{t("strategy.matches", { count: candidates.length })}</span>
                     </Link>
@@ -83,8 +85,8 @@ export function HomeView({ viewer }: { viewer: ViewerSummary }) {
         </DataState>
       </Panel>
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Panel testId="home-movers" title={t("home.movers")} meta={market.data ? freshnessMeta(market.data) : undefined}>
+      <div className="contents lg:grid lg:grid-cols-3 lg:gap-4">
+        <Panel testId="home-movers" className="max-lg:order-3" title={t("home.movers")} meta={market.data ? freshnessMeta(market.data) : undefined}>
           <DataState query={market} compact isEmpty={(envelope) => envelope.data.movers.length === 0}>
             {(envelope) => (
               <div className="flex flex-col">
@@ -95,7 +97,7 @@ export function HomeView({ viewer }: { viewer: ViewerSummary }) {
             )}
           </DataState>
         </Panel>
-        <Panel testId="home-sectors" title={t("home.sectors")} description={t("home.sectorsHint")} meta={sectors.data ? freshnessMeta(sectors.data) : undefined}>
+        <Panel testId="home-sectors" className="max-lg:order-6" title={t("home.sectors")} description={t("home.sectorsHint")} meta={sectors.data ? freshnessMeta(sectors.data) : undefined}>
           <DataState query={sectors} compact isEmpty={(envelope) => envelope.data.length === 0}>
             {(envelope) => (
               <ul className="flex flex-col divide-y divide-border" data-testid="home-sectors-list">
@@ -114,12 +116,12 @@ export function HomeView({ viewer }: { viewer: ViewerSummary }) {
             )}
           </DataState>
         </Panel>
-        <Panel testId="home-watchlist" title={t("home.watchlist")}>
+        <Panel testId="home-watchlist" className="max-lg:order-2" title={t("home.watchlist")}>
           <WatchlistActivity viewer={viewer} />
         </Panel>
       </div>
 
-      <Panel testId="home-news" title={t("home.news")} meta={news.data ? freshnessMeta(news.data) : undefined}>
+      <Panel testId="home-news" className="max-lg:order-7" title={t("home.news")} meta={news.data ? freshnessMeta(news.data) : undefined}>
         <DataState query={news} compact isEmpty={(envelope) => envelope.data.length === 0}>
           {(envelope) => (
             <ul className="flex flex-col divide-y divide-border">

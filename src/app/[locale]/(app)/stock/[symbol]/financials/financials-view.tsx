@@ -3,7 +3,7 @@
 import { AlertTriangle } from "lucide-react";
 import { parseAsBoolean, parseAsInteger, parseAsString, parseAsStringLiteral, useQueryState } from "nuqs";
 import { useLocale, useTranslations } from "next-intl";
-import { DivergingColumnChart } from "@/components/charts/diverging-column-chart";
+import { DivergingColumnChart } from "@/components/charts/lazy";
 import { StatementTable } from "@/components/data/statement-table";
 import { DataState } from "@/components/feedback/data-state";
 import { SectionHeader } from "@/components/layout/section-header";

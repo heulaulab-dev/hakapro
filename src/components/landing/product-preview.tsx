@@ -31,7 +31,7 @@ export async function ProductPreview() {
       <div className="no-scrollbar flex gap-4 overflow-x-hidden border-b border-border px-4 pt-3 text-xs text-subtle">
         {tabs.map((tab, index) => <span key={tab} className={index === 1 ? "border-b-2 border-primary pb-2 text-foreground" : "pb-2"}>{tab}</span>)}
       </div>
-      <div className="grid gap-3 p-4 sm:grid-cols-[1.4fr_1fr]">
+      <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-[1.4fr_1fr]">
         <div className="flex flex-col gap-2 rounded-xl border border-border p-3">
           <div className="flex items-center justify-between gap-2">
             <span className="caption-style text-soft">{t("flow")}</span>

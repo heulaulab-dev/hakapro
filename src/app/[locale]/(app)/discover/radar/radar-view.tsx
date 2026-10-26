@@ -28,7 +28,7 @@ export function RadarView() {
   return (
     <div className="flex flex-col gap-section p-4 md:p-6" data-testid="radar-view">
       <SectionHeader as="h1" title={t("title")} description={t("intro")} meta={query.data ? freshnessMeta(query.data) : undefined}
-        actions={<Link href="/methodology" className="caption-style text-link hover:underline" data-testid="radar-methodology-link">{t("methodologyLink")}</Link>} />
+        actions={<Link href="/methodology" className="caption-style text-link hover:underline touch-target" data-testid="radar-methodology-link">{t("methodologyLink")}</Link>} />
       <DataState query={query}>{(envelope) => <RadarBody radar={envelope.data} />}</DataState>
       <ResearchDisclaimer />
     </div>
