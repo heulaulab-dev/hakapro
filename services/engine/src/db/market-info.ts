@@ -2,7 +2,6 @@
 // `raw_ref`. News is deduplicated by canonical URL (unique) and by normalized title within TITLE_DEDUPE_DAYS.
 import { and, gte, inArray, lt, lte, sql } from "drizzle-orm";
 import * as t from "../../db/schema";
-import type { MacroRow } from "../sources/bi";
 import type { NewsItemParsed } from "../sources/news";
 import type { EngineDb } from "./client";
 import type { Provenance } from "./ingest";
@@ -44,8 +43,11 @@ export async function deleteNewsOlderThan(db: EngineDb, cutoff: Date, limit: num
   return deleted.length;
 }
 
-/** Upserts BI rows; a later read of the same date replaces the value (BI corrections) and its provenance. */
-export async function upsertMacro(db: EngineDb, rows: MacroRow[], prov: Provenance): Promise<number> {
+/** A macro/commodity observation to store: any series id (BI `BI_RATE`/`JISDOR`, World Bank `wb.*`). */
+export type MacroUpsertRow = { series: string; date: string; value: number; link: string | null };
+
+/** Upserts macro rows; a later read of the same (series, date) replaces the value (corrections) and its provenance. */
+export async function upsertMacro(db: EngineDb, rows: MacroUpsertRow[], prov: Provenance): Promise<number> {
   if (!rows.length) return 0;
   await db.insert(t.macroObservations).values(rows.map((row) => ({
     series: row.series, date: row.date, value: row.value, link: row.link, source: prov.source, asOf: prov.asOf, rawRef: prov.rawRef,
