@@ -80,9 +80,13 @@ export interface OwnershipStore {
   latestMonth(): Promise<string | null>;
   /** Changes into `month` (ordered by symbol, then holder key). */
   changes(month: string, symbol?: string): Promise<ChangeRecord[]>;
+  /** The stated investor type of each holder line in these sets (KSEI codes such as CP; null when not stated). */
+  holderTypes(setIds: string[]): Promise<HolderType[]>;
   /** Records rows ingested on the ownership source (health). */
   recordIngest(rows: number): Promise<void>;
 }
+
+export type HolderType = { setId: string; holderKey: string; investorType: string | null };
 
 const bySymbolKey = (a: { symbol: string; holderKey: string }, b: { symbol: string; holderKey: string }) =>
   a.symbol.localeCompare(b.symbol) || a.holderKey.localeCompare(b.holderKey);
@@ -171,6 +175,10 @@ export class MemoryOwnershipStore implements OwnershipStore {
   }
   async changes(month: string, symbol?: string) {
     return this.changeRows.filter((change) => change.month === month && (!symbol || change.symbol === symbol)).sort(bySymbolKey);
+  }
+  async holderTypes(setIds: string[]) {
+    return this.sets.filter((set) => setIds.includes(set.id))
+      .flatMap((set) => set.rows.map((row) => ({ setId: set.id, holderKey: row.holderKey, investorType: row.investorType })));
   }
   async recordIngest(rows: number) { this.rowsIngested += rows; }
 }

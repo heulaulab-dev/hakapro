@@ -6,6 +6,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { RADAR_RULES_V0, STEALTH_RULES_V0 } from "@/lib/radar/rules";
 import { MarketDataError } from "@/server/market/errors";
 import { IdxBeiSource } from "@/server/market/idx-bei-source";
 import { LocalRawStore } from "../../services/engine/src/fetch/raw-store";
@@ -63,6 +64,11 @@ describe("engine /v1 stubs via IdxBeiSource", () => {
       freshness: "UNAVAILABLE", asOf: null,
       data: { days: 7, from: "2026-10-07", to: "2026-10-14", action: "buy", coverage: { checked: 0, active: 0, revisitDays: 7, oldestCheck: null }, transactions: [] },
     });
+    // Radar and the KSEI corporate-holder view: empty forms with the rules echoed, never invented rows.
+    const radar = await source.radar();
+    expect(radar).toMatchObject({ freshness: "UNAVAILABLE", asOf: null, data: { tradingDate: null, stocks: [], kseiMonth: null, coverage: { stocks: 0 } } });
+    expect(radar.data.rulesVersion).toBe(RADAR_RULES_V0.version);
+    expect(await source.stealthOwnership()).toMatchObject({ freshness: "UNAVAILABLE", asOf: null, data: { month: null, stocks: [], rulesVersion: STEALTH_RULES_V0.version } });
     // No price data yet: a typed provider error, never a fake quote.
     await expect(source.stock("BBCA")).rejects.toBeInstanceOf(MarketDataError);
     await expect(source.foreignFlow()).rejects.toBeInstanceOf(MarketDataError);
@@ -263,6 +269,31 @@ describe("engine /v1 real responses via IdxBeiSource", () => {
     expect(all.data.ratioSources).toEqual({ BBCA: { per: "derived", roe: "derived" }, GOTO: { per: "derived", pbv: "pasardana" } });
   });
 
+  it("parses the radar (/v1/radar): signals with thresholds, counter-evidence, data status, the 1-day change in percent", async () => {
+    vi.resetModules();
+    const { IdxBeiSource: FreshSource } = await import("@/server/market/idx-bei-source");
+    // 21 sessions to 2026-10-16: foreign investors net sell 10 % of volume while the close rises; the newest session trades 3× the volume.
+    const dates = Array.from({ length: 21 }, (_, index) => `2026-09-${String(index + 8).padStart(2, "0")}`).slice(0, 20).concat("2026-10-16");
+    const rows = dates.map((date, index) => ({
+      symbol: "BBCA", date, open: null, high: null, low: null, close: 6000 + index * 10, previousClose: 6000 + (index - 1) * 10,
+      volume: index === 20 ? 3_000_000 : 1_000_000, value: 6e9, frequency: null, foreignBuy: 0, foreignSell: index === 20 ? 300_000 : 100_000,
+    }));
+    const radarStore = new MemoryMarketStore({
+      securities: [{ symbol: "BBCA", name: "PT Bank Central Asia Tbk", sector: "Finance", subsector: null, board: null, sharesOutstanding: null, freeFloatPct: null, asOf }],
+      daily: rows,
+    });
+    const now = new Date("2026-10-16T11:00:00Z");
+    const radar = await new FreshSource(BASE, () => now, engineFetch(dir, now, radarStore)).radar();
+    expect(radar).toMatchObject({ freshness: "EOD", asOf: "2026-10-16", data: { tradingDate: "2026-10-16", rulesVersion: RADAR_RULES_V0.version, coverage: { stocks: 1, listed: 1 } } });
+    const [stock] = radar.data.stocks;
+    expect(stock).toMatchObject({ symbol: "BBCA", name: "PT Bank Central Asia Tbk", sector: "Finance", close: 6200, firedCount: 1 });
+    expect(stock.changePercent).toBeCloseTo((6200 / 6190 - 1) * 100, 6);
+    expect(stock.fired).toEqual([{ key: "volumeSpike", observed: 3, threshold: RADAR_RULES_V0.signals.volumeSpike.threshold, window: "1D", detail: { volume: 3_000_000 } }]);
+    expect(stock.counter.map((item) => item.key)).toEqual(["priceVsForeign5", "priceVsForeign20"]);
+    expect(stock.status).toMatchObject({ foreignNetBuy5: "ok", orderSizeSpike: "missing", kseiHolderIncrease: "missing" });
+    expect(radar.data.rules.foreignNetBuy5).toEqual({ window: 5, baseline: null, threshold: 0.05, unit: "fraction" });
+  });
+
   it("parses an intraday quote from a newer session as DELAYED", async () => {
     vi.resetModules();
     const { IdxBeiSource: FreshSource } = await import("@/server/market/idx-bei-source");
@@ -303,7 +334,7 @@ describe("engine ownership routes via IdxBeiSource (E6, synthetic uploads)", () 
 
   const fixture = (name: string) => new Uint8Array(readFileSync(join(process.cwd(), "services/engine/test/fixtures/ownership", name)));
 
-  async function ownershipFetch(now: Date, upload: boolean) {
+  async function ownershipFetch(now: Date, upload: boolean, market?: AppDeps["market"]) {
     const service = new OwnershipService({ store: new MemoryOwnershipStore(), rawStore: new LocalRawStore(join(dir, "raw")), documents: new MemoryRawDocumentIndex(), now: () => now });
     if (upload) {
       for (const [name, month] of [["synthetic-1pct-2026-02.pdf", "2026-02"], ["synthetic-1pct-2026-03.pdf", "2026-03"]] as const) {
@@ -314,7 +345,7 @@ describe("engine ownership routes via IdxBeiSource (E6, synthetic uploads)", () 
     const scheduler = new Scheduler({ jobs: [], pause, runs: new MemoryRunRecorder(), cursors: new MemoryCursorStore(), sourceState: new MemorySourceStateStore() });
     const app = createApp({
       ping: async () => true, pause, scheduler, rawStoreKind: "local", sourceHealth: async () => [], unblockSource: async () => false, now: () => now,
-      ownership: { service, maxUploadBytes: 20 * 1024 * 1024, freeFloatEnabled: false },
+      ownership: { service, maxUploadBytes: 20 * 1024 * 1024, freeFloatEnabled: false }, market,
     });
     return ((input: string | URL | Request, init?: RequestInit) => app(new Request(input, init))) as typeof fetch;
   }
@@ -341,5 +372,17 @@ describe("engine ownership routes via IdxBeiSource (E6, synthetic uploads)", () 
     expect(changes).toMatchObject({ freshness: "HISTORICAL", asOf: "2026-03-31" });
     expect(changes.data.changes.find((change) => change.holderName === "PT FIKTIF HOLDCO")).toMatchObject({ kind: "DECREASE", shareDelta: "-10000000" });
     await expect(source.ownershipChanges({ month: "2026-3" })).rejects.toThrow();
+  });
+
+  it("parses the corporate-holder view: TEST1's CP parent added shares while the close slipped (percentage points)", async () => {
+    vi.resetModules();
+    const { IdxBeiSource: FreshSource } = await import("@/server/market/idx-bei-source");
+    const bar = (date: string, close: number) => ({ symbol: "TEST1", date, open: null, high: null, low: null, close, previousClose: null, volume: null, value: null, frequency: null, foreignBuy: null, foreignSell: null });
+    const market = new MemoryMarketStore({ daily: [bar("2026-02-27", 1000), bar("2026-03-31", 990)] });
+    const stealth = await new FreshSource(BASE, () => NOW, await ownershipFetch(NOW, true, market)).stealthOwnership();
+    expect(stealth).toMatchObject({ freshness: "HISTORICAL", asOf: "2026-03-31", data: { month: "2026-03", coverage: { issuers: 3, corporateIncrease: 1 } } });
+    expect(stealth.data.stocks).toHaveLength(1);
+    expect(stealth.data.stocks[0]).toMatchObject({ symbol: "TEST1", combinedShareDelta: "10000000", holders: [{ holderName: "PT CONTOH INDUK FIKTIF", investorType: "CP", kind: "INCREASE" }] });
+    expect(stealth.data.stocks[0].price!.changePercent).toBeCloseTo(-1, 9);
   });
 });

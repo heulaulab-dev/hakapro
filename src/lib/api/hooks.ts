@@ -52,6 +52,8 @@ export const useSectors = () => useQuery({ queryKey: queryKeys.sectors(), queryF
 export const useHeatmap = (limit: number) =>
   useQuery({ queryKey: queryKeys.heatmap(limit), queryFn: ({ signal }) => engineApi.heatmap(limit, signal), placeholderData: (previous) => previous });
 export const useGroups = (window: GroupWindow = "1D") => useQuery({ queryKey: queryKeys.groups(window), queryFn: ({ signal }) => engineApi.groups(window, signal) });
+export const useRadar = () => useQuery({ queryKey: queryKeys.radar(), queryFn: ({ signal }) => engineApi.radar(signal) });
+export const useStealthOwnership = () => useQuery({ queryKey: queryKeys.stealthOwnership(), queryFn: ({ signal }) => engineApi.stealthOwnership(signal) });
 export const useActionsCalendar = (range: { from?: string; to?: string } = {}) =>
   useQuery({ queryKey: queryKeys.actionsCalendar(range.from, range.to), queryFn: ({ signal }) => engineApi.actionsCalendar(range, signal) });
 export const useOwnership = (symbol: string) => useQuery({ queryKey: queryKeys.ownership(symbol), queryFn: ({ signal }) => engineApi.ownership(symbol, signal) });

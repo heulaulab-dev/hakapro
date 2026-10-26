@@ -4,7 +4,7 @@ import type {
   ActionCalendarItem, AnnouncementItem, BrokerAccumulation, BrokerFlow, BrokerSummary, CompanyProfile, CorporateAction, DoneDetails,
   FinancialStatements, ForeignFlow, FundamentalPeriod, Heatmap, History, Insiders, LastPrice, MarketCap, MarketOverview, NewsItem, ScreenRequest,
   ScreenResult, OwnershipChanges, RecentInsiders, SearchResult, Seasonality, SectorPerformance, Security, StockAnalysis, StockOwnership,
-  StockSnapshot, StrategyScreen, GroupsView, GroupWindow,
+  StockSnapshot, StrategyScreen, GroupsView, GroupWindow, RadarSnapshot, StealthOwnership,
 } from "./types";
 
 export type HistoryQuery = { limit?: number; frame?: "daily" | "weekly" | "monthly"; startDate?: string; endDate?: string };
@@ -77,6 +77,10 @@ export interface MarketDataSource {
   ownershipChanges(query: OwnershipChangesQuery): R<OwnershipChanges>;
   /** Market-wide insider transactions from a rotating crawl, with how much of the market it covers (empty form before the first read). */
   recentInsiders(query: RecentInsidersQuery): R<RecentInsiders>;
+  /** Documented signals per stock of the newest session, with counter-evidence and data status; never a score. */
+  radar(): R<RadarSnapshot>;
+  /** Newest uploaded KSEI month: corporate ≥1% holders up while the close was flat or lower (empty form before any upload). */
+  stealthOwnership(): R<StealthOwnership>;
 }
 
 export type Capability = Exclude<keyof MarketDataSource, "id">;
@@ -117,4 +121,6 @@ export abstract class BaseMarketDataSource implements MarketDataSource {
   async ownership(..._args: unknown[]): R<StockOwnership> { return this.fail("ownership"); }
   async ownershipChanges(..._args: unknown[]): R<OwnershipChanges> { return this.fail("ownershipChanges"); }
   async recentInsiders(..._args: unknown[]): R<RecentInsiders> { return this.fail("recentInsiders"); }
+  async radar(..._args: unknown[]): R<RadarSnapshot> { return this.fail("radar"); }
+  async stealthOwnership(..._args: unknown[]): R<StealthOwnership> { return this.fail("stealthOwnership"); }
 }

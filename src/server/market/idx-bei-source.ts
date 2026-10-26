@@ -5,7 +5,8 @@ import { strategyBoardSchema } from "@/lib/strategies/contract";
 import {
   actionsCalendarSchema, actionsSchema, announcementItemSchema, fundamentalsSchema, HEATMAP_DEFAULT_LIMIT, heatmapLimitSchema, heatmapSchema,
   idxBeiEnvelope, insidersRecentSchema, macroSchema, marketOverviewSchema, newsItemSchema, groupsSchema, groupWindowSchema, profileSchema,
-  screenRequestSchema, screenResultSchema, sectorsSchema, securitySchema, signalsSchema, stockSchema, type ScreenRequest,
+  screenRequestSchema, screenResultSchema, sectorsSchema, securitySchema, signalsSchema, stockSchema, type ScreenRequest, radarSchema,
+  stealthOwnershipSchema,
 } from "@/server/schemas/idx-bei";
 import { symbolSchema } from "@/server/schemas/inputs";
 import { ownershipChangesSchema, ownershipMonthSchema, stockOwnershipSchema } from "@/server/schemas/ownership";
@@ -276,6 +277,22 @@ export class IdxBeiSource extends BaseMarketDataSource {
         priceIdr: row.price, valueIdr: row.value,
       })),
     }, "HISTORICAL", meta.dataAsOf);
+  }
+
+  /**
+   * Data Engine `/v1/radar`: per stock of the newest session, the documented signals that fired, counter-evidence and
+   * each signal's data status (draft rules, no score). Freshness is re-derived from the trading date.
+   */
+  async radar() {
+    const { data, meta } = await this.get("/v1/radar", radarSchema, TTL_MS.market);
+    return this.snapshot({ ...data, stocks: data.stocks.map((stock) => ({ ...stock, changePercent: pct(stock.changePercent) })) }, meta.dataAsOf);
+  }
+
+  /** Data Engine `/v1/ownership/stealth` (E6): the newest uploaded KSEI month, dated by its position date (HISTORICAL). */
+  async stealthOwnership() {
+    const { data, meta } = await this.get("/v1/ownership/stealth", stealthOwnershipSchema, TTL_MS.securities);
+    const stocks = data.stocks.map((stock) => ({ ...stock, price: stock.price && { ...stock.price, changePercent: stock.price.changePercent * 100 } }));
+    return this.wrap({ ...data, stocks }, "HISTORICAL", meta.dataAsOf);
   }
 
   /**

@@ -2,7 +2,7 @@
  * Domain types shared by every MarketDataSource. Units are explicit in field names or docs:
  * shares vs lots, IDR, and percent units (1.25 = 1.25%), never fractions.
  */
-import type { NewsItem, AnnouncementItem, ScreenRequest } from "@/server/schemas/idx-bei";
+import type { NewsItem, AnnouncementItem, ScreenRequest, Radar, StealthOwnership as StealthOwnershipData } from "@/server/schemas/idx-bei";
 import type { InsiderRow } from "@/server/services/arjum-normalize";
 export type {
   BrokerAccumulation, BrokerFlow, BrokerSummary, DoneDetails, FinancialStatements, History, Insiders, LastPrice, MarketCap, SearchResult, Seasonality,
@@ -118,3 +118,11 @@ export type RecentInsiders = {
   coverage: { checked: number; active: number; revisitDays: number; oldestCheck: string | null };
   transactions: RecentInsiderTransaction[];
 };
+/**
+ * Signal confluence radar (Data Engine `/v1/radar`). As the engine sends it, except each stock's 1-day
+ * `changePercent`, which is in percentage points like the rest of the app. Signal values keep their rule's unit
+ * (fraction, ratio or count; src/lib/radar/rules.ts).
+ */
+export type RadarSnapshot = Radar;
+/** KSEI corporate holders up while the close was flat or lower (Data Engine `/v1/ownership/stealth`); price change in percentage points. */
+export type StealthOwnership = StealthOwnershipData;

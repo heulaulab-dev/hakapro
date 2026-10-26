@@ -63,6 +63,10 @@ export interface MarketStore {
   snapshotRows(ts: Date): Promise<IntradayRecord[]>;
   /** Close of each symbol's newest session before `date` (previous close for intraday rows). */
   closesBefore(date: string, symbols: string[]): Promise<Map<string, number>>;
+  /** Each symbol's newest session on or before `date`, with its close. */
+  closesOnOrBefore(date: string, symbols: string[]): Promise<Map<string, { date: string; close: number }>>;
+  /** Every daily row in the newest `sessions` session dates up to `endDate` (any symbol, with or without foreign data). */
+  sessionHistory(endDate: string, sessions: number): Promise<DailyRecord[]>;
   /** Newest index_daily row per code. */
   latestIndexDaily(): Promise<IndexDailyRecord[]>;
   /** Newest index_intraday row per code. */
@@ -131,6 +135,17 @@ export class MemoryMarketStore implements MarketStore {
       if (row.date < date && symbols.includes(row.symbol)) out.set(row.symbol, row.close);
     }
     return out;
+  }
+  async closesOnOrBefore(date: string, symbols: string[]) {
+    const out = new Map<string, { date: string; close: number }>();
+    for (const row of [...this.daily].sort((a, b) => a.date.localeCompare(b.date))) {
+      if (row.date <= date && symbols.includes(row.symbol)) out.set(row.symbol, { date: row.date, close: row.close });
+    }
+    return out;
+  }
+  async sessionHistory(endDate: string, sessions: number) {
+    const dates = [...new Set(this.daily.filter((row) => row.date <= endDate).map((row) => row.date))].sort().slice(-sessions);
+    return this.daily.filter((row) => dates.includes(row.date));
   }
   async latestIndexDaily() {
     const latest = new Map<string, IndexDailyRecord>();

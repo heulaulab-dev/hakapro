@@ -1,6 +1,8 @@
 // Ported from heulatrade lib/market/contracts.ts + lib/market/providers/direct.ts (Zod 3 → Zod 4).
 // Lane A: the existing Python market-api over idx-bei datasets (services/market-api/app.py).
 import { z } from "zod";
+import { OWNERSHIP_CHANGE_FLAGS, OWNERSHIP_CHANGE_KINDS } from "@/lib/ownership/changes";
+import { RADAR_COUNTER_KEYS, RADAR_SIGNAL_KEYS } from "@/lib/radar/rules";
 import { stripIdentifiers } from "@/server/services/strip-identifiers";
 import { symbolSchema } from "./inputs";
 
@@ -215,7 +217,101 @@ export const insidersRecentSchema = z.object({
   })),
 });
 
-export const SCREEN_FIELDS =["price", "volume", "value", "frequency", "foreignNetShares", "marketCap", "per", "pbv", "roe", "roa", "eps", "der", "dividendYield", "change1D"] as const;
+/**
+ * Data Engine `/v1/radar`: per stock of the newest EOD session, the documented signals that fired (observed value,
+ * threshold and window), the observations that point the other way, and whether each signal had the data it needs.
+ * No composite score (spec §3.5): stocks are ordered by how many signals fired, then by traded value. Changes and
+ * `fraction` signal values are fractions; `ratio` values are multiples; `count` values are whole numbers.
+ */
+const radarSignalKey = z.enum(RADAR_SIGNAL_KEYS);
+const radarWindow = z.string().regex(/^(\d{1,3}D|\d{4}-\d{2})$/);
+export const radarFiredSignalSchema = z.object({
+  key: radarSignalKey,
+  observed: z.number(),
+  threshold: z.number(),
+  /** "5D" (sessions ending at the trading date) or "2026-09" (the KSEI month). */
+  window: radarWindow,
+  /** Supporting figures (e.g. net foreign shares behind a share-of-volume value). */
+  detail: z.record(z.string(), num),
+});
+export const radarCounterSchema = z.object({
+  key: z.enum(RADAR_COUNTER_KEYS),
+  window: radarWindow,
+  values: z.record(z.string(), num),
+});
+export const RADAR_DATA_STATUSES = ["ok", "missing"] as const;
+export const radarStockSchema = z.object({
+  symbol: symbolSchema, name: z.string().nullable(), sector: z.string().nullable(),
+  close: z.number(), changePercent: num, value: num,
+  fired: z.array(radarFiredSignalSchema),
+  counter: z.array(radarCounterSchema),
+  firedCount: z.number().int().nonnegative(),
+  status: z.record(radarSignalKey, z.enum(RADAR_DATA_STATUSES)),
+});
+export const radarRuleSchema = z.object({
+  window: z.number().int().positive().nullable(), baseline: z.number().int().positive().nullable(),
+  threshold: z.number(), unit: z.enum(["fraction", "ratio", "count"]),
+});
+export const radarSchema = z.object({
+  tradingDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
+  rulesVersion: z.string(),
+  rules: z.record(radarSignalKey, radarRuleSchema),
+  /** Newest uploaded KSEI month the ownership signal read; null before any upload. */
+  kseiMonth: z.string().regex(/^\d{4}-\d{2}$/).nullable(),
+  coverage: z.object({
+    /** Stocks with a row in the newest session (all evaluated). */
+    stocks: z.number().int().nonnegative(),
+    /** Stocks with at least one firing signal, and how many of them are in `stocks` below (the list is capped). */
+    listed: z.number().int().nonnegative(),
+    returned: z.number().int().nonnegative(),
+    /** Per signal: stocks that had the data to evaluate it. */
+    signals: z.record(radarSignalKey, z.number().int().nonnegative()),
+  }),
+  stocks: z.array(radarStockSchema),
+});
+
+/**
+ * Data Engine `/v1/ownership/stealth`: in the newest uploaded KSEI month, stocks whose corporate (CP) ≥1% holders
+ * raised their combined shares while the close was flat or lower between the two position dates. Share counts are
+ * integer strings, percentages six-decimal strings (as /v1/ownership/changes); the price change is a fraction.
+ */
+const signedShareString = z.string().regex(/^-?\d{1,25}$/);
+export const stealthHolderSchema = z.object({
+  holderKey: z.string(), holderName: z.string(), investorType: z.string(), kind: z.enum(OWNERSHIP_CHANGE_KINDS),
+  sharesBefore: z.string().nullable(), sharesAfter: z.string().nullable(), shareDelta: signedShareString.nullable(),
+  percentBefore: z.string().nullable(), percentAfter: z.string().nullable(), ppDelta: z.string().nullable(),
+  flags: z.array(z.enum(OWNERSHIP_CHANGE_FLAGS)),
+});
+const closeAt = z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), close: z.number() });
+export const stealthStockSchema = z.object({
+  symbol: symbolSchema, name: z.string().nullable(), fromDate: z.string(), toDate: z.string(),
+  /** Sum of the known share deltas of corporate holders present in both months. */
+  combinedShareDelta: signedShareString,
+  /** Corporate holders newly listed at ≥1% (earlier holding unknown, not summed). */
+  newHolders: z.number().int().nonnegative(),
+  holders: z.array(stealthHolderSchema),
+  /** Close on or before each position date; null when either close is not stored (never treated as flat). */
+  price: z.object({ from: closeAt, to: closeAt, changePercent: z.number() }).nullable(),
+});
+export const stealthOwnershipSchema = z.object({
+  month: z.string().regex(/^\d{4}-\d{2}$/).nullable(),
+  previousMonth: z.string().regex(/^\d{4}-\d{2}$/).nullable(),
+  rulesVersion: z.string(),
+  rules: z.object({ investorTypes: z.array(z.string()), maxPriceChange: z.number(), maxCloseGapDays: z.number().int().nonnegative() }),
+  coverage: z.object({
+    /** Issuers in the month's list. */
+    issuers: z.number().int().nonnegative(),
+    /** Issuers where corporate holders raised their combined shares. */
+    corporateIncrease: z.number().int().nonnegative(),
+    /** Of those, excluded because the close rose more than the rule allows. */
+    priceRose: z.number().int().nonnegative(),
+    /** Of those, listed without a price change because a close is not stored. */
+    priceMissing: z.number().int().nonnegative(),
+  }),
+  stocks: z.array(stealthStockSchema),
+});
+
+export const SCREEN_FIELDS = ["price", "volume", "value", "frequency", "foreignNetShares", "marketCap", "per", "pbv", "roe", "roa", "eps", "der", "dividendYield", "change1D"] as const;
 export const screenFieldSchema = z.enum(SCREEN_FIELDS);
 export const screenConditionSchema = z.object({
   field: screenFieldSchema,
@@ -250,3 +346,5 @@ export type ActionsCalendar = z.infer<typeof actionsCalendarSchema>;
 export type InsidersRecent = z.infer<typeof insidersRecentSchema>;
 export type ScreenRequest = z.infer<typeof screenRequestSchema>;
 export type ScreenResult = z.infer<typeof screenResultSchema>;
+export type Radar = z.infer<typeof radarSchema>;
+export type StealthOwnership = z.infer<typeof stealthOwnershipSchema>;
