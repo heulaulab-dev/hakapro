@@ -1407,6 +1407,45 @@
       "unavailable": "Price not available",
       "unavailableDescription": "A brief can't be compiled without a price. Not available: {list}.",
       "price": "Price"
+    },
+    "narrative": {
+      "title": "Summary",
+      "label": "AI-written summary of the figures on this page, checked so that every number matches the data. Research only, not investment advice.",
+      "basis": "Based on data as of {date}",
+      "loading": "Writing a summary…"
+    }
+  },
+  "copilot": {
+    "open": "Ask Copilot",
+    "title": "Copilot (prototype)",
+    "description": "Ask about IDX stocks using HAKAPRO data. Answers cite their data and as-of date. Research only: no buy, sell or hold advice.",
+    "placeholder": "e.g. What is BBCA's last price and foreign flow this week?",
+    "send": "Send",
+    "stop": "Stop",
+    "you": "You",
+    "assistant": "Copilot",
+    "draft": "Checking the numbers…",
+    "sources": "Sources",
+    "asOf": "as of {date}",
+    "lookup": "Looking up {tool}",
+    "tools": {
+      "get_price": "last price",
+      "get_price_history": "price history",
+      "get_broker_summary": "broker summary",
+      "get_insider_transactions": "insider transactions",
+      "get_sector_performance": "sector performance",
+      "get_research_brief": "research brief"
+    },
+    "retracted": {
+      "UNVERIFIED_NUMBERS": "This answer was hidden because it contained a number that HAKAPRO's data could not confirm. Try asking more specifically.",
+      "ADVICE_WORDING": "This answer was hidden because it sounded like investment advice. Copilot only describes data.",
+      "REFUSED": "Copilot could not answer this question.",
+      "INCOMPLETE": "The answer was cut off. Try a shorter question."
+    },
+    "errors": {
+      "AI_QUOTA_EXCEEDED": "You have used today's Copilot limit. It resets tomorrow (WIB).",
+      "RATE_LIMITED": "Too many requests. Wait a minute and try again.",
+      "default": "Copilot is unavailable right now. Try again later."
     }
   },
   "groups": {

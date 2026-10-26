@@ -6,6 +6,7 @@ import { MobileNav } from "@/components/layout/mobile-nav";
 import { Providers } from "@/components/providers";
 import { DENSITY_COOKIE, parseDensity, parseTheme, THEME_COOKIE } from "@/lib/preferences";
 import { getTranslations } from "next-intl/server";
+import { isAiEnabled } from "@/server/config/ai";
 import { getViewer } from "@/server/viewer";
 
 export default async function AppShellLayout({ children }: LayoutProps<"/[locale]">) {
@@ -21,7 +22,7 @@ export default async function AppShellLayout({ children }: LayoutProps<"/[locale
       <div data-testid="app-shell" className="flex min-h-0 flex-1">
         <AppSidebar />
         <div className="flex min-w-0 flex-1 flex-col">
-          <AppHeader viewer={viewer} theme={theme} density={density} />
+          <AppHeader viewer={viewer} theme={theme} density={density} aiEnabled={isAiEnabled()} />
           <main id="main" tabIndex={-1} className="min-h-0 flex-1 overflow-y-auto outline-none">
             {children}
           </main>

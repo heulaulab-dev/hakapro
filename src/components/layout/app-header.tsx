@@ -1,6 +1,7 @@
 "use client";
 
 import { Search } from "lucide-react";
+import { CopilotDrawer } from "@/components/ai/copilot-drawer";
 import { useTranslations } from "next-intl";
 import { Logo } from "@/components/brand/logo";
 import { Kbd } from "@/components/ui/kbd";
@@ -11,7 +12,8 @@ import { AccountMenu } from "./account-menu";
 import { DensityToggle, LocaleSwitch, ThemeToggle } from "./preference-controls";
 import type { ViewerSummary } from "./types";
 
-export function AppHeader({ viewer, theme, density }: { viewer: ViewerSummary; theme: Theme; density: Density }) {
+/** `aiEnabled` is resolved on the server; the copilot entry point exists only when AI is on. */
+export function AppHeader({ viewer, theme, density, aiEnabled = false }: { viewer: ViewerSummary; theme: Theme; density: Density; aiEnabled?: boolean }) {
   const t = useTranslations("header");
   const openPalette = useUiStore((state) => state.setPaletteOpen);
   return (
@@ -32,6 +34,7 @@ export function AppHeader({ viewer, theme, density }: { viewer: ViewerSummary; t
         <Kbd className="ml-auto hidden lg:inline-flex">Ctrl K</Kbd>
       </button>
       <div className="ml-auto flex items-center gap-0.5">
+        {aiEnabled && <CopilotDrawer />}
         <div className="hidden items-center gap-0.5 md:flex">
           <LocaleSwitch />
           <ThemeToggle initial={theme} />

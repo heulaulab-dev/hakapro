@@ -1407,6 +1407,45 @@
       "unavailable": "Harga belum tersedia",
       "unavailableDescription": "Brief tidak dapat disusun tanpa harga. Belum tersedia: {list}.",
       "price": "Harga"
+    },
+    "narrative": {
+      "title": "Ringkasan",
+      "label": "Ringkasan tulisan AI dari angka di halaman ini, diperiksa agar setiap angka cocok dengan data. Hanya untuk riset, bukan saran investasi.",
+      "basis": "Berdasarkan data per {date}",
+      "loading": "Menyusun ringkasan…"
+    }
+  },
+  "copilot": {
+    "open": "Tanya Copilot",
+    "title": "Copilot (purwarupa)",
+    "description": "Tanya tentang saham BEI dengan data HAKAPRO. Jawaban menyebut sumber dan tanggal datanya. Hanya untuk riset: tanpa saran beli, jual atau tahan.",
+    "placeholder": "mis. Berapa harga terakhir BBCA dan arus asing minggu ini?",
+    "send": "Kirim",
+    "stop": "Berhenti",
+    "you": "Anda",
+    "assistant": "Copilot",
+    "draft": "Memeriksa angka…",
+    "sources": "Sumber",
+    "asOf": "per {date}",
+    "lookup": "Mencari {tool}",
+    "tools": {
+      "get_price": "harga terakhir",
+      "get_price_history": "riwayat harga",
+      "get_broker_summary": "ringkasan broker",
+      "get_insider_transactions": "transaksi orang dalam",
+      "get_sector_performance": "kinerja sektor",
+      "get_research_brief": "research brief"
+    },
+    "retracted": {
+      "UNVERIFIED_NUMBERS": "Jawaban ini disembunyikan karena memuat angka yang tidak dapat dikonfirmasi oleh data HAKAPRO. Coba ajukan pertanyaan yang lebih spesifik.",
+      "ADVICE_WORDING": "Jawaban ini disembunyikan karena terdengar seperti saran investasi. Copilot hanya menjelaskan data.",
+      "REFUSED": "Copilot tidak dapat menjawab pertanyaan ini.",
+      "INCOMPLETE": "Jawaban terpotong. Coba pertanyaan yang lebih singkat."
+    },
+    "errors": {
+      "AI_QUOTA_EXCEEDED": "Batas Copilot Anda hari ini sudah habis. Batas direset besok (WIB).",
+      "RATE_LIMITED": "Terlalu banyak permintaan. Tunggu sebentar lalu coba lagi.",
+      "default": "Copilot sedang tidak tersedia. Coba lagi nanti."
     }
   },
   "groups": {

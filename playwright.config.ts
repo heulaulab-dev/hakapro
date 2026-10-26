@@ -27,6 +27,7 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     // Fixture data + explicit dev auth bypass; never valid in production (next.config.ts guards).
     // BETTER_AUTH_URL gives metadata its own origin, as every deployment has (the bypass skips auth itself).
-    env: { DEV_AUTH_BYPASS: "1", MARKET_DATA_SOURCE: "fixture", FIXTURE_DATASET: "baseline", E2E_RATE_LIMIT_SCALE: "50", BETTER_AUTH_URL: process.env.E2E_SITE_ORIGIN },
+    // AI features stay off in e2e (an empty value overrides any AI_FEATURES_ENABLED in .env.local): no Claude calls.
+    env: { DEV_AUTH_BYPASS: "1", MARKET_DATA_SOURCE: "fixture", FIXTURE_DATASET: "baseline", E2E_RATE_LIMIT_SCALE: "50", BETTER_AUTH_URL: process.env.E2E_SITE_ORIGIN, AI_FEATURES_ENABLED: "" },
   },
 });
