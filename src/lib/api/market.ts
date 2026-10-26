@@ -214,6 +214,17 @@ export const heatmapSchema = z.object({ limit: n, stocks: z.array(heatmapStockSc
 export type HeatmapStock = z.infer<typeof heatmapStockSchema>;
 export type HeatmapSector = z.infer<typeof heatmapSectorSchema>;
 export type Heatmap = z.infer<typeof heatmapSchema>;
+
+// Macro / commodity series (/api/macro): BI-Rate and JISDOR (daily), World Bank commodities `wb.*` (monthly).
+export const macroSeriesSchema = z.object({
+  id: z.string(), name: z.string(), unit: z.string(), date: z.string(), value: z.number(),
+  previousDate: z.string().nullable(), previousValue: z.number().nullable(), link: z.string().nullable(),
+  observations: z.array(z.object({ date: z.string(), value: z.number() })),
+});
+export const macroSchema = z.object({ series: z.array(macroSeriesSchema) });
+export type MacroSeries = z.infer<typeof macroSeriesSchema>;
+export type Macro = z.infer<typeof macroSchema>;
+
 export const GROUP_WINDOWS = ["1D", "5D", "20D"] as const;
 export type GroupWindow = (typeof GROUP_WINDOWS)[number];
 const groupConfidence = z.enum(["sourced", "unverified"]);
@@ -320,6 +331,7 @@ export const engineApi = {
   stealthOwnership: (signal?: AbortSignal) => fetchEnvelope("/api/ownership/stealth", stealthOwnershipSchema, { signal }),
   sectors: (signal?: AbortSignal) => fetchEnvelope("/api/sectors", z.array(sectorPerformanceSchema), { signal }),
   heatmap: (limit: number, signal?: AbortSignal) => fetchEnvelope(`/api/heatmap${qs({ limit })}`, heatmapSchema, { signal }),
+  macro: (signal?: AbortSignal) => fetchEnvelope("/api/macro", macroSchema, { signal }),
   groups: (window: GroupWindow, signal?: AbortSignal) => fetchEnvelope(`/api/groups${qs({ window })}`, groupsViewSchema, { signal }),
   actionsCalendar: (range: { from?: string; to?: string } = {}, signal?: AbortSignal) => fetchEnvelope(`/api/actions${qs(range)}`, z.array(actionCalendarItemSchema), { signal }),
   ownership: (symbol: string, signal?: AbortSignal) => fetchEnvelope(`/api/stocks/${encodeURIComponent(symbol.toUpperCase())}/ownership`, stockOwnershipSchema, { signal }),

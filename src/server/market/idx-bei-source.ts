@@ -167,7 +167,7 @@ export class IdxBeiSource extends BaseMarketDataSource {
     return this.wrap(data, "HISTORICAL", meta.dataAsOf);
   }
 
-  /** Data Engine only (`/v1/macro`, E3): BI-Rate and JISDOR. Not a MarketDataSource capability; no UI uses it yet. */
+  /** Data Engine only (`/v1/macro`, E3): BI-Rate, JISDOR and World Bank commodity prices (`wb.*`). */
   async macro() {
     const { data, meta } = await this.get("/v1/macro", macroSchema, TTL_MS.news);
     return this.snapshot(data, meta.dataAsOf);

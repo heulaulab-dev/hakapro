@@ -113,7 +113,18 @@
     "groups": "Grup Konglomerat",
     "radar": "Radar Sinyal",
     "stealth": "Korporasi KSEI",
+    "macro": "Suku Bunga & Komoditas",
     "methodology": "Metodologi"
+  },
+  "macro": {
+    "title": "Suku bunga & komoditas",
+    "note": "Latar makro pasar Indonesia: suku bunga acuan, rupiah, dan harga komoditas dunia yang menggerakkan sektor IDX.",
+    "rates": "Suku bunga & kurs",
+    "ratesNote": "Suku bunga acuan Bank Indonesia dan kurs referensi JISDOR USD/IDR.",
+    "commodities": "Komoditas",
+    "commoditiesNote": "Harga dunia bulanan untuk komoditas yang menggerakkan emiten batubara, CPO, logam, dan energi di IDX.",
+    "commoditiesEmpty": "Harga komoditas diperbarui bulanan; rilis berikutnya belum terkumpul.",
+    "worldBankAttribution": "Harga komoditas: World Bank Commodity Price Data (The Pink Sheet), CC BY 4.0."
   },
   "stockTabs": {
     "label": "Bagian saham",
