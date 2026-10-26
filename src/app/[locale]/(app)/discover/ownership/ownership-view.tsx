@@ -75,7 +75,7 @@ function KseiChanges({ canUpload }: { canUpload: boolean }) {
   return (
     <section className="flex flex-col gap-3" data-testid="ksei-changes">
       <SectionHeader title={t("kseiTitle")} description={t("kseiHint")} meta={query.data ? freshnessMeta(query.data) : undefined}
-        actions={canUpload ? <Link href="/admin/ownership" className="caption-style text-link hover:underline" data-testid="ksei-upload-link">{t("kseiUpload")}</Link> : undefined} />
+        actions={canUpload ? <Link href="/admin/ownership" className="caption-style text-link hover:underline touch-target" data-testid="ksei-upload-link">{t("kseiUpload")}</Link> : undefined} />
       <DataState query={query} compact>
         {(envelope) => envelope.data.changes.length === 0 ? <EmptyState compact icon={<Landmark />} title={t("kseiNone")} /> : (
           <div className="flex flex-col gap-2">
@@ -83,7 +83,7 @@ function KseiChanges({ canUpload }: { canUpload: boolean }) {
             <ul className="flex flex-col divide-y divide-border rounded-xl border border-border px-4 text-sm">
               {envelope.data.changes.filter((change) => change.kind !== "UNCHANGED").map((change) => (
                 <li key={`${change.symbol}-${change.holderKey}`} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2">
-                  <Link href={stockHref(change.symbol, "ownership")} className="ticker text-link hover:underline">{change.symbol}</Link>
+                  <Link href={stockHref(change.symbol, "ownership")} className="ticker text-link hover:underline touch-target">{change.symbol}</Link>
                   <span className="min-w-0 flex-1 truncate">{change.holderName}</span>
                   <span className="caption-style text-subtle">{t(`kind.${change.kind}` as "kind.NEW")}</span>
                   <span className="num shrink-0 text-xs">{pctText(change.percentBefore)} → {pctText(change.percentAfter)} <span className="text-muted-foreground">{ppText(change.ppDelta)}</span></span>

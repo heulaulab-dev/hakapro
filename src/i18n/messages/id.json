@@ -2,7 +2,9 @@
   "app": {
     "name": "HAKA PRO",
     "tagline": "Baca pasarnya. Ikuti arusnya.",
-    "summary": "Riset dan intelijen pasar untuk saham Indonesia."
+    "summary": "Riset dan intelijen pasar untuk saham Indonesia.",
+    "offline": "Anda sedang offline. Data di layar bisa jadi sudah usang.",
+    "backOnline": "Kembali online. Memuat ulang data."
   },
   "locale": {
     "id": "Bahasa Indonesia",
@@ -132,7 +134,8 @@
     "themeToLight": "Pakai tema terang",
     "density": "Kepadatan tampilan",
     "locale": "Bahasa",
-    "display": "Tampilan"
+    "display": "Tampilan",
+    "home": "Beranda"
   },
   "palette": {
     "title": "Palet perintah",
@@ -186,7 +189,9 @@
     "sortAscending": "Urutkan naik",
     "sortDescending": "Urutkan turun",
     "showTable": "Lihat tabel",
-    "showChart": "Lihat grafik"
+    "showChart": "Lihat grafik",
+    "sortBy": "Urutkan",
+    "showMore": "Tampilkan {count} lagi"
   },
   "chart": {
     "attribution": "Grafik oleh TradingView Lightweight Charts",
@@ -235,7 +240,8 @@
     "pierceBandwidthPercent": "Lebar band sesi itu",
     "sessionsSincePierce": "Sesi sejak itu",
     "changePercent": "Perubahan harian",
-    "boardKnown": "Papan diketahui (1 = ya)"
+    "boardKnown": "Papan diketahui (1 = ya)",
+    "dayRange": "Rentang harian"
   },
   "criteria": {
     "accumulation": "Pola akumulasi teramati",
@@ -314,7 +320,10 @@
   "filters": {
     "label": "Filter",
     "reset": "Atur ulang",
-    "search": "Cari…"
+    "search": "Cari…",
+    "open": "Filter",
+    "done": "Tampilkan hasil",
+    "count": "{count, plural, other {# filter}}"
   },
   "drawer": {
     "close": "Tutup"
@@ -566,7 +575,9 @@
     "ratioNote": "Satuan ROE, ROA, dan dividend yield mengikuti penyedia (belum diverifikasi), jadi ditampilkan apa adanya.",
     "saveFailed": "Screen tidak tersimpan.",
     "loading": "Memuat data…",
-    "loadFailed": "Data gagal dimuat. Coba lagi."
+    "loadFailed": "Data gagal dimuat. Coba lagi.",
+    "conditionCount": "{count, plural, other {# kondisi}}",
+    "editFilters": "Ubah kondisi"
   },
   "movers": {
     "title": "Penggerak Pasar",

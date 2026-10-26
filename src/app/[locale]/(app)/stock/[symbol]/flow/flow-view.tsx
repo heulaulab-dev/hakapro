@@ -5,9 +5,9 @@ import { parseAsBoolean, parseAsString, parseAsStringLiteral, useQueryState } fr
 import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState, type FormEvent } from "react";
 import { ChartRangeToggle, useChartRange } from "@/components/charts/chart-range-toggle";
-import { DivergingBarChart } from "@/components/charts/diverging-bar-chart";
-import { DivergingColumnChart } from "@/components/charts/diverging-column-chart";
-import { MultiLineChart } from "@/components/charts/multi-line-chart";
+import { DivergingBarChart } from "@/components/charts/lazy";
+import { DivergingColumnChart } from "@/components/charts/lazy";
+import { MultiLineChart } from "@/components/charts/lazy";
 import { DataTable } from "@/components/data/data-table";
 import { DataState } from "@/components/feedback/data-state";
 import { ResearchDisclaimer } from "@/components/feedback/research-disclaimer";
@@ -117,7 +117,7 @@ export function FlowView({ symbol }: { symbol: string }) {
               </div>
               <ChartCard testId="foreign-chart" title={t("flow.foreignTitle")} meta={meta}
                 description={sliced.limited ? t("chart.rangeLimited", { count: envelope.data.rows.length }) : undefined}
-                table={<DataTable columns={foreignColumns} data={[...sliced.rows].reverse()} meta={meta} caption={t("flow.foreignTitle")} getRowId={(row) => row.date} maxHeight={360} />}>
+                table={<DataTable mobile="cards" columns={foreignColumns} data={[...sliced.rows].reverse()} meta={meta} caption={t("flow.foreignTitle")} getRowId={(row) => row.date} maxHeight={360} />}>
                 <DivergingColumnChart data={sliced.rows.map((row) => ({ date: row.date, value: row.foreignNetShares }))} format="sharesCompact" ariaLabel={t("flow.foreignDesc")} positiveLabel={t("chart.netBuy")} negativeLabel={t("chart.netSell")} />
               </ChartCard>
             </section>
@@ -135,11 +135,11 @@ export function FlowView({ symbol }: { symbol: string }) {
             const extremes = [...rows.slice(0, 10), ...rows.slice(-10)].filter((row, index, all) => all.findIndex((other) => other.code === row.code) === index);
             const scope = `${t(`flow.flows.${data.flow}`)}${data.net ? ` · ${t("flow.netOnly")}` : ""}`;
             return (
-              <div className="grid gap-4 xl:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
                 <ChartCard testId="broker-summary" title={t("flow.brokerTitle")} meta={meta}
                   description={t("flow.brokerDesc", { start: formatDate(data.startDate, locale), end: formatDate(data.endDate, locale), scope })}
                   footer={t("flow.available", { from: formatDate(data.availableFrom, locale), to: formatDate(data.availableTo, locale) })}
-                  table={<DataTable columns={brokerColumns} data={rows} meta={meta} caption={t("flow.brokerTitle")} getRowId={(row) => row.code} maxHeight={400} initialSorting={[{ id: "netValueIdr", desc: true }]} />}>
+                  table={<DataTable mobile="cards" columns={brokerColumns} data={rows} meta={meta} caption={t("flow.brokerTitle")} getRowId={(row) => row.code} maxHeight={400} initialSorting={[{ id: "netValueIdr", desc: true }]} />}>
                   <DivergingBarChart data={extremes.map((row) => ({ key: row.code, label: row.code, value: row.netValueIdr }))} format="idrCompact" ariaLabel={t("broker.topNet")} />
                 </ChartCard>
                 <section className="flex flex-col gap-2" data-testid="broker-levels">
@@ -153,7 +153,7 @@ export function FlowView({ symbol }: { symbol: string }) {
         </DataState>
       </section>
 
-      <div className="grid gap-4">
+      <div className="grid grid-cols-1 gap-4">
 
         <DataState query={accumulation} compact isEmpty={(envelope) => envelope.data.series.length === 0}>
           {(envelope) => {
@@ -186,7 +186,7 @@ export function FlowView({ symbol }: { symbol: string }) {
                 }>
                 <div className="flex flex-col gap-3">
                   <MultiLineChart series={data.series.map((series) => ({ key: series.code, label: series.name, points: series.points.map((point) => ({ date: point.date, value: point.cumulativeNetValueIdr })) }))} format="idrCompact" ariaLabel={t("flow.accumulationTitle")} />
-                  <dl className="grid gap-1 text-xs sm:grid-cols-2">
+                  <dl className="grid grid-cols-1 gap-1 text-xs sm:grid-cols-2">
                     <div><dt className="text-muted-foreground">{t("flow.topBuyers")}</dt><dd className="num">{list(data.topBuyers)}</dd></div>
                     <div><dt className="text-muted-foreground">{t("flow.topSellers")}</dt><dd className="num">{list(data.topSellers)}</dd></div>
                   </dl>

@@ -2,7 +2,9 @@
   "app": {
     "name": "HAKA PRO",
     "tagline": "Read the market. Follow the flow.",
-    "summary": "Research and market intelligence for Indonesian equities."
+    "summary": "Research and market intelligence for Indonesian equities.",
+    "offline": "You are offline. Data on screen may be out of date.",
+    "backOnline": "Back online. Refreshing data."
   },
   "locale": {
     "id": "Bahasa Indonesia",
@@ -132,7 +134,8 @@
     "themeToLight": "Use light theme",
     "density": "Display density",
     "locale": "Language",
-    "display": "Display"
+    "display": "Display",
+    "home": "Home"
   },
   "palette": {
     "title": "Command palette",
@@ -186,7 +189,9 @@
     "sortAscending": "Sort ascending",
     "sortDescending": "Sort descending",
     "showTable": "Show table",
-    "showChart": "Show chart"
+    "showChart": "Show chart",
+    "sortBy": "Sort by",
+    "showMore": "Show {count} more"
   },
   "chart": {
     "attribution": "Charting by TradingView Lightweight Charts",
@@ -235,7 +240,8 @@
     "pierceBandwidthPercent": "Bandwidth that session",
     "sessionsSincePierce": "Sessions since",
     "changePercent": "Change on the day",
-    "boardKnown": "Board known (1 = yes)"
+    "boardKnown": "Board known (1 = yes)",
+    "dayRange": "Day range"
   },
   "criteria": {
     "accumulation": "Accumulation pattern observed",
@@ -314,7 +320,10 @@
   "filters": {
     "label": "Filters",
     "reset": "Reset",
-    "search": "Search…"
+    "search": "Search…",
+    "open": "Filters",
+    "done": "Show results",
+    "count": "{count, plural, one {# filter} other {# filters}}"
   },
   "drawer": {
     "close": "Close"
@@ -566,7 +575,9 @@
     "ratioNote": "ROE, ROA and dividend yield units follow the provider (unverified), so they're shown as-is.",
     "saveFailed": "The screen wasn't saved.",
     "loading": "Loading data…",
-    "loadFailed": "Could not load saved screens. Try again."
+    "loadFailed": "Could not load saved screens. Try again.",
+    "conditionCount": "{count, plural, one {# condition} other {# conditions}}",
+    "editFilters": "Edit conditions"
   },
   "movers": {
     "title": "Movers",

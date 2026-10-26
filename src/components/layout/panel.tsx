@@ -19,12 +19,12 @@ export function Panel({ title, meta, description, actions, children, className, 
 }) {
   return (
     <section data-testid={testId} className={cn("flex min-w-0 flex-col rounded-xl border border-border", className)}>
-      <div className="flex min-h-12 shrink-0 items-center justify-between gap-2 border-b border-border px-4 py-2">
+      <div className="flex min-h-12 shrink-0 flex-wrap items-center justify-between gap-x-2 gap-y-1 border-b border-border px-4 py-2">
         <div className="flex min-w-0 items-center gap-2">
           <h3 className="eyebrow-style truncate font-normal text-soft">{title}</h3>
           {meta && <FreshnessBadge {...meta} />}
         </div>
-        {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
+        {actions && <div className="flex max-w-full flex-wrap items-center gap-2">{actions}</div>}
       </div>
       <div className={cn("flex min-w-0 flex-1 flex-col gap-3 p-4", bodyClassName)}>
         {description && <p className="caption-style leading-snug text-subtle">{description}</p>}

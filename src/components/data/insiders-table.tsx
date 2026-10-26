@@ -30,5 +30,5 @@ export function InsidersTable({ rows, meta, showSymbol, showValue, toolbar, test
     { accessorKey: "priceIdr", header: t("price"), meta: { numeric: true }, cell: ({ getValue }) => formatIdr(getValue<number | null>(), locale) },
     ...(showValue ? [{ id: "valueIdr", accessorFn: (row) => row.valueIdr ?? null, header: t("value"), meta: { numeric: true }, cell: ({ getValue }) => formatIdr(getValue<number | null>(), locale, { compact: true }) } satisfies ColumnDef<InsiderTableRow, unknown>] : []),
   ], [t, locale, showSymbol, showValue]);
-  return <DataTable testId={testId} columns={columns} data={rows} meta={meta} caption={t("title")} toolbar={toolbar} initialSorting={[{ id: "date", desc: true }]} />;
+  return <DataTable mobile="cards" testId={testId} columns={columns} data={rows} meta={meta} caption={t("title")} toolbar={toolbar} initialSorting={[{ id: "date", desc: true }]} />;
 }

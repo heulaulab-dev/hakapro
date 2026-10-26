@@ -17,8 +17,8 @@ export function AppHeader({ viewer, theme, density, aiEnabled = false }: { viewe
   const t = useTranslations("header");
   const openPalette = useUiStore((state) => state.setPaletteOpen);
   return (
-    <header data-testid="app-header" className="flex h-[58px] shrink-0 items-center gap-2 border-b border-border bg-background px-4">
-      <Link href="/dashboard" data-testid="header-brand" className="shrink-0 md:hidden">
+    <header data-testid="app-header" className="flex h-12 shrink-0 items-center gap-2 border-b border-border bg-background px-4 md:h-[58px]">
+      <Link href="/dashboard" data-testid="header-brand" aria-label={t("home")} className="-ml-1 inline-flex size-10 shrink-0 items-center justify-center md:hidden">
         <Logo variant="symbol" height={28} priority />
       </Link>
       {/* Global stock search lives in the command palette; this is its desktop entry point. */}

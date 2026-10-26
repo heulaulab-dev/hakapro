@@ -3,7 +3,7 @@
 import { ChevronRight } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { ChartRangeToggle, useChartRange } from "@/components/charts/chart-range-toggle";
-import { PriceChart } from "@/components/charts/price-chart";
+import { PriceChart } from "@/components/charts/lazy";
 import { DataState } from "@/components/feedback/data-state";
 import { ResearchDisclaimer } from "@/components/feedback/research-disclaimer";
 import { SectionHeader } from "@/components/layout/section-header";
@@ -89,7 +89,7 @@ export function OverviewView({ symbol }: { symbol: string }) {
           // Same failure everywhere (e.g. an unrecorded symbol): the history block above already says why.
           if (firstError && history.isError && sections.every((item) => item.status === "error" && item.error === firstError)) return null;
           return (
-            <div className="grid gap-4 lg:grid-cols-2" data-testid="overview-insights">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2" data-testid="overview-insights">
               <SectionInsight testId="insight-price" title={t("overview.priceTitle")} section={o.price} observations={(p) => [
                 { id: "range", text: t("overview.price.range", { sessions: p.rangeSessions, change: formatPercent(p.rangeChangePercent, locale), low: idr(p.rangeLow), high: idr(p.rangeHigh) }) },
                 ...(p.closeVsSma20 && p.sma20 !== null ? [{ id: "sma", text: t(`overview.price.${p.closeVsSma20}`, { sma: idr(p.sma20) }) }] : []),
@@ -124,7 +124,7 @@ export function OverviewView({ symbol }: { symbol: string }) {
 
       <section className="flex flex-col gap-3">
         <SectionHeader title={t("overview.deepDive")} />
-        <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3" data-testid="deep-dive">
+        <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3" data-testid="deep-dive">
           {STOCK_TABS.filter((tab) => tab !== "overview").map((tab) => (
             <li key={tab}>
               <Link href={stockHref(symbol, tab)} className="group flex items-center justify-between gap-3 rounded-xl border border-border px-4 py-3 transition-colors hover:bg-accent/40">

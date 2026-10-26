@@ -70,5 +70,19 @@ export function ScreenerTable({ candidates, meta, caption, maxHeight, onWhy }: {
         ) } satisfies ColumnDef<ScreenerCandidate, unknown>]
       : []),
   ], [t, tWhy, onWhy]);
-  return <DataTable testId="screener-table" columns={columns} data={candidates} meta={meta} caption={caption} getRowId={(row) => row.symbol} maxHeight={maxHeight} />;
+  // Phone card: ticker and company on one line, the reasons as full-width chips (a 2-column grid would squeeze them).
+  const renderCard = (candidate: ScreenerCandidate) => (
+    <div className="flex flex-col gap-2" data-testid={`screener-card-${candidate.symbol}`}>
+      <div className="flex items-center justify-between gap-3">
+        <span className="flex min-w-0 items-baseline gap-2">
+          <Link href={stockHref(candidate.symbol)} className="ticker touch-target font-medium text-link hover:underline" data-testid={`screener-symbol-${candidate.symbol}`}>{candidate.symbol}</Link>
+          <span className="truncate text-muted-foreground">{candidate.name}</span>
+        </span>
+        {onWhy && <Button variant="outline" size="sm" className="shrink-0" onClick={() => onWhy(candidate)} data-testid={`why-${candidate.symbol}`}>{tWhy("why")}</Button>}
+      </div>
+      <CriteriaList reasons={candidate.reasons} />
+      {textsOf(candidate.reasons, "pattern").map((pattern) => <span key={pattern} className="caption-style text-soft">{pattern}</span>)}
+    </div>
+  );
+  return <DataTable mobile="cards" renderCard={renderCard} testId="screener-table" columns={columns} data={candidates} meta={meta} caption={caption} getRowId={(row) => row.symbol} maxHeight={maxHeight} />;
 }

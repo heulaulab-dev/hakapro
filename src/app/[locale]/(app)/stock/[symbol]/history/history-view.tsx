@@ -4,7 +4,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { parseAsInteger, parseAsString, useQueryState } from "nuqs";
 import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState, type FormEvent } from "react";
-import { SeasonalityHeatmap } from "@/components/charts/seasonality-heatmap";
+import { SeasonalityHeatmap } from "@/components/charts/lazy";
 import { DataTable } from "@/components/data/data-table";
 import { DataState } from "@/components/feedback/data-state";
 import { SectionHeader } from "@/components/layout/section-header";
@@ -76,12 +76,12 @@ export function HistoryView({ symbol }: { symbol: string }) {
         <SectionHeader title={t("stockHistory.title")}
           description={overview.data?.data.available ? t("stockHistory.available", { from: formatDate(overview.data.data.available.from, locale), to: formatDate(overview.data.data.available.to, locale) }) : undefined}
           actions={
-            <form onSubmit={applyRange} className="flex flex-wrap items-end gap-2" data-testid="history-range">
-              <label className="flex flex-col gap-0.5 text-xs text-muted-foreground">{t("stockHistory.from")}
-                <Input type="date" value={draft.from} min={overview.data?.data.available?.from} max={draft.to || undefined} onChange={(event) => setDraft({ ...draft, from: event.target.value })} className="h-8 w-36 text-xs" />
+            <form onSubmit={applyRange} className="grid w-full grid-cols-2 items-end gap-2 sm:flex sm:w-auto sm:flex-wrap" data-testid="history-range">
+              <label className="flex min-w-0 flex-col gap-0.5 text-xs text-muted-foreground">{t("stockHistory.from")}
+                <Input type="date" value={draft.from} min={overview.data?.data.available?.from} max={draft.to || undefined} onChange={(event) => setDraft({ ...draft, from: event.target.value })} className="h-8 w-full text-xs sm:w-36" />
               </label>
-              <label className="flex flex-col gap-0.5 text-xs text-muted-foreground">{t("stockHistory.to")}
-                <Input type="date" value={draft.to} min={draft.from || undefined} max={overview.data?.data.available?.to} onChange={(event) => setDraft({ ...draft, to: event.target.value })} className="h-8 w-36 text-xs" />
+              <label className="flex min-w-0 flex-col gap-0.5 text-xs text-muted-foreground">{t("stockHistory.to")}
+                <Input type="date" value={draft.to} min={draft.from || undefined} max={overview.data?.data.available?.to} onChange={(event) => setDraft({ ...draft, to: event.target.value })} className="h-8 w-full text-xs sm:w-36" />
               </label>
               <Button type="submit" variant="outline" size="sm">{t("stockHistory.apply")}</Button>
               {ranged && <Button type="button" variant="ghost" size="sm" onClick={() => { setDraft({ from: "", to: "" }); void setFrom(null); void setTo(null); }}>{t("stockHistory.reset")}</Button>}
@@ -90,7 +90,7 @@ export function HistoryView({ symbol }: { symbol: string }) {
         <DataState query={history}>
           {(envelope) => (
             <div className="flex flex-col gap-1">
-              <DataTable testId="history-table" columns={historyColumns} data={[...envelope.data.rows].reverse()} meta={freshnessMeta(envelope)} caption={t("stockHistory.title")} getRowId={(row) => row.date} maxHeight={420} />
+              <DataTable mobile="cards" testId="history-table" columns={historyColumns} data={[...envelope.data.rows].reverse()} meta={freshnessMeta(envelope)} caption={t("stockHistory.title")} getRowId={(row) => row.date} maxHeight={420} />
               {ranged && envelope.data.rows.length >= ARJUM_LIMITS.historyRows && <p className="text-[11px] text-muted-foreground">{t("stockHistory.rangeCapped", { count: ARJUM_LIMITS.historyRows })}</p>}
             </div>
           )}
@@ -112,7 +112,21 @@ export function HistoryView({ symbol }: { symbol: string }) {
                     </SelectContent>
                   </Select>
                 } />
-              <DataTable testId="tape-table" columns={tapeColumns} data={data.rows} meta={freshnessMeta(envelope)} caption={t("stockHistory.tape", { date: data.date })} maxHeight={360} />
+                            <DataTable mobile="cards" renderCard={(row) => (
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <span className="num font-medium">{row.time}</span>
+                    <span className="ticker">{formatIdr(row.priceIdr, locale)} <span className="text-muted-foreground">· {formatValue(row.lots, "number", locale)} lot</span></span>
+                  </div>
+                  <dl className="grid grid-cols-3 gap-x-3 gap-y-1">
+                    <div><dt className="caption-style text-subtle">{t("metrics.value")}</dt><dd className="ticker text-data">{formatIdr(row.valueIdr, locale, { compact: true })}</dd></div>
+                    <div><dt className="caption-style text-subtle">{t("stockHistory.buyer")}</dt><dd className="ticker text-data">{row.buyer}<span className="ml-1 text-muted-foreground">{row.buyerType}</span></dd></div>
+                    <div><dt className="caption-style text-subtle">{t("stockHistory.seller")}</dt><dd className="ticker text-data">{row.seller}<span className="ml-1 text-muted-foreground">{row.sellerType}</span></dd></div>
+                    <div><dt className="caption-style text-subtle">{t("stockHistory.board")}</dt><dd className="ticker text-data">{row.board}</dd></div>
+                    <div><dt className="caption-style text-subtle">{t("stockHistory.aggressor")}</dt><dd className="ticker text-data">{row.aggressor}</dd></div>
+                  </dl>
+                </div>
+              )} testId="tape-table" columns={tapeColumns} data={data.rows} meta={freshnessMeta(envelope)} caption={t("stockHistory.tape", { date: data.date })} maxHeight={360} />
               <div className="flex items-center justify-end gap-2 text-xs text-muted-foreground">
                 <span className="num" data-testid="tape-page">{t("stockHistory.page", { page: data.page, total: Math.max(1, data.totalPages) })}</span>
                 <Button variant="outline" size="sm" disabled={data.page <= 1} onClick={() => void setTapePage(data.page - 1 > 1 ? data.page - 1 : null)}>{t("stockInsiders.previous")}</Button>

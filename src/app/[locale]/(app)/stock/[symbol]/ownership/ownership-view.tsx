@@ -83,7 +83,7 @@ export function StockOwnershipView({ symbol }: { symbol: string }) {
             </p>
             {envelope.data.description && <p className="text-sm text-muted-foreground">{envelope.data.description}</p>}
             {safeUrl(envelope.data.website) && <a href={safeUrl(envelope.data.website)!} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-link hover:underline">{t("website")}<ExternalLink className="size-3" /></a>}
-            <div className="grid gap-4 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
               {people(t("shareholders"), envelope.data.shareholders, "holder")}
               {people(t("directors"), envelope.data.directors, "person")}
               {people(t("commissioners"), envelope.data.commissioners, "person")}
