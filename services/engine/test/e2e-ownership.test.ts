@@ -4,7 +4,7 @@
 import { readFileSync } from "node:fs";
 import { asc, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { idxBeiEnvelope } from "@/server/schemas/idx-bei";
+import { idxBeiEnvelope, radarSchema, stealthOwnershipSchema } from "@/server/schemas/idx-bei";
 import { ownershipChangesSchema, ownershipUploadSchema, stockOwnershipSchema } from "@/server/schemas/ownership";
 import * as t from "../db/schema";
 import { loadConfig } from "../src/config";
@@ -91,6 +91,27 @@ describe.skipIf(!enabled)("ownership uploads (docker postgres)", () => {
 
     const list = ownershipUploadSchema.array().parse(((await (await call("/v1/admin/ownership/uploads", { headers: ADMIN })).json()) as { data: unknown }).data);
     expect(list.map((item) => [item.asOfMonth, item.status, item.fileName])).toEqual([["2026-03", "PARSED", "mar.pdf"], ["2026-02", "PARSED", "feb.pdf"]]);
+
+    // Corporate-holder view and the radar's KSEI signal, read through the PostgreSQL stores. Synthetic closes: TEST1 is
+    // flat between the position dates (the 2026-03-31 close is two days before the date, still within the gap).
+    const asOf = new Date("2026-03-31T10:00:00Z");
+    const bar = (date: string, close: number, volume: number) => ({
+      symbol: "TEST1", date, close, previousClose: close, volume, value: 1000 * close, frequency: 100, source: "test-fixture", asOf,
+    });
+    const dates = Array.from({ length: 21 }, (_, index) => `2026-03-${String(index + 9).padStart(2, "0")}`);
+    await db.insert(t.securities).values({ symbol: "TEST1", name: "PT CONTOH DUMMY TBK", sector: "Finance", active: true, source: "test-fixture", asOf });
+    await db.insert(t.dailyPrices).values([bar("2026-02-26", 500, 1000), ...dates.map((date, index) => bar(date, 500, index === dates.length - 1 ? 3000 : 1000))]);
+    const stealth = idxBeiEnvelope(stealthOwnershipSchema).parse(await (await call("/v1/ownership/stealth")).json());
+    expect(stealth.meta).toMatchObject({ freshness: "HISTORICAL", dataAsOf: "2026-03-31" });
+    expect(stealth.data.stocks.map((stock) => [stock.symbol, stock.combinedShareDelta, stock.price?.from.date, stock.price?.to.date, stock.price?.changePercent])).toEqual([
+      ["TEST1", "10000000", "2026-02-26", "2026-03-29", 0],
+    ]);
+    expect(stealth.data.stocks[0].holders.map((holder) => [holder.holderName, holder.investorType, holder.kind])).toEqual([["PT CONTOH INDUK FIKTIF", "CP", "INCREASE"]]);
+
+    const radar = idxBeiEnvelope(radarSchema).parse(await (await call("/v1/radar")).json());
+    expect(radar.data).toMatchObject({ tradingDate: "2026-03-29", kseiMonth: "2026-03", coverage: { stocks: 1, listed: 1 } });
+    expect(radar.data.stocks[0].fired.map((signal) => [signal.key, signal.observed])).toEqual([["volumeSpike", 3], ["kseiHolderIncrease", 1]]);
+    expect(radar.data.stocks[0].status).toMatchObject({ foreignNetBuy5: "missing", orderSizeSpike: "ok", kseiHolderIncrease: "ok" });
   });
 
   it("deduplicates, replaces a month on a corrected upload, re-parses, and records failures", async () => {

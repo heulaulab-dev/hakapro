@@ -1,6 +1,6 @@
 // Drizzle implementation of the ownership store (src/ownership/store.ts). A set replacement is one transaction: the
 // old set of the symbol and month goes (its rows and changes cascade), the new set and its rows go in.
-import { and, asc, desc, eq, gt, lt, notInArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, inArray, lt, notInArray, sql } from "drizzle-orm";
 import * as t from "../../db/schema";
 import { OWNERSHIP_SOURCE_HOST, OWNERSHIP_SOURCE_ID } from "../ownership/service";
 import type { ChangeRecord, Derivation, NewSet, NewUpload, OwnershipStore, SetHeader, StoredRow, StoredSet, UploadPatch, UploadRecord } from "../ownership/store";
@@ -151,6 +151,12 @@ export class DbOwnershipStore implements OwnershipStore {
       .where(symbol ? and(eq(t.ownershipChanges.month, month), eq(t.ownershipChanges.symbol, symbol)) : eq(t.ownershipChanges.month, month))
       .orderBy(asc(t.ownershipChanges.symbol), asc(t.ownershipChanges.holderKey));
     return rows.map(toChange);
+  }
+
+  async holderTypes(setIds: string[]) {
+    if (!setIds.length) return [];
+    return this.db.select({ setId: t.ownershipSnapshotRows.setId, holderKey: t.ownershipSnapshotRows.holderKey, investorType: t.ownershipSnapshotRows.investorType })
+      .from(t.ownershipSnapshotRows).where(inArray(t.ownershipSnapshotRows.setId, setIds));
   }
 
   async recordIngest(rows: number) {

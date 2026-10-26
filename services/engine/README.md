@@ -8,6 +8,7 @@ Experimental internal collector and API for IDX data. Spec: [`docs/features/DATA
 - E3 (HAKA-63): market info: news RSS headlines, BI-Rate and JISDOR, the market-wide corporate-action calendar; announcements stay unavailable (IDX blocked).
 - E5 (HAKA-65): financial statements from Yahoo fundamentals timeseries, derived valuation ratios (with Pasardana's own as a secondary source), `/v1/stocks/{s}/fundamentals` and `POST /v1/screener`.
 - E6 (HAKA-66): ownership. The owner uploads the monthly KSEI ≥1% shareholder list (PDF, or a CSV/XLSX export); the engine parses it into HAKA-33 snapshot sets, computes month-over-month changes and a draft HAKA-34 free-float estimate. Nothing is fetched from IDX or KSEI. See [Ownership uploads](#ownership-uploads-e6).
+- Radar: `/v1/radar` (documented signals per stock of the newest session, counter-evidence and data status; draft rules in `src/lib/radar/rules.ts`, echoed as `rulesVersion`, no score) and `/v1/ownership/stealth` (corporate KSEI ≥1% holders up while the close was flat or lower in the newest uploaded month), both from stored rows only (`src/serve/radar.ts`).
 - E4 (HAKA-64): strategy scans on the HAKA-17 **draft** rules (BREAKOUT, BB REVERSAL) over the whole active universe, served as a HAKA-18 board on `/v1/strategies`. Off by default (`ENGINE_STRATEGY_SCANS_ENABLED`).
 
 It is a separate Bun + TypeScript service with no Next.js. It shares code with the app through the `@/*` path: the idx-bei and arjum Zod contracts (`src/server/schemas/`), the arjum URL builder, the IDX calendar, the freshness clock, the arjum page limits and the movers ranking.
@@ -19,7 +20,9 @@ It is a separate Bun + TypeScript service with no Next.js. It shares code with t
 | `src/main.ts` | Entry: `Bun.serve` on `PORT`, scheduler start, graceful SIGTERM |
 | `src/engine.ts` | Wiring: DB, raw store, fetcher, the production registry (sources + jobs), scheduler, HTTP handler |
 | `src/sources/` | One module per source: URL/body builders and parsers (TradingView, Yahoo, Pasardana, arjum, the news feeds, Bank Indonesia), a small RSS/Atom reader, source policies, IDX session dates |
+| `src/jobs/` | Collection jobs: `universe`, `indices-eod`, `eod-daily`, `eod-backfill`, `foreign-flow`, `insider-feed`, `intraday`, `news`, `macro-jisdor`, `macro-bi-rate`, `fundamentals`; the `ratios` and `strategy-scan-eod` derivations |
 | `src/jobs/` | Collection jobs: `universe`, `indices-eod`, `eod-daily`, `eod-backfill`, `foreign-flow`, `intraday`, `news`, `macro-jisdor`, `macro-bi-rate`, `fundamentals`; the `ratios` and `strategy-scan-eod` derivations |
+| `src/groups/` | The curated conglomerate catalog (`groups.ts`, versioned data that needs owner review) and its structural checks (`catalog.ts`). See [Conglomerate groups](#conglomerate-groups-owner-review-required) |
 | `src/derive/` | Pure derivations: valuation ratios from statement lines (`ratios.ts`, formulas in its header) |
 | `src/strategies/` | E4 strategy rules: the versioned draft parameters (`rules.ts`), gate G, BREAKOUT, BB REVERSAL, the universe scan, the catalog of built / not-built strategies and the wording guard. Pure functions |
 | `src/db/ingest.ts`, `src/db/market-info.ts`, `src/db/fundamentals.ts`, `src/db/market-store.ts` | Idempotent upserts with source precedence (prices) and dedupe (news); statement lines and ratios; the read store behind `/v1` |
@@ -31,6 +34,7 @@ It is a separate Bun + TypeScript service with no Next.js. It shares code with t
 | `src/registry.ts` | Source/job registry (`defineSource`, intraday retention job) |
 | `src/ownership/` | E6: upload service, parsers (`pdf.ts`, `tabular.ts` for CSV/XLSX), the ≥1% column layout (`layout.ts`), number/date parsing, normalization into HAKA-33 rows, derivations (changes, draft free float), the store port |
 | `src/db/ownership.ts`, `src/serve/ownership.ts`, `src/http/ownership-admin.ts` | E6 storage, `/v1` payloads, admin routes |
+| `src/db/insiders.ts`, `src/serve/insiders.ts` | Insider feed: `insider_transactions` (deduplicated), `insider_checks` (per-symbol reads: rotation and coverage), `/v1/insiders/recent` |
 | `db/schema.ts`, `db/migrations/` | Engine Drizzle schema and generated SQL |
 | `test/` | Recorded source fixtures, the local fixture world, and the Docker e2e suites |
 
@@ -56,7 +60,7 @@ Yahoo, TradingView, and Pasardana are unofficial sources and are for internal ex
 | `yahoo-chart` | `query1.finance.yahoo.com` | 1 request / 5 s, 1 in flight | Daily OHLCV (`range=5d`), history from 2020-01-01, splits/dividends, IHSG `^JKSE` |
 | `yahoo-fundamentals` | `query1.finance.yahoo.com` (same limiter as the chart) | 1 request / 5 s, 1 in flight, shared with `yahoo-chart` | `/ws/fundamentals-timeseries/v1/finance/timeseries/<SYM>.JK`: 26 statement lines, annual + quarterly, one request per symbol |
 | `pasardana` | `pasardana.id` | 1 request / 3 s, 1 in flight | Sectors (IDX-IC), capitalisation, shares, free float, previous-session value/frequency |
-| `arjum` | from `ENGINE_ARJUM_BASE_URL` | 1 request / 2 s, 1 in flight | Foreign buy/sell; optionally primary EOD OHLCV/value/frequency via the same history response when `ENGINE_ARJUM_EOD_ENABLED=1` and the provider entitlement permits storage and app display |
+| `arjum` | from `ENGINE_ARJUM_BASE_URL` | 1 request / 2 s, 1 in flight | Foreign buy/sell; optionally primary EOD OHLCV/value/frequency via the same history response when `ENGINE_ARJUM_EOD_ENABLED=1` and the provider entitlement permits storage and app display. With `ENGINE_ARJUM_INSIDER_BUDGET > 0`, also `/api/insiders/{code}` page 1 for the insider feed |
 | `news-cnbcindonesia` | `www.cnbcindonesia.com` | 1 request / 5 s, 1 in flight | `/market/rss` |
 | `news-detik` | `finance.detik.com` | 1 request / 5 s, 1 in flight | `/rss` (general finance) |
 | `news-antara` | `www.antaranews.com` | 1 request / 5 s, 1 in flight | `/rss/ekonomi-bursa.xml` |
@@ -72,6 +76,7 @@ Schedules (WIB; "trading days" skips weekends and IDX holidays):
 | `indices-eod` | 16:35, trading days | TradingView index scan → `index_daily` (primary) once the session is final |
 | `eod-daily` | 16:45, 18:45, 20:45, trading days | Yahoo `range=5d` per active symbol, most liquid first, plus `^JKSE` (~900 calls ≈ 75 min at 5 s). Later runs fetch only symbols still missing the session's Yahoo row. The 20:45 run (or any run after the session day) is final: `eod_sessions` becomes `COMPLETE` or `STALE` |
 | `foreign-flow` | 19:00, 21:00, trading days | arjum, most liquid first by the session's value. Stops at `ENGINE_ARJUM_DAILY_BUDGET` calls per WIB day (counted in `job_cursors` across runs), when `x-ratelimit-remaining` drops below `ENGINE_ARJUM_RESERVE`, or on a 429/401/403 (source `BLOCKED`). Unreached stocks keep `foreignBuy/foreignSell` null |
+| `insider-feed` | Every 10 min, 21:30–23:30, every day, background; only with `ENGINE_ARJUM_INSIDER_BUDGET > 0` (default 0: not registered) | arjum `/api/insiders/{code}?page=1&limit=15` (the newest 15 filings) per active symbol → `insider_transactions` (natural key symbol + date + person + action + share change + shares after, NULLs equal, so a re-read updates rows instead of adding them) and `insider_checks` (read date per symbol). Rotation: never-read symbols first, then the longest ago, most liquid first within each; a symbol is re-read at most once per `ENGINE_ARJUM_INSIDER_REVISIT_DAYS` (default 7). Stops at `ENGINE_ARJUM_INSIDER_BUDGET` calls per WIB day (`job_cursors`), when `x-ratelimit-remaining` is at or below `ENGINE_ARJUM_RESERVE` (the value is kept in the cursor, so no later run that day probes again), or on a 429/401/403 (source `BLOCKED`, shared with `foreign-flow`). An unknown code (404) is recorded as read. See "arjum quota" |
 | `eod-backfill` | Every 10 min, 19:00–05:59, background | One Yahoo call per symbol (and `^JKSE`) from 2020-01-01 up to the session the daily job owns, 10 per run. The cursor lists finished symbols, so new listings join automatically. Yields to every other job |
 | `intraday-retention` | 02:30, background | Prunes `intraday_snapshots` and `index_intraday` past `ENGINE_INTRADAY_RETENTION_DAYS` |
 | `news` | Every `ENGINE_NEWS_INTERVAL_MINUTES` (default 15, minimum 5) from 06:00 to 22:00, every day | One conditional GET per feed (ETag / Last-Modified; a 304 or identical bytes adds nothing) → `news_items`. Each outlet is its own source: a block stops that outlet only. Items older than the retention window are not stored |
@@ -81,6 +86,25 @@ Schedules (WIB; "trading days" skips weekends and IDX holidays):
 | `fundamentals` | Every 10 min at :05, 19:00–05:59, every day, background **low priority** | Yahoo fundamentals, 10 symbols per run, most liquid first → `financials`. Weekly full cycle (ISO week, Monday WIB; ~900 calls over about two nights). From Thursday to Sunday inside the filing windows (15 Mar–10 May, 15 Jul–10 Aug, 15 Oct–10 Nov) a catch-up pass refetches only symbols whose newest stored quarter is older than the expected one (the newest quarter end ≥ 21 days ago). Cursor in `job_cursors`; gives way to every other job, including the EOD backfill |
 | `ratios` | 06:15, 17:15, 21:15 daily | No network: derived ratios for every symbol with statement lines → `stock_ratios` (`derived`); ratios whose inputs are now missing are removed |
 | `strategy-scan-eod` | 21:00 and 23:00, trading days; only with `ENGINE_STRATEGY_SCANS_ENABLED` | Reads stored rows only (no source). Scans the last completed session once its `eod_sessions` status is `COMPLETE`; otherwise records a `SKIPPED` run with the reason. A scheduled run skips a session already scanned; `POST /v1/admin/jobs/strategy-scan-eod/run` recomputes it in place. See "Strategy scans" |
+
+### arjum quota (foreign flow vs insider feed vs the app)
+
+One arjum key has **1000 calls per day**, shared by the engine and every app environment. `ENGINE_ARJUM_RESERVE` (default 400) is the app's share: both engine jobs stop while `x-ratelimit-remaining` is at (insider feed) or below (foreign flow) it. The engine's own spend is two budgets, and the engine refuses to start when they cannot both fit above the reserve:
+
+```
+ENGINE_ARJUM_DAILY_BUDGET + ENGINE_ARJUM_INSIDER_BUDGET ≤ 1000 − ENGINE_ARJUM_RESERVE      (checked when the insider budget > 0)
+```
+
+With the defaults (600 + 0 ≤ 600) there is no room: **every insider call comes out of foreign-flow coverage or the app's reserve**. The trade-off, for ~950 active stocks:
+
+| Split (foreign / insider / reserve) | Foreign flow per session | Insider feed: full rotation | App's share |
+| --- | --- | --- | --- |
+| 600 / 0 / 400 (default) | the 600 most liquid stocks | off | 400 |
+| 500 / 100 / 400 | the 500 most liquid stocks | ~10 days (each stock read every ~10 days) | 400 |
+| 450 / 150 / 400 | the 450 most liquid stocks | ~7 days, matching the 7-day feed window | 400 |
+| 600 / 100 / 300 | unchanged | ~10 days | 300 |
+
+Foreign flow fills the most liquid stocks first, so lowering its budget drops the least traded ones. The insider budget sets how fresh the market-wide feed is: a stock is read about every `active ÷ budget` days (never more often than the revisit window), and `/v1/insiders/recent` states its coverage so the app never implies a complete view. Leave `ENGINE_ARJUM_INSIDER_BUDGET` at 0 until the owner picks a split.
 
 Precedence: Yahoo is the primary OHLC source for stocks and overwrites TradingView/Pasardana/arjum fallback rows, but never their value/frequency. Pasardana's value/frequency replace TradingView's value. TradingView is primary for `index_daily`; Yahoo `^JKSE` only fills gaps. A fallback source refreshes only rows it wrote itself.
 
@@ -127,6 +151,19 @@ Fallbacks when a source is `BLOCKED`: universe from Pasardana (or TradingView); 
 - **Wording:** reasons are HAKA-18 `criterion` keys, worded by the app in en/id, plus English `note`s with the observed numbers and dates. There is no score. Labels, descriptions and notes go through a forbidden-wording guard (no buy/sell/entry/target/signal/potensi/win rate/drawdown/arrows) in the tests.
 - **App:** `engineStrategySource` (`src/server/strategies/engine-eod.ts`) reads `/v1/strategies` through `IdxBeiSource.engineStrategies()` and prefixes ids (`eod-breakout`, `eod-bb-reversal`). It is registered after the arjum screener only when `STRATEGY_ENGINE_ENABLED=1`. An unreachable engine contributes nothing and doesn't change the board's freshness.
 
+## Conglomerate groups (owner review required)
+
+`src/groups/groups.ts` is a hand-curated list of business groups and their listed members, each group with public `sources`, a `reviewedAt` date and a `confidence` (`sourced` or `unverified`, also per member). It is data, not derived from any feed: **the owner must review it** before relying on it, and again whenever a member changes control (rights issues, tender offers, mergers, spin-offs). Bump `version` and `reviewedAt` with every change. Only list a member when a public source names the link, and mark anything uncertain `unverified` with a `note`; the page shows both.
+
+Members are checked against `securities` on every request. Unknown, inactive and no-data symbols are reported per group instead of failing, so a renamed or delisted ticker shows up on the page.
+
+What `/v1/groups` measures (`src/serve/groups.ts`), and nothing else (no phase or action labels):
+
+- **1D**: the same rows as `/v1/market` and `/v1/sectors` (the newest EOD session, or a newer intraday snapshot, `DELAYED`, which has no foreign data).
+- **5D / 20D**: the newest 5 / 20 stored EOD sessions. A member's change is its last close over the close before the window. A member with a split (or rights/bonus) ex-date in the window is flagged `corporateAction` and left out of the change, because unadjusted closes would show a fake move.
+- **Net foreign estimate**: Σ (foreign buy − foreign sell shares) × the session close, in IDR. It is an estimate, since trades happen at other prices. Only members with foreign data on every session they traded count towards it; partially covered members are counted in `foreign.partialMembers` and left out.
+- **Divergence**: the group's price change (value-weighted, or the mean when nothing traded) and the foreign estimate have opposite non-zero signs: `price_up_foreign_net_sell` or `price_down_foreign_net_buy`. The page states it in words. It never turns a strong price day into "accumulation" while foreign investors sell.
+
 ## Scheduler
 
 - **Cron jobs** run on five-field cron in Asia/Jakarta. `tradingDaysOnly` skips weekends and IDX holidays (for EOD jobs).
@@ -149,11 +186,13 @@ Fallbacks when a source is `BLOCKED`: universe from Pasardana (or TradingView); 
 | `GET /v1/securities?q=` | API token | Active securities by symbol prefix or name (all when `q` is empty) |
 | `GET /v1/stocks/{s}?limit=` | API token | Quote from the newest daily row (`EOD`/`STALE`), or from an intraday snapshot of a newer session (`DELAYED`, WIB timestamp). Daily candles, oldest first, up to `limit` (default 500, max 5000). `404 NO_DATA` without data |
 | `GET /v1/market` | API token | Indices (intraday when newer), breadth (advancers/decliners/unchanged, value, volume, frequency) and movers (top 50 gainers, losers and most active, same liquidity rule as the app) from the latest session or intraday snapshot |
+| `GET /v1/groups?window=1D\|5D\|20D` | API token | Curated conglomerate groups (`groupsSchema`) over a session window (default `1D`): per group, members with data, mean and value-weighted change (fractions), traded value, advancers/decliners, best/worst member, a net foreign **estimate** with its coverage, a `divergence` flag, sources, confidence, and the catalog members the engine doesn't know (`unknownSymbols`), no longer lists (`inactiveSymbols`) or has no price for (`noDataSymbols`). Ranked by value-weighted change. See [Conglomerate groups](#conglomerate-groups-owner-review-required). `400` on another window |
 | `GET /v1/signals` | API token | Foreign-flow radar from arjum data: per stock, the run of same-direction net foreign sessions ending on the newest session, its total, % of free float and average value. `404 NO_DATA` until foreign data exists |
 | `GET /v1/stocks/{s}/actions` | API token | Splits and cash dividends (ex-dates) from Yahoo events |
 | `GET /v1/actions?from=&to=` | API token | Market-wide calendar by ex-date, oldest first (`actionsCalendarSchema`): symbol, date, type, description, amount, ratio. Default window: 30 days back to 60 days ahead (WIB); at most 366 days. Yahoo reports actions only after the ex-date, so upcoming dates are usually empty. `400` on bad dates |
 | `GET /v1/news?page=&page_size=&symbol=` | API token | Headlines newest first (`newsItemSchema`): `date` (WIB ISO), `title`, `summary`, `url`, plus `outlet`, `symbols`, `dateEstimated`. `page_size` 1–100 (default 20). `meta.freshness` is `DELAYED` while the newest headline is under a day old, then `STALE` |
 | `GET /v1/macro` | API token | BI-Rate and JISDOR (`macroSchema`): latest value and date, the previous one, the press-release link (BI-Rate), and up to 10 observations newest first. `meta.dataAsOf` is the newest date |
+| `GET /v1/insiders/recent?days=&action=&limit=` | API token | Market-wide insider feed (`insidersRecentSchema`): transactions dated within the last `days` (1–30, default 7; `from`–`to` WIB), optionally `action` `buy`/`sell`/`cross`, newest first then largest value, at most `limit` (1–200, default 50). Each row: symbol, person, roles, action, date, signed share change, shares and percent (percent units) before/after when given, price and value (\|shares\| × price; null without a price), broker, nationality, source, as-of. `coverage`: `checked` of `active` stocks read within the last `ENGINE_ARJUM_INSIDER_REVISIT_DAYS` days and the oldest such read. `meta.dataAsOf` is the newest read, `HISTORICAL`. Before the first read (feed off, the default): the empty form, `UNAVAILABLE`. `400` on bad parameters |
 | `GET /v1/announcements` | API token | Always the empty `UNAVAILABLE` form: IDX disclosures are only on `www.idx.co.id`, which blocks the engine (Cloudflare 403, §5.4). `/v1/meta/health` lists it under `unavailable` with the reason |
 | `GET /v1/strategies` | API token | The latest scan of the current rules version as a HAKA-18 board (`strategyBoardSchema` from `src/lib/strategies/contract.ts`): `contexts` (version, universe covered/eligible/skipped), `strategies` (`breakout`, `bb-reversal`; `HAKAPRO_EOD_ENGINE`, `EOD`) and `candidates` (score null, `criterion`/`note` reasons, metrics with units). `meta.dataAsOf` is the session date; freshness `EOD`, then `STALE`. Flag off, or no scan yet: the empty board, `UNAVAILABLE` |
 | `GET /v1/stocks/{s}/fundamentals` | API token | `fundamentalsSchema`: one entry per (period end, `ANNUAL`/`QUARTERLY`), newest first; `metrics` as stored, plus `units` per metric (`IDR`, `USD`, `IDR/share`, `shares`), `currency` and `source`. `meta.dataAsOf` = the newest period end, `HISTORICAL`. Empty `UNAVAILABLE` form without statements |
@@ -189,6 +228,8 @@ All are runtime-only. None is needed at build time.
 | `ENGINE_ARJUM_BASE_URL` / `ENGINE_ARJUM_API_KEY` | unset | arjum base URL and key (same provider and key as the app's `HEULATRADE_MARKET_API_BASE_URL` / `_KEY`). Set together; without them `foreign-flow` is not registered and foreign buy/sell stay null |
 | `ENGINE_ARJUM_DAILY_BUDGET` | `600` | Max arjum calls per WIB day for foreign flow (of the shared 1000/day quota) |
 | `ENGINE_ARJUM_RESERVE` | `400` | Stop while arjum's `x-ratelimit-remaining` is below this (the app environments' share) |
+| `ENGINE_ARJUM_INSIDER_BUDGET` | `0` | Max arjum calls per WIB day for the market-wide insider feed. `0` leaves `insider-feed` unregistered. When above 0, `ENGINE_ARJUM_DAILY_BUDGET + ENGINE_ARJUM_INSIDER_BUDGET` must be ≤ `1000 − ENGINE_ARJUM_RESERVE` or the engine refuses to start: each insider call is taken from foreign-flow coverage or the app's reserve (see "arjum quota") |
+| `ENGINE_ARJUM_INSIDER_REVISIT_DAYS` | `7` | A symbol's insider page is re-read at most once per this many days (1–90); also the window `/v1/insiders/recent` measures coverage over |
 | `ENGINE_ARJUM_EOD_ENABLED` | `false` | Also treats arjum history as primary EOD OHLCV/value/frequency and records its per-session coverage. Enable only when the provider plan/terms permit server-side storage and display in HAKAPRO. The configured daily budget/reserve still applies; sessions below full active-universe coverage remain `PARTIAL` or `STALE`, and this endpoint does not provide the long backfill used by Yahoo |
 | `ENGINE_STRATEGY_SCANS_ENABLED` | `false` | `true`/`1` registers `strategy-scan-eod` and serves `/v1/strategies`. Leave off until the owner approves the HAKA-17 rules |
 | `ENGINE_SCHEDULER_ENABLED` | `true` | `false` serves the API only |

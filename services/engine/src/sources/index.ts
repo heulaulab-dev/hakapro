@@ -36,7 +36,9 @@ export function engineSources(arjum: ArjumConfig | null): EngineSources {
     yahooFundamentals: defineSource({ id: SOURCE_IDS.yahooFundamentals, host: YAHOO_HOST, kind: "reference", policy: { ...YAHOO_POLICY }, description: "Yahoo fundamentals timeseries: annual and quarterly statement lines" }),
     pasardana: defineSource({ id: SOURCE_IDS.pasardana, host: PASARDANA_HOST, kind: "reference", policy: { minIntervalMs: 3000, concurrency: 1 }, description: "Pasardana GetAll: sectors, capitalisation, free float, value/frequency" }),
     arjum: arjum
-      ? defineSource({ id: SOURCE_IDS.arjum, host: new URL(arjum.baseUrl).host, kind: "eod", policy: { minIntervalMs: 2000, concurrency: 1 }, description: "arjum /api/history: foreign buy/sell within the daily budget" })
+      ? defineSource({ id: SOURCE_IDS.arjum, host: new URL(arjum.baseUrl).host, kind: "eod", policy: { minIntervalMs: 2000, concurrency: 1 }, description: arjum.insiderBudget > 0
+        ? "arjum /api/history (foreign buy/sell) and /api/insiders (insider feed), each within its daily budget"
+        : "arjum /api/history: foreign buy/sell within the daily budget" })
       : null,
     news: Object.values(NEWS_SOURCE_IDS).map((id) => {
       const feed = outlets.get(id)!;

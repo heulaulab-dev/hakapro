@@ -5,6 +5,7 @@ import type {
   ActionCalendarRecord, ActionRecord, DailyRecord, FundamentalRecord, IndexDailyRecord, IndexIntradayRecord, IntradayRecord, MacroRecord, MarketStore, NewsQuery, NewsRecord,
   RatioRecord, SecurityRecord,
 } from "../serve/store";
+import { normalizeSectorLabel } from "../serve/store";
 import type { EngineDb } from "./client";
 
 const dailyColumns = {
@@ -20,7 +21,7 @@ const intradayColumns = {
 const securityColumns = {
   symbol: t.securities.symbol, name: t.securities.name, sector: t.securities.sector, subsector: t.securities.subsector, board: t.securities.board,
   sharesOutstanding: t.securities.sharesOutstanding, freeFloatPct: t.securities.freeFloatPct, asOf: t.securities.asOf,
-  marketCap: t.securities.marketCap,
+  marketCap: t.securities.marketCap, active: t.securities.active,
 };
 const escapeLike = (value: string) => value.replace(/[\\%_]/g, (char) => `\\${char}`);
 
@@ -30,12 +31,14 @@ export class DbMarketStore implements MarketStore {
   async searchSecurities(query: string, limit: number): Promise<SecurityRecord[]> {
     const q = query.trim();
     const match = q ? or(like(t.securities.symbol, `${escapeLike(q.toUpperCase())}%`), ilike(t.securities.name, `%${escapeLike(q)}%`)) : undefined;
-    return this.db.select(securityColumns).from(t.securities).where(and(eq(t.securities.active, true), match)).orderBy(asc(t.securities.symbol)).limit(limit);
+    const rows = await this.db.select(securityColumns).from(t.securities).where(and(eq(t.securities.active, true), match)).orderBy(asc(t.securities.symbol)).limit(limit);
+    return rows.map((row) => ({ ...row, sector: normalizeSectorLabel(row.sector) }));
   }
 
   async securities(symbols: string[]): Promise<SecurityRecord[]> {
     if (!symbols.length) return [];
-    return this.db.select(securityColumns).from(t.securities).where(inArray(t.securities.symbol, symbols));
+    const rows = await this.db.select(securityColumns).from(t.securities).where(inArray(t.securities.symbol, symbols));
+    return rows.map((row) => ({ ...row, sector: normalizeSectorLabel(row.sector) }));
   }
 
   async dailyHistory(symbol: string, limit: number): Promise<DailyRecord[]> {
@@ -57,6 +60,18 @@ export class DbMarketStore implements MarketStore {
     return this.db.select(dailyColumns).from(t.dailyPrices).where(eq(t.dailyPrices.date, date));
   }
 
+  async sessionDates(endDate: string, count: number): Promise<string[]> {
+    const rows = await this.db.selectDistinct({ date: t.dailyPrices.date }).from(t.dailyPrices)
+      .where(lte(t.dailyPrices.date, endDate)).orderBy(desc(t.dailyPrices.date)).limit(count);
+    return rows.map((row) => row.date);
+  }
+
+  async dailyRowsBetween(from: string, to: string, symbols: string[]): Promise<DailyRecord[]> {
+    if (!symbols.length) return [];
+    return this.db.select(dailyColumns).from(t.dailyPrices)
+      .where(and(inArray(t.dailyPrices.symbol, symbols), gte(t.dailyPrices.date, from), lte(t.dailyPrices.date, to)));
+  }
+
   async latestSnapshotTs(): Promise<Date | null> {
     const [row] = await this.db.select({ ts: max(t.intradaySnapshots.ts) }).from(t.intradaySnapshots);
     return row?.ts ?? null;
@@ -72,6 +87,20 @@ export class DbMarketStore implements MarketStore {
       .from(t.dailyPrices).where(and(inArray(t.dailyPrices.symbol, symbols), lt(t.dailyPrices.date, date)))
       .orderBy(t.dailyPrices.symbol, desc(t.dailyPrices.date));
     return new Map(rows.map((row) => [row.symbol, row.close]));
+  }
+
+  async closesOnOrBefore(date: string, symbols: string[]): Promise<Map<string, { date: string; close: number }>> {
+    if (!symbols.length) return new Map();
+    const rows = await this.db.selectDistinctOn([t.dailyPrices.symbol], { symbol: t.dailyPrices.symbol, date: t.dailyPrices.date, close: t.dailyPrices.close })
+      .from(t.dailyPrices).where(and(inArray(t.dailyPrices.symbol, symbols), lte(t.dailyPrices.date, date)))
+      .orderBy(t.dailyPrices.symbol, desc(t.dailyPrices.date));
+    return new Map(rows.map((row) => [row.symbol, { date: row.date, close: row.close }]));
+  }
+
+  async sessionHistory(endDate: string, sessions: number): Promise<DailyRecord[]> {
+    const dates = this.db.selectDistinct({ date: t.dailyPrices.date }).from(t.dailyPrices)
+      .where(lte(t.dailyPrices.date, endDate)).orderBy(desc(t.dailyPrices.date)).limit(sessions);
+    return this.db.select(dailyColumns).from(t.dailyPrices).where(sql`${t.dailyPrices.date} in (select date from (${dates}) as recent)`);
   }
 
   async latestIndexDaily(): Promise<IndexDailyRecord[]> {

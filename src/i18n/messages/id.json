@@ -100,13 +100,18 @@
     "screener": "Screener",
     "strategies": "Strategi",
     "movers": "Penggerak Pasar",
+    "heatmap": "Peta Pasar",
     "ownership": "Perubahan Kepemilikan",
     "watchlist": "Daftar Pantau",
     "news": "Berita & Kalender",
     "more": "Lainnya",
     "search": "Cari",
     "alerts": "Peringatan",
-    "about": "Tentang HAKA PRO"
+    "about": "Tentang HAKA PRO",
+    "groups": "Grup Konglomerat",
+    "radar": "Radar Sinyal",
+    "stealth": "Korporasi KSEI",
+    "methodology": "Metodologi"
   },
   "stockTabs": {
     "label": "Bagian saham",
@@ -279,7 +284,23 @@
       "SELL": "Jual",
       "CROSS": "Crossing",
       "OTHER": "Lainnya"
-    }
+    },
+    "value": "Nilai"
+  },
+  "insiderFeed": {
+    "title": "Transaksi insider 7 hari",
+    "hint": "Transaksi orang dalam yang dilaporkan di seluruh pasar. Halaman insider tiap saham dibaca bergiliran, jadi daftar ini hanya memuat saham yang sudah dibaca.",
+    "coverage": "Mencakup {checked} dari {active} saham; diperbarui bergiliran.",
+    "oldest": "Pembacaan tertua dalam {days} hari terakhir: {date}.",
+    "window": "Tanggal transaksi {from} – {to}",
+    "filter": "Saring aksi",
+    "all": "Semua",
+    "notRunning": "Umpan insider lintas pasar belum berjalan. Transaksi akan muncul setelah mesin data mulai membaca halaman insider per saham.",
+    "none": "Tidak ada transaksi insider bertanggal {days} hari terakhir pada saham yang sudah dibaca.",
+    "previewTitle": "Pembelian insider terbesar · 7 hari",
+    "previewHint": "Diurutkan menurut nilai (lembar × harga). Mencakup {checked} dari {active} saham; diperbarui bergiliran.",
+    "previewNone": "Belum ada pembelian insider bernilai dalam 7 hari terakhir pada saham yang sudah dibaca.",
+    "seeAll": "Lihat semua"
   },
   "broker": {
     "title": "Broker Summary",
@@ -558,6 +579,86 @@
     "viewLabel": "Tampilan",
     "capDate": "Tanggal kapitalisasi pasar",
     "capsAsOf": "Per {date} · {total} saham"
+  },
+  "heatmap": {
+    "title": "Peta Pasar",
+    "intro": "Saham dengan nilai transaksi terbesar pada data terbaru, dikelompokkan per sektor. Luas dan warna menggambarkan data pasar, bukan saran jual atau beli.",
+    "scope": "Top {count} saham menurut nilai transaksi",
+    "asOf": "Data per {date}",
+    "source": "Sumber: {source}",
+    "coverage": "{count} saham · data asing tersedia untuk {foreign}",
+    "controls": "Pengaturan peta",
+    "viewLabel": "Tampilan",
+    "views": {
+      "treemap": "Treemap",
+      "bubbles": "Gelembung",
+      "pulse": "Denyut sektor"
+    },
+    "limitLabel": "Jumlah saham",
+    "limit": "Top {count}",
+    "directionLabel": "Arah perubahan",
+    "direction": {
+      "all": "Semua",
+      "gainers": "Naik",
+      "losers": "Turun"
+    },
+    "sectorLabel": "Sektor",
+    "allSectors": "Semua sektor",
+    "unknownSector": "Sektor belum diketahui",
+    "searchLabel": "Cari kode atau nama saham",
+    "searchPlaceholder": "Cari kode/nama",
+    "sizeLabel": "Luas kotak",
+    "size": {
+      "value": "Nilai transaksi",
+      "foreign": "Besar asing bersih (estimasi)"
+    },
+    "colorLabel": "Warna",
+    "color": {
+      "change": "Perubahan %",
+      "foreign": "Asing bersih (estimasi)"
+    },
+    "yLabel": "Sumbu Y",
+    "y": {
+      "value": "Nilai transaksi (log)",
+      "foreign": "Asing bersih (estimasi)"
+    },
+    "xAxis": "Perubahan (%)",
+    "bubbleHint": "Sumbu X: perubahan harga. Luas gelembung sebanding dengan nilai transaksi.",
+    "foreignNote": "Asing bersih adalah ESTIMASI: (lembar beli asing − lembar jual asing) × harga penutupan. Hanya tersedia untuk saham yang tercakup data asing, dan hanya pada data akhir hari (tidak pada snapshot intraday).",
+    "foreignHidden": "{count} saham tanpa data asing tidak ditampilkan pada pengaturan ini.",
+    "noForeign": "Belum ada data asing untuk data ini (snapshot intraday atau di luar cakupan data asing).",
+    "noMatch": "Tidak ada saham yang cocok dengan filter.",
+    "legend": {
+      "down": "Turun",
+      "up": "Naik",
+      "netSell": "Jual bersih",
+      "netBuy": "Beli bersih",
+      "noData": "Tanpa data",
+      "cap": "Warna penuh pada ±{value}",
+      "foreignCap": "Warna penuh pada nilai terbesar yang tampil (±{value})"
+    },
+    "tile": "{symbol}, {name}. Perubahan {change}. Nilai transaksi {value}. Asing bersih (estimasi) {foreign}. Sektor {sector}.",
+    "fields": {
+      "change": "Perubahan",
+      "price": "Harga",
+      "value": "Nilai transaksi",
+      "volume": "Volume",
+      "foreign": "Asing bersih (estimasi)",
+      "sector": "Sektor"
+    },
+    "sectorTile": "Sektor {sector}: {count} saham, nilai {value}, rata-rata perubahan {change}",
+    "pulse": {
+      "hint": "Rata-rata perubahan per sektor, dan jumlah saham naik, turun dan tetap, di antara saham yang tampil.",
+      "average": "Rata-rata perubahan",
+      "breadth": "{adv} naik · {dec} turun · {unch} tetap",
+      "stocks": "{count} saham",
+      "value": "Nilai {value}",
+      "only": "Tampilkan sektor {sector} saja"
+    },
+    "mobileHint": "Geser ke samping untuk melihat seluruh peta.",
+    "previewTitle": "Peta Pasar",
+    "previewHint": "30 saham dengan nilai transaksi terbesar, warna menurut perubahan.",
+    "previewMore": "Buka peta pasar"
   },
   "news": {
     "title": "Berita & Kalender",
@@ -1307,5 +1408,247 @@
       "unavailableDescription": "Brief tidak dapat disusun tanpa harga. Belum tersedia: {list}.",
       "price": "Harga"
     }
+  },
+  "groups": {
+    "title": "Grup Konglomerat",
+    "intro": "Pergerakan saham-saham emiten grup usaha besar dalam satu jendela sesi: perubahan harga, nilai transaksi, jumlah naik/turun, dan estimasi net asing. Fakta terukur, bukan ajakan membeli atau menjual.",
+    "windowLabel": "Jendela",
+    "window": {
+      "1D": "1 hari",
+      "5D": "5 hari",
+      "20D": "20 hari"
+    },
+    "windowSingle": "Sesi {date}",
+    "windowRange": "{sessions} sesi: {from} – {to}",
+    "intradayNote": "snapshot intrahari (tertunda); data asing menyusul bersama harga penutupan",
+    "howToRead": "Perubahan dibobot nilai transaksi tiap saham dalam jendela (rata-rata biasa ditampilkan di sebelahnya). Net asing adalah estimasi: lembar beli asing dikurangi jual × harga penutupan sesi, dijumlah selama jendela, hanya untuk saham yang punya data asing di setiap sesi. Bila harga dan arus asing berlawanan arah, kartu menyebutkannya.",
+    "catalog": "Daftar keanggotaan kurasi v{version}, ditinjau {date}. Keanggotaan grup bisa berubah; periksa sumber tiap grup.",
+    "empty": "Belum ada harga tersimpan untuk anggota grup mana pun.",
+    "noData": "Belum ada harga tersimpan untuk anggota grup ini dalam jendela ini.",
+    "unverified": "Belum terverifikasi",
+    "unverifiedHint": "Kurator belum bisa memastikan keanggotaan ini dari sumber publik.",
+    "breadth": "▲{up} ▼{down} · {count} dari {members} anggota punya harga",
+    "vwChange": "perubahan berbobot nilai",
+    "meanOnly": "perubahan rata-rata (tanpa nilai transaksi)",
+    "meanChange": "Perubahan rata-rata",
+    "value": "Nilai transaksi",
+    "foreign": "Net asing (estimasi)",
+    "foreignCoverage": "{covered} dari {count} saham punya data asing",
+    "foreignPartial": "{partial} dengan data asing tidak lengkap tidak dihitung",
+    "foreignNone": "Tidak ada data asing",
+    "foreignIntraday": "Tidak ada di snapshot intrahari",
+    "foreignSessions": "data asing di {covered} dari {sessions} sesi (tidak dihitung)",
+    "bestWorst": "Terbaik / terlemah",
+    "divergence": {
+      "price_up_foreign_net_sell": "Harga dan arus asing tidak searah: grup naik {change} sementara investor asing net jual (estimasi {foreign}).",
+      "price_down_foreign_net_buy": "Harga dan arus asing tidak searah: grup turun {change} sementara investor asing net beli (estimasi {foreign})."
+    },
+    "divergenceShort": {
+      "price_up_foreign_net_sell": "Harga naik, asing net jual",
+      "price_down_foreign_net_buy": "Harga turun, asing net beli"
+    },
+    "showMembers": "Anggota ({count}), sumber, dan data yang kurang",
+    "colStock": "Saham",
+    "colClose": "Penutupan",
+    "colChange": "Perubahan",
+    "colValue": "Nilai",
+    "colForeign": "Net asing (est.)",
+    "corporateAction": "Aksi korporasi",
+    "corporateActionHint": "Ada stock split atau aksi serupa dengan tanggal ex di jendela ini, jadi perubahan harganya tidak sebanding dan tidak dihitung di angka grup.",
+    "unknownSymbols": "Tidak dikenal mesin data (ganti kode, delisting, atau salah daftar): {symbols}",
+    "inactiveSymbols": "Sudah tidak aktif: {symbols}",
+    "noDataSymbols": "Tanpa harga di jendela ini: {symbols}",
+    "curatorNote": "Catatan kurator",
+    "sources": "Sumber (ditinjau {date})",
+    "previewTitle": "Grup konglomerat",
+    "previewHint": "Sesi terakhir, berbobot nilai.",
+    "previewBreadth": "▲{up} ▼{down} dari {count}",
+    "previewForeign": "est. asing {value}",
+    "viewAll": "Lihat semua"
+  },
+  "radar": {
+    "title": "Radar Konfluensi Sinyal",
+    "intro": "Saham yang menunjukkan beberapa pengamatan data sekaligus pada sesi terakhir. Setiap sinyal punya ambang yang terdokumentasi. Sinyal hanya dihitung, tidak digabung menjadi skor.",
+    "methodologyLink": "Cara kerja dan ambang",
+    "asOf": "Sesi {date}",
+    "rulesVersion": "Aturan {version}",
+    "kseiMonth": "Daftar KSEI: {month}",
+    "kseiNotUploaded": "Daftar KSEI: belum ada yang diunggah",
+    "coverage": "{listed} dari {stocks} saham pada sesi ini memiliki setidaknya satu sinyal.",
+    "coverageCapped": "Yang ditampilkan: {returned} teratas.",
+    "coverageDetails": "Cakupan data per sinyal",
+    "coverageCount": "{count} dari {stocks}",
+    "noSession": "Belum ada sesi perdagangan tersimpan untuk dievaluasi.",
+    "noneFired": "Tidak ada sinyal yang memenuhi ambang pada sesi ini.",
+    "noMatch": "Tidak ada saham yang cocok dengan filter ini.",
+    "shown": "{count} saham",
+    "firedCount": "{count} sinyal",
+    "firedLabel": "Sinyal yang muncul",
+    "counterLabel": "Pengamatan yang berlawanan",
+    "missing": "Data belum tersedia untuk: {list}",
+    "previewTitle": "Radar sinyal",
+    "viewAll": "Lihat semua",
+    "filters": {
+      "minSignals": "Minimal jumlah sinyal",
+      "minOption": "{count}+ sinyal",
+      "sector": "Sektor",
+      "allSectors": "Semua sektor"
+    },
+    "signal": {
+      "foreignNetBuy": "Asing beli bersih {sessions} sesi ({share} dari volume)",
+      "volumeSpike": "Volume {ratio}× rata-rata {baseline} sesi",
+      "closeAboveAverage": "Harga {pct} di atas rata-rata {baseline} sesi",
+      "priceUp": "Harga naik {pct} dalam {sessions} sesi",
+      "orderSizeSpike": "Nilai per transaksi {ratio}× rata-rata {baseline} sesi",
+      "kseiHolderIncrease": "{count} pemegang ≥1% menambah saham ({month})"
+    },
+    "counter": {
+      "priceVsForeign": "Harga {direction, select, up {naik} other {turun}} {pct}, asing {flow, select, sell {jual} other {beli}} bersih {shares} ({sessions} sesi)",
+      "volumeOnDownSession": "Volume {ratio}× rata-rata pada sesi yang turun {pct}",
+      "kseiHolderDecrease": "{count} pemegang ≥1% mengurangi saham ({month})"
+    },
+    "name": {
+      "foreignNetBuy5": "Beli bersih asing, {window} sesi",
+      "foreignNetBuy20": "Beli bersih asing, {window} sesi",
+      "volumeSpike": "Lonjakan volume",
+      "closeAboveAverage": "Harga di atas rata-rata {baseline} sesi",
+      "priceUp5": "Kenaikan harga {window} sesi",
+      "orderSizeSpike": "Nilai per transaksi tidak biasa",
+      "kseiHolderIncrease": "Pemegang KSEI ≥1% bertambah"
+    },
+    "counterName": {
+      "priceVsForeign5": "Harga dan arus asing berlawanan (jendela pendek)",
+      "priceVsForeign20": "Harga dan arus asing berlawanan (jendela panjang)",
+      "volumeOnDownSession": "Volume tinggi pada sesi turun",
+      "kseiHolderDecrease": "Pemegang KSEI ≥1% berkurang"
+    }
+  },
+  "stealth": {
+    "title": "Korporasi Menambah, Harga Datar",
+    "intro": "Dari daftar KSEI ≥1% terbaru yang diunggah: emiten yang pemegang berjenis korporasi menambah total sahamnya, sementara harga datar atau turun di antara dua tanggal posisi. Ini menyandingkan dua data, bukan kesimpulan tentang niat siapa pun.",
+    "methodologyLink": "Cara kerja",
+    "notUploaded": "Belum ada daftar KSEI ≥1% yang diunggah.",
+    "notUploadedHint": "Tampilan ini terisi setelah daftar bulanan diunggah dan bisa dibandingkan dengan bulan sebelumnya.",
+    "uploadLink": "Unggah daftar KSEI",
+    "none": "Tidak ada emiten yang memenuhi kriteria pada {month}.",
+    "months": "{month} dibanding {previous}",
+    "rulesVersion": "Aturan {version}",
+    "coverage": "{corporate} dari {issuers} emiten: pemegang korporasi ({types}) menambah total saham. {rose} tidak ditampilkan karena harga naik lebih dari {max}; {missing} ditampilkan tanpa perubahan harga karena data harga tidak tersedia.",
+    "period": "Posisi {from} → {to}",
+    "combined": "Total korporasi {delta}",
+    "newHolders": "{count} pemegang korporasi baru tercatat ≥1% (kepemilikan sebelumnya tidak diketahui)",
+    "price": "Harga {from} → {to}",
+    "priceMissing": "Data harga untuk periode ini tidak tersedia",
+    "issuedSharesChanged": "Jumlah saham beredar berubah",
+    "previewTitle": "KSEI: korporasi menambah, harga datar",
+    "viewAll": "Lihat semua",
+    "kind": {
+      "NEW": "Baru ≥1%",
+      "INCREASE": "Bertambah",
+      "DECREASE": "Berkurang",
+      "EXIT": "Keluar",
+      "UNCHANGED": "Tetap",
+      "BELOW_THRESHOLD": "Di bawah 1%",
+      "AMBIGUOUS": "Tidak dapat dibandingkan"
+    }
+  },
+  "methodology": {
+    "title": "Metodologi",
+    "intro": "Cara HAKA PRO membaca data: dari mana datanya, kapan tiba, apa arti setiap sinyal, dan batas-batas yang kami pegang. Semua ambang di halaman ini dibaca langsung dari konfigurasi yang dipakai mesin data.",
+    "version": "Versi aturan: {version}",
+    "principles": {
+      "title": "Prinsip",
+      "observe": "Kami menampilkan pengamatan, bukan saran. Label menyebut apa yang terlihat di data, misalnya \"Volume 2,3× rata-rata 20 sesi\", bukan apa yang sebaiknya dilakukan.",
+      "trace": "Setiap angka punya tanggal data dan sumber. Tanggal sesi atau tanggal posisi selalu ditampilkan di samping datanya.",
+      "missing": "Data yang tidak ada ditandai \"belum tersedia\", tidak pernah dianggap nol.",
+      "counter": "Pengamatan yang berlawanan arah ditampilkan di samping sinyal, tidak disembunyikan."
+    },
+    "sources": {
+      "title": "Sumber data dan jedanya",
+      "intro": "Semua data bersifat akhir hari (EOD) kecuali disebut lain. Tidak ada umpan harga real-time.",
+      "source": "Sumber",
+      "what": "Yang dipakai",
+      "when": "Kapan tersedia",
+      "arjum": {
+        "name": "arjum (penyedia data berlisensi kunci API)",
+        "what": "Beli dan jual asing per saham, riwayat harga, ringkasan broker, transaksi orang dalam untuk halaman saham.",
+        "when": "Setelah bursa tutup. Mesin data mengambil arus asing pukul 19.00 dan 21.00 WIB pada hari bursa, dari saham paling likuid, dalam batas kuota harian. Saham yang tidak terjangkau kuota tidak punya data asing untuk sesi itu, sehingga sinyal asingnya \"belum tersedia\"."
+      },
+      "prices": {
+        "name": "Harga harian mesin data (Yahoo Finance, TradingView, Pasardana)",
+        "what": "Harga pembukaan, tertinggi, terendah, penutupan, volume dan nilai; daftar emiten aktif dan sektor; frekuensi transaksi sesi sebelumnya.",
+        "when": "Mulai sekitar 16.35–16.45 WIB pada hari bursa, dengan pengambilan ulang sampai 20.45 WIB. Frekuensi transaksi sering baru tersedia sesi berikutnya atau dari arjum, sehingga sinyal nilai per transaksi bisa \"belum tersedia\"."
+      },
+      "ksei": {
+        "name": "Daftar pemegang saham ≥1% (KSEI, diunggah admin)",
+        "what": "Pemegang ≥1% per emiten, jenis investor (misalnya CP untuk korporasi), jumlah saham dan persentase, dibandingkan dengan bulan sebelumnya.",
+        "when": "Bulanan. Daftar ini diterbitkan di situs IDX dan diunggah manual oleh admin HAKA PRO, biasanya beberapa hari sampai beberapa minggu setelah tanggal posisi. Sebelum ada unggahan, sinyal dan tampilan KSEI kosong."
+      },
+      "intraday": {
+        "name": "Cuplikan intrahari",
+        "what": "Harga berjalan untuk daftar penggerak pasar dan kutipan saham.",
+        "when": "Tertunda sekitar 10 menit dan selalu ditandai tertunda. Radar tidak memakainya; radar hanya membaca sesi harian yang tersimpan."
+      }
+    },
+    "inputs": {
+      "dailyPrices": "harga harian",
+      "foreignFlow": "beli/jual asing",
+      "frequency": "frekuensi transaksi",
+      "kseiUpload": "daftar KSEI ≥1%"
+    },
+    "radar": {
+      "title": "Sinyal radar",
+      "intro": "Setiap sinyal dievaluasi terpisah pada sesi tersimpan terbaru. Sinyal \"muncul\" bila nilai yang teramati mencapai ambangnya. Sinyal yang datanya tidak lengkap ditandai belum tersedia dan tidak ikut dihitung.",
+      "open": "Buka radar",
+      "signal": "Sinyal",
+      "measures": "Yang diukur",
+      "windowHead": "Jendela",
+      "threshold": "Ambang",
+      "needs": "Data yang dibutuhkan",
+      "window": "{window} sesi terakhir",
+      "windowBaseline": "Sesi terakhir vs {baseline} sesi sebelumnya",
+      "monthly": "Bulan terbaru yang diunggah",
+      "describe": {
+        "foreignNetBuy5": "Beli bersih asing (lembar beli dikurangi lembar jual) selama {window} sesi, sebagai porsi dari total volume sesi-sesi itu.",
+        "foreignNetBuy20": "Sama, untuk {window} sesi. Membutuhkan data asing pada setiap sesi dalam jendela.",
+        "volumeSpike": "Volume sesi terakhir dibagi rata-rata volume {baseline} sesi sebelumnya.",
+        "closeAboveAverage": "Harga penutupan terakhir dibanding rata-rata penutupan {baseline} sesi (termasuk sesi terakhir).",
+        "priceUp5": "Perubahan harga penutupan dari sesi sebelum jendela sampai sesi terakhir, {window} sesi.",
+        "orderSizeSpike": "Nilai per transaksi (nilai dibagi frekuensi) sesi terakhir dibagi rata-ratanya pada {baseline} sesi sebelumnya. Pesanan yang jauh lebih besar dari biasanya bisa tampak di sini.",
+        "kseiHolderIncrease": "Jumlah pemegang ≥1% yang sahamnya bertambah dibanding bulan sebelumnya. Pemegang yang baru tercatat ≥1% tidak dihitung karena kepemilikan sebelumnya tidak diketahui."
+      },
+      "ranking": "Urutan: saham dengan sinyal terbanyak lebih dulu, lalu nilai transaksi sesi terakhir yang lebih besar. Paling banyak {limit} saham ditampilkan; jumlah lengkapnya tetap dilaporkan.",
+      "foreignCoverage": "Karena data asing dibatasi kuota harian, radar melaporkan untuk berapa saham setiap sinyal bisa dievaluasi. Sinyal yang belum tersedia bukan berarti tidak ada aktivitas."
+    },
+    "counter": {
+      "title": "Bukti yang berlawanan",
+      "intro": "Pengamatan yang mengarah ke sebaliknya selalu ditampilkan di samping sinyal, apa pun sinyal yang muncul. Tujuannya agar satu angka yang mencolok tidak dibaca tanpa konteks, misalnya harga naik sementara investor asing menjual bersih.",
+      "describe": {
+        "priceVsForeign5": "arah harga dan arus asing bersih berlawanan pada {window} sesi yang sama (keduanya tidak nol).",
+        "priceVsForeign20": "sama, pada {window} sesi.",
+        "volumeOnDownSession": "volume mencapai {volume} rata-rata {baseline} sesi, tetapi harga sesi itu ditutup lebih rendah.",
+        "kseiHolderDecrease": "setidaknya {threshold} pemegang ≥1% mengurangi sahamnya pada bulan terbaru yang diunggah."
+      }
+    },
+    "stealth": {
+      "title": "Tampilan KSEI: korporasi menambah, harga datar",
+      "intro": "Tampilan ini menyandingkan dua data: perubahan kepemilikan pemegang ≥1% berjenis korporasi, dan perubahan harga pada periode yang sama.",
+      "open": "Buka tampilan",
+      "types": "Jenis investor yang dihitung: {types} (kode KSEI untuk korporasi), sesuai yang tertulis di daftar, tidak ditebak.",
+      "combined": "Total korporasi = jumlah perubahan saham pemegang korporasi yang tercatat di kedua bulan. Pemegang baru ≥1% ditampilkan terpisah dan tidak dijumlahkan.",
+      "price": "Harga dianggap datar atau turun bila perubahan penutupan antara dua tanggal posisi paling tinggi {max}. Penutupan yang dipakai adalah sesi terakhir pada atau sebelum tanggal posisi, paling jauh {gap} hari; bila tidak ada, harga ditandai tidak tersedia.",
+      "notIntent": "Tampilan ini tidak menyimpulkan niat, identitas pembeli, atau arah harga berikutnya. Perubahan jumlah saham beredar (aksi korporasi) ditandai karena bisa mengubah kepemilikan tanpa transaksi."
+    },
+    "noScore": {
+      "title": "Mengapa tidak ada skor",
+      "p1": "Skor gabungan baru layak ditampilkan setelah setiap komponennya diuji pada data historis kami sendiri: berapa sering sinyal diikuti pergerakan harga 5 dan 20 sesi berikutnya, berapa banyak sampelnya, dan seberapa lebar rentang ketidakpastiannya.",
+      "p2": "Pengujian itu belum dilakukan. Karena itu radar hanya menghitung sinyal yang muncul. Jumlah sinyal bukan peluang dan bukan peringkat kualitas; dua sinyal belum tentu lebih bermakna daripada satu.",
+      "p3": "Ambang di halaman ini adalah draf yang dipilih untuk menggambarkan aktivitas yang tidak biasa. Setiap perubahan ambang mendapat versi baru, dan versi itu ditampilkan di setiap hasil."
+    },
+    "missing": {
+      "title": "Data yang tidak ada",
+      "body": "Bila data yang dibutuhkan sebuah sinyal tidak lengkap, misalnya data asing di luar kuota, frekuensi transaksi yang belum tersedia, saham yang baru tercatat, atau daftar KSEI yang belum diunggah, sinyal itu ditandai \"belum tersedia\". Ia tidak dihitung sebagai nol dan tidak dihitung sebagai sinyal yang muncul."
+    },
+    "disclaimer": "Halaman ini dan semua tampilan yang dirujuknya dibuat untuk riset dan edukasi. Isinya menggambarkan data masa lalu, bukan saran investasi, bukan ajakan jual atau beli, dan tidak menjamin hasil apa pun."
   }
 }
