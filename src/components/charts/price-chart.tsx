@@ -44,6 +44,8 @@ export function PriceChart({ rows, height = 320, overlays = [], macd }: { rows: 
       rightPriceScale: { borderVisible: false },
       timeScale: { borderVisible: false, fixLeftEdge: true, fixRightEdge: true },
       crosshair: { mode: 0 },
+      // A vertical swipe over the chart scrolls the page; only horizontal drags pan the time axis.
+      handleScroll: { vertTouchDrag: false },
       localization: { locale: locale === "id" ? "id-ID" : "en-US" },
     });
     // Formatters live on each series: a chart-wide priceFormatter would override the volume pane's compact format.
@@ -123,7 +125,7 @@ export function PriceChart({ rows, height = 320, overlays = [], macd }: { rows: 
   const shown = hovered ?? latest;
   return (
     <div className="flex flex-col gap-2">
-      <dl className="num flex flex-wrap gap-x-4 gap-y-1 text-xs" aria-live="polite" data-testid="price-readout">
+      <dl className="num grid grid-cols-3 gap-x-3 gap-y-1 text-xs sm:flex sm:flex-wrap sm:gap-x-4" aria-live="polite" data-testid="price-readout">
         {shown && (
           <>
             <div className="flex gap-1"><dt className="text-muted-foreground">{t("date")}</dt><dd>{formatDate(shown.date, locale)}</dd></div>

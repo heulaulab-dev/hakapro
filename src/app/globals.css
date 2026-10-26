@@ -445,3 +445,86 @@
     letter-spacing: -0.005em;
   }
 }
+
+/*
+ * Touch ergonomics (mobile-first audit). Everything here is gated on the input device, never on width:
+ * a tablet with a mouse keeps the dense desktop sizes, a phone gets 40px targets.
+ */
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  /* Notch and rounded corners (needs viewport-fit=cover, set in the locale layout). */
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  /* No 300ms double-tap-zoom delay on controls. */
+  button, [role="button"], [role="tab"], a, select, label, summary {
+    touch-action: manipulation;
+  }
+  /* Scrolling regions never chain into the page behind them (no accidental pull-to-refresh of the shell). */
+  main, [data-testid="marketing-scroll"] {
+    overscroll-behavior-y: contain;
+  }
+}
+
+@media (pointer: coarse) {
+  /* 16px inputs: iOS Safari zooms the page on focus below that. */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+  /* 40px minimum touch targets (WCAG 2.5.8 asks 24, Apple/Google 44-48; 40 keeps lists dense). */
+  button:not([role="checkbox"]):not([role="switch"]):not([data-slot="tabs-trigger"]):not([data-freshness]),
+  a[data-slot="button"],
+  [role="tab"],
+  [role="combobox"],
+  select,
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]) {
+    min-height: 40px;
+  }
+  button:not([role="checkbox"]):not([role="switch"]):not([data-freshness]),
+  a[data-slot="button"],
+  [role="tab"] {
+    min-width: 40px;
+  }
+  /* Small checkboxes and switches keep their look and grow only the hit area. */
+  [role="checkbox"], [role="switch"] {
+    position: relative;
+  }
+  [role="checkbox"]::after, [role="switch"]::after {
+    content: "";
+    position: absolute;
+    inset: -12px;
+  }
+}
+
+@media (hover: none) {
+  /* Tap feedback: touch has no hover state, so the press itself must acknowledge the tap. */
+  a:active, button:not(:disabled):active, [role="tab"]:active, [role="option"]:active {
+    opacity: 0.68;
+  }
+}
+
+/* Respect the OS "reduce motion" setting: skeleton pulses, the LIVE dot, sheet slides and fades all stop. */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/** Inline text links that must still be a comfortable tap target on touch devices. */
+@utility touch-target {
+  @media (pointer: coarse) {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+  }
+}

@@ -113,7 +113,7 @@ function Brief({ brief, aiEnabled }: { brief: ResearchBrief; aiEnabled: boolean 
         <p className="text-sm" data-testid="research-confidence">
           {t("research.summary.confidence", { ok, total: brief.components.length, pct: formatPercent(brief.score.confidence * 100, locale, { decimals: 0, signed: false }) })}
         </p>
-        <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {brief.components.map((item) => (
             <li key={item.key} className="flex items-center justify-between gap-2 rounded-lg border border-border px-3 py-2" data-testid={`summary-${item.key}`} data-status={item.status}>
               <span className="text-sm">{t(`research.components.${item.key}`)}</span>
@@ -123,7 +123,7 @@ function Brief({ brief, aiEnabled }: { brief: ResearchBrief; aiEnabled: boolean 
         </ul>
       </Panel>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <MomentumPanel item={component("momentum")} reason={reason} />
         <VolumePanel item={component("volume")} reason={reason} />
       </div>
@@ -149,7 +149,7 @@ function Brief({ brief, aiEnabled }: { brief: ResearchBrief; aiEnabled: boolean 
         )}
       </Panel>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {/* 4. Ownership (KSEI ≥1%): the newest monthly list uploaded by the owner. */}
         <Panel title={t("research.ownership.title")} testId="research-ownership">
           {component("ksei").status === "missing"

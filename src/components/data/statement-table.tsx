@@ -42,7 +42,7 @@ export function StatementTable({ rows, periods, meta, caption, selectedKey, onSe
         <table aria-label={caption} className="w-full border-separate border-spacing-0 text-data">
           <thead>
             <tr>
-              <th scope="col" className="sticky left-0 z-10 min-w-56 border-b border-border bg-card px-cell-x py-cell-y text-left text-xs font-medium text-muted-foreground">{caption}</th>
+              <th scope="col" className="sticky left-0 z-10 min-w-40 max-w-44 border-b sm:min-w-56 sm:max-w-none border-border bg-card px-cell-x py-cell-y text-left text-xs font-medium text-muted-foreground">{caption}</th>
               {periods.map((period) => <th key={period} scope="col" className="border-b border-border px-cell-x py-cell-y text-right text-xs font-medium whitespace-nowrap text-muted-foreground">{period}</th>)}
             </tr>
           </thead>
@@ -57,8 +57,8 @@ export function StatementTable({ rows, periods, meta, caption, selectedKey, onSe
                       </button>
                     ) : <span className="w-3.5" />}
                     {onSelect && !row.expandable ? (
-                      <button type="button" onClick={() => onSelect(row)} className="truncate text-left hover:underline">{row.label}</button>
-                    ) : <span className="truncate">{row.label}</span>}
+                      <button type="button" onClick={() => onSelect(row)} className="text-left hover:underline max-sm:line-clamp-2 sm:truncate">{row.label}</button>
+                    ) : <span className="max-sm:line-clamp-2 sm:truncate">{row.label}</span>}
                   </span>
                 </th>
                 {row.values.map((value, index) => (

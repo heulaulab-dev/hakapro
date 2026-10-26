@@ -21,7 +21,7 @@ export function StrategyDetailView({ id }: { id: string }) {
   const [why, setWhy] = useQueryState("why", parseAsString);
   return (
     <div className="flex flex-col gap-section p-4 md:p-6">
-      <Link href="/discover/strategies" className="inline-flex w-fit items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+      <Link href="/discover/strategies" className="inline-flex w-fit items-center gap-1 text-xs text-muted-foreground hover:text-foreground pointer-coarse:min-h-10">
         <ArrowLeft className="size-3.5" />
         {t("strategies.back")}
       </Link>

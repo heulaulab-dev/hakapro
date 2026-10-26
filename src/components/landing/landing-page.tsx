@@ -73,7 +73,9 @@ export async function LandingPage({ viewer, theme }: { viewer: Viewer; theme: Th
       <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 md:px-6">
           <Link href="/" className="shrink-0">
-            <Logo variant="horizontal" height={30} alt={tApp("name")} priority />
+            {/* Phones get the symbol only: with locale, theme and the CTA the full wordmark overflows 360px. */}
+            <span className="sm:hidden"><Logo variant="symbol" height={30} alt={tApp("name")} priority /></span>
+            <span className="hidden sm:block"><Logo variant="horizontal" height={30} alt={tApp("name")} priority /></span>
           </Link>
           <nav aria-label={t("nav.label")} className="hidden items-center gap-6 text-sm text-soft md:flex">
             <a href="#features" className="hover:text-foreground">{t("nav.features")}</a>
@@ -121,7 +123,7 @@ export async function LandingPage({ viewer, theme }: { viewer: Viewer; theme: Th
         </section>
 
         <Section id="features" eyebrow={t("features.eyebrow")} title={t("features.title")} intro={t("features.intro")}>
-          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {FEATURES.map(({ key, icon: Icon }) => (
               <li key={key} className="flex flex-col gap-3 rounded-xl border border-border bg-card/60 p-5 transition-colors hover:border-line-strong">
                 <span className="flex size-9 items-center justify-center rounded-lg bg-primary/12 text-primary"><Icon className="size-4" /></span>
@@ -134,7 +136,7 @@ export async function LandingPage({ viewer, theme }: { viewer: Viewer; theme: Th
 
         <Section id="freshness" eyebrow={t("freshness.eyebrow")} title={t("freshness.title")} intro={t("freshness.intro")} className="bg-card/40">
           <div className="flex flex-col gap-4">
-            <ul className="grid gap-3 md:grid-cols-2 lg:grid-cols-5" data-testid="landing-freshness">
+            <ul className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-5" data-testid="landing-freshness">
               {STATES.map((state) => (
                 <li key={state} className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4">
                   <FreshnessBadge freshness={state} asOf={null} className="self-start" />
@@ -147,7 +149,7 @@ export async function LandingPage({ viewer, theme }: { viewer: Viewer; theme: Th
         </Section>
 
         <Section id="how" eyebrow={t("how.eyebrow")} title={t("how.title")}>
-          <ol className="grid gap-4 md:grid-cols-3">
+          <ol className="grid grid-cols-1 gap-4 md:grid-cols-3">
             {steps.map((step, index) => {
               const Icon = STEP_ICONS[index] ?? Eye;
               return (
@@ -165,7 +167,7 @@ export async function LandingPage({ viewer, theme }: { viewer: Viewer; theme: Th
         </Section>
 
         <Section id="principles" eyebrow={t("principles.eyebrow")} title={t("principles.title")} className="bg-card/40">
-          <ul className="grid gap-x-8 gap-y-8 sm:grid-cols-2">
+          <ul className="grid grid-cols-1 gap-x-8 gap-y-8 sm:grid-cols-2">
             {PRINCIPLES.map(({ key, icon: Icon }) => (
               <li key={key} className="flex gap-4">
                 <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-border bg-background"><Icon className="size-4 text-soft" /></span>

@@ -49,7 +49,7 @@ function shareImages(origin: string, locale: string): Pick<Metadata, "openGraph"
 /** Follows the cookie theme (the app ignores the OS scheme), so the browser bar matches the page. */
 export async function generateViewport(): Promise<Viewport> {
   const store = await cookies();
-  return { themeColor: THEME_COLOR[parseTheme(store.get(THEME_COOKIE)?.value)] };
+  return { themeColor: THEME_COLOR[parseTheme(store.get(THEME_COOKIE)?.value)], viewportFit: "cover" };
 }
 
 export default async function LocaleLayout({ children, params }: LayoutProps<"/[locale]">) {

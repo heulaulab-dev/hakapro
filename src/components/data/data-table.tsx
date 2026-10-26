@@ -10,7 +10,9 @@ import { useTranslations } from "next-intl";
 import { useRef, useState, type ReactNode } from "react";
 import { FreshnessBadge } from "@/components/feedback/freshness-badge";
 import type { FreshnessMeta } from "@/lib/freshness";
+import { useMediaQuery, MEDIA } from "@/lib/use-media-query";
 import { cn } from "@/lib/utils";
+import { TableCards } from "./table-cards";
 
 declare module "@tanstack/react-table" {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -35,14 +37,20 @@ export type DataTableProps<T> = {
   toolbar?: ReactNode;
   empty?: ReactNode;
   testId?: string;
+  /** Under 640px render each row as a card (no sideways scroll). Opt in per table; wide numeric tables benefit most. */
+  mobile?: "cards";
+  /** Hand-built phone card; when omitted the cards are laid out from the columns (see `cardLayout`). */
+  renderCard?: (row: T) => ReactNode;
 };
 
 /**
  * Sortable, virtualized table (TanStack Table v8 + TanStack Virtual). Rows are measured, so it
  * follows the active density. Freshness of the dataset is shown in the toolbar.
  */
-export function DataTable<T>({ columns, data, meta, caption, getRowId, initialSorting = [], maxHeight = 480, toolbar, empty, testId }: DataTableProps<T>) {
+export function DataTable<T>({ columns, data, meta, caption, getRowId, initialSorting = [], maxHeight = 480, toolbar, empty, testId, mobile, renderCard }: DataTableProps<T>) {
   const t = useTranslations("table");
+  const phone = useMediaQuery(MEDIA.phone);
+  const cards = mobile === "cards" && phone;
   const [sorting, setSorting] = useState<SortingState>(initialSorting);
   // TanStack Table returns non-memoizable functions by design; the React Compiler is off in this project.
   // eslint-disable-next-line react-hooks/incompatible-library
@@ -77,7 +85,8 @@ export function DataTable<T>({ columns, data, meta, caption, getRowId, initialSo
           <FreshnessBadge {...meta} />
         </div>
       </div>
-      <div ref={scrollRef} className="overflow-auto" style={{ maxHeight }}>
+      {cards && <TableCards table={table} render={renderCard} empty={empty} />}
+      {!cards && <div ref={scrollRef} className="overflow-auto" style={{ maxHeight }}>
         <table aria-label={caption} aria-rowcount={rows.length + 1} className="w-full border-separate border-spacing-0 text-data">
           <thead className="sticky top-0 z-10 bg-background">
             {table.getHeaderGroups().map((group) => (
@@ -136,7 +145,7 @@ export function DataTable<T>({ columns, data, meta, caption, getRowId, initialSo
             {padBottom > 0 && <tr aria-hidden style={{ height: padBottom }} />}
           </tbody>
         </table>
-      </div>
+      </div>}
     </div>
   );
 }

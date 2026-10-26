@@ -52,7 +52,7 @@ export function InsiderHolders({ groups, meta, coverage }: { groups: HolderGroup
               <th scope="col" className="caption-style h-[38px] w-8 border-b border-border px-2 font-normal" />
               <th scope="col" className="caption-style h-[38px] border-b border-border px-3 text-left font-normal text-subtle">{t("holder")}</th>
               <th scope="col" className="caption-style h-[38px] border-b border-border px-3 text-right font-normal whitespace-nowrap text-subtle">{t("latest")}</th>
-              <th scope="col" className="caption-style h-[38px] border-b border-border px-3 text-left font-normal whitespace-nowrap text-subtle">{t("asOf")}</th>
+              <th scope="col" className="caption-style hidden h-[38px] border-b border-border px-3 text-left font-normal whitespace-nowrap text-subtle sm:table-cell">{t("asOf")}</th>
               <th scope="col" className="caption-style hidden h-[38px] border-b border-border px-3 text-right font-normal text-subtle sm:table-cell">{t("disclosures")}</th>
             </tr>
           </thead>
@@ -92,10 +92,11 @@ export function InsiderHolders({ groups, meta, coverage }: { groups: HolderGroup
                         <span className="flex flex-col items-end">
                           <span>{percent(group.latest.holdings[0]?.percent ?? null)}</span>
                           <span className="text-[11px] text-muted-foreground">{formatVolume(group.latest.holdings[0]?.shares ?? null, locale, { compact: true })}</span>
+                          <span className="num text-[11px] text-muted-foreground sm:hidden">{formatDate(group.latest.date, locale)}</span>
                         </span>
                       )}
                     </td>
-                    <td className="num border-b border-border px-3 py-cell-y whitespace-nowrap">{formatDate(group.latest.date, locale)}</td>
+                    <td className="num hidden border-b border-border px-3 py-cell-y whitespace-nowrap sm:table-cell">{formatDate(group.latest.date, locale)}</td>
                     <td className="num hidden border-b border-border px-3 py-cell-y text-right whitespace-nowrap sm:table-cell">{group.events.length}</td>
                   </tr>
                   {expanded && (

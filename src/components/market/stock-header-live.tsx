@@ -6,12 +6,24 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useCompanyName, useHistory, usePrice } from "@/lib/api/hooks";
 import { freshnessMeta } from "@/lib/freshness";
 import { mergeLastPrice } from "@/lib/last-price";
+import { headerStats } from "@/lib/stock-header";
 import type { ViewerSummary } from "@/components/layout/types";
 import { StockHeader } from "./stock-header";
 import { AlertLink, ResearchLink, WatchButton } from "./watch-button";
 
 /** Shared history query: same key as the overview's chart and metrics, so it is fetched once. */
 export const OVERVIEW_HISTORY = { frame: "daily", limit: 250 } as const;
+
+/** Same silhouette as the loaded header (symbol, price, stat strip) so the page does not jump when data arrives. */
+function HeaderSkeleton() {
+  return (
+    <div className="flex flex-col gap-2" aria-hidden>
+      <Skeleton className="h-6 w-40" />
+      <Skeleton className="h-8 w-56" />
+      <Skeleton className="h-10 w-full" />
+    </div>
+  );
+}
 
 export function StockHeaderLive({ symbol, viewer }: { symbol: string; viewer: ViewerSummary }) {
   const t = useTranslations("lastPrice");
@@ -21,7 +33,7 @@ export function StockHeaderLive({ symbol, viewer }: { symbol: string; viewer: Vi
   const name = useCompanyName(symbol);
   // When price data is unavailable the page body explains why; the header just names the stock.
   const watch = (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1">
       <ResearchLink symbol={symbol} />
       <WatchButton symbol={symbol} viewer={viewer} />
       {viewer.kind === "user" && <AlertLink symbol={symbol} />}
@@ -36,7 +48,7 @@ export function StockHeaderLive({ symbol, viewer }: { symbol: string; viewer: Vi
     );
   }
   return (
-    <DataState query={history} compact skeleton={<Skeleton className="h-16 w-72" />} isEmpty={(envelope) => envelope.data.rows.length === 0}>
+    <DataState query={history} compact skeleton={<HeaderSkeleton />} isEmpty={(envelope) => envelope.data.rows.length === 0}>
       {(envelope) => {
         const today = price.data;
         const merged = mergeLastPrice(envelope.data.rows, today?.data)!;
@@ -48,6 +60,7 @@ export function StockHeaderLive({ symbol, viewer }: { symbol: string; viewer: Vi
         return (
           <StockHeader symbol={symbol} name={name.data} price={merged.close} change={merged.change} changePercent={merged.changePercent}
             meta={freshnessMeta(fromPrice ? today : envelope)} actions={watch}
+            stats={headerStats(envelope.data.rows.at(-1), today?.data, fromPrice)}
             note={note ? <span data-testid="market-state">{note}</span> : undefined} />
         );
       }}
