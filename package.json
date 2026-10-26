@@ -27,6 +27,7 @@
     "verify": "bun run typecheck && bun run lint && bun run test && bun run check:prod-guards && bun run check:server-boundary && bun run build:check"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "0.134.0",
     "@tanstack/react-query": "^5.104.1",
     "@tanstack/react-table": "^8",
     "@tanstack/react-virtual": "^3.14.13",

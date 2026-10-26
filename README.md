@@ -34,6 +34,8 @@ All credentials below are server-only runtime settings in Coolify. No database/a
 | `HEULATRADE_MARKET_API_BASE_URL`, `HEULATRADE_MARKET_API_KEY` | Required for arjum; HTTPS URL |
 | `MARKET_API_URL` | Required for idx-bei; optional supplemental lane for arjum (the Data Engine). HTTPS URL, or `http://<service-name>:<port>` to an internal Coolify service (no dots), e.g. `http://hp7pevthvpqki0eyqxkqpwu4:8080` for the shared `hakapro-engine` |
 | `ALERT_JOB_SECRET` | Runtime bearer secret for the alert evaluator |
+| `AI_FEATURES_ENABLED`, `ANTHROPIC_API_KEY` | Optional. AI features are off unless both are set (`1` and a runtime-only Claude API key). See [AI features](#ai-features) |
+| `AI_MODEL_NARRATIVE`, `AI_MODEL_COPILOT`, `AI_DAILY_REQUEST_LIMIT` | Optional AI overrides (defaults `claude-opus-5-5`, 20 requests per user per day) |
 | `DEV_AUTH_BYPASS` | Unset in production |
 | `E2E_RATE_LIMIT_SCALE` | Local e2e only; ignored in production |
 
@@ -69,6 +71,28 @@ Three long-lived branches each deploy to their own Coolify app, built from the s
 | `verify` | Runs static checks, existing tests and build guards |
 
 Auth handlers live under `/api/auth/[...all]`; session lookup is server-side. User-owned actions call `requireUser()` and PostgreSQL repositories scoped by the session UUID. Browser adapters call those actions without direct database access. Market API responses use `{data, freshness, asOf, period?, source}`. Providers, DB, auth and mail modules use `server-only`; the CSP limits browser connections to the application origin. Freshness is never fabricated, and locale-aware formatters retain explicit units.
+
+## AI features
+
+Off by default. They turn on only when `AI_FEATURES_ENABLED=1` **and** `ANTHROPIC_API_KEY` are set at runtime (Coolify secret; no rebuild needed). Without them the app behaves exactly as before: no AI UI is rendered, no request reaches Anthropic, and the AI routes answer `503 AI_NOT_CONFIGURED`. Research and options: [docs/research/2026-10-21-ai-features.md](docs/research/2026-10-21-ai-features.md).
+
+| Route | What it does |
+| --- | --- |
+| `GET /api/research/[code]/narrative?lang=id\|en` | 3–5 neutral sentences phrasing the Research Brief. Shown only if every number traces to the brief (number validator) and no advice wording appears; cached per ticker, session and language |
+| `POST /api/ai/copilot` | **Prototype.** Tool-use chat over six read-only data tools; NDJSON stream with citations (tool + as-of). Opened from the header ("Ask Copilot") |
+| `GET /api/ai/health[?probe=1]` | Admin only. Whether AI is configured, models, limits; `probe=1` checks the key with a Models API lookup. Never returns the key |
+
+Each signed-in user gets `AI_DAILY_REQUEST_LIMIT` (default 20) AI requests per Jakarta day, counted **in memory per process** (resets on restart; move it to PostgreSQL before running more than one instance). Failed, rejected or retracted answers are not charged. Logs carry token counts and outcome codes only, never prompts or answers.
+
+```sh
+# Copilot from a signed-in session (copy the session cookie from the browser):
+curl -N "$HAKAPRO_ORIGIN/api/ai/copilot" \
+  -H 'content-type: application/json' -H "cookie: $HAKAPRO_SESSION_COOKIE" \
+  -d '{"lang":"id","messages":[{"role":"user","content":"Berapa harga terakhir BBCA dan arus asing 5 hari terakhir?"}]}'
+# {"type":"tool","tool":"get_research_brief","code":"BBCA"}
+# {"type":"text","text":"..."}        <- draft until "done"; a "retract" event means hide it
+# {"type":"done","citations":[{"tool":"get_research_brief","code":"BBCA","asOf":"...","source":"..."}],"charged":true,"refusal":false}
+```
 
 ## Coolify deployment and migration
 

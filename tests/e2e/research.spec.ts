@@ -20,6 +20,16 @@ test.describe("research brief", () => {
     await expect(view.getByTestId("research-disclaimer")).toBeVisible();
   });
 
+  test("AI is off by default: no narrative panel, no copilot entry, and the narrative API says so", async ({ page, request }) => {
+    await page.goto("/en/research/BBCA");
+    await expect(page.getByTestId("research-summary")).toBeVisible();
+    await expect(page.getByTestId("research-narrative")).toHaveCount(0);
+    await expect(page.getByTestId("copilot-open")).toHaveCount(0);
+    const response = await request.get("/api/research/BBCA/narrative?lang=en");
+    expect(response.status()).toBe(503);
+    expect((await response.json()).error).toBe("AI_NOT_CONFIGURED");
+  });
+
   test("reachable from the stock page header", async ({ page }) => {
     await page.goto("/en/stock/BBCA");
     await page.getByTestId("research-link").click();
