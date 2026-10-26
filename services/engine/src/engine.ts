@@ -13,7 +13,10 @@ import { LimiterRegistry } from "./fetch/rate-limit";
 import { createRawStore, type RawStore } from "./fetch/raw-store";
 import { createApp } from "./http/app";
 import { eodBackfillJob, eodDailyJob } from "./jobs/eod";
+import { DbInsiderStore } from "./db/insiders";
 import { foreignFlowJob } from "./jobs/foreign";
+import { insiderFeedJob } from "./jobs/insiders";
+import { DEFAULT_INSIDER_REVISIT_DAYS } from "./serve/insiders";
 import { fundamentalsJob } from "./jobs/fundamentals";
 import { ratiosJob } from "./jobs/ratios";
 import { indicesEodJob } from "./jobs/indices";
@@ -48,6 +51,8 @@ export type EngineServices = {
  *   indices-eod    16:35 trading days                                           TradingView index scan
  *   eod-daily      16:45, 18:45, 20:45 trading days (20:45 finalizes/STALE)     Yahoo range=5d per symbol + ^JKSE
  *   foreign-flow   19:00, 21:00 trading days (only with ENGINE_ARJUM_*)          arjum /api/history, budgeted
+ *   insider-feed   every 10 min 21:30–23:30, background (only with ENGINE_ARJUM_INSIDER_BUDGET > 0)
+ *                                                                               arjum /api/insiders page 1, budgeted rotation
  *   eod-backfill   every 10 min 19:00–05:59, background                          Yahoo from 2020-01-01 per symbol
  *   intraday-retention 02:30, background                                        prunes intraday tables
  *   news           every ENGINE_NEWS_INTERVAL_MINUTES 06:00–22:00, every day   4 outlets' RSS (5 feeds), conditional GET
@@ -70,6 +75,7 @@ export function defaultRegistry(services: EngineServices): Registry {
       eodDailyJob(jobServices, sources.yahoo),
       eodBackfillJob(jobServices, sources.yahoo),
       ...(sources.arjum && services.config.arjum ? [foreignFlowJob(jobServices, sources.arjum, services.config.arjum)] : []),
+      ...(sources.arjum && services.config.arjum && services.config.arjum.insiderBudget > 0 ? [insiderFeedJob(jobServices, sources.arjum, services.config.arjum)] : []),
       intradayJob(jobServices, sources.tradingview, services.config.intraday.intervalMinutes),
       intradayRetentionJob({
         retentionDays: services.config.intraday.retentionDays,
@@ -134,6 +140,8 @@ export async function createEngine(config: EngineConfig, options: EngineOptions 
     market: new DbMarketStore(db),
     ownership: { service: ownership, maxUploadBytes: config.ownership.maxUploadBytes, freeFloatEnabled: config.ownership.freeFloatEnabled },
     strategies: { enabled: config.strategyScans.enabled, store: new DbStrategyStore(db) },
+    // Served whatever the budget: stored reads stay visible (with their shrinking coverage) after the feed is turned off.
+    insiders: { store: new DbInsiderStore(db), revisitDays: config.arjum?.insiderRevisitDays ?? DEFAULT_INSIDER_REVISIT_DAYS },
     eodSessions: async () => (await recentEodSessions(db)).map((row) => ({
       date: row.date, status: row.status, expected: row.expected, present: row.present, attempts: row.attempts, finalizedAt: row.finalizedAt?.toISOString() ?? null,
     })),

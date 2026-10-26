@@ -3,8 +3,10 @@ import type { z } from "zod";
 import { classifySessionDate, withFreshness, type Freshness, type WithFreshness } from "@/lib/freshness";
 import { strategyBoardSchema } from "@/lib/strategies/contract";
 import {
-  actionsCalendarSchema, actionsSchema, announcementItemSchema, fundamentalsSchema, idxBeiEnvelope, macroSchema, marketOverviewSchema, newsItemSchema,
-  profileSchema, screenRequestSchema, screenResultSchema, sectorsSchema, securitySchema, signalsSchema, stockSchema, type ScreenRequest,
+  actionsCalendarSchema, actionsSchema, announcementItemSchema, fundamentalsSchema, HEATMAP_DEFAULT_LIMIT, heatmapLimitSchema, heatmapSchema,
+  idxBeiEnvelope, insidersRecentSchema, macroSchema, marketOverviewSchema, newsItemSchema, groupsSchema, groupWindowSchema, profileSchema,
+  screenRequestSchema, screenResultSchema, sectorsSchema, securitySchema, signalsSchema, stockSchema, type ScreenRequest, radarSchema,
+  stealthOwnershipSchema,
 } from "@/server/schemas/idx-bei";
 import { symbolSchema } from "@/server/schemas/inputs";
 import { ownershipChangesSchema, ownershipMonthSchema, stockOwnershipSchema } from "@/server/schemas/ownership";
@@ -12,7 +14,10 @@ import { PROVIDER_USER_AGENT } from "@/server/config/provider-identity";
 import { logWarn } from "@/server/log";
 import { ProviderBackoff } from "@/server/providers/backoff";
 import { MarketDataError, unsupported } from "./errors";
-import { BaseMarketDataSource, type ActionsCalendarQuery, type OwnershipChangesQuery, type PageQuery } from "./source";
+import {
+  BaseMarketDataSource, type ActionsCalendarQuery, type HeatmapQuery, type OwnershipChangesQuery, type PageQuery, type RecentInsidersQuery,
+  type GroupsQuery,
+} from "./source";
 import type { Candle, Quote } from "./types";
 import type { Clock } from "./arjum-source";
 
@@ -178,6 +183,54 @@ export class IdxBeiSource extends BaseMarketDataSource {
     })), meta.dataAsOf);
   }
 
+  /**
+   * Data Engine `/v1/heatmap`: the most-traded stocks of the newest view (the same rows as the movers) with per-sector
+   * totals. Fractions become percentage points; the net foreign value stays an estimate and keeps its nulls.
+   */
+  async heatmap(query: HeatmapQuery) {
+    const limit = heatmapLimitSchema.parse(query.limit ?? HEATMAP_DEFAULT_LIMIT);
+    const { data, meta } = await this.get(`/v1/heatmap?limit=${limit}`, heatmapSchema, TTL_MS.market);
+    return this.snapshot({
+      limit: data.limit,
+      stocks: data.stocks.map((row) => ({
+        symbol: row.symbol, name: row.name, sector: row.sector, close: row.close, changePercent: pct(row.changePercent),
+        valueIdr: row.value, volumeShares: row.volume, netForeignValueEstimateIdr: row.netForeignValueEstimate,
+      })),
+      sectors: data.sectors.map((row) => ({
+        sector: row.sector, stocks: row.stocks, advancers: row.advancers, decliners: row.decliners, unchanged: row.unchanged,
+        valueIdr: row.value, changePercent: pct(row.changePercent), netForeignValueEstimateIdr: row.netForeignValueEstimate,
+      })),
+    }, meta.dataAsOf);
+  }
+
+  /**
+   * Data Engine `/v1/groups`: curated conglomerate groups over a 1D/5D/20D session window, in percentage points like
+   * `sectors()`. The foreign figure stays labelled an estimate; divergence is passed through, never turned into a label.
+   */
+  async groups(query: GroupsQuery) {
+    const window = groupWindowSchema.parse(query.window ?? "1D");
+    const { data, meta } = await this.get(`/v1/groups?window=${window}`, groupsSchema, TTL_MS.market);
+    return this.snapshot({
+      window: data.window, catalog: data.catalog,
+      groups: data.groups.map((group) => ({
+        id: group.id, name: group.name, confidence: group.confidence, note: group.note, reviewedAt: group.reviewedAt, sources: group.sources,
+        members: group.members, membersWithData: group.membersWithData,
+        unknownSymbols: group.unknownSymbols, inactiveSymbols: group.inactiveSymbols, noDataSymbols: group.noDataSymbols,
+        advancers: group.advancers, decliners: group.decliners, unchanged: group.unchanged,
+        changePercent: pct(group.changePercent), valueWeightedChangePercent: pct(group.valueWeightedChangePercent), valueIdr: group.value,
+        foreign: { netValueEstimateIdr: group.foreign.netValueEstimate, members: group.foreign.members, partialMembers: group.foreign.partialMembers },
+        divergence: group.divergence,
+        best: group.best && { symbol: group.best.symbol, changePercent: group.best.changePercent * 100 },
+        worst: group.worst && { symbol: group.worst.symbol, changePercent: group.worst.changePercent * 100 },
+        stocks: group.stocks.map((stock) => ({
+          symbol: stock.symbol, name: stock.name, confidence: stock.confidence, note: stock.note, close: stock.close, changePercent: pct(stock.changePercent),
+          valueIdr: stock.value, sessions: stock.sessions, corporateAction: stock.corporateAction,
+          netForeignValueEstimateIdr: stock.netForeignValueEstimate, foreignSessions: stock.foreignSessions, divergence: stock.divergence,
+        })),
+      })),
+    }, meta.dataAsOf);
+  }
+
   /** Data Engine `/v1/actions`: market-wide corporate actions by ex-date (the engine's window when no range is given). */
   async actionsCalendar(query: ActionsCalendarQuery) {
     const params = new URLSearchParams();
@@ -203,6 +256,43 @@ export class IdxBeiSource extends BaseMarketDataSource {
     if (query.symbol) params.set("symbol", symbolSchema.parse(query.symbol));
     const { data, meta } = await this.get(`/v1/ownership/changes${params.size ? `?${params}` : ""}`, ownershipChangesSchema, TTL_MS.securities);
     return this.wrap(data, "HISTORICAL", meta.dataAsOf);
+  }
+
+  /**
+   * Data Engine `/v1/insiders/recent`: market-wide insider transactions from the engine's rotating arjum crawl, with its
+   * coverage. Dated by the newest read (HISTORICAL); the empty form (UNAVAILABLE) before the first read.
+   */
+  async recentInsiders(query: RecentInsidersQuery) {
+    const params = new URLSearchParams();
+    if (query.days) params.set("days", String(query.days));
+    if (query.action) params.set("action", query.action);
+    if (query.limit) params.set("limit", String(query.limit));
+    const { data, meta } = await this.get(`/v1/insiders/recent${params.size ? `?${params}` : ""}`, insidersRecentSchema, TTL_MS.news);
+    return this.wrap({
+      days: data.days, from: data.from, to: data.to, action: data.action, coverage: data.coverage,
+      transactions: data.transactions.map((row) => ({
+        symbol: row.symbol, person: row.person, date: row.date, action: row.action, roles: row.roles, broker: row.broker, nationality: row.nationality ?? "",
+        previousShares: row.sharesBefore, currentShares: row.sharesAfter, changeShares: row.sharesChange,
+        previousPercent: row.percentBefore, currentPercent: row.percentAfter, changePercent: row.percentChange,
+        priceIdr: row.price, valueIdr: row.value,
+      })),
+    }, "HISTORICAL", meta.dataAsOf);
+  }
+
+  /**
+   * Data Engine `/v1/radar`: per stock of the newest session, the documented signals that fired, counter-evidence and
+   * each signal's data status (draft rules, no score). Freshness is re-derived from the trading date.
+   */
+  async radar() {
+    const { data, meta } = await this.get("/v1/radar", radarSchema, TTL_MS.market);
+    return this.snapshot({ ...data, stocks: data.stocks.map((stock) => ({ ...stock, changePercent: pct(stock.changePercent) })) }, meta.dataAsOf);
+  }
+
+  /** Data Engine `/v1/ownership/stealth` (E6): the newest uploaded KSEI month, dated by its position date (HISTORICAL). */
+  async stealthOwnership() {
+    const { data, meta } = await this.get("/v1/ownership/stealth", stealthOwnershipSchema, TTL_MS.securities);
+    const stocks = data.stocks.map((stock) => ({ ...stock, price: stock.price && { ...stock.price, changePercent: stock.price.changePercent * 100 } }));
+    return this.wrap({ ...data, stocks }, "HISTORICAL", meta.dataAsOf);
   }
 
   /**

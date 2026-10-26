@@ -26,6 +26,8 @@ jobs:
       - run: bun run test
       - name: Engine integration tests (throwaway PostgreSQL)
         run: bun run engine:test:e2e
+      - name: Data Engine image builds (its Dockerfile copies only selected app files)
+        run: docker build -q -f services/engine/Dockerfile -t hakapro-engine-ci .
       - name: Production guards refuse unsafe configuration
         run: bun run check:prod-guards
       - name: server-only boundary

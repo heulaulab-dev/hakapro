@@ -3,6 +3,7 @@
  * (src/server/market/types.ts); every response is validated again here.
  */
 import { z } from "zod";
+import { RADAR_COUNTER_KEYS, RADAR_SIGNAL_KEYS } from "@/lib/radar/rules";
 import { strategyBoardSchema } from "@/lib/strategies/contract";
 import { fetchEnvelope } from "./envelope";
 
@@ -201,6 +202,45 @@ export const sectorPerformanceSchema = z.object({
   leader: z.object({ symbol: z.string(), changePercent: nn }), laggard: z.object({ symbol: z.string(), changePercent: nn }),
 });
 export type SectorPerformance = z.infer<typeof sectorPerformanceSchema>;
+/** Heatmap (Data Engine): changes in percentage points; `netForeignValueEstimateIdr` is an ESTIMATE, null without foreign data. */
+export const heatmapStockSchema = z.object({
+  symbol: z.string(), name: z.string().nullable(), sector: z.string().nullable(), close: nn, changePercent: nn,
+  valueIdr: nn, volumeShares: nn, netForeignValueEstimateIdr: nn,
+});
+export const heatmapSectorSchema = z.object({
+  sector: z.string().nullable(), stocks: n, advancers: n, decliners: n, unchanged: n, valueIdr: n, changePercent: nn, netForeignValueEstimateIdr: nn,
+});
+export const heatmapSchema = z.object({ limit: n, stocks: z.array(heatmapStockSchema), sectors: z.array(heatmapSectorSchema) });
+export type HeatmapStock = z.infer<typeof heatmapStockSchema>;
+export type HeatmapSector = z.infer<typeof heatmapSectorSchema>;
+export type Heatmap = z.infer<typeof heatmapSchema>;
+export const GROUP_WINDOWS = ["1D", "5D", "20D"] as const;
+export type GroupWindow = (typeof GROUP_WINDOWS)[number];
+const groupConfidence = z.enum(["sourced", "unverified"]);
+const groupDivergence = z.enum(["price_up_foreign_net_sell", "price_down_foreign_net_buy"]).nullable();
+export const groupStockSchema = z.object({
+  symbol: z.string(), name: z.string().nullable(), confidence: groupConfidence, note: z.string().nullable(),
+  close: nn, changePercent: nn, valueIdr: nn, sessions: n, corporateAction: z.boolean(),
+  netForeignValueEstimateIdr: nn, foreignSessions: n, divergence: groupDivergence,
+});
+export const groupPerformanceSchema = z.object({
+  id: z.string(), name: z.object({ id: z.string(), en: z.string() }), confidence: groupConfidence, note: z.string().nullable(), reviewedAt: z.string(),
+  sources: z.array(z.object({ label: z.string(), url: z.string() })),
+  members: n, membersWithData: n, unknownSymbols: z.array(z.string()), inactiveSymbols: z.array(z.string()), noDataSymbols: z.array(z.string()),
+  advancers: n, decliners: n, unchanged: n, changePercent: nn, valueWeightedChangePercent: nn, valueIdr: n,
+  foreign: z.object({ netValueEstimateIdr: nn, members: n, partialMembers: n }),
+  divergence: groupDivergence,
+  best: z.object({ symbol: z.string(), changePercent: n }).nullable(), worst: z.object({ symbol: z.string(), changePercent: n }).nullable(),
+  stocks: z.array(groupStockSchema),
+});
+export const groupsViewSchema = z.object({
+  window: z.object({ id: z.enum(GROUP_WINDOWS), sessions: n, from: z.string().nullable(), to: z.string().nullable(), basis: z.enum(["daily", "intraday"]) }),
+  catalog: z.object({ version: z.string(), reviewedAt: z.string() }),
+  groups: z.array(groupPerformanceSchema),
+});
+export type GroupStock = z.infer<typeof groupStockSchema>;
+export type GroupPerformance = z.infer<typeof groupPerformanceSchema>;
+export type GroupsView = z.infer<typeof groupsViewSchema>;
 export const actionCalendarItemSchema = z.object({
   symbol: z.string(), date: z.string(), type: z.string(), description: z.string().nullable(), amount: nn, ratio: z.string().nullable(), documentUrl: z.string().nullable(),
 });
@@ -223,12 +263,68 @@ export const ownershipChangeSchema = z.object({
 });
 export const ownershipChangesSchema = z.object({ month: z.string(), previousMonth: z.string(), changes: z.array(ownershipChangeSchema) });
 export type OwnershipChange = z.infer<typeof ownershipChangeSchema>;
+/** Market-wide insider feed (Data Engine rotation): the per-stock row plus symbol and value, and the crawl's coverage. */
+export const recentInsiderSchema = insiderRowSchema.extend({ symbol: z.string(), valueIdr: nn });
+export const recentInsidersSchema = z.object({
+  days: n, from: z.string(), to: z.string(), action: z.enum(["buy", "sell", "cross"]).nullable(),
+  coverage: z.object({ checked: n, active: n, revisitDays: n, oldestCheck: z.string().nullable() }),
+  transactions: z.array(recentInsiderSchema),
+});
+export type RecentInsider = z.infer<typeof recentInsiderSchema>;
+export type RecentInsiders = z.infer<typeof recentInsidersSchema>;
+export type RecentInsidersQuery = { days?: number; action?: "buy" | "sell"; limit?: number };
+
+// --- Data Engine: signal confluence radar and KSEI corporate holders -------------------------------------------
+const radarSignalKey = z.enum(RADAR_SIGNAL_KEYS);
+export const radarStockSchema = z.object({
+  symbol: z.string(), name: z.string().nullable(), sector: z.string().nullable(), close: n,
+  /** 1-day change in percentage points. */
+  changePercent: nn, value: nn,
+  fired: z.array(z.object({ key: radarSignalKey, observed: n, threshold: n, window: z.string(), detail: z.record(z.string(), nn) })),
+  counter: z.array(z.object({ key: z.enum(RADAR_COUNTER_KEYS), window: z.string(), values: z.record(z.string(), nn) })),
+  firedCount: n,
+  status: z.record(radarSignalKey, z.enum(["ok", "missing"])),
+});
+export type RadarStock = z.infer<typeof radarStockSchema>;
+export const radarSchema = z.object({
+  tradingDate: z.string().nullable(), rulesVersion: z.string(), kseiMonth: z.string().nullable(),
+  rules: z.record(radarSignalKey, z.object({ window: nn, baseline: nn, threshold: n, unit: z.enum(["fraction", "ratio", "count"]) })),
+  coverage: z.object({ stocks: n, listed: n, returned: n, signals: z.record(radarSignalKey, n) }),
+  stocks: z.array(radarStockSchema),
+});
+export type Radar = z.infer<typeof radarSchema>;
+const closeAtSchema = z.object({ date: z.string(), close: n });
+export const stealthStockSchema = z.object({
+  symbol: z.string(), name: z.string().nullable(), fromDate: z.string(), toDate: z.string(),
+  /** Integer string; shown, never recomputed. */
+  combinedShareDelta: z.string(), newHolders: n,
+  holders: z.array(z.object({
+    holderKey: z.string(), holderName: z.string(), investorType: z.string(), kind: z.string(),
+    sharesBefore: z.string().nullable(), sharesAfter: z.string().nullable(), shareDelta: z.string().nullable(),
+    percentBefore: z.string().nullable(), percentAfter: z.string().nullable(), ppDelta: z.string().nullable(), flags: z.array(z.string()),
+  })),
+  /** Close change between the two position dates in percentage points; null when a close is not stored. */
+  price: z.object({ from: closeAtSchema, to: closeAtSchema, changePercent: n }).nullable(),
+});
+export type StealthStock = z.infer<typeof stealthStockSchema>;
+export const stealthOwnershipSchema = z.object({
+  month: z.string().nullable(), previousMonth: z.string().nullable(), rulesVersion: z.string(),
+  rules: z.object({ investorTypes: z.array(z.string()), maxPriceChange: n, maxCloseGapDays: n }),
+  coverage: z.object({ issuers: n, corporateIncrease: n, priceRose: n, priceMissing: n }),
+  stocks: z.array(stealthStockSchema),
+});
+export type StealthOwnership = z.infer<typeof stealthOwnershipSchema>;
 
 export const engineApi = {
+  radar: (signal?: AbortSignal) => fetchEnvelope("/api/radar", radarSchema, { signal }),
+  stealthOwnership: (signal?: AbortSignal) => fetchEnvelope("/api/ownership/stealth", stealthOwnershipSchema, { signal }),
   sectors: (signal?: AbortSignal) => fetchEnvelope("/api/sectors", z.array(sectorPerformanceSchema), { signal }),
+  heatmap: (limit: number, signal?: AbortSignal) => fetchEnvelope(`/api/heatmap${qs({ limit })}`, heatmapSchema, { signal }),
+  groups: (window: GroupWindow, signal?: AbortSignal) => fetchEnvelope(`/api/groups${qs({ window })}`, groupsViewSchema, { signal }),
   actionsCalendar: (range: { from?: string; to?: string } = {}, signal?: AbortSignal) => fetchEnvelope(`/api/actions${qs(range)}`, z.array(actionCalendarItemSchema), { signal }),
   ownership: (symbol: string, signal?: AbortSignal) => fetchEnvelope(`/api/stocks/${encodeURIComponent(symbol.toUpperCase())}/ownership`, stockOwnershipSchema, { signal }),
   ownershipChanges: (query: { month?: string; symbol?: string } = {}, signal?: AbortSignal) => fetchEnvelope(`/api/ownership/changes${qs(query)}`, ownershipChangesSchema, { signal }),
+  recentInsiders: (query: RecentInsidersQuery = {}, signal?: AbortSignal) => fetchEnvelope(`/api/insiders/recent${qs(query)}`, recentInsidersSchema, { signal }),
 };
 
 export const stockApi = {
