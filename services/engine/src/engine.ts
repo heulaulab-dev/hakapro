@@ -21,6 +21,7 @@ import { fundamentalsJob } from "./jobs/fundamentals";
 import { ratiosJob } from "./jobs/ratios";
 import { indicesEodJob } from "./jobs/indices";
 import { intradayJob } from "./jobs/intraday";
+import { commoditiesJob } from "./jobs/commodities";
 import { biRateJob, jisdorJob } from "./jobs/macro";
 import { newsJob } from "./jobs/news";
 import { strategyScanJob } from "./jobs/strategy-scan";
@@ -68,7 +69,7 @@ export function defaultRegistry(services: EngineServices): Registry {
   const sources = engineSources(services.config.arjum);
   const jobServices = { db: services.db, fetcher: services.fetcher, documents: services.documents, sourceState: services.sourceState, log: services.log, now: services.now };
   return {
-    sources: [sources.tradingview, sources.yahoo, sources.pasardana, ...(sources.arjum ? [sources.arjum] : []), ...sources.news, sources.bi, sources.yahooFundamentals],
+    sources: [sources.tradingview, sources.yahoo, sources.pasardana, ...(sources.arjum ? [sources.arjum] : []), ...sources.news, sources.bi, sources.yahooFundamentals, sources.worldBank],
     jobs: [
       universeJob(jobServices, { tradingview: sources.tradingview, pasardana: sources.pasardana }),
       indicesEodJob(jobServices, sources.tradingview),
@@ -92,6 +93,7 @@ export function defaultRegistry(services: EngineServices): Registry {
       }),
       jisdorJob(jobServices, sources.bi),
       biRateJob(jobServices, sources.bi),
+      commoditiesJob(jobServices, sources.worldBank),
       fundamentalsJob(jobServices, sources.yahooFundamentals, { hostSources: [sources.yahoo.id] }),
       ratiosJob(jobServices, { fundamentals: sources.yahooFundamentals.id, chart: sources.yahoo.id }),
       ...(services.config.strategyScans.enabled ? [strategyScanJob(jobServices)] : []),
