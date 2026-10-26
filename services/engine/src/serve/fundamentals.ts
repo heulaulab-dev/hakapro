@@ -111,6 +111,8 @@ export async function serveScreener(store: MarketStore, request: { conditions: S
     const values: ScreenValues = {
       price: day.close, volume: day.volume, value: day.value, frequency: day.frequency,
       foreignNetShares: day.foreignBuy !== null && day.foreignSell !== null ? day.foreignBuy - day.foreignSell : null,
+      // Net foreign value in IDR (net shares × close): the "foreign accumulation" ranking traders screen on.
+      foreignNetValue: day.foreignBuy !== null && day.foreignSell !== null ? (day.foreignBuy - day.foreignSell) * day.close : null,
       marketCap: shares ? day.close * shares : security?.marketCap ?? null,
       change1D: day.previousClose ? day.close / day.previousClose - 1 : null,
       per: null, pbv: null, roe: null, roa: null, eps: null, der: null, dividendYield: null,

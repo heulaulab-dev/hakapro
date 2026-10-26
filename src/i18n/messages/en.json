@@ -556,6 +556,7 @@
       "value": "Traded value (Rp)",
       "frequency": "Frequency",
       "foreignNetShares": "Net foreign (shares)",
+      "foreignNetValue": "Net foreign (Rp)",
       "marketCap": "Market cap (Rp)",
       "per": "P/E (x)",
       "pbv": "P/B (x)",

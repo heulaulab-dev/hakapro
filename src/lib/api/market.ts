@@ -152,7 +152,7 @@ export const financialsApi = {
 };
 
 // --- Screener (POST /api/screener, idx-bei lane) ---------------------------------------------
-export const SCREEN_FIELDS = ["price", "volume", "value", "frequency", "foreignNetShares", "marketCap", "per", "pbv", "roe", "roa", "eps", "der", "dividendYield", "change1D"] as const;
+export const SCREEN_FIELDS = ["price", "volume", "value", "frequency", "foreignNetShares", "foreignNetValue", "marketCap", "per", "pbv", "roe", "roa", "eps", "der", "dividendYield", "change1D"] as const;
 export type ScreenField = (typeof SCREEN_FIELDS)[number];
 export const SCREEN_OPERATORS = ["GT", "GTE", "LT", "LTE", "EQ"] as const;
 export const screenConditionSchema = z.object({

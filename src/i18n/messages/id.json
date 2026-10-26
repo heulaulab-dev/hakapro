@@ -556,6 +556,7 @@
       "value": "Nilai transaksi (Rp)",
       "frequency": "Frekuensi",
       "foreignNetShares": "Asing bersih (lembar)",
+      "foreignNetValue": "Asing bersih (Rp)",
       "marketCap": "Kapitalisasi pasar (Rp)",
       "per": "PER (x)",
       "pbv": "PBV (x)",
