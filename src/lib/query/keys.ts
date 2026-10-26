@@ -23,6 +23,7 @@ export const queryKeys = {
   profile: (symbol: string) => ["market", "profile", symbol.toUpperCase()] as const,
   actions: (symbol: string) => ["market", "actions", symbol.toUpperCase()] as const,
   sectors: () => ["market", "sectors"] as const,
+  macro: () => ["market", "macro"] as const,
   heatmap: (limit: number) => ["market", "heatmap", limit] as const,
   groups: (window: string) => ["market", "groups", window] as const,
   radar: () => ["market", "radar"] as const,

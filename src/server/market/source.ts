@@ -4,7 +4,7 @@ import type {
   ActionCalendarItem, AnnouncementItem, BrokerAccumulation, BrokerFlow, BrokerSummary, CompanyProfile, CorporateAction, DoneDetails,
   FinancialStatements, ForeignFlow, FundamentalPeriod, Heatmap, History, Insiders, LastPrice, MarketCap, MarketOverview, NewsItem, ScreenRequest,
   ScreenResult, OwnershipChanges, RecentInsiders, SearchResult, Seasonality, SectorPerformance, Security, StockAnalysis, StockOwnership,
-  StockSnapshot, StrategyScreen, GroupsView, GroupWindow, RadarSnapshot, StealthOwnership,
+  StockSnapshot, StrategyScreen, GroupsView, GroupWindow, RadarSnapshot, StealthOwnership, Macro,
 } from "./types";
 
 export type HistoryQuery = { limit?: number; frame?: "daily" | "weekly" | "monthly"; startDate?: string; endDate?: string };
@@ -65,6 +65,8 @@ export interface MarketDataSource {
   screen(request: ScreenRequest): R<ScreenResult>;
   news(query: PageQuery): R<NewsItem[]>;
   announcements(query: PageQuery & { keywords?: string }): R<AnnouncementItem[]>;
+  /** Macro and commodity series (`/v1/macro`): BI-Rate, JISDOR, and World Bank commodity prices (`wb.*`). */
+  macro(): R<Macro>;
   // Data Engine lane
   sectors(): R<SectorPerformance[]>;
   /** The most-traded stocks of the newest view with per-sector totals (net foreign value is an estimate). */
@@ -114,6 +116,7 @@ export abstract class BaseMarketDataSource implements MarketDataSource {
   async screen(..._args: unknown[]): R<ScreenResult> { return this.fail("screen"); }
   async news(..._args: unknown[]): R<NewsItem[]> { return this.fail("news"); }
   async announcements(..._args: unknown[]): R<AnnouncementItem[]> { return this.fail("announcements"); }
+  async macro(..._args: unknown[]): R<Macro> { return this.fail("macro"); }
   async sectors(..._args: unknown[]): R<SectorPerformance[]> { return this.fail("sectors"); }
   async heatmap(..._args: unknown[]): R<Heatmap> { return this.fail("heatmap"); }
   async groups(..._args: unknown[]): R<GroupsView> { return this.fail("groups"); }
