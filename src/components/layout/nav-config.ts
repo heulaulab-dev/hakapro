@@ -1,9 +1,9 @@
 import {
   ArrowUpDown, Bell, Bookmark, Compass, House, Info, Landmark, LayoutGrid, ListChecks, Newspaper, SlidersHorizontal, type LucideIcon, Network,
-  BookOpen, Building2, Radar,
+  BookOpen, Building2, Radar, Coins,
 } from "lucide-react";
 
-export type NavKey = "home" | "discover" | "screener" | "strategies" | "movers" | "heatmap" | "groups" | "radar" | "ownership" | "stealth" | "watchlist" | "news" | "alerts" | "methodology" | "about";
+export type NavKey = "home" | "discover" | "screener" | "strategies" | "movers" | "heatmap" | "groups" | "radar" | "ownership" | "stealth" | "macro" | "watchlist" | "news" | "alerts" | "methodology" | "about";
 export type NavItem = { key: NavKey; href: string; icon: LucideIcon; children?: NavItem[] };
 
 /** The four primary destinations ("/" is the public landing page; the research home is /dashboard). Stock pages are reached via search, Cmd+K or lists, never the nav. */
@@ -22,6 +22,7 @@ export const NAV: NavItem[] = [
       { key: "radar", href: "/discover/radar", icon: Radar },
       { key: "ownership", href: "/discover/ownership", icon: Landmark },
       { key: "stealth", href: "/discover/stealth", icon: Building2 },
+      { key: "macro", href: "/discover/macro", icon: Coins },
     ],
   },
   { key: "watchlist", href: "/watchlist", icon: Bookmark },

@@ -265,7 +265,7 @@ describe("engine /v1 real responses via IdxBeiSource", () => {
     expect(all.data.rows.map((row) => row.symbol)).toEqual(["BBCA", "GOTO"]);
     expect(all.data.rows[1]).toMatchObject({ symbol: "GOTO", per: null, pbv: 1.97, marketCap: null });
     // No frequency in this session's rows: the field is not offered.
-    expect(all.data.supportedFields).toEqual(["price", "volume", "value", "foreignNetShares", "marketCap", "per", "pbv", "roe", "change1D"]);
+    expect(all.data.supportedFields).toEqual(["price", "volume", "value", "foreignNetShares", "foreignNetValue", "marketCap", "per", "pbv", "roe", "change1D"]);
     expect(all.data.ratioSources).toEqual({ BBCA: { per: "derived", roe: "derived" }, GOTO: { per: "derived", pbv: "pasardana" } });
   });
 
