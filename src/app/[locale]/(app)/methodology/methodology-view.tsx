@@ -68,7 +68,7 @@ export function MethodologyView() {
       </Panel>
 
       <Panel title={t("radar.title")} description={t("radar.intro")} testId="methodology-radar"
-        actions={<Link href="/discover/radar" className="caption-style text-link hover:underline">{t("radar.open")}</Link>}>
+        actions={<Link href="/discover/radar" className="caption-style text-link hover:underline touch-target">{t("radar.open")}</Link>}>
         <p className="caption-style ticker text-subtle" data-testid="methodology-radar-version">{t("version", { version: RADAR_RULES_V0.version })}</p>
         <Table head={[t("radar.signal"), t("radar.measures"), t("radar.windowHead"), t("radar.threshold"), t("radar.needs")]} testId="methodology-signals">
           {RADAR_SIGNAL_KEYS.map((key) => {
@@ -107,7 +107,7 @@ export function MethodologyView() {
       </Panel>
 
       <Panel title={t("stealth.title")} description={t("stealth.intro")} testId="methodology-stealth"
-        actions={<Link href="/discover/stealth" className="caption-style text-link hover:underline">{t("stealth.open")}</Link>}>
+        actions={<Link href="/discover/stealth" className="caption-style text-link hover:underline touch-target">{t("stealth.open")}</Link>}>
         <p className="caption-style ticker text-subtle" data-testid="methodology-stealth-version">{t("version", { version: STEALTH_RULES_V0.version })}</p>
         <ul className="flex list-disc flex-col gap-1.5 pl-5 text-sm">
           <li>{t("stealth.types", { types: STEALTH_RULES_V0.investorTypes.join(", ") })}</li>

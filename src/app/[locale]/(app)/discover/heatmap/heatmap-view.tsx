@@ -4,6 +4,7 @@ import { parseAsNumberLiteral, parseAsString, parseAsStringLiteral, useQueryStat
 import type { ReactNode } from "react";
 import { DataState } from "@/components/feedback/data-state";
 import { EmptyState } from "@/components/feedback/empty-state";
+import { ChipBar } from "@/components/layout/chip-bar";
 import { Panel } from "@/components/layout/panel";
 import { SectionHeader } from "@/components/layout/section-header";
 import { AsOfLine, HeatmapBubbles, HeatmapLegend, HeatmapPulse, HeatmapTreemap } from "@/components/market/heatmap";
@@ -43,7 +44,7 @@ export function HeatmapView() {
     <div className="flex flex-col gap-section p-4 md:p-6" data-testid="heatmap-view">
       <SectionHeader as="h1" title={t("title")} description={t("intro")} meta={meta} />
 
-      <div role="group" aria-label={t("controls")} className="flex flex-wrap items-center gap-2" data-testid="heatmap-controls">
+      <ChipBar label={t("controls")} testId="heatmap-controls">
         <Toggle label={t("viewLabel")} value={view} values={HEATMAP_VIEWS} onChange={(value) => void setView(value === "treemap" ? null : value)} text={(value) => t(`views.${value}`)} testId="heatmap-view-toggle" />
         <Toggle label={t("limitLabel")} value={String(limit)} values={HEATMAP_LIMITS.map(String)} onChange={(value) => void setLimit(value === "100" ? null : (Number(value) as 30 | 50))} text={(value) => t("limit", { count: Number(value) })} testId="heatmap-limit" />
         <Toggle label={t("directionLabel")} value={direction} values={DIRECTIONS} onChange={(value) => void setDirection(value === "all" ? null : value)} text={(value) => t(`direction.${value}`)} testId="heatmap-direction" />
@@ -61,7 +62,7 @@ export function HeatmapView() {
         {view === "treemap" && <Toggle label={t("sizeLabel")} value={sizeBy} values={SIZE_METRICS} onChange={(value) => void setSizeBy(value === "value" ? null : value)} text={(value) => t(`size.${value}`)} testId="heatmap-size" />}
         {view === "bubbles" && <Toggle label={t("yLabel")} value={yBy} values={SIZE_METRICS} onChange={(value) => void setYBy(value === "value" ? null : value)} text={(value) => t(`y.${value}`)} testId="heatmap-y" />}
         {view !== "pulse" && <Toggle label={t("colorLabel")} value={colorBy} values={COLOR_METRICS} onChange={(value) => void setColorBy(value === "change" ? null : value)} text={(value) => t(`color.${value}`)} testId="heatmap-color" />}
-      </div>
+      </ChipBar>
 
       <Panel testId="heatmap-panel" title={t("scope", { count: limit })} meta={meta}>
         <DataState query={heatmap} isEmpty={(envelope) => envelope.data.stocks.length === 0}>

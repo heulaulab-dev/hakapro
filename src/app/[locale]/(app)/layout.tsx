@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { OfflineBanner } from "@/components/feedback/offline-banner";
 import { AppHeader } from "@/components/layout/app-header";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { CommandPalette } from "@/components/layout/command-palette";
@@ -22,6 +23,7 @@ export default async function AppShellLayout({ children }: LayoutProps<"/[locale
       <div data-testid="app-shell" className="flex min-h-0 flex-1">
         <AppSidebar />
         <div className="flex min-w-0 flex-1 flex-col">
+          <OfflineBanner />
           <AppHeader viewer={viewer} theme={theme} density={density} aiEnabled={isAiEnabled()} />
           <main id="main" tabIndex={-1} className="min-h-0 flex-1 overflow-y-auto outline-none">
             {children}

@@ -78,7 +78,7 @@ function AnalysisBody({ data, meta }: { data: StockAnalysis; meta: FreshnessMeta
     <div className="flex flex-col gap-4">
       <p className="caption-style text-subtle">{t("session", { date: formatDate(data.date, locale) })}</p>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Panel testId="analysis-score" title={t("score.title")} meta={meta}>
           {data.score ? (
             <div className="flex flex-col gap-2">
@@ -132,7 +132,7 @@ function AnalysisBody({ data, meta }: { data: StockAnalysis; meta: FreshnessMeta
         </Panel>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Panel testId="analysis-price" title={t("price.title")} meta={meta}>
           <Facts items={[
             { label: t("price.close"), value: <>{idr(close)} <span className="text-muted-foreground">({pct(data.price.changePercent, true)})</span></> },
@@ -187,7 +187,7 @@ function AnalysisBody({ data, meta }: { data: StockAnalysis; meta: FreshnessMeta
       </div>
 
       <Panel testId="analysis-brokers" title={t("brokers.title")} meta={meta} description={data.brokers.total !== null ? t("brokers.total", { count: data.brokers.total }) : undefined}>
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <Facts items={[
             { label: t("brokers.topBuyers"), value: data.brokers.topBuyers.map((row) => `${row.code} ${idrCompact(row.netValueIdr)}`).join(", ") || "—" },
             { label: t("brokers.topSellers"), value: data.brokers.topSellers.map((row) => `${row.code} ${idrCompact(row.netValueIdr)}`).join(", ") || "—" },

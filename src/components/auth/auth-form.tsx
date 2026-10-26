@@ -151,12 +151,12 @@ export function AuthForm({ kind, mode, next, callbackError, googleEnabled, passw
       <div className="flex flex-col gap-1 text-xs text-muted-foreground">
         {kind === "login" && (
           <>
-            {passwordEnabled && <Link href="/forgot-password" className="text-link hover:underline">{t("forgotLink")}</Link>}
-            {passwordEnabled && <span>{t("noAccount")} <Link href="/signup" className="text-link hover:underline">{t("signUp")}</Link></span>}
+            {passwordEnabled && <Link href="/forgot-password" className="text-link hover:underline touch-target">{t("forgotLink")}</Link>}
+            {passwordEnabled && <span>{t("noAccount")} <Link href="/signup" className="text-link hover:underline touch-target">{t("signUp")}</Link></span>}
           </>
         )}
-        {kind === "signup" && <span>{t("haveAccount")} <Link href="/login" className="text-link hover:underline">{t("signIn")}</Link></span>}
-        {(kind === "forgot" || kind === "reset") && <Link href="/login" className="text-link hover:underline">{t("backToSignIn")}</Link>}
+        {kind === "signup" && <span>{t("haveAccount")} <Link href="/login" className="text-link hover:underline touch-target">{t("signIn")}</Link></span>}
+        {(kind === "forgot" || kind === "reset") && <Link href="/login" className="text-link hover:underline touch-target">{t("backToSignIn")}</Link>}
       </div>
     </div>
   );

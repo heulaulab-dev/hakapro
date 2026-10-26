@@ -22,12 +22,18 @@ for (const locale of ["id", "en"] as const) {
   });
 }
 
-test("freshness tooltip shows as-of and period on keyboard focus", async ({ page }) => {
+test("freshness details show as-of and period (tooltip on keyboard focus; tap popover on touch)", async ({ page, hasTouch }) => {
   await page.goto("/en/dev/primitives");
-  await page.getByTestId("panel-dark-comfortable").locator('[data-freshness="STALE"]').focus();
-  const tooltip = page.getByRole("tooltip").first();
-  await expect(tooltip).toContainText("Data as of Mar 31, 2026");
-  await expect(tooltip).toContainText("Period Q1 2026");
+  const badge = page.getByTestId("panel-dark-comfortable").locator('[data-freshness="STALE"]');
+  // Hover tooltips never open on touch screens, so touch devices get the same details in a popover.
+  if (hasTouch) {
+    await expect(badge).toHaveJSProperty("tagName", "BUTTON"); // swapped in after hydration
+    await badge.click();
+  }
+  else await badge.focus();
+  const details = page.getByRole(hasTouch ? "dialog" : "tooltip").first();
+  await expect(details).toContainText("Data as of Mar 31, 2026");
+  await expect(details).toContainText("Period Q1 2026");
 });
 
 test("compact density rows are shorter than comfortable rows", async ({ page }) => {

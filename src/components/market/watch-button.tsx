@@ -41,7 +41,7 @@ export function AlertLink({ symbol }: { symbol: string }) {
   const t = useTranslations("alerts");
   return (
     <Button variant="ghost" size="sm" asChild>
-      <Link href={`/alerts?symbol=${symbol}`} data-testid="alert-link"><Bell />{t("setAlert")}</Link>
+      <Link href={`/alerts?symbol=${symbol}`} data-testid="alert-link" aria-label={t("setAlert")}><Bell /><span className="max-md:sr-only">{t("setAlert")}</span></Link>
     </Button>
   );
 }
@@ -51,7 +51,7 @@ export function ResearchLink({ symbol }: { symbol: string }) {
   const t = useTranslations("research");
   return (
     <Button variant="ghost" size="sm" asChild>
-      <Link href={`/research/${symbol}`} data-testid="research-link" aria-label={t("linkLabel", { code: symbol })}><FileSearch />{t("link")}</Link>
+      <Link href={`/research/${symbol}`} data-testid="research-link" aria-label={t("linkLabel", { code: symbol })}><FileSearch /><span className="max-md:sr-only">{t("link")}</span></Link>
     </Button>
   );
 }
