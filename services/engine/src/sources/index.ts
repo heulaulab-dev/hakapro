@@ -8,10 +8,11 @@ import { BI_HOST } from "./bi";
 import { NEWS_FEEDS, NEWS_SOURCE_IDS } from "./news";
 import { PASARDANA_HOST } from "./pasardana";
 import { TRADINGVIEW_HOST } from "./tradingview";
+import { WORLD_BANK_FILE_HOST } from "./worldbank";
 import { YAHOO_HOST } from "./yahoo";
 
 export const SOURCE_IDS = {
-  tradingview: "tradingview-scanner", yahoo: "yahoo-chart", yahooFundamentals: "yahoo-fundamentals", pasardana: "pasardana", arjum: "arjum", bi: "bank-indonesia",
+  tradingview: "tradingview-scanner", yahoo: "yahoo-chart", yahooFundamentals: "yahoo-fundamentals", pasardana: "pasardana", arjum: "arjum", bi: "bank-indonesia", worldBank: "world-bank-pinksheet",
 } as const;
 
 /** Yahoo chart + fundamentals (one host): 5 s between requests, one in flight. */
@@ -22,7 +23,7 @@ export const MARKET_INFO_POLICY = { minIntervalMs: 5000, concurrency: 1 } as con
 
 export type EngineSources = {
   tradingview: SourceDefinition; yahoo: SourceDefinition; yahooFundamentals: SourceDefinition; pasardana: SourceDefinition; arjum: SourceDefinition | null;
-  news: SourceDefinition[]; bi: SourceDefinition;
+  news: SourceDefinition[]; bi: SourceDefinition; worldBank: SourceDefinition;
 };
 
 export function engineSources(arjum: ArjumConfig | null): EngineSources {
@@ -45,5 +46,8 @@ export function engineSources(arjum: ArjumConfig | null): EngineSources {
       return defineSource({ id, host: feed.host, kind: "news", policy: { ...MARKET_INFO_POLICY }, description: `${feed.outlet} RSS: headline, link, time, feed summary` });
     }),
     bi: defineSource({ id: SOURCE_IDS.bi, host: BI_HOST, kind: "macro", policy: { ...MARKET_INFO_POLICY }, description: "Bank Indonesia: BI-Rate and JISDOR tables (first page only)" }),
+    // CC BY 4.0 monthly commodity workbook; the landing page (www.worldbank.org) is fetched under the same source to
+    // discover the current file URL (its path carries a release hash), then the XLSX from thedocs.worldbank.org.
+    worldBank: defineSource({ id: SOURCE_IDS.worldBank, host: WORLD_BANK_FILE_HOST, kind: "macro", policy: { minIntervalMs: 2000, concurrency: 1 }, description: "World Bank Pink Sheet: monthly commodity prices (coal, CPO, nickel, gold, …)" }),
   };
 }

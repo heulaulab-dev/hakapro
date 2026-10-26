@@ -120,11 +120,30 @@
     "overview": "Overview",
     "chart": "Chart",
     "flow": "Flow",
+    "running": "Running Trade",
     "financials": "Financials",
     "ownership": "Ownership",
     "insiders": "Insiders",
     "history": "History",
     "analysis": "Analysis"
+  },
+  "runningTrade": {
+    "title": "Running trade",
+    "note": "Every executed trade today, newest first, from the data provider. Foreign (F) and domestic (D) mark each side's investor type. End of day, not real-time.",
+    "time": "Time",
+    "board": "Board",
+    "price": "Price",
+    "lots": "Lots",
+    "value": "Value",
+    "buyer": "Buyer",
+    "seller": "Seller",
+    "aggressor": "Side",
+    "foreign": "F",
+    "domestic": "D",
+    "actions": { "BUY": "Buy", "SELL": "Sell" },
+    "page": "Page {page} of {total}",
+    "previous": "Previous",
+    "next": "Next"
   },
   "header": {
     "search": "Search stocks or pages…",
@@ -357,6 +376,7 @@
     "hints": {
       "chart": "Candles, volume and time ranges",
       "flow": "Broker Summary and Foreign Flow",
+      "running": "Today's executed trades, tick by tick",
       "financials": "Income statement, balance sheet, cash flow",
       "ownership": "Shareholder structure",
       "insiders": "Director, commissioner and major-holder transactions",
