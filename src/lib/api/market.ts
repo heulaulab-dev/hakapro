@@ -326,8 +326,17 @@ export const stealthOwnershipSchema = z.object({
 });
 export type StealthOwnership = z.infer<typeof stealthOwnershipSchema>;
 
+/** IHSG + IDX-IC sector-index daily closes (`/api/indices/history`), for the sector-rotation RRG. */
+export const indicesHistorySchema = z.object({
+  series: z.array(z.object({ code: z.string(), name: z.string().nullable(), points: z.array(z.object({ date: z.string(), close: z.number() })) })),
+});
+export type IndicesHistory = z.infer<typeof indicesHistorySchema>;
+export type IndexSeries = IndicesHistory["series"][number];
+
 export const engineApi = {
   radar: (signal?: AbortSignal) => fetchEnvelope("/api/radar", radarSchema, { signal }),
+  indicesHistory: (query: { codes?: string[]; from?: string; to?: string } = {}, signal?: AbortSignal) =>
+    fetchEnvelope(`/api/indices/history${qs({ codes: query.codes?.join(","), from: query.from, to: query.to })}`, indicesHistorySchema, { signal }),
   stealthOwnership: (signal?: AbortSignal) => fetchEnvelope("/api/ownership/stealth", stealthOwnershipSchema, { signal }),
   sectors: (signal?: AbortSignal) => fetchEnvelope("/api/sectors", z.array(sectorPerformanceSchema), { signal }),
   heatmap: (limit: number, signal?: AbortSignal) => fetchEnvelope(`/api/heatmap${qs({ limit })}`, heatmapSchema, { signal }),

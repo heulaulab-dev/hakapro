@@ -110,6 +110,15 @@ export class DbMarketStore implements MarketStore {
     }).from(t.indexDaily).orderBy(t.indexDaily.code, desc(t.indexDaily.date));
   }
 
+  async indexDailyBetween(codes: string[] | null, from: string, to: string): Promise<IndexDailyRecord[]> {
+    const filters = [gte(t.indexDaily.date, from), lte(t.indexDaily.date, to)];
+    if (codes && codes.length) filters.push(inArray(t.indexDaily.code, codes));
+    return this.db.select({
+      code: t.indexDaily.code, name: t.indexDaily.name, date: t.indexDaily.date, close: t.indexDaily.close,
+      previousClose: t.indexDaily.previousClose, changePercent: t.indexDaily.changePercent,
+    }).from(t.indexDaily).where(and(...filters)).orderBy(asc(t.indexDaily.code), asc(t.indexDaily.date));
+  }
+
   async latestIndexIntraday(): Promise<IndexIntradayRecord[]> {
     return this.db.selectDistinctOn([t.indexIntraday.code], {
       code: t.indexIntraday.code, name: t.indexIntraday.name, ts: t.indexIntraday.ts, last: t.indexIntraday.last, changePercent: t.indexIntraday.changePercent,

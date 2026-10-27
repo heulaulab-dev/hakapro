@@ -49,6 +49,9 @@ export const useSeasonality = (symbol: string) => useQuery({ queryKey: queryKeys
 export const useProfile = (symbol: string) => useQuery({ queryKey: queryKeys.profile(symbol), queryFn: ({ signal }) => stockApi.profile(symbol, signal) });
 export const useSectors = () => useQuery({ queryKey: queryKeys.sectors(), queryFn: ({ signal }) => engineApi.sectors(signal) });
 export const useMacro = () => useQuery({ queryKey: queryKeys.macro(), queryFn: ({ signal }) => engineApi.macro(signal) });
+/** IHSG + IDX-IC sector-index daily closes for the sector-rotation RRG. */
+export const useIndicesHistory = (query: { codes?: string[]; from?: string; to?: string } = {}) =>
+  useQuery({ queryKey: queryKeys.indicesHistory(query.codes), queryFn: ({ signal }) => engineApi.indicesHistory(query, signal) });
 /** The most-traded `limit` stocks with sector totals; the previous limit's map stays on screen while the next loads. */
 export const useHeatmap = (limit: number) =>
   useQuery({ queryKey: queryKeys.heatmap(limit), queryFn: ({ signal }) => engineApi.heatmap(limit, signal), placeholderData: (previous) => previous });

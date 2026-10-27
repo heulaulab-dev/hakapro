@@ -4,7 +4,7 @@ import { classifySessionDate, withFreshness, type Freshness, type WithFreshness 
 import { strategyBoardSchema } from "@/lib/strategies/contract";
 import {
   actionsCalendarSchema, actionsSchema, announcementItemSchema, fundamentalsSchema, HEATMAP_DEFAULT_LIMIT, heatmapLimitSchema, heatmapSchema,
-  idxBeiEnvelope, insidersRecentSchema, macroSchema, marketOverviewSchema, newsItemSchema, groupsSchema, groupWindowSchema, profileSchema,
+  idxBeiEnvelope, indicesHistorySchema, insidersRecentSchema, macroSchema, marketOverviewSchema, newsItemSchema, groupsSchema, groupWindowSchema, profileSchema,
   screenRequestSchema, screenResultSchema, sectorsSchema, securitySchema, signalsSchema, stockSchema, type ScreenRequest, radarSchema,
   stealthOwnershipSchema,
 } from "@/server/schemas/idx-bei";
@@ -170,6 +170,17 @@ export class IdxBeiSource extends BaseMarketDataSource {
   /** Data Engine only (`/v1/macro`, E3): BI-Rate, JISDOR and World Bank commodity prices (`wb.*`). */
   async macro() {
     const { data, meta } = await this.get("/v1/macro", macroSchema, TTL_MS.news);
+    return this.snapshot(data, meta.dataAsOf);
+  }
+
+  /** Data Engine `/v1/indices/history`: IHSG + IDX-IC sector-index daily closes for sector rotation. */
+  async indicesHistory(query: { codes?: string[]; from?: string; to?: string } = {}) {
+    const params = new URLSearchParams();
+    if (query.from) params.set("from", query.from);
+    if (query.to) params.set("to", query.to);
+    if (query.codes?.length) params.set("codes", query.codes.join(","));
+    const qs = params.toString();
+    const { data, meta } = await this.get(`/v1/indices/history${qs ? `?${qs}` : ""}`, indicesHistorySchema, TTL_MS.market);
     return this.snapshot(data, meta.dataAsOf);
   }
 

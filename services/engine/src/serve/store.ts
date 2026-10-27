@@ -69,6 +69,8 @@ export interface MarketStore {
   sessionHistory(endDate: string, sessions: number): Promise<DailyRecord[]>;
   /** Newest index_daily row per code. */
   latestIndexDaily(): Promise<IndexDailyRecord[]>;
+  /** index_daily rows for `codes` (all when null) between `from` and `to` (inclusive), oldest first. */
+  indexDailyBetween(codes: string[] | null, from: string, to: string): Promise<IndexDailyRecord[]>;
   /** Newest index_intraday row per code. */
   latestIndexIntraday(): Promise<IndexIntradayRecord[]>;
   /** Newest session date with foreign buy/sell. */
@@ -156,6 +158,12 @@ export class MemoryMarketStore implements MarketStore {
     const latest = new Map<string, IndexIntradayRecord>();
     for (const row of this.data.indexIntraday ?? []) if (!latest.has(row.code) || latest.get(row.code)!.ts < row.ts) latest.set(row.code, row);
     return [...latest.values()];
+  }
+  async indexDailyBetween(codes: string[] | null, from: string, to: string) {
+    const set = codes ? new Set(codes) : null;
+    return (this.data.indexDaily ?? [])
+      .filter((row) => row.date >= from && row.date <= to && (!set || set.has(row.code)))
+      .sort((a, b) => a.code.localeCompare(b.code) || a.date.localeCompare(b.date));
   }
   async latestForeignDate() { return this.daily.filter((row) => row.foreignBuy !== null).map((row) => row.date).sort().at(-1) ?? null; }
   async foreignHistory(endDate: string, sessions: number) {
