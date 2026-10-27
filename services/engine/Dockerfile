@@ -35,11 +35,20 @@ WORKDIR /app
 ENV NODE_ENV=production \
     PORT=8080 \
     ENGINE_DATA_DIR=/data \
-    ENGINE_MIGRATIONS_DIR=/app/migrations
+    ENGINE_MIGRATIONS_DIR=/app/migrations \
+    ENGINE_IDX_PRIMARY_PYTHON=/opt/idx-venv/bin/python \
+    ENGINE_IDX_PRIMARY_WORKER_SCRIPT=/app/services/engine/python/idx_curl_worker.py
 COPY --from=build /build/dist/main.js /build/dist/migrate.js ./
 COPY --from=build /build/services/engine/db/migrations ./migrations
+COPY services/engine/python/idx_curl_worker.py services/engine/python/idx_transport.py ./services/engine/python/
 # /data holds the PAUSE flag and the raw-store fallback; mount a persistent volume there in Coolify.
-RUN mkdir -p /data && chown bun:bun /data
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends python3 python3-venv \
+    && python3 -m venv /opt/idx-venv \
+    && /opt/idx-venv/bin/pip install --no-cache-dir curl_cffi==0.17.0 \
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p /data \
+    && chown bun:bun /data
 USER bun
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \

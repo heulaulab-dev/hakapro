@@ -39,7 +39,8 @@ export function idxIndexBackfillJob(services: JobServices, source: SourceRef, tr
       const result = await collectIndexSummary(transport, date);
       if (result.status === "UNAVAILABLE") {
         services.log.info("idx_index_backfill_unavailable", { job: IDX_INDEX_BACKFILL_ID, date, reason: result.reason });
-        return { rows: 0 };
+        // Throw before the shared backfill writes its date cursor; a WAF/timeout must be retried next run, not skipped.
+        throw new Error(`IDX transport unavailable for ${date}: ${result.reason}`);
       }
       const { rows, rejected } = result.parse;
       if (rejected.length) services.log.info("idx_index_backfill_rejected", { job: IDX_INDEX_BACKFILL_ID, date, rejected: rejected.length });

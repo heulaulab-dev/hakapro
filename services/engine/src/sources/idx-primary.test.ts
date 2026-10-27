@@ -46,11 +46,11 @@ describe("parseIdxIndexSummary — validation + normalization", () => {
   });
 });
 
-describe("transport (injectable, unavailable by default)", () => {
-  it("collectIndexSummary reports UNAVAILABLE when no authorized transport is configured", async () => {
+describe("transport (injectable, opt-in curl_cffi worker)", () => {
+  it("collectIndexSummary reports UNAVAILABLE when no transport is configured", async () => {
     const result = await collectIndexSummary(unavailableIdxTransport(), FIXTURE_DATE);
     expect(result.status).toBe("UNAVAILABLE");
-    if (result.status === "UNAVAILABLE") expect(result.reason).toMatch(/authorized/i);
+    if (result.status === "UNAVAILABLE") expect(result.reason).toMatch(/transport configured/i);
   });
 
   it("collectIndexSummary parses whatever bytes an injected transport returns", async () => {
@@ -60,11 +60,10 @@ describe("transport (injectable, unavailable by default)", () => {
     if (result.status === "OK") expect(result.parse.rows).toHaveLength(2);
   });
 
-  it("makeIdxIndexTransport is null when disabled and unavailable when enabled without an authorized transport", async () => {
+  it("makeIdxIndexTransport is opt-in and creates curl_cffi transport when enabled", () => {
     expect(makeIdxIndexTransport({ enabled: false, baseUrl: "https://www.idx.co.id/primary" })).toBeNull();
     const enabled = makeIdxIndexTransport({ enabled: true, baseUrl: "https://www.idx.co.id/primary" });
-    expect(enabled).not.toBeNull();
-    expect(await enabled!.fetchIndexSummary(FIXTURE_DATE)).toEqual({ ok: false, reason: expect.stringMatching(/authorized/i) });
+    expect(enabled).toMatchObject({ id: "idx-primary-curl-cffi" });
   });
 
   it("exposes a stable source id", () => {

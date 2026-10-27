@@ -1,0 +1,17 @@
+[project]
+name = "hakapro-idx-transport-lab"
+version = "0.1.0"
+description = "Educational curl_cffi transport and client comparison for authorized IDX red-team testing"
+requires-python = ">=3.10"
+dependencies = [
+  "curl_cffi>=0.15,<1",
+  "httpx[http2]>=0.28,<1",
+  "requests>=2.32,<3",
+  "playwright>=1.50,<2",
+]
+
+[tool.unittest]
+test-directory = "tests"
+
+[tool.setuptools]
+py-modules = ["idx_transport", "idx_curl_worker", "compare_http_clients"]
