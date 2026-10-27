@@ -4,7 +4,7 @@ import { conditionHolds, matchesConditions, pickRatio, serveFundamentals, serveS
 import { MemoryMarketStore, type DailyRecord, type RatioRecord } from "./store";
 
 const values = (overrides: Partial<ScreenValues>): ScreenValues => ({
-  price: null, volume: null, value: null, frequency: null, foreignNetShares: null, foreignNetValue: null, marketCap: null, per: null, pbv: null, roe: null, roa: null,
+  price: null, volume: null, value: null, frequency: null, foreignNetShares: null, foreignNetValue: null, relativeVolume: null, pctFromHigh: null, marketCap: null, per: null, pbv: null, roe: null, roa: null,
   eps: null, der: null, dividendYield: null, change1D: null, ...overrides,
 });
 const cond = (field: keyof ScreenValues, operator: "GT" | "GTE" | "LT" | "LTE" | "EQ", value: number, connective: "AND" | "OR" = "AND") => ({ field, operator, value, connective });
@@ -100,6 +100,28 @@ describe("serveScreener", () => {
     expect(aadi).toMatchObject({ per: 6.17137, roe: 0.2408, change1D: null, value: null });
     expect(served.data.ratioSources).toEqual({ BBCA: { per: "derived", roe: "derived" }, GOTO: { per: "derived" }, AADI: { per: "pasardana", roe: "pasardana" } });
     expect(served.data.supportedFields).toEqual(["price", "volume", "value", "frequency", "foreignNetShares", "foreignNetValue", "marketCap", "per", "roe", "change1D"]);
+  });
+
+  it("computes relativeVolume and pctFromHigh (breakout) from the trailing window", async () => {
+    const priorDates = ["2026-10-08", "2026-10-09", "2026-10-10", "2026-10-13", "2026-10-14", "2026-10-15"];
+    const windowStore = new MemoryMarketStore({
+      securities: [{ symbol: "VOLT", name: "Volt Tbk", sector: null, subsector: null, board: null, sharesOutstanding: null, freeFloatPct: null, asOf }],
+      daily: [
+        // Six quiet prior sessions: volume 1,000 and high 100 each.
+        ...priorDates.map((date) => ({ ...day("VOLT", 95, 94, 1e9, { volume: 1_000, high: 100 }), date })),
+        // Today: volume 3,000 (3× the average) and a close of 120, 20% above the prior 100 high (a breakout).
+        day("VOLT", 120, 95, 3e9, { volume: 3_000, high: 120 }),
+      ],
+    });
+    const served = (await serveScreener(windowStore, { conditions: [cond("price", "GT", 0)], limit: 10 }, now))!;
+    const volt = served.data.rows[0] as unknown as { relativeVolume: number; pctFromHigh: number };
+    expect(volt.relativeVolume).toBeCloseTo(3, 12);
+    expect(volt.pctFromHigh).toBeCloseTo(0.2, 12);
+    expect(served.data.supportedFields).toContain("relativeVolume");
+    expect(served.data.supportedFields).toContain("pctFromHigh");
+    // A breakout screen: close at or above the prior high.
+    const breakout = await serveScreener(windowStore, { conditions: [cond("pctFromHigh", "GTE", 0)], limit: 10 }, now);
+    expect(breakout!.data.rows.map((row) => row.symbol)).toEqual(["VOLT"]);
   });
 
   it("applies conditions and the limit; total counts every match", async () => {
