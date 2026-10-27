@@ -20,6 +20,8 @@ import { DEFAULT_INSIDER_REVISIT_DAYS } from "./serve/insiders";
 import { fundamentalsJob } from "./jobs/fundamentals";
 import { ratiosJob } from "./jobs/ratios";
 import { indicesEodJob } from "./jobs/indices";
+import { idxIndexBackfillJob } from "./jobs/idx-index-backfill";
+import { idxPrimarySource, makeIdxIndexTransport } from "./sources/idx-primary";
 import { intradayJob } from "./jobs/intraday";
 import { commoditiesJob } from "./jobs/commodities";
 import { biRateJob, jisdorJob } from "./jobs/macro";
@@ -68,8 +70,11 @@ export type EngineServices = {
 export function defaultRegistry(services: EngineServices): Registry {
   const sources = engineSources(services.config.arjum);
   const jobServices = { db: services.db, fetcher: services.fetcher, documents: services.documents, sourceState: services.sourceState, log: services.log, now: services.now };
+  // IDX /primary historical index backfill: registered only when enabled AND an authorized transport is available.
+  const idxTransport = makeIdxIndexTransport(services.config.idxPrimary);
+  const idxSource = idxPrimarySource(services.config.idxPrimary.baseUrl);
   return {
-    sources: [sources.tradingview, sources.yahoo, sources.pasardana, ...(sources.arjum ? [sources.arjum] : []), ...sources.news, sources.bi, sources.yahooFundamentals, sources.worldBank],
+    sources: [sources.tradingview, sources.yahoo, sources.pasardana, ...(sources.arjum ? [sources.arjum] : []), ...sources.news, sources.bi, sources.yahooFundamentals, sources.worldBank, ...(idxTransport ? [idxSource] : [])],
     jobs: [
       universeJob(jobServices, { tradingview: sources.tradingview, pasardana: sources.pasardana }),
       indicesEodJob(jobServices, sources.tradingview),
@@ -97,6 +102,7 @@ export function defaultRegistry(services: EngineServices): Registry {
       fundamentalsJob(jobServices, sources.yahooFundamentals, { hostSources: [sources.yahoo.id] }),
       ratiosJob(jobServices, { fundamentals: sources.yahooFundamentals.id, chart: sources.yahoo.id }),
       ...(services.config.strategyScans.enabled ? [strategyScanJob(jobServices)] : []),
+      ...(idxTransport ? [idxIndexBackfillJob(jobServices, idxSource, idxTransport)] : []),
     ],
   };
 }

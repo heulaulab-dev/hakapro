@@ -120,7 +120,8 @@
     "radar": "Radar Sinyal",
     "stealth": "Korporasi KSEI",
     "macro": "Suku Bunga & Komoditas",
-    "methodology": "Metodologi"
+    "methodology": "Metodologi",
+    "rotation": "Rotasi Sektor"
   },
   "macro": {
     "title": "Suku bunga & komoditas",
@@ -165,7 +166,10 @@
     "aggressor": "Sisi",
     "foreign": "F",
     "domestic": "D",
-    "actions": { "BUY": "Beli", "SELL": "Jual" },
+    "actions": {
+      "BUY": "Beli",
+      "SELL": "Jual"
+    },
     "page": "Halaman {page} dari {total}",
     "previous": "Sebelumnya",
     "next": "Berikutnya"
@@ -1792,5 +1796,73 @@
       "body": "Bila data yang dibutuhkan sebuah sinyal tidak lengkap, misalnya data asing di luar kuota, frekuensi transaksi yang belum tersedia, saham yang baru tercatat, atau daftar KSEI yang belum diunggah, sinyal itu ditandai \"belum tersedia\". Ia tidak dihitung sebagai nol dan tidak dihitung sebagai sinyal yang muncul."
     },
     "disclaimer": "Halaman ini dan semua tampilan yang dirujuknya dibuat untuk riset dan edukasi. Isinya menggambarkan data masa lalu, bukan saran investasi, bukan ajakan jual atau beli, dan tidak menjamin hasil apa pun."
+  },
+  "sectorRotation": {
+    "title": "Rotasi Sektor",
+    "intro": "Kekuatan dan momentum relatif sektor IDX-IC terhadap benchmark, pada Relative Rotation Graph empat kuadran. Riset saja — bukan sinyal beli atau jual.",
+    "experimental": "Data eksperimental / internal: nilai indeks sektor berasal dari scanner publik TradingView dan tidak dilisensikan untuk redistribusi komersial.",
+    "benchmark": "Benchmark",
+    "interval": "Interval",
+    "daily": "Harian",
+    "weekly": "Mingguan",
+    "tail": "Ekor",
+    "reset": "Atur ulang",
+    "rrgTitle": "Relative Rotation Graph",
+    "rrgDesc": "Tiap sektor vs {benchmark}. Pusat (100, 100) berarti sektor berada di rata-rata relatifnya sendiri.",
+    "chartAria": "Grafik rotasi relatif empat kuadran sektor terhadap benchmark.",
+    "axisRatio": "RS-Ratio (kekuatan relatif)",
+    "axisMomentum": "RS-Momentum",
+    "noBenchmark": "Benchmark {code} tidak tersedia pada data saat ini.",
+    "rankingsTitle": "Peringkat sektor",
+    "rankingsDesc": "Diurutkan berdasarkan RS-Ratio pada tanggal terpilih. Arahkan kursor ke baris untuk menyorotnya di grafik.",
+    "sector": "Sektor",
+    "rsRatio": "RS-Ratio",
+    "rsMomentum": "RS-Momentum",
+    "quadrant": "Kuadran",
+    "momentumChange": "Δ Momentum",
+    "show": "Tampilkan",
+    "hide": "Sembunyikan",
+    "detailTitle": "Detail sektor",
+    "detailEmpty": "Pilih sektor untuk melihat lintasannya.",
+    "heading": "Arah",
+    "velocity": "Kecepatan",
+    "trajectory": "Lintasan terkini (RS-Ratio / RS-Momentum)",
+    "asOf": "Per {date}",
+    "insightsTitle": "Pengamatan",
+    "insightsDesc": "Catatan deterministik dari titik hasil perhitungan — bukan prediksi.",
+    "prev": "Periode sebelumnya",
+    "pause": "Jeda",
+    "play": "Putar",
+    "next": "Periode berikutnya",
+    "timeline": "Linimasa pemutaran",
+    "live": "Terkini",
+    "insufficientTitle": "Riwayat belum cukup",
+    "insufficientBody": "Relative Rotation Graph butuh minimal {required} observasi {interval} yang selaras sebelum titik pertama bisa dihitung. Data saat ini baru {available}.",
+    "activation": "Grafik aktif otomatis setelah {required} observasi valid terkumpul — tanpa sakelar manual, tanpa ambang tanggal.",
+    "alignedObs": "Obs selaras",
+    "validPoints": "Titik valid",
+    "ingestionNote": "Engine mengambil indeks sektor sekali per hari bursa, jadi cakupan bertambah seiring waktu. Benchmark dan sebagian sektor mungkin masih belum tersedia.",
+    "missingSectors": "Belum ada data untuk {count} sektor: {sectors}. Indeks sektor ini tidak memiliki sumber historis yang sah dan tidak dikumpulkan.",
+    "methodologyTitle": "Cara perhitungannya",
+    "methodologyBody": "Pendekatan independen dan transparan (harga relatif → rata-rata bergerak → z-score bergulir berpusat di 100). Ini BUKAN JdK RS-Ratio/RS-Momentum yang proprieter. Lihat docs/research/sector-rotation-analysis.md.",
+    "quadrants": {
+      "leading": "Memimpin",
+      "weakening": "Melemah",
+      "improving": "Membaik",
+      "lagging": "Tertinggal"
+    },
+    "quadrantHelp": {
+      "leading": "kuat dan masih menguat",
+      "weakening": "kuat tapi kehilangan momentum",
+      "improving": "lemah tapi pulih",
+      "lagging": "lemah dan masih memburuk"
+    },
+    "insight": {
+      "moved": "{sector} berpindah dari {from} ke {to}.",
+      "momentumUp": "Momentum relatif {sector} naik dalam tiga observasi terakhir.",
+      "momentumDown": "Momentum relatif {sector} turun dalam tiga observasi terakhir.",
+      "crossedUp": "Kekuatan relatif {sector} melewati rata-rata benchmark (RS-Ratio ≥ 100).",
+      "crossedDown": "Kekuatan relatif {sector} turun di bawah rata-rata benchmark (RS-Ratio < 100)."
+    }
   }
 }

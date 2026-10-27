@@ -120,7 +120,8 @@
     "radar": "Signal Radar",
     "stealth": "KSEI Corporate",
     "macro": "Rates & Commodities",
-    "methodology": "Methodology"
+    "methodology": "Methodology",
+    "rotation": "Sector Rotation"
   },
   "macro": {
     "title": "Rates & commodities",
@@ -165,7 +166,10 @@
     "aggressor": "Side",
     "foreign": "F",
     "domestic": "D",
-    "actions": { "BUY": "Buy", "SELL": "Sell" },
+    "actions": {
+      "BUY": "Buy",
+      "SELL": "Sell"
+    },
     "page": "Page {page} of {total}",
     "previous": "Previous",
     "next": "Next"
@@ -1792,5 +1796,73 @@
       "body": "When a signal's data is incomplete, for example foreign data outside the quota, a trade count that is not available yet, a newly listed stock, or a KSEI list that has not been uploaded, the signal is marked \"not available yet\". It is not counted as zero and not counted as fired."
     },
     "disclaimer": "This page and every view it refers to are for research and education. They describe past data; they are not investment advice, not an invitation to buy or sell, and guarantee no outcome."
+  },
+  "sectorRotation": {
+    "title": "Sector Rotation",
+    "intro": "Relative strength and momentum of IDX-IC sectors versus a benchmark, on a four-quadrant Relative Rotation Graph. Research only — not a buy or sell signal.",
+    "experimental": "Experimental / internal data: sector-index values come from TradingView's public scanner and are not licensed for commercial redistribution.",
+    "benchmark": "Benchmark",
+    "interval": "Interval",
+    "daily": "Daily",
+    "weekly": "Weekly",
+    "tail": "Tail",
+    "reset": "Reset",
+    "rrgTitle": "Relative Rotation Graph",
+    "rrgDesc": "Each sector vs {benchmark}. Centre (100, 100) is a sector trading at its own recent relative average.",
+    "chartAria": "Four-quadrant relative rotation graph of sectors versus the benchmark.",
+    "axisRatio": "RS-Ratio (relative strength)",
+    "axisMomentum": "RS-Momentum",
+    "noBenchmark": "Benchmark {code} is not available in the current data.",
+    "rankingsTitle": "Sector rankings",
+    "rankingsDesc": "Ordered by RS-Ratio at the selected date. Hover a row to highlight it on the chart.",
+    "sector": "Sector",
+    "rsRatio": "RS-Ratio",
+    "rsMomentum": "RS-Momentum",
+    "quadrant": "Quadrant",
+    "momentumChange": "Δ Momentum",
+    "show": "Show",
+    "hide": "Hide",
+    "detailTitle": "Sector detail",
+    "detailEmpty": "Select a sector to see its trajectory.",
+    "heading": "Heading",
+    "velocity": "Velocity",
+    "trajectory": "Recent trajectory (RS-Ratio / RS-Momentum)",
+    "asOf": "As of {date}",
+    "insightsTitle": "Observations",
+    "insightsDesc": "Deterministic notes read from the calculated points — never predictions.",
+    "prev": "Previous period",
+    "pause": "Pause",
+    "play": "Play",
+    "next": "Next period",
+    "timeline": "Playback timeline",
+    "live": "Latest",
+    "insufficientTitle": "Not enough history yet",
+    "insufficientBody": "A Relative Rotation Graph needs at least {required} aligned {interval} observations before the first point can be computed. The data currently has {available}.",
+    "activation": "The chart activates automatically once {required} valid observations have accumulated — no manual switch, no date threshold.",
+    "alignedObs": "Aligned obs",
+    "validPoints": "Valid points",
+    "ingestionNote": "The engine ingests the sector indices once per trading day, so coverage grows over time. Benchmark and some sectors may still be unavailable.",
+    "missingSectors": "No data yet for {count} sector(s): {sectors}. These sector indices have no legitimate historical source and are not collected.",
+    "methodologyTitle": "How this is calculated",
+    "methodologyBody": "An independent, transparent approximation (price relative → moving average → rolling z-score centred on 100). This is NOT the proprietary JdK RS-Ratio/RS-Momentum. See docs/research/sector-rotation-analysis.md.",
+    "quadrants": {
+      "leading": "Leading",
+      "weakening": "Weakening",
+      "improving": "Improving",
+      "lagging": "Lagging"
+    },
+    "quadrantHelp": {
+      "leading": "strong and still improving",
+      "weakening": "strong but losing momentum",
+      "improving": "weak but recovering",
+      "lagging": "weak and still deteriorating"
+    },
+    "insight": {
+      "moved": "{sector} moved from {from} to {to}.",
+      "momentumUp": "{sector} relative momentum rose over the last three observations.",
+      "momentumDown": "{sector} relative momentum fell over the last three observations.",
+      "crossedUp": "{sector} relative strength crossed above the benchmark average (RS-Ratio ≥ 100).",
+      "crossedDown": "{sector} relative strength crossed below the benchmark average (RS-Ratio < 100)."
+    }
   }
 }
