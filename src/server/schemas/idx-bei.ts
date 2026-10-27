@@ -192,6 +192,33 @@ export const macroSeriesSchema = z.object({
 });
 export const macroSchema = z.object({ series: z.array(macroSeriesSchema) });
 
+/** Per-index ingestion quality/coverage flags (Data Engine `serve/index-quality`). Generic, not RRG-specific. */
+export const INDEX_QUALITY_FLAGS = ["STALE", "NON_POSITIVE_CLOSE", "UNORDERED"] as const;
+
+/** Data Engine `/v1/indices/history` (sector-rotation): daily close series per index code, oldest first. */
+export const indicesHistorySchema = z.object({
+  series: z.array(z.object({
+    code: z.string(),
+    name: z.string().nullable(),
+    points: z.array(z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), close: z.number() })),
+  })),
+  // Ingestion observability (Phase 8): what is actually stored per code, and any data-quality flags. Optional so
+  // older stubs and the unavailable lane still validate; the live engine always includes it.
+  coverage: z.array(z.object({
+    code: z.string(),
+    name: z.string().nullable(),
+    count: z.number().int(),
+    firstDate: z.string().nullable(),
+    lastDate: z.string().nullable(),
+    spanTradingDays: z.number().int(),
+    missingSessions: z.number().int(),
+    staleTradingDays: z.number().int(),
+    flags: z.array(z.enum(INDEX_QUALITY_FLAGS)),
+  })).optional(),
+});
+export type IndicesHistory = z.infer<typeof indicesHistorySchema>;
+export type IndexCoverageReport = NonNullable<IndicesHistory["coverage"]>[number];
+
 /** Data Engine `/v1/actions?from&to` (E3): market-wide corporate actions by ex-date, oldest first. */
 export const actionsCalendarSchema = z.array(z.object({
   symbol: symbolSchema, date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), type: z.string(), description: z.string().nullable(),

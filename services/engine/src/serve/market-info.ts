@@ -3,10 +3,11 @@
 //   News: newest first, served DELAYED while the newest headline is under a day old, STALE after (never LIVE).
 //   Macro and actions: dated by their newest data and classified with the IDX session clock.
 import type { z } from "zod";
-import type { actionsCalendarSchema, macroSchema, newsItemSchema } from "@/server/schemas/idx-bei";
+import type { actionsCalendarSchema, indicesHistorySchema, macroSchema, newsItemSchema } from "@/server/schemas/idx-bei";
 import { MACRO_SERIES } from "../sources/bi";
 import { WORLD_BANK_COMMODITIES } from "../sources/worldbank";
 import { addDays, wibDateOf, wibIso, wibToday } from "../sources/session";
+import { indexCoverageReport } from "./index-quality";
 import { sessionFreshness, type Served } from "./market";
 import type { MarketStore } from "./store";
 
@@ -60,6 +61,23 @@ export async function serveMacro(store: MarketStore, now: Date): Promise<Served<
   if (!series.length) return null;
   const dataAsOf = series.map((row) => row.date).sort().at(-1)!;
   return { data: { series }, dataAsOf, freshness: sessionFreshness(dataAsOf, now) };
+}
+
+// ── /v1/indices/history ─────────────────────────────────────────────────────────────────────────────────────────
+
+/** Daily close series per index code (oldest first), grouped by code. Null when nothing is stored in range. */
+export async function serveIndicesHistory(store: MarketStore, from: string, to: string, codes: string[] | null, now: Date): Promise<Served<z.input<typeof indicesHistorySchema>> | null> {
+  const rows = await store.indexDailyBetween(codes, from, to);
+  if (!rows.length) return null;
+  const byCode = new Map<string, { code: string; name: string | null; points: { date: string; close: number }[] }>();
+  for (const row of rows) {
+    let series = byCode.get(row.code);
+    if (!series) { series = { code: row.code, name: row.name, points: [] }; byCode.set(row.code, series); }
+    series.points.push({ date: row.date, close: row.close });
+  }
+  const dataAsOf = rows.map((row) => row.date).sort().at(-1)!;
+  const series = [...byCode.values()];
+  return { data: { series, coverage: indexCoverageReport(series, wibToday(now)) }, dataAsOf, freshness: sessionFreshness(dataAsOf, now) };
 }
 
 // ── /v1/actions ─────────────────────────────────────────────────────────────────────────────────────────────────

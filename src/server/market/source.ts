@@ -4,7 +4,7 @@ import type {
   ActionCalendarItem, AnnouncementItem, BrokerAccumulation, BrokerFlow, BrokerSummary, CompanyProfile, CorporateAction, DoneDetails,
   FinancialStatements, ForeignFlow, FundamentalPeriod, Heatmap, History, Insiders, LastPrice, MarketCap, MarketOverview, NewsItem, ScreenRequest,
   ScreenResult, OwnershipChanges, RecentInsiders, SearchResult, Seasonality, SectorPerformance, Security, StockAnalysis, StockOwnership,
-  StockSnapshot, StrategyScreen, GroupsView, GroupWindow, RadarSnapshot, StealthOwnership, Macro,
+  StockSnapshot, StrategyScreen, GroupsView, GroupWindow, RadarSnapshot, StealthOwnership, Macro, IndicesHistory,
 } from "./types";
 
 export type HistoryQuery = { limit?: number; frame?: "daily" | "weekly" | "monthly"; startDate?: string; endDate?: string };
@@ -26,6 +26,8 @@ export type HeatmapQuery = { limit?: 30 | 50 | 100 };
 export type InsidersQuery = { page?: number; limit?: number; actionType?: "buy" | "sell" | "cross" };
 /** Market-wide feed: transactions dated within the last `days` (provider default 7), optionally one action, at most `limit`. */
 export type RecentInsidersQuery = { days?: number; action?: "buy" | "sell" | "cross"; limit?: number };
+/** Index daily-close history (sector rotation). Without `codes`, every stored index; dates are YYYY-MM-DD inclusive. */
+export type IndicesHistoryQuery = { codes?: string[]; from?: string; to?: string };
 
 type R<T> = Promise<WithFreshness<T>>;
 
@@ -67,6 +69,8 @@ export interface MarketDataSource {
   announcements(query: PageQuery & { keywords?: string }): R<AnnouncementItem[]>;
   /** Macro and commodity series (`/v1/macro`): BI-Rate, JISDOR, and World Bank commodity prices (`wb.*`). */
   macro(): R<Macro>;
+  /** Index daily-close history (`/v1/indices/history`): IHSG and IDX-IC sector indices, for sector rotation. */
+  indicesHistory(query?: IndicesHistoryQuery, signal?: AbortSignal): R<IndicesHistory>;
   // Data Engine lane
   sectors(): R<SectorPerformance[]>;
   /** The most-traded stocks of the newest view with per-sector totals (net foreign value is an estimate). */
@@ -117,6 +121,7 @@ export abstract class BaseMarketDataSource implements MarketDataSource {
   async news(..._args: unknown[]): R<NewsItem[]> { return this.fail("news"); }
   async announcements(..._args: unknown[]): R<AnnouncementItem[]> { return this.fail("announcements"); }
   async macro(..._args: unknown[]): R<Macro> { return this.fail("macro"); }
+  async indicesHistory(..._args: unknown[]): R<IndicesHistory> { return this.fail("indicesHistory"); }
   async sectors(..._args: unknown[]): R<SectorPerformance[]> { return this.fail("sectors"); }
   async heatmap(..._args: unknown[]): R<Heatmap> { return this.fail("heatmap"); }
   async groups(..._args: unknown[]): R<GroupsView> { return this.fail("groups"); }
