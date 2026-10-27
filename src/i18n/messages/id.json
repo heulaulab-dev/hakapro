@@ -568,6 +568,8 @@
       "frequency": "Frekuensi",
       "foreignNetShares": "Asing bersih (lembar)",
       "foreignNetValue": "Asing bersih (Rp)",
+      "relativeVolume": "Volume relatif (×)",
+      "pctFromHigh": "Close vs tertinggi 20 hari",
       "marketCap": "Kapitalisasi pasar (Rp)",
       "per": "PER (x)",
       "pbv": "PBV (x)",

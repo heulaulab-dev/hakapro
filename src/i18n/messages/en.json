@@ -568,6 +568,8 @@
       "frequency": "Frequency",
       "foreignNetShares": "Net foreign (shares)",
       "foreignNetValue": "Net foreign (Rp)",
+      "relativeVolume": "Relative volume (×)",
+      "pctFromHigh": "Close vs 20-day high",
       "marketCap": "Market cap (Rp)",
       "per": "P/E (x)",
       "pbv": "P/B (x)",
