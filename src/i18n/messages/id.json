@@ -97,6 +97,12 @@
   },
   "nav": {
     "label": "Navigasi utama",
+    "allModules": "Semua Modul",
+    "pulse": "Denyut Pasar",
+    "bandar": "Bandar & Asing",
+    "scalp": "Scalp Lab",
+    "whale": "Asing & KSEI",
+    "investor": "Lab Investor",
     "home": "Beranda",
     "discover": "Jelajahi",
     "screener": "Screener",

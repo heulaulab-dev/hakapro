@@ -1,39 +1,57 @@
 import {
-  ArrowUpDown, Bell, Bookmark, Compass, House, Info, Landmark, LayoutGrid, ListChecks, Newspaper, SlidersHorizontal, type LucideIcon, Network,
-  BookOpen, Building2, Radar, Coins,
+  Activity, ArrowUpDown, Bell, Bookmark, Briefcase, Compass, House, Info, Landmark, LayoutGrid, ListChecks, Newspaper,
+  SlidersHorizontal, type LucideIcon, Network, BookOpen, Building2, Radar, Coins, TrendingUp, Zap, Waves,
 } from "lucide-react";
 
-export type NavKey = "home" | "discover" | "screener" | "strategies" | "movers" | "heatmap" | "groups" | "radar" | "ownership" | "stealth" | "macro" | "watchlist" | "news" | "alerts" | "methodology" | "about";
+export type NavKey =
+  | "home" | "discover" | "screener" | "strategies" | "movers" | "heatmap" | "groups" | "radar" | "ownership" | "stealth"
+  | "macro" | "watchlist" | "news" | "alerts" | "methodology" | "about"
+  // Module groups (BDMFlow-style terminal menu).
+  | "pulse" | "bandar" | "scalp" | "whale" | "investor";
 export type NavItem = { key: NavKey; href: string; icon: LucideIcon; children?: NavItem[] };
 
-/** The four primary destinations ("/" is the public landing page; the research home is /dashboard). Stock pages are reached via search, Cmd+K or lists, never the nav. */
+// Leaf destinations, defined once and arranged into module groups below.
+const PAGES = {
+  home: { key: "home", href: "/dashboard", icon: House },
+  movers: { key: "movers", href: "/discover/movers", icon: ArrowUpDown },
+  heatmap: { key: "heatmap", href: "/discover/heatmap", icon: LayoutGrid },
+  macro: { key: "macro", href: "/discover/macro", icon: Coins },
+  news: { key: "news", href: "/news", icon: Newspaper },
+  radar: { key: "radar", href: "/discover/radar", icon: Radar },
+  groups: { key: "groups", href: "/discover/groups", icon: Network },
+  strategies: { key: "strategies", href: "/discover/strategies", icon: ListChecks },
+  screener: { key: "screener", href: "/discover/screener", icon: SlidersHorizontal },
+  ownership: { key: "ownership", href: "/discover/ownership", icon: Landmark },
+  stealth: { key: "stealth", href: "/discover/stealth", icon: Building2 },
+  watchlist: { key: "watchlist", href: "/watchlist", icon: Bookmark },
+  alerts: { key: "alerts", href: "/alerts", icon: Bell },
+} satisfies Record<string, NavItem>;
+
+/**
+ * The terminal menu, grouped into modules (BDMFlow-style): a quick-access Home, then named groups of related tools.
+ * The desktop sidebar renders each group with a label; the mobile "all modules" sheet renders the same groups as a
+ * grid. Every leaf must be reachable here or in SECONDARY so Cmd+K (ALL_PAGES) can find it.
+ */
 export const NAV: NavItem[] = [
-  { key: "home", href: "/dashboard", icon: House },
-  {
-    key: "discover",
-    href: "/discover/strategies",
-    icon: Compass,
-    children: [
-      { key: "screener", href: "/discover/screener", icon: SlidersHorizontal },
-      { key: "strategies", href: "/discover/strategies", icon: ListChecks },
-      { key: "movers", href: "/discover/movers", icon: ArrowUpDown },
-      { key: "heatmap", href: "/discover/heatmap", icon: LayoutGrid },
-      { key: "groups", href: "/discover/groups", icon: Network },
-      { key: "radar", href: "/discover/radar", icon: Radar },
-      { key: "ownership", href: "/discover/ownership", icon: Landmark },
-      { key: "stealth", href: "/discover/stealth", icon: Building2 },
-      { key: "macro", href: "/discover/macro", icon: Coins },
-    ],
-  },
-  { key: "watchlist", href: "/watchlist", icon: Bookmark },
-  { key: "news", href: "/news", icon: Newspaper },
+  PAGES.home,
+  { key: "pulse", href: PAGES.movers.href, icon: Activity, children: [PAGES.movers, PAGES.heatmap, PAGES.macro, PAGES.news] },
+  { key: "bandar", href: PAGES.radar.href, icon: TrendingUp, children: [PAGES.radar, PAGES.groups, PAGES.strategies] },
+  { key: "scalp", href: PAGES.screener.href, icon: Zap, children: [PAGES.screener] },
+  { key: "whale", href: PAGES.ownership.href, icon: Waves, children: [PAGES.ownership, PAGES.stealth] },
+  { key: "investor", href: PAGES.watchlist.href, icon: Briefcase, children: [PAGES.watchlist, PAGES.alerts] },
 ];
 
-/** Secondary destinations: not in the 4-item sidebar, reachable from Cmd+K, the account menu and mobile More. */
-export const SECONDARY: NavItem[] = [{ key: "alerts", href: "/alerts", icon: Bell }, { key: "methodology", href: "/methodology", icon: BookOpen }, { key: "about", href: "/", icon: Info }];
+/** The ordered module groups (every NAV item that has children). */
+export const MODULE_GROUPS: NavItem[] = NAV.filter((item) => item.children);
 
-/** Every page reachable from Cmd+K. */
+/** Secondary destinations: not in a module group, reachable from Cmd+K, the account menu and mobile More. */
+export const SECONDARY: NavItem[] = [{ key: "methodology", href: "/methodology", icon: BookOpen }, { key: "about", href: "/", icon: Info }];
+
+/** Every page reachable from Cmd+K (leaf pages only; group headers are not destinations). */
 export const ALL_PAGES: NavItem[] = [...NAV.flatMap((item) => (item.children ? item.children : [item])), ...SECONDARY];
+
+/** The Discover glyph, still used as the command-palette group label. */
+export const DISCOVER_ICON = Compass;
 
 export const STOCK_TABS = ["overview", "chart", "flow", "running", "analysis", "financials", "ownership", "insiders", "history"] as const;
 export type StockTab = (typeof STOCK_TABS)[number];

@@ -97,6 +97,12 @@
   },
   "nav": {
     "label": "Main navigation",
+    "allModules": "All modules",
+    "pulse": "Market Pulse",
+    "bandar": "Smart Money",
+    "scalp": "Scalp Lab",
+    "whale": "Whale & KSEI",
+    "investor": "Investor Lab",
     "home": "Home",
     "discover": "Discover",
     "screener": "Screener",
