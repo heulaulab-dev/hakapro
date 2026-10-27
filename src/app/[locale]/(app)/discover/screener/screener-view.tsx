@@ -18,6 +18,7 @@ import { SectionHeader } from "@/components/layout/section-header";
 import type { ViewerSummary } from "@/components/layout/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from "@/i18n/navigation";
 import { useScreen } from "@/lib/api/hooks";
 import { SCREEN_FIELDS, SCREEN_OPERATORS, screenConditionSchema, type ScreenCondition, type ScreenResult } from "@/lib/api/market";
@@ -31,8 +32,6 @@ const conditionsParser = parseAsJson((value) => {
   const parsed = z.array(screenConditionSchema).max(20).safeParse(value);
   return parsed.success ? parsed.data : null;
 });
-
-const selectClass = "h-8 rounded-md border border-input bg-background px-2 text-sm";
 
 export function ScreenerView({ viewer }: { viewer: ViewerSummary }) {
   const t = useTranslations("screener");
@@ -94,19 +93,22 @@ export function ScreenerView({ viewer }: { viewer: ViewerSummary }) {
         <div key={index} className="flex flex-col gap-2 rounded-lg border border-border p-2 sm:flex-row sm:flex-wrap sm:items-center sm:border-0 sm:p-0" data-testid={`condition-${index}`}>
           <div className="flex items-center gap-2 sm:contents">
             {index === 0 ? <span className="hidden w-14 text-xs text-muted-foreground sm:block" /> : (
-              <select aria-label={t("operator")} className={`${selectClass} w-16 sm:w-14`} value={condition.connective} onChange={(event) => update(index, { connective: event.target.value as "AND" | "OR" })}>
-                <option value="AND">{t("and")}</option><option value="OR">{t("or")}</option>
-              </select>
+              <Select value={condition.connective} onValueChange={(value) => update(index, { connective: value as "AND" | "OR" })}>
+                <SelectTrigger aria-label={t("operator")} className="h-8 w-16 text-sm sm:w-14"><SelectValue /></SelectTrigger>
+                <SelectContent><SelectItem value="AND">{t("and")}</SelectItem><SelectItem value="OR">{t("or")}</SelectItem></SelectContent>
+              </Select>
             )}
-            <select aria-label={t("field")} className={`${selectClass} min-w-0 flex-1 sm:min-w-44 sm:flex-none`} value={condition.field} onChange={(event) => update(index, { field: event.target.value as ScreenCondition["field"] })} data-testid={`field-${index}`}>
-              {SCREEN_FIELDS.map((field) => <option key={field} value={field}>{t(`fields.${field}`)}</option>)}
-            </select>
+            <Select value={condition.field} onValueChange={(value) => update(index, { field: value as ScreenCondition["field"] })}>
+              <SelectTrigger aria-label={t("field")} data-testid={`field-${index}`} className="h-8 min-w-0 flex-1 text-sm sm:min-w-44 sm:flex-none"><SelectValue /></SelectTrigger>
+              <SelectContent>{SCREEN_FIELDS.map((field) => <SelectItem key={field} value={field}>{t(`fields.${field}`)}</SelectItem>)}</SelectContent>
+            </Select>
             <Button type="button" variant="ghost" size="icon" className="sm:order-last" aria-label={t("remove")} onClick={() => setDraft((current) => current.filter((_, position) => position !== index))}><X /></Button>
           </div>
           <div className="flex items-center gap-2 sm:contents">
-            <select aria-label={t("operator")} className={`${selectClass} w-20 sm:w-14`} value={condition.operator} onChange={(event) => update(index, { operator: event.target.value as ScreenCondition["operator"] })}>
-              {SCREEN_OPERATORS.map((operator) => <option key={operator} value={operator}>{operatorText(operator)}</option>)}
-            </select>
+            <Select value={condition.operator} onValueChange={(value) => update(index, { operator: value as ScreenCondition["operator"] })}>
+              <SelectTrigger aria-label={t("operator")} className="h-8 w-20 text-sm sm:w-14"><SelectValue /></SelectTrigger>
+              <SelectContent>{SCREEN_OPERATORS.map((operator) => <SelectItem key={operator} value={operator}>{operatorText(operator)}</SelectItem>)}</SelectContent>
+            </Select>
             <Input aria-label={t("value")} type="number" step="any" inputMode="decimal" className="ticker h-8 min-w-0 flex-1 sm:w-40 sm:flex-none" value={Number.isFinite(condition.value) ? condition.value : ""}
               onChange={(event) => update(index, { value: event.target.value === "" ? Number.NaN : Number(event.target.value) })} data-testid={`value-${index}`} />
           </div>

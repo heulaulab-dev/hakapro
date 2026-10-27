@@ -10,13 +10,13 @@ import { SectionHeader } from "@/components/layout/section-header";
 import type { ViewerSummary } from "@/components/layout/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from "@/i18n/navigation";
 import { ALERT_METRICS, ALERT_OPERATORS, METRIC_FORMAT, validThreshold, type AlertMetric, type AlertOperator } from "@/lib/alerts";
 import { useAlertEvents, useAlertMutations, useAlerts } from "@/lib/alerts-client";
 import { formatDate, formatValue, type Locale } from "@/lib/format";
 
 const TICKER = /^[A-Z0-9]{1,12}$/;
-const selectClass = "h-8 rounded-md border border-input bg-background px-2 text-sm";
 
 export function AlertsView({ viewer }: { viewer: ViewerSummary }) {
   const t = useTranslations("alerts");
@@ -57,12 +57,18 @@ export function AlertsView({ viewer }: { viewer: ViewerSummary }) {
       <SectionHeader as="h1" title={t("title")} description={t("intro")} />
       <form onSubmit={submit} className="flex flex-wrap items-end gap-2 rounded-xl border border-border p-4" data-testid="alert-form">
         <label className="flex flex-col gap-1 text-xs text-muted-foreground">{t("symbol")}<Input value={symbol} onChange={(event) => setSymbol(event.target.value)} className="ticker h-8 w-28 uppercase" data-testid="alert-symbol" /></label>
-        <label className="flex flex-col gap-1 text-xs text-muted-foreground">{t("metric")}
-          <select className={selectClass} value={metric} onChange={(event) => setMetric(event.target.value as AlertMetric)}>{ALERT_METRICS.map((value) => <option key={value} value={value}>{t(`metrics.${value}`)}</option>)}</select>
-        </label>
-        <label className="flex flex-col gap-1 text-xs text-muted-foreground">{t("operator")}
-          <select className={selectClass} value={operator} onChange={(event) => setOperator(event.target.value as AlertOperator)}>{ALERT_OPERATORS.map((value) => <option key={value} value={value}>{t(`operators.${value}`)}</option>)}</select>
-        </label>
+        <div className="flex flex-col gap-1 text-xs text-muted-foreground"><span>{t("metric")}</span>
+          <Select value={metric} onValueChange={(value) => setMetric(value as AlertMetric)}>
+            <SelectTrigger aria-label={t("metric")} className="h-8 w-44 text-sm"><SelectValue /></SelectTrigger>
+            <SelectContent>{ALERT_METRICS.map((value) => <SelectItem key={value} value={value}>{t(`metrics.${value}`)}</SelectItem>)}</SelectContent>
+          </Select>
+        </div>
+        <div className="flex flex-col gap-1 text-xs text-muted-foreground"><span>{t("operator")}</span>
+          <Select value={operator} onValueChange={(value) => setOperator(value as AlertOperator)}>
+            <SelectTrigger aria-label={t("operator")} className="h-8 w-28 text-sm"><SelectValue /></SelectTrigger>
+            <SelectContent>{ALERT_OPERATORS.map((value) => <SelectItem key={value} value={value}>{t(`operators.${value}`)}</SelectItem>)}</SelectContent>
+          </Select>
+        </div>
         <label className="flex flex-col gap-1 text-xs text-muted-foreground">{t("threshold")}<Input type="number" step="any" inputMode="decimal" value={threshold} onChange={(event) => setThreshold(event.target.value)} className="ticker h-8 w-36" /></label>
         <Button type="submit" size="sm" variant="primary" disabled={create.isPending}><Bell />{t("create")}</Button>
         {message && <p role="alert" className="w-full text-xs text-negative">{message}</p>}

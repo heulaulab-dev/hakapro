@@ -54,7 +54,8 @@ test.describe("slice 3: Financials tab", () => {
 test.describe("slice 4: Screener", () => {
   test("builder writes conditions to the URL; fixture mode states the source can't screen", async ({ page }) => {
     await page.goto("/en/discover/screener");
-    await page.getByTestId("field-0").selectOption("per");
+    await page.getByTestId("field-0").click();
+    await page.getByRole("option", { name: "P/E (x)" }).click();
     await page.getByTestId("value-0").fill("15");
     await page.getByTestId("screen-run").click();
     await expect(page).toHaveURL(/c=/);
