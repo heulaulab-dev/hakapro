@@ -46,7 +46,7 @@ try {
     encoding: "utf8",
     // The production guards need a non-fixture source and Better Auth/PG config. These placeholders are
     // compile-only: this probe build is expected to fail and its output is never served.
-    env: { ...process.env, MARKET_DATA_SOURCE: "arjum", HEULATRADE_MARKET_API_BASE_URL: "https://build-check.invalid", HEULATRADE_MARKET_API_KEY: "build-check", DEV_AUTH_BYPASS: "", DATABASE_URL: "postgresql://build-check:build-check@127.0.0.1:5432/build_check", BETTER_AUTH_URL: "https://hakapro.heulaulab.xyz", BETTER_AUTH_SECRET: "compile-only-placeholder-at-least-32-characters", GOOGLE_CLIENT_ID: "compile-only", GOOGLE_CLIENT_SECRET: "compile-only", BETTER_AUTH_ENVIRONMENT: "production", BETTER_AUTH_REHEARSAL_URL: "", SMTP_HOST: "", SMTP_PORT: "", SMTP_USER: "", SMTP_PASSWORD: "", SMTP_FROM: "", SMTP_SECURE: "" },
+    env: { ...process.env, MARKET_DATA_SOURCE: "arjum", HEULATRADE_MARKET_API_BASE_URL: "https://build-check.invalid", HEULATRADE_MARKET_API_KEY: "build-check", DEV_AUTH_BYPASS: "", DATABASE_URL: "postgresql://build-check:build-check@127.0.0.1:5432/build_check", BETTER_AUTH_URL: "https://hakapro.id", BETTER_AUTH_SECRET: "compile-only-placeholder-at-least-32-characters", GOOGLE_CLIENT_ID: "compile-only", GOOGLE_CLIENT_SECRET: "compile-only", BETTER_AUTH_ENVIRONMENT: "production", BETTER_AUTH_REHEARSAL_URL: "", SMTP_HOST: "", SMTP_PORT: "", SMTP_USER: "", SMTP_PASSWORD: "", SMTP_FROM: "", SMTP_SECURE: "" },
   });
 } finally {
   rmSync(probeDir, { recursive: true, force: true });
