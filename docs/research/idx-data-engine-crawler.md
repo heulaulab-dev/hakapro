@@ -1,6 +1,8 @@
 # IDX Market-Data Crawler & Historical Backfill — Analysis, Gap Assessment & Implementation
 
-_Status: research + bounded implementation. No commit / push / deploy. No data fabricated. 2026-10-27._
+_Historical assessment snapshot: research + bounded implementation. No commit / push / deploy. No data fabricated. 2026-10-27. See the [follow-up transport study](idx-bei-transport-study.md) for the authorized prerelease red-team implementation and updated findings._
+
+The assessment below records the state and access boundary at the time it was written. The project owner later confirmed that the IDX prerelease target is under their red-team control. The follow-up implements an opt-in `curl_cffi` transport for that authorized target; it remains disabled by default and does not change this historical snapshot.
 
 This document covers the 10-phase "Data Engine — IDX Market Data Crawler & Historical Backfill" brief.
 It reports what the real `idx-bei` project does, what the HakaPro Data Engine already does, which of the brief's
