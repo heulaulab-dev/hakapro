@@ -12,11 +12,9 @@ log = logging.getLogger("hakapro.idx_transport")
 
 RETRYABLE_STATUS = {403, 429, 500, 502, 503, 504}
 IMPERSONATION_ROTATION = ("chrome124", "chrome120", "safari18_0", "safari17_0", "edge101", "chrome110")
-DEFAULT_HEADERS = {
-    "accept": "application/json, text/plain, */*",
-    "accept-language": "en-US,en;q=0.9",
-    "referer": "https://www.idx.co.id/",
-}
+# Keep curl_cffi's impersonated browser defaults. Coolify's egress received a
+# Cloudflare challenge when these application-level headers were forced.
+DEFAULT_HEADERS: dict[str, str] = {}
 
 
 def backoff_seconds(retry: int, *, base: float = 2.0, linear: float = 0.5, jitter: float = 0.25) -> float:

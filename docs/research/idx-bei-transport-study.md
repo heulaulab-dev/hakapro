@@ -38,6 +38,12 @@ Transport failures now throw from the backfill's per-date processor. The shared 
 
 ## Client comparison
 
+### Coolify egress follow-up (2026-10-27 18:15 UTC)
+
+The same Coolify container and egress IP (`43.129.51.202`, Cloudflare SIN) were tested against the same date (`2020-02-19`) with bounded one-request probes. `curl_cffi==0.17.0` returned 403; `curl_cffi==0.16.3` returned 200 and 34 rows. With 0.16.3, the persistent `AsyncSession` worker returned 403 while forcing the old `accept`, `accept-language`, and `referer` headers, then returned 200 and 34 rows when it used curl_cffi's defaults without application-level headers. Sync and async sessions both returned 200 with 0.16.3 and no forced headers. The exact successful worker probe returned one attempt and `cf-mitigated` was absent.
+
+This isolates a version/header interaction on this tested egress path; it does not establish a universal Cloudflare rule. The production transport now pins 0.16.3 and leaves `DEFAULT_HEADERS` empty, while retaining the existing browser impersonation, bounded retries, timeout, and session lifecycle. The temporary Coolify diagnostics and downloaded 0.16.3 package were removed after the probe.
+
 Reproduction command (the host allowlist is required):
 
 ```sh

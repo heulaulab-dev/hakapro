@@ -45,7 +45,7 @@ COPY services/engine/python/idx_curl_worker.py services/engine/python/idx_transp
 RUN apt-get update \
     && apt-get install -y --no-install-recommends python3 python3-venv \
     && python3 -m venv /opt/idx-venv \
-    && /opt/idx-venv/bin/pip install --no-cache-dir curl_cffi==0.17.0 \
+    && /opt/idx-venv/bin/pip install --no-cache-dir curl_cffi==0.16.3 \
     && rm -rf /var/lib/apt/lists/* \
     && mkdir -p /data \
     && chown bun:bun /data

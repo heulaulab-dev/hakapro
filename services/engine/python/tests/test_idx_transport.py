@@ -40,6 +40,7 @@ class IdxTransportTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result["body"]["recordsTotal"], 1)
         self.assertEqual(session.calls[0][1]["params"], {"date": "20260105", "start": 0, "length": 9999})
         self.assertEqual(session.calls[0][1]["timeout"], 30)
+        self.assertEqual(session.calls[0][1]["headers"], {})
         self.assertTrue(session.closed)
 
     async def test_rotates_impersonation_after_forbidden_then_succeeds(self):
