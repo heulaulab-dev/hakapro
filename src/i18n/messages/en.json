@@ -132,6 +132,14 @@
     "commoditiesEmpty": "Commodity prices update monthly; the next release has not been collected yet.",
     "worldBankAttribution": "Commodity prices: World Bank Commodity Price Data (The Pink Sheet), CC BY 4.0."
   },
+  "actionCenter": {
+    "title": "Action Center",
+    "note": "Stocks where several documented signals line up today. Research only, never advice.",
+    "alerts": "{count} alerts",
+    "single": "1 signal",
+    "double": "Confluence ×2",
+    "triple": "Confluence ×3+"
+  },
   "stockTabs": {
     "label": "Stock sections",
     "overview": "Overview",
