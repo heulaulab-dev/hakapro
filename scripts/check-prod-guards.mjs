@@ -10,7 +10,7 @@ const valid = {
   HEULATRADE_MARKET_API_BASE_URL: "https://build-check.invalid",
   HEULATRADE_MARKET_API_KEY: "build-check",
   DATABASE_URL: "postgresql://build-check:build-check@127.0.0.1:5432/build_check",
-  BETTER_AUTH_URL: "https://hakapro.heulaulab.xyz",
+  BETTER_AUTH_URL: "https://hakapro.id",
   BETTER_AUTH_SECRET: "compile-only-placeholder-at-least-32-characters",
   GOOGLE_CLIENT_ID: "compile-only",
   GOOGLE_CLIENT_SECRET: "compile-only",
