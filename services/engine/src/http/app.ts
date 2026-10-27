@@ -4,7 +4,7 @@ import { timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 import {
   actionsCalendarSchema, actionsSchema, announcementItemSchema, fundamentalsSchema, HEATMAP_DEFAULT_LIMIT, HEATMAP_LIMITS, heatmapLimitSchema,
-  heatmapSchema, insidersRecentSchema, macroSchema, marketOverviewSchema, newsItemSchema, sectorsSchema, screenRequestSchema, screenResultSchema,
+  heatmapSchema, indicesHistorySchema, insidersRecentSchema, macroSchema, marketOverviewSchema, newsItemSchema, sectorsSchema, screenRequestSchema, screenResultSchema,
   securitySchema, signalsSchema, stockSchema, groupWindowSchema, groupsSchema, radarSchema, stealthOwnershipSchema,
 } from "@/server/schemas/idx-bei";
 import { dateSchema, symbolSchema } from "@/server/schemas/inputs";
@@ -19,7 +19,7 @@ import {
   DEFAULT_CANDLES, MAX_CANDLES, serveActions, serveHeatmap, serveMarket, serveSectors, serveSecurities, serveSignals, serveStock, type Served,
 } from "../serve/market";
 import {
-  ACTIONS_MAX_RANGE_DAYS, defaultActionsRange, NEWS_DEFAULT_PAGE_SIZE, NEWS_MAX_PAGE, NEWS_MAX_PAGE_SIZE, serveActionsCalendar, serveMacro,
+  ACTIONS_MAX_RANGE_DAYS, defaultActionsRange, NEWS_DEFAULT_PAGE_SIZE, NEWS_MAX_PAGE, NEWS_MAX_PAGE_SIZE, serveActionsCalendar, serveIndicesHistory, serveMacro,
   serveNews,
 } from "../serve/market-info";
 import { serveFundamentals, serveScreener } from "../serve/fundamentals";
@@ -206,6 +206,15 @@ export function createApp(deps: AppDeps): (request: Request) => Promise<Response
     }
     // Signal confluence over the newest session (stored rows only, versioned draft rules, no score).
     if (path === "/v1/radar") return respond(radarSchema, market ? await serveRadar(market, deps.ownership?.service.store ?? null, at) : null, emptyRadar());
+    if (path === "/v1/indices/history") {
+      const from = dateSchema.safeParse(param(url, "from") ?? "2000-01-01");
+      const to = dateSchema.safeParse(param(url, "to") ?? "2100-01-01");
+      if (!from.success || !to.success) return error(400, "BAD_REQUEST", "from and to must be YYYY-MM-DD dates");
+      if (from.data > to.data) return error(400, "BAD_REQUEST", "from must not be after to");
+      const codesParam = param(url, "codes");
+      const codes = codesParam ? codesParam.split(",").map((code) => code.trim().toUpperCase()).filter(Boolean).slice(0, 40) : null;
+      return respond(indicesHistorySchema, market ? await serveIndicesHistory(market, from.data, to.data, codes, at) : null, { series: [] });
+    }
     if (path === "/v1/securities") {
       return respond(securitySchema.array(), market ? await serveSecurities(market, (url.searchParams.get("q") ?? "").slice(0, 64), at) : null, []);
     }

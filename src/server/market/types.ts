@@ -2,14 +2,14 @@
  * Domain types shared by every MarketDataSource. Units are explicit in field names or docs:
  * shares vs lots, IDR, and percent units (1.25 = 1.25%), never fractions.
  */
-import type { NewsItem, AnnouncementItem, ScreenRequest, Radar, StealthOwnership as StealthOwnershipData, Macro } from "@/server/schemas/idx-bei";
+import type { NewsItem, AnnouncementItem, ScreenRequest, Radar, StealthOwnership as StealthOwnershipData, Macro, IndicesHistory } from "@/server/schemas/idx-bei";
 import type { InsiderRow } from "@/server/services/arjum-normalize";
 export type {
   BrokerAccumulation, BrokerFlow, BrokerSummary, DoneDetails, FinancialStatements, History, Insiders, LastPrice, MarketCap, SearchResult, Seasonality,
 } from "@/server/services/arjum-normalize";
 export type { StockAnalysis } from "@/server/services/analysis-parse";
 export type { StrategyScreen } from "@/server/services/why-matched";
-export type { NewsItem, AnnouncementItem, ScreenRequest, Macro };
+export type { NewsItem, AnnouncementItem, ScreenRequest, Macro, IndicesHistory };
 
 export type Quote = {
   symbol: string;

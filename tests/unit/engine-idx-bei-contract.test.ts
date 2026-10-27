@@ -19,6 +19,9 @@ import { Scheduler } from "../../services/engine/src/schedule/scheduler";
 import { MemoryInsiderStore } from "../../services/engine/src/serve/insiders";
 import { MemoryMarketStore } from "../../services/engine/src/serve/store";
 import { recentInsidersSchema } from "@/lib/api/market";
+import { computeRotation } from "@/lib/sector-rotation";
+import { parseIdxIndexSummary } from "../../services/engine/src/sources/idx-primary";
+import { FIXTURE_DATE, IDX_INDEX_SUMMARY_FIXTURE } from "../../services/engine/src/sources/idx-primary.fixture";
 import { fixtureStrategyStore } from "../../services/engine/test/strategy-fixtures";
 
 const BASE = "http://engine.test";
@@ -50,6 +53,7 @@ describe("engine /v1 stubs via IdxBeiSource", () => {
     expect((await source.corporateActions("BBCA")).data).toEqual([]);
     expect((await source.screen({ conditions: [], limit: 10 })).data.rows).toEqual([]);
     expect(await source.macro()).toMatchObject({ freshness: "UNAVAILABLE", data: { series: [] } });
+    expect(await source.indicesHistory()).toMatchObject({ freshness: "UNAVAILABLE", data: { series: [] } });
     expect(await source.heatmap({ limit: 30 })).toMatchObject({ freshness: "UNAVAILABLE", asOf: null, data: { limit: 30, stocks: [], sectors: [] } });
     // Only the engine's limits are ever sent.
     await expect(source.heatmap({ limit: 10 as never })).rejects.toThrow();
@@ -111,6 +115,51 @@ describe("engine /v1 real responses via IdxBeiSource", () => {
       { symbol: "GOTO", ratio: "per", ratioSource: "derived", value: null, date: "2026-10-16" },
       { symbol: "GOTO", ratio: "pbv", ratioSource: "pasardana", value: 1.97, date: "2026-10-15" },
     ],
+  });
+
+  it("serves index_daily history (/v1/indices/history) grouped by code, oldest first, parsed by the app", async () => {
+    vi.resetModules();
+    const { IdxBeiSource: FreshSource } = await import("@/server/market/idx-bei-source");
+    const now = new Date("2026-10-27T11:00:00Z");
+    const market = new MemoryMarketStore({ indexDaily: [
+      { code: "COMPOSITE", name: "IDX Composite Index", date: "2026-10-20", close: 100, previousClose: null, changePercent: null },
+      { code: "COMPOSITE", name: "IDX Composite Index", date: "2026-10-21", close: 101, previousClose: 100, changePercent: 1 },
+      { code: "IDXENERGY", name: "IDX Sector Energy Index", date: "2026-10-20", close: 50, previousClose: null, changePercent: null },
+      { code: "IDXENERGY", name: "IDX Sector Energy Index", date: "2026-10-21", close: 52, previousClose: 50, changePercent: 4 },
+    ] });
+    const source = new FreshSource(BASE, () => now, engineFetch(dir, now, market));
+    const res = await source.indicesHistory({ codes: ["COMPOSITE", "IDXENERGY"], from: "2026-10-01", to: "2026-10-31" });
+    expect(res.data.series.map((s) => s.code).sort()).toEqual(["COMPOSITE", "IDXENERGY"]);
+    const energy = res.data.series.find((s) => s.code === "IDXENERGY")!;
+    expect(energy.name).toBe("IDX Sector Energy Index");
+    expect(energy.points).toEqual([{ date: "2026-10-20", close: 50 }, { date: "2026-10-21", close: 52 }]);
+  });
+
+  it("chains IDX GetIndexSummary fixture → adapter → store → history API → RRG (insufficient on one day, never fabricated)", async () => {
+    vi.resetModules();
+    const { IdxBeiSource: FreshSource } = await import("@/server/market/idx-bei-source");
+    const now = new Date("2026-01-07T11:00:00Z");
+    // fixture → adapter: validate + normalize into index_daily rows (IHSG→COMPOSITE; bad rows rejected).
+    const { rows, rejected } = parseIdxIndexSummary(IDX_INDEX_SUMMARY_FIXTURE, FIXTURE_DATE);
+    expect(rejected).toHaveLength(2);
+    // adapter rows → store (the backfill's persistence target).
+    const market = new MemoryMarketStore({ indexDaily: rows.map((r) => ({ code: r.code, name: r.name, date: r.date, close: r.close, previousClose: r.previousClose, changePercent: r.changePercent })) });
+    const source = new FreshSource(BASE, () => now, engineFetch(dir, now, market));
+
+    // store → history API, with coverage observability.
+    const res = await source.indicesHistory({ from: "2026-01-01", to: "2026-01-31" });
+    expect(res.data.series.map((s) => s.code).sort()).toEqual(["COMPOSITE", "IDXENERGY"]);
+    expect(res.data.series.find((s) => s.code === "COMPOSITE")!.points).toEqual([{ date: FIXTURE_DATE, close: 7050 }]);
+    const coverage = res.data.coverage?.find((c) => c.code === "IDXENERGY");
+    expect(coverage).toMatchObject({ count: 1, firstDate: FIXTURE_DATE, lastDate: FIXTURE_DATE });
+
+    // history API → RRG: one aligned day is far below the warm-up, so the engine reports insufficient (no fabrication).
+    const benchmark = { id: "COMPOSITE", series: res.data.series.find((s) => s.code === "COMPOSITE")!.points };
+    const sectors = res.data.series.filter((s) => s.code !== "COMPOSITE").map((s) => ({ id: s.code, name: s.name ?? s.code, series: s.points }));
+    const rotation = computeRotation(benchmark, sectors, "daily");
+    expect(rotation.available).toBe(1);
+    expect(rotation.sufficient).toBe(false);
+    expect(rotation.rotations[0].points).toEqual([]);
   });
 
   it("parses stored EOD data with freshness re-derived by the app", async () => {

@@ -42,6 +42,11 @@ const envSchema = z.object({
   ENGINE_FREE_FLOAT_ENABLED: flag(false),
   // E4 strategy scans on the HAKA-17 DRAFT rules (not owner-approved): off by default (job not registered, /v1/strategies empty).
   ENGINE_STRATEGY_SCANS_ENABLED: flag(false),
+  // IDX /primary historical index backfill (GetIndexSummary). Off by default: idx.co.id is behind a Cloudflare WAF and
+  // IDX prohibits commercial redistribution, so the backfill only runs when an operator injects an AUTHORIZED transport.
+  // Disabled → neither the source nor the backfill job is registered (the adapter reports UNAVAILABLE, never fabricates).
+  ENGINE_IDX_PRIMARY_ENABLED: flag(false),
+  ENGINE_IDX_PRIMARY_BASE_URL: z.string().optional(),
 });
 
 /** arjum's daily request quota for one key, shared by the engine (foreign flow, insider feed) and the app environments. */
@@ -73,6 +78,8 @@ export type EngineConfig = {
   ownership: { maxUploadBytes: number; freeFloatEnabled: boolean };
   /** false → strategy-scan-eod is not registered and /v1/strategies serves the empty UNAVAILABLE board. */
   strategyScans: { enabled: boolean };
+  /** IDX /primary historical index backfill. Disabled → the backfill job and its source are not registered. */
+  idxPrimary: { enabled: boolean; baseUrl: string };
 };
 
 /** Parses env; error messages name variables, never values. */
@@ -92,6 +99,9 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
   }
   if (e.ENGINE_ARJUM_BASE_URL && !/^https?:\/\/[^/]/.test(e.ENGINE_ARJUM_BASE_URL)) {
     throw new Error("Invalid engine configuration: ENGINE_ARJUM_BASE_URL must be an http(s) URL");
+  }
+  if (e.ENGINE_IDX_PRIMARY_BASE_URL && !/^https?:\/\/[^/]/.test(e.ENGINE_IDX_PRIMARY_BASE_URL)) {
+    throw new Error("Invalid engine configuration: ENGINE_IDX_PRIMARY_BASE_URL must be an http(s) URL");
   }
   // The two engine budgets together must fit in what the reserve leaves of the shared quota. Checked only when the
   // insider feed is on, so configurations from before it existed keep loading unchanged.
@@ -125,5 +135,6 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
       : null,
     ownership: { maxUploadBytes: e.ENGINE_OWNERSHIP_MAX_UPLOAD_MB * 1024 * 1024, freeFloatEnabled: e.ENGINE_FREE_FLOAT_ENABLED },
     strategyScans: { enabled: e.ENGINE_STRATEGY_SCANS_ENABLED },
+    idxPrimary: { enabled: e.ENGINE_IDX_PRIMARY_ENABLED, baseUrl: (e.ENGINE_IDX_PRIMARY_BASE_URL ?? "https://www.idx.co.id/primary").replace(/\/+$/, "") },
   };
 }
