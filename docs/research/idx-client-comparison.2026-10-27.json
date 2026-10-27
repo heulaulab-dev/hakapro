@@ -1,0 +1,54 @@
+{
+  "observedAt": "2026-10-27T16:43:07.081106+00:00",
+  "urlHost": "www.idx.co.id",
+  "results": [
+    {
+      "client": "requests",
+      "status": 403,
+      "latencyMs": 76.93,
+      "challenge": true,
+      "tlsVersion": null,
+      "httpVersion": "HTTP/1.1",
+      "ja3": null,
+      "ja4": null,
+      "cfMitigated": null,
+      "cfRay": "a513286779174092-SIN"
+    },
+    {
+      "client": "httpx",
+      "status": 403,
+      "latencyMs": 94.85,
+      "challenge": true,
+      "tlsVersion": "TLSv1.3",
+      "httpVersion": "HTTP/2",
+      "ja3": null,
+      "ja4": null,
+      "cfMitigated": null,
+      "cfRay": "a51328682d25a8f7-SIN"
+    },
+    {
+      "client": "curl_cffi",
+      "status": 200,
+      "latencyMs": 72.47,
+      "challenge": false,
+      "tlsVersion": null,
+      "httpVersion": "HTTP/2",
+      "ja3": null,
+      "ja4": null,
+      "cfMitigated": null,
+      "cfRay": "a5132868af41fd71-SIN"
+    },
+    {
+      "client": "chromium",
+      "status": 403,
+      "latencyMs": 455.05,
+      "challenge": true,
+      "tlsVersion": "TLS 1.3",
+      "httpVersion": "h2",
+      "ja3": null,
+      "ja4": null,
+      "cfMitigated": null,
+      "cfRay": "a513286b7ede072d-SIN"
+    }
+  ]
+}

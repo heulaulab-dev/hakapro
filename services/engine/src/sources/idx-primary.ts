@@ -1,11 +1,9 @@
 // IDX /primary historical index adapter (reference: nichsedge/idx-bei `GetIndexSummary`, MIT).
 //
-// This module is the transport-INDEPENDENT half: request construction, response models, index-code normalization,
-// and historical-observation validation. It never performs a network request itself. The actual bytes come from an
-// injected `IdxIndexTransport` (see below): idx.co.id/primary sits behind a Cloudflare WAF that idx-bei defeats with
-// TLS-fingerprint browser impersonation (`curl_cffi impersonate=chrome`, rotated on 403). That transport behaviour is
-// deliberately NOT reproduced here; an operator must inject an authorized transport. With none injected, the adapter
-// returns an explicit UNAVAILABLE result — it never fabricates index history.
+// This module owns request construction, response validation, code normalization, and observation validation. The
+// optional curl_cffi worker is injected through IdxIndexTransport and is registered only when the operator enables it.
+// Its TLS/browser impersonation and bounded 403 profile rotation are for the authorized IDX prerelease red-team target;
+// this source remains disabled by default. The normalizer never fabricates history.
 //
 // Endpoint (verified in idx-bei docs/API_VERIFICATION_SPEC.md, Aug 2026):
 //   GET https://www.idx.co.id/primary/TradingSummary/GetIndexSummary?date=YYYYMMDD&start=0&length=9999
@@ -14,6 +12,8 @@ import { z } from "zod";
 import type { IndexDailyUpsert } from "../db/ingest";
 import { round } from "../db/ingest";
 import { defineSource, type SourceDefinition } from "../registry";
+import { CurlCffiIdxTransport } from "./idx-curl-cffi";
+import type { Logger } from "../log";
 
 export const IDX_PRIMARY_BASE_URL = "https://www.idx.co.id/primary";
 export const IDX_PRIMARY_HOST = new URL(IDX_PRIMARY_BASE_URL).host; // www.idx.co.id
@@ -35,7 +35,7 @@ const numish = num.optional();
 export const idxIndexRowSchema = z.object({
   IndexCode: z.string().min(1),
   Date: z.string().min(1), // ISO datetime, e.g. "2026-08-07T00:00:00"
-  Previous: numish, OpenPrice: numish, High: numish, Low: numish, Close: num, Change: numish,
+  Previous: numish, OpenPrice: numish, High: numish, Low: numish, Highest: numish, Lowest: numish, Close: num, Change: numish,
   Volume: numish, Value: numish, Frequency: numish, NumberOfStock: numish,
 }).loose();
 export type IdxIndexRow = z.infer<typeof idxIndexRowSchema>;
@@ -85,7 +85,7 @@ export function parseIdxIndexSummary(body: unknown, requestedIso: string): IdxIn
     const changePercent = previous && previous > 0 && raw.Change != null ? raw.Change / previous : null;
     rows.push({
       code, date, name: null,
-      open: raw.OpenPrice ?? null, high: raw.High ?? null, low: raw.Low ?? null, close: round(raw.Close, 4),
+      open: raw.OpenPrice ?? null, high: raw.High ?? raw.Highest ?? null, low: raw.Low ?? raw.Lowest ?? null, close: round(raw.Close, 4),
       previousClose: previous, changePercent,
     });
   }
@@ -101,11 +101,12 @@ export type IdxIndexTransport = {
   id: string;
   /** Fetch raw GetIndexSummary JSON for one WIB trading date (ISO `YYYY-MM-DD`). */
   fetchIndexSummary(isoDate: string, signal?: AbortSignal): Promise<IdxFetchResult>;
+  /** Release persistent session resources when the engine shuts down. */
+  close?(): Promise<void>;
 };
 
 export const IDX_TRANSPORT_UNAVAILABLE_REASON =
-  "No authorized IDX /primary transport configured: idx.co.id is behind a Cloudflare WAF and IDX prohibits commercial "
-  + "redistribution. Inject a licensed/authorized transport to enable historical sector backfill; refusing to fabricate.";
+  "No IDX /primary transport configured. Enable ENGINE_IDX_PRIMARY_ENABLED and install the optional curl_cffi worker; refusing to fabricate history.";
 
 /** The default transport when none is configured: always reports UNAVAILABLE. */
 export function unavailableIdxTransport(): IdxIndexTransport {
@@ -118,18 +119,25 @@ export const IDX_PRIMARY_SOURCE_ID = "idx-primary";
 export function idxPrimarySource(baseUrl: string = IDX_PRIMARY_BASE_URL): SourceDefinition {
   return defineSource({
     id: IDX_PRIMARY_SOURCE_ID, host: new URL(baseUrl).host, kind: "eod", policy: { minIntervalMs: 2000, concurrency: 1 },
-    description: "IDX /primary GetIndexSummary: historical daily index values (authorized transport required)",
+    description: "IDX /primary GetIndexSummary: historical daily index values (opt-in curl_cffi transport)",
   });
 }
 
-/**
- * Build the index transport from config. Disabled → null (nothing registered). Enabled → an authorized transport must
- * be injected here; none ships in this build (WAF + licensing), so it returns the UNAVAILABLE transport, which makes
- * the backfill report unavailable rather than fabricate. `_baseUrl` is where an authorized transport would point.
- */
-export function makeIdxIndexTransport(cfg: { enabled: boolean; baseUrl: string }): IdxIndexTransport | null {
+/** Build the index transport from config. Disabled → null; enabled → the persistent curl_cffi worker. */
+export function makeIdxIndexTransport(cfg: {
+  enabled: boolean; baseUrl: string; python?: string; workerScript?: string; maxRetries?: number; timeoutSeconds?: number; delaySeconds?: number; impersonate?: string;
+}, log?: Logger): IdxIndexTransport | null {
   if (!cfg.enabled) return null;
-  return unavailableIdxTransport();
+  return new CurlCffiIdxTransport({
+    baseUrl: cfg.baseUrl,
+    python: cfg.python,
+    workerScript: cfg.workerScript,
+    maxRetries: cfg.maxRetries,
+    timeoutSeconds: cfg.timeoutSeconds,
+    delaySeconds: cfg.delaySeconds,
+    impersonate: cfg.impersonate,
+    log,
+  });
 }
 
 export type IdxIndexSummaryResult =
