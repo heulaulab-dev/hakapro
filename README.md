@@ -25,9 +25,9 @@ All credentials below are server-only runtime settings in Coolify. No database/a
 | Variables | Production requirement |
 | --- | --- |
 | `DATABASE_URL` | Private URL for Hakapro PostgreSQL; use its own resource, never Dashboard PostgreSQL |
-| `BETTER_AUTH_URL` | `https://hakapro.heulaulab.xyz` |
+| `BETTER_AUTH_URL` | `https://hakapro.id` |
 | `BETTER_AUTH_SECRET` | Random secret of at least 32 characters |
-| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Both required; register `https://hakapro.heulaulab.xyz/api/auth/callback/google` |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Both required; register `https://hakapro.id/api/auth/callback/google` |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` | Complete set required for email/password, verification and password reset; `/api/ready` fails production readiness if absent |
 | `SMTP_SECURE` | Optional `1` or `0`; default follows port 465 |
 | `MARKET_DATA_SOURCE` | `arjum` or `idx-bei`; fixtures rejected |
@@ -45,9 +45,9 @@ Three long-lived branches each deploy to their own Coolify app, built from the s
 
 | Branch | Environment | `BETTER_AUTH_ENVIRONMENT` | Origin | Database |
 | --- | --- | --- | --- | --- |
-| `develop` | develop | `develop` | `https://dev-hakapro.heulaulab.xyz` | own PostgreSQL, test data only |
-| `staging` | staging | `staging` | `https://staging-hakapro.heulaulab.xyz` | own PostgreSQL, test data only |
-| `main` | production | unset (`production`) | `https://hakapro.heulaulab.xyz` | `hakapro-postgres` |
+| `develop` | develop | `develop` | `https://dev.hakapro.id` | own PostgreSQL, test data only |
+| `staging` | staging | `staging` | `https://staging.hakapro.id` | own PostgreSQL, test data only |
+| `main` | production | unset (`production`) | `https://hakapro.id` | `hakapro-postgres` |
 
 - **Flow:** feature branches open PRs into `develop`; `develop` → `staging` for acceptance; `staging` → `main` releases to production. CI runs on pushes to all three and on every PR. Don't commit directly to `staging` or `main`.
 - **Isolation:** each environment has its own database, `BETTER_AUTH_SECRET` and `ALERT_JOB_SECRET`. Never point develop or staging at the production database or copy production user data into them.
@@ -96,7 +96,7 @@ curl -N "$HAKAPRO_ORIGIN/api/ai/copilot" \
 
 ## Coolify deployment and migration
 
-Production deploys branch `main` of `heulaulab-dev/hakapro` with `/Dockerfile`, container port `3000`, and HTTPS domain `hakapro.heulaulab.xyz`; staging and develop follow the table above. Apply runtime settings above to the app; disable any legacy Supabase build/runtime variables during the coordinated cutover. Keep the known-good deployment available until cutover is accepted.
+Production deploys branch `main` of `heulaulab-dev/hakapro` with `/Dockerfile`, container port `3000`, and HTTPS domain `hakapro.id`; staging and develop follow the table above. Apply runtime settings above to the app; disable any legacy Supabase build/runtime variables during the coordinated cutover. Keep the known-good deployment available until cutover is accepted.
 
 [Resource inventory](docs/migrations/coolify-resources.md) records separate private PostgreSQL 17 databases: production `hakapro-postgres`, rehearsal `hakapro-rehearsal-postgres`. Each has its own persistent volume/password. Daily local backup schedules retain seven copies; offsite recovery and a restore drill remain required operational work. Never import into the existing Dashboard database.
 

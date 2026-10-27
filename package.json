@@ -16,7 +16,7 @@
     "test:e2e": "playwright test",
     "check:server-boundary": "node scripts/check-server-boundary.mjs",
     "record:fixtures": "bun scripts/record-fixtures.ts",
-    "build:check": "MARKET_DATA_SOURCE=arjum HEULATRADE_MARKET_API_BASE_URL=https://build-check.invalid HEULATRADE_MARKET_API_KEY=build-check DATABASE_URL=postgresql://build-check:build-check@127.0.0.1:5432/build_check BETTER_AUTH_URL=https://hakapro.heulaulab.xyz BETTER_AUTH_SECRET=compile-only-placeholder-at-least-32-characters GOOGLE_CLIENT_ID=compile-only GOOGLE_CLIENT_SECRET=compile-only BETTER_AUTH_ENVIRONMENT=production BETTER_AUTH_REHEARSAL_URL= SMTP_HOST= SMTP_PORT= SMTP_USER= SMTP_PASSWORD= SMTP_FROM= SMTP_SECURE= DEV_AUTH_BYPASS= next build",
+    "build:check": "MARKET_DATA_SOURCE=arjum HEULATRADE_MARKET_API_BASE_URL=https://build-check.invalid HEULATRADE_MARKET_API_KEY=build-check DATABASE_URL=postgresql://build-check:build-check@127.0.0.1:5432/build_check BETTER_AUTH_URL=https://hakapro.id BETTER_AUTH_SECRET=compile-only-placeholder-at-least-32-characters GOOGLE_CLIENT_ID=compile-only GOOGLE_CLIENT_SECRET=compile-only BETTER_AUTH_ENVIRONMENT=production BETTER_AUTH_REHEARSAL_URL= SMTP_HOST= SMTP_PORT= SMTP_USER= SMTP_PASSWORD= SMTP_FROM= SMTP_SECURE= DEV_AUTH_BYPASS= next build",
     "check:prod-guards": "node scripts/check-prod-guards.mjs",
     "engine:dev": "bun --watch services/engine/src/main.ts",
     "engine:start": "bun services/engine/src/main.ts",
