@@ -4,6 +4,7 @@ import type { ValueFormat } from "@/lib/format";
 /** Display format per screen field. Ratio percentages are normalized by the market source adapter. */
 export const FIELD_FORMAT: Record<ScreenField, ValueFormat> = {
   price: "idr", volume: "sharesCompact", value: "idrCompact", frequency: "number", foreignNetShares: "netSharesCompact", foreignNetValue: "idrCompact",
+  relativeVolume: "number", pctFromHigh: "percent",
   marketCap: "idrCompact", per: "number", pbv: "number", roe: "percent", roa: "percent", eps: "idr", der: "number",
   dividendYield: "percent", change1D: "percent",
 };

@@ -8,21 +8,34 @@ import { Link, usePathname } from "@/i18n/navigation";
 import type { Density, Theme } from "@/lib/preferences";
 import { useUiStore } from "@/lib/stores/ui";
 import { cn } from "@/lib/utils";
-import { isActive, NAV, SECONDARY } from "./nav-config";
+import { isActive, MODULE_GROUPS, SECONDARY, type NavItem } from "./nav-config";
 import { DensityToggle, LocaleSwitch, ThemeToggle } from "./preference-controls";
 
 const tab = "caption-style relative flex flex-1 flex-col items-center justify-center gap-1 text-subtle transition-colors duration-150 ease-power3-out before:absolute before:top-0 before:h-0.5 before:w-8 before:rounded-full before:bg-transparent aria-[current=page]:text-foreground aria-[current=page]:before:bg-foreground";
+const moduleCard = "flex items-center gap-2.5 rounded-xl border border-border px-3 py-3 transition-colors hover:bg-(--overlay-soft) data-[active=true]:border-(--tag-neutral-border) data-[active=true]:bg-muted";
 
-/** Mobile has its own hierarchy: Home, Search, Watchlist, More — not a shrunken desktop. */
+/** Mobile has its own hierarchy: Home, Search, Watchlist, More. "More" opens the grouped module grid (all modules). */
 export function MobileNav({ theme, density }: { theme: Theme; density: Density }) {
   const t = useTranslations();
   const pathname = usePathname();
   const openPalette = useUiStore((state) => state.setPaletteOpen);
   const [moreOpen, setMoreOpen] = useState(false);
-  const discover = NAV.find((item) => item.key === "discover")!;
-  const news = NAV.find((item) => item.key === "news")!;
   // The More sheet holds everything that is not Home / Watchlist, so it lights up for those pages.
   const moreActive = !isActive(pathname, "/dashboard") && !isActive(pathname, "/watchlist") && !pathname.startsWith("/stock");
+
+  const moduleLink = (item: NavItem) => (
+    <Link
+      key={item.key}
+      href={item.href}
+      onClick={() => setMoreOpen(false)}
+      data-active={isActive(pathname, item.href)}
+      data-testid={`module-${item.key}`}
+      className={moduleCard}
+    >
+      <item.icon className="size-4 shrink-0 text-subtle" />
+      <span className="lead-style min-w-0 truncate">{t(`nav.${item.key}`)}</span>
+    </Link>
+  );
 
   return (
     <>
@@ -45,28 +58,20 @@ export function MobileNav({ theme, density }: { theme: Theme; density: Density }
         </button>
       </nav>
       <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
-        <SheetContent side="bottom" className="max-h-[85dvh] overflow-y-auto" onOpenAutoFocus={(event) => event.preventDefault()}>
-          <SheetHeader title={t("nav.more")} />
-          <div className="flex flex-col gap-4 px-4 pb-6">
-            <section>
-              <h2 className="eyebrow-style mb-2 font-medium text-faint">{t("nav.discover")}</h2>
-              {discover.children!.map((item) => (
-                <Link key={item.key} href={item.href} onClick={() => setMoreOpen(false)} className="lead-style flex h-11 items-center gap-3 rounded-lg px-2 transition-colors hover:bg-(--overlay-soft)">
-                  <item.icon className="size-3.5 text-subtle" />
-                  {t(`nav.${item.key}`)}
-                </Link>
-              ))}
-              <Link href="/news" onClick={() => setMoreOpen(false)} className="lead-style flex h-11 items-center gap-3 rounded-lg px-2 transition-colors hover:bg-(--overlay-soft)">
-                <news.icon className="size-3.5 text-subtle" />
-                {t("nav.news")}
-              </Link>
-              {SECONDARY.map((item) => (
-                <Link key={item.key} href={item.href} onClick={() => setMoreOpen(false)} className="lead-style flex h-11 items-center gap-3 rounded-lg px-2 transition-colors hover:bg-(--overlay-soft)">
-                  <item.icon className="size-3.5 text-subtle" />
-                  {t(`nav.${item.key}`)}
-                </Link>
-              ))}
-            </section>
+        <SheetContent side="bottom" className="max-h-[88dvh] overflow-y-auto" onOpenAutoFocus={(event) => event.preventDefault()}>
+          <SheetHeader title={t("nav.allModules")} />
+          <div className="flex flex-col gap-5 px-4 pb-6" data-testid="all-modules">
+            {MODULE_GROUPS.map((group) => (
+              <section key={group.key}>
+                <div className="mb-2 flex items-center gap-2">
+                  <group.icon className="size-3.5 text-subtle" />
+                  <h2 className="eyebrow-style font-medium text-faint">{t(`nav.${group.key}`)}</h2>
+                  <span className="caption-style ml-auto text-faint">{group.children!.length}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">{group.children!.map(moduleLink)}</div>
+              </section>
+            ))}
+            <section className="grid grid-cols-2 gap-2 border-t border-border pt-4">{SECONDARY.map(moduleLink)}</section>
             <section className="flex items-center gap-1 border-t border-border pt-3">
               <span className="caption-style mr-auto text-subtle">{t("header.display")}</span>
               <LocaleSwitch />

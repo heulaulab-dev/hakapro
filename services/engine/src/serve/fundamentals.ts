@@ -8,7 +8,7 @@
 import type { z } from "zod";
 import { SCREEN_FIELDS, type fundamentalsSchema, type screenConditionSchema, type screenResultSchema } from "@/server/schemas/idx-bei";
 import { sessionFreshness, type Served } from "./market";
-import type { FundamentalRecord, MarketStore, RatioRecord } from "./store";
+import type { DailyRecord, FundamentalRecord, MarketStore, RatioRecord } from "./store";
 
 type ScreenField = (typeof SCREEN_FIELDS)[number];
 type ScreenCondition = z.infer<typeof screenConditionSchema>;
@@ -17,6 +17,26 @@ type ScreenResult = z.input<typeof screenResultSchema>;
 /** Statement sources in order of preference, when several stored the same line. */
 export const FUNDAMENTALS_SOURCES = ["yahoo-fundamentals"];
 const RATIO_FIELDS = ["per", "pbv", "roe", "roa", "eps", "der", "dividendYield"] as const satisfies readonly ScreenField[];
+
+/** Trailing sessions used for relativeVolume (volume vs its average) and pctFromHigh (close vs the period high). */
+const VOLUME_WINDOW = 20;
+/** Minimum prior sessions before the window metrics are reported (too few is noise, not a signal). */
+const VOLUME_MIN_SESSIONS = 5;
+
+/** relativeVolume and pctFromHigh from a symbol's prior sessions; nulls when there is too little history. */
+function windowMetrics(prior: DailyRecord[] | undefined, day: DailyRecord): { relativeVolume: number | null; pctFromHigh: number | null } {
+  const bars = (prior ?? []).slice(-VOLUME_WINDOW);
+  if (bars.length < VOLUME_MIN_SESSIONS) return { relativeVolume: null, pctFromHigh: null };
+  const volumes = bars.map((bar) => bar.volume).filter((v): v is number => v !== null && v > 0);
+  const avgVolume = volumes.length ? volumes.reduce((sum, v) => sum + v, 0) / volumes.length : null;
+  const highs = bars.map((bar) => bar.high ?? bar.close).filter((h): h is number => h !== null && h > 0);
+  const priorHigh = highs.length ? Math.max(...highs) : null;
+  return {
+    relativeVolume: avgVolume && day.volume !== null ? day.volume / avgVolume : null,
+    // Fraction like change1D: 0 = closed exactly at the prior high, > 0 = broke above it (breakout), < 0 = below.
+    pctFromHigh: priorHigh ? day.close / priorHigh - 1 : null,
+  };
+}
 
 const unitLabel = (row: FundamentalRecord) => (row.unit === "shares" ? "shares" : row.unit === "per_share" ? `${row.currency ?? "?"}/share` : row.currency ?? "?");
 const sourceRank = (source: string) => (FUNDAMENTALS_SOURCES.includes(source) ? FUNDAMENTALS_SOURCES.indexOf(source) : FUNDAMENTALS_SOURCES.length);
@@ -96,13 +116,24 @@ export async function serveScreener(store: MarketStore, request: { conditions: S
   const daily = await store.sessionRows(session);
   if (!daily.length) return null;
   const symbols = daily.map((row) => row.symbol);
-  const [securities, ratioRows] = await Promise.all([store.securities(symbols), store.ratios(symbols)]);
+  // The trailing window feeds relativeVolume and pctFromHigh (breakout). +1 session so the current day's own row can
+  // be excluded, leaving VOLUME_WINDOW prior sessions.
+  const [securities, ratioRows, history] = await Promise.all([
+    store.securities(symbols), store.ratios(symbols), store.sessionHistory(session, VOLUME_WINDOW + 1),
+  ]);
   const bySymbol = new Map(securities.map((row) => [row.symbol, row]));
   const ratios = new Map<string, RatioRecord[]>();
   for (const row of ratioRows) {
     const key = `${row.symbol}|${row.ratio}`;
     if (!ratios.has(key)) ratios.set(key, []);
     ratios.get(key)!.push(row);
+  }
+  // Prior sessions (strictly before the current one) per symbol, for the window metrics.
+  const priorBars = new Map<string, DailyRecord[]>();
+  for (const row of history) {
+    if (row.date >= session) continue;
+    if (!priorBars.has(row.symbol)) priorBars.set(row.symbol, []);
+    priorBars.get(row.symbol)!.push(row);
   }
 
   const rows = daily.map((day) => {
@@ -115,6 +146,7 @@ export async function serveScreener(store: MarketStore, request: { conditions: S
       foreignNetValue: day.foreignBuy !== null && day.foreignSell !== null ? (day.foreignBuy - day.foreignSell) * day.close : null,
       marketCap: shares ? day.close * shares : security?.marketCap ?? null,
       change1D: day.previousClose ? day.close / day.previousClose - 1 : null,
+      ...windowMetrics(priorBars.get(day.symbol), day),
       per: null, pbv: null, roe: null, roa: null, eps: null, der: null, dividendYield: null,
     };
     const sources: Record<string, "derived" | "pasardana"> = {};
