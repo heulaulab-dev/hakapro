@@ -46,12 +46,14 @@ describe("idxIndexBackfillJob — fixture → adapter → validation → backfil
     expect(ctx.rows).toBe(2);
   });
 
-  it("writes nothing and does not call persist when the transport is UNAVAILABLE", async () => {
+  it("does not advance the cursor past an unavailable request", async () => {
     const persist = vi.fn(async () => 0);
     const job = idxIndexBackfillJob(services("2026-01-07T00:00:00Z"), SOURCE, unavailableIdxTransport(), { from: FIXTURE_DATE, batchDays: 1, persist });
-    const ctx = context(new MemoryCursorStore(), job.id);
-    await job.run(ctx);
+    const cursors = new MemoryCursorStore();
+    const ctx = context(cursors, job.id);
+    await expect(job.run(ctx)).rejects.toThrow(/IDX transport unavailable/);
     expect(persist).not.toHaveBeenCalled();
     expect(ctx.rows).toBe(0);
+    expect(await cursors.get(job.id)).toBeNull();
   });
 });

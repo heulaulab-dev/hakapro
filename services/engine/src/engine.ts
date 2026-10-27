@@ -45,6 +45,7 @@ export type EngineServices = {
   sourceState: DbSourceStateStore;
   log: Logger;
   now: () => Date;
+  onShutdown: Array<() => Promise<void>>;
 };
 
 /**
@@ -71,7 +72,8 @@ export function defaultRegistry(services: EngineServices): Registry {
   const sources = engineSources(services.config.arjum);
   const jobServices = { db: services.db, fetcher: services.fetcher, documents: services.documents, sourceState: services.sourceState, log: services.log, now: services.now };
   // IDX /primary historical index backfill: registered only when enabled AND an authorized transport is available.
-  const idxTransport = makeIdxIndexTransport(services.config.idxPrimary);
+  const idxTransport = makeIdxIndexTransport(services.config.idxPrimary, services.log);
+  if (idxTransport?.close) services.onShutdown.push(() => idxTransport.close!());
   const idxSource = idxPrimarySource(services.config.idxPrimary.baseUrl);
   return {
     sources: [sources.tradingview, sources.yahoo, sources.pasardana, ...(sources.arjum ? [sources.arjum] : []), ...sources.news, sources.bi, sources.yahooFundamentals, sources.worldBank, ...(idxTransport ? [idxSource] : [])],
@@ -130,7 +132,8 @@ export async function createEngine(config: EngineConfig, options: EngineOptions 
   const documents = new DbRawDocumentIndex(db);
   const sourceState = new DbSourceStateStore(db, now);
   const fetcher = new Fetcher({ rawStore, documents, sourceState, limiters: options.limiters ?? new LimiterRegistry(), fetch: options.fetch });
-  const services: EngineServices = { config, db, fetcher, rawStore, documents, sourceState, log, now };
+  const onShutdown: Array<() => Promise<void>> = [];
+  const services: EngineServices = { config, db, fetcher, rawStore, documents, sourceState, log, now, onShutdown };
 
   const registry = validateRegistry((options.registry ?? defaultRegistry)(services));
   await syncSources(db, registry.sources);
@@ -160,6 +163,7 @@ export async function createEngine(config: EngineConfig, options: EngineOptions 
     async shutdown() {
       scheduler.stop();
       await scheduler.drain();
+      await Promise.allSettled(onShutdown.map((cleanup) => cleanup()));
       await close();
     },
   };
