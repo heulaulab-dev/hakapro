@@ -132,6 +132,14 @@
     "commoditiesEmpty": "Harga komoditas diperbarui bulanan; rilis berikutnya belum terkumpul.",
     "worldBankAttribution": "Harga komoditas: World Bank Commodity Price Data (The Pink Sheet), CC BY 4.0."
   },
+  "actionCenter": {
+    "title": "Action Center",
+    "note": "Saham yang beberapa sinyal terdokumentasinya sejalan hari ini. Riset saja, bukan rekomendasi.",
+    "alerts": "{count} alert",
+    "single": "1 sinyal",
+    "double": "Konfluensi ×2",
+    "triple": "Konfluensi ×3+"
+  },
   "stockTabs": {
     "label": "Bagian saham",
     "overview": "Ringkasan",
