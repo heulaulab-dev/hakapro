@@ -18,6 +18,21 @@ describe("CurlCffiIdxTransport worker bridge", () => {
     await transport.close();
   });
 
+  it("sends typed IDX endpoint requests over the existing persistent worker", async () => {
+    const spawnWorker = vi.fn((python: string, script: string) => spawn(python, [script], { stdio: ["pipe", "pipe", "pipe"] }));
+    const transport = new CurlCffiIdxTransport({
+      baseUrl: "https://idx-test.example/primary",
+      workerScript: fileURLToPath(new URL("../../python/tests/fixtures/idx-echo-worker.py", import.meta.url)),
+      spawnWorker,
+    });
+
+    await expect(transport.fetchJson("/TradingSummary/GetStockSummary", { date: "20260807", start: 0, length: 9999 })).resolves.toEqual({
+      ok: true, body: { path: "/TradingSummary/GetStockSummary", params: { date: "20260807", start: 0, length: 9999 } },
+    });
+    expect(spawnWorker).toHaveBeenCalledTimes(1);
+    await transport.close();
+  });
+
   it("reports an aborted request without contacting the worker", async () => {
     const spawnWorker = vi.fn();
     const transport = new CurlCffiIdxTransport({ baseUrl: "https://idx-test.example/primary", spawnWorker });

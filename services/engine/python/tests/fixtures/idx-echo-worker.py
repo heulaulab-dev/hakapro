@@ -6,4 +6,5 @@ for line in sys.stdin:
     if message.get("op") == "close":
         print(json.dumps({"id": message["id"], "ok": True, "closed": True}), flush=True)
         break
-    print(json.dumps({"id": message["id"], "result": {"ok": True, "status": 200, "attempts": 1, "body": {"data": [{"IndexCode": "IHSG"}]}}}), flush=True)
+    body = {"path": message["path"], "params": message["params"]} if message.get("op") == "request" else {"data": [{"IndexCode": "IHSG"}]}
+    print(json.dumps({"id": message["id"], "result": {"ok": True, "status": 200, "attempts": 1, "body": body}}), flush=True)

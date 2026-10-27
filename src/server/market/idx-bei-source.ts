@@ -3,7 +3,7 @@ import type { z } from "zod";
 import { classifySessionDate, withFreshness, type Freshness, type WithFreshness } from "@/lib/freshness";
 import { strategyBoardSchema } from "@/lib/strategies/contract";
 import {
-  actionsCalendarSchema, actionsSchema, announcementItemSchema, fundamentalsSchema, HEATMAP_DEFAULT_LIMIT, heatmapLimitSchema, heatmapSchema,
+  actionsCalendarSchema, actionsSchema, announcementItemSchema, brokerDirectorySchema, fundamentalsSchema, HEATMAP_DEFAULT_LIMIT, heatmapLimitSchema, heatmapSchema, marketBrokerSummarySchema,
   idxBeiEnvelope, indicesHistorySchema, insidersRecentSchema, macroSchema, marketOverviewSchema, newsItemSchema, groupsSchema, groupWindowSchema, profileSchema,
   screenRequestSchema, screenResultSchema, sectorsSchema, securitySchema, signalsSchema, stockSchema, type ScreenRequest, radarSchema,
   stealthOwnershipSchema,
@@ -181,6 +181,21 @@ export class IdxBeiSource extends BaseMarketDataSource {
     if (query.codes?.length) params.set("codes", query.codes.join(","));
     const qs = params.toString();
     const { data, meta } = await this.get(`/v1/indices/history${qs ? `?${qs}` : ""}`, indicesHistorySchema, TTL_MS.market);
+    return this.snapshot(data, meta.dataAsOf);
+  }
+
+  async marketBrokerSummary(query: { from?: string; to?: string; limit?: number } = {}, signal?: AbortSignal) {
+    const params = new URLSearchParams();
+    if (query.from) params.set("from", query.from);
+    if (query.to) params.set("to", query.to);
+    if (query.limit !== undefined) params.set("limit", String(query.limit));
+    const qs = params.toString();
+    const { data, meta } = await this.get(`/v1/brokers/market-summary${qs ? `?${qs}` : ""}`, marketBrokerSummarySchema, TTL_MS.market, { signal });
+    return this.snapshot(data, meta.dataAsOf);
+  }
+
+  async brokerDirectory(signal?: AbortSignal) {
+    const { data, meta } = await this.get("/v1/brokers/directory", brokerDirectorySchema, TTL_MS.market, { signal });
     return this.snapshot(data, meta.dataAsOf);
   }
 

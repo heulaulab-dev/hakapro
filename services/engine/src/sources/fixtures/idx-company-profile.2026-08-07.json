@@ -1,0 +1,16 @@
+{
+  "recordsTotal": 957,
+  "recordsFiltered": 957,
+  "data": [
+    {
+      "KodeEmiten": "AADI",
+      "NamaEmiten": "PT Adaro Andalan Indonesia Tbk",
+      "Sektor": "Energi",
+      "SubSektor": "Minyak, Gas & Batu Bara",
+      "Industri": "Batu Bara",
+      "SubIndustri": "Produksi Batu Bara",
+      "PapanPencatatan": "Utama",
+      "TanggalPencatatan": "2024-12-05T00:00:00"
+    }
+  ]
+}

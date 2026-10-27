@@ -1,0 +1,14 @@
+{
+  "recordsTotal": 1,
+  "recordsFiltered": 1,
+  "data": [
+    {
+      "id": 82803,
+      "KodeEmiten": "UNSP",
+      "TanggalPencatatan": "2026-08-04T00:00:00",
+      "JenisTindakan": "tanpaHmetd",
+      "JumlahSaham": 14505112734.0,
+      "JumlahSahamSetelahTindakan": 17005275078.0
+    }
+  ]
+}

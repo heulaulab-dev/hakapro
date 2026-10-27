@@ -1,0 +1,47 @@
+{
+  "ItemCount": 1,
+  "PageCount": 1,
+  "PageNumber": 1,
+  "PageSize": 10,
+  "Items": [
+    {
+      "Id": "20261022115833-122/LBB/X/2026_id-id",
+      "ItemID": null,
+      "AnnouncementNo": "122/LBB/X/2026",
+      "PublishDate": "2026-10-22T11:58:33",
+      "Title": "Pengumuman Negosiasi sehubungan dengan Rencana Pengambilalihan PT Lovina Beach Brewery Tbk",
+      "AnnouncementType": "",
+      "Code": "STRK                                                                                                ",
+      "FormID": null,
+      "JmsxGroupId": "f-32168630-0",
+      "Jenis": "STOCK",
+      "Attachments": [
+        {
+          "PDFFilename": "cc3ee88a0b_45690de7ce.pdf",
+          "FullSavePath": "https://www.idx.co.id/StaticData/NewsAndAnnouncement/ANNOUNCEMENTSTOCK/From_EREP/202610/cc3ee88a0b_45690de7ce.pdf",
+          "IsAttachment": 0,
+          "OriginalFilename": "20261022_STRK_Laporan Informasi dan Fakta Material_32168630.pdf"
+        },
+        {
+          "PDFFilename": "e5c1203bf8_4fb3a2b790.pdf",
+          "FullSavePath": "https://www.idx.co.id/StaticData/NewsAndAnnouncement/ANNOUNCEMENTSTOCK/From_EREP/202610/e5c1203bf8_4fb3a2b790.pdf",
+          "IsAttachment": 1,
+          "OriginalFilename": "20261022_STRK_Laporan Informasi dan Fakta Material_32168630_lamp1.pdf"
+        },
+        {
+          "PDFFilename": "ec05a1a4f2_f81feb9088.pdf",
+          "FullSavePath": "https://www.idx.co.id/StaticData/NewsAndAnnouncement/ANNOUNCEMENTSTOCK/From_EREP/202610/ec05a1a4f2_f81feb9088.pdf",
+          "IsAttachment": 1,
+          "OriginalFilename": "20261022_STRK_Laporan Informasi dan Fakta Material_32168630_lamp2.pdf"
+        }
+      ],
+      "PdfPath": "[{\"PDFFilename\":\"cc3ee88a0b_45690de7ce.pdf\",\"FullSavePath\":\"https://www.idx.co.id/StaticData/NewsAndAnnouncement/ANNOUNCEMENTSTOCK/From_EREP/202610/cc3ee88a0b_45690de7ce.pdf\",\"IsAttachment\":\"0\",\"OriginalFilename\":\"20261022_STRK_Laporan Informasi dan Fakta Material_32168630.pdf\"},{\"PDFFilename\":\"e5c1203bf8_4fb3a2b790.pdf\",\"FullSavePath\":\"https://www.idx.co.id/StaticData/NewsAndAnnouncement/ANNOUNCEMENTSTOCK/From_EREP/202610/e5c1203bf8_4fb3a2b790.pdf\",\"IsAttachment\":\"1\",\"OriginalFilename\":\"20261022_STRK_Laporan Informasi dan Fakta Material_32168630_lamp1.pdf\"},{\"PDFFilename\":\"ec05a1a4f2_f81feb9088.pdf\",\"FullSavePath\":\"https://www.idx.co.id/StaticData/NewsAndAnnouncement/ANNOUNCEMENTSTOCK/From_EREP/202610/ec05a1a4f2_f81feb9088.pdf\",\"IsAttachment\":\"1\",\"OriginalFilename\":\"20261022_STRK_Laporan Informasi dan Fakta Material_32168630_lamp2.pdf\"}]",
+      "Perihal": null,
+      "Lang": null,
+      "KodeDivisi": null,
+      "Divisi": null,
+      "JenisEmiten": null,
+      "IsHidden": false
+    }
+  ]
+}

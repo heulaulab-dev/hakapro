@@ -105,6 +105,34 @@ export const securities = pgTable("securities", {
   updatedAt: ts("updated_at").notNull().defaultNow(),
 });
 
+/** IDX issuer detail snapshot by symbol/language; raw public disclosure arrays stay separate from KSEI ownership tables. */
+export const idxIssuerProfiles = pgTable("idx_issuer_profiles", {
+  symbol: text("symbol").notNull().references(() => securities.symbol),
+  language: text("language").notNull(),
+  profile: jsonb("profile").$type<Record<string, unknown>>().notNull(),
+  directors: jsonb("directors").$type<Record<string, unknown>[]>().notNull().default(sql`'[]'::jsonb`),
+  commissioners: jsonb("commissioners").$type<Record<string, unknown>[]>().notNull().default(sql`'[]'::jsonb`),
+  auditCommittee: jsonb("audit_committee").$type<Record<string, unknown>[]>().notNull().default(sql`'[]'::jsonb`),
+  shareholders: jsonb("shareholders").$type<Record<string, unknown>[]>().notNull().default(sql`'[]'::jsonb`),
+  subsidiaries: jsonb("subsidiaries").$type<Record<string, unknown>[]>().notNull().default(sql`'[]'::jsonb`),
+  retrievedAt: ts("retrieved_at").notNull(),
+  ...provenance,
+}, (t) => [primaryKey({ name: "idx_issuer_profiles_pk", columns: [t.symbol, t.language] })]);
+
+/** Original IDX ratio values and fiscal metadata; percentage fields keep the source's percent units in metrics. */
+export const idxRatioPeriods = pgTable("idx_ratio_periods", {
+  // Keep the IDX source contract even when the local securities directory has not caught up yet.
+  symbol: text("symbol").notNull(),
+  fsDate: date("fs_date").notNull(),
+  periodType: text("period_type").notNull(),
+  fiscalYearEnd: text("fiscal_year_end"),
+  sharia: text("sharia"),
+  audit: text("audit"),
+  opinion: text("opinion"),
+  metrics: jsonb("metrics").$type<Record<string, number | null>>().notNull(),
+  ...provenance,
+}, (t) => [primaryKey({ name: "idx_ratio_periods_pk", columns: [t.symbol, t.fsDate, t.periodType] }), index("idx_ratio_periods_date").on(t.fsDate, t.symbol)]);
+
 export const dailyPrices = pgTable("daily_prices", {
   symbol: text("symbol").notNull(),
   date: date("date").notNull(),
@@ -185,6 +213,29 @@ export const indexIntraday = pgTable("index_intraday", {
   index("index_intraday_ts").on(t.ts),
 ]);
 
+/** IDX GetBrokerSummary: one market-wide aggregate per exchange date and broker, never per stock. */
+export const brokerDailySummaries = pgTable("broker_daily_summaries", {
+  date: date("date").notNull(),
+  brokerCode: text("broker_code").notNull(),
+  firmName: text("firm_name"),
+  volume: count("volume"),
+  value: count("value"),
+  frequency: count("frequency"),
+  ...provenance,
+}, (t) => [
+  primaryKey({ name: "broker_daily_summaries_pk", columns: [t.date, t.brokerCode] }),
+  index("broker_daily_summaries_code_date").on(t.brokerCode, t.date),
+]);
+
+/** IDX GetBrokerSearch registry, distinct from date×broker trading activity. */
+export const idxBrokerMembers = pgTable("idx_broker_members", {
+  brokerCode: text("broker_code").primaryKey(),
+  firmName: text("firm_name").notNull(),
+  license: text("license"),
+  active: boolean("active").notNull().default(true),
+  ...provenance,
+});
+
 /** Completeness of each session's EOD run: retried until every active symbol has a row, otherwise STALE. */
 export const eodSessions = pgTable("eod_sessions", {
   date: date("date").primaryKey(),
@@ -250,12 +301,16 @@ export const corporateActions = pgTable("corporate_actions", {
   id: uuid("id").primaryKey().defaultRandom(),
   symbol: text("symbol").notNull(),
   type: text("type").notNull(),
+  /** Exact IDX caType when the row came from GetIssuedHistory. */
+  sourceCategory: text("source_category"),
   exDate: date("ex_date"),
   recordDate: date("record_date"),
   paymentDate: date("payment_date"),
   /** Ratio as published (e.g. "1:5" for a split); amount per share for cash actions. */
   ratio: text("ratio"),
   amount: numeric("amount", { precision: 20, scale: 6, mode: "number" }),
+  shares: count("shares"),
+  sharesAfter: count("shares_after"),
   description: text("description"),
   ...provenance,
 }, (t) => [
@@ -288,7 +343,7 @@ export const financials = pgTable("financials", {
 ]);
 
 export const RATIO_KEYS = ["per", "pbv", "roe", "roa", "eps", "der", "dividendYield"] as const;
-export const RATIO_SOURCES = ["derived", "pasardana"] as const;
+export const RATIO_SOURCES = ["derived", "idx", "pasardana"] as const;
 
 /**
  * Valuation ratios per symbol: the latest value per (ratio, ratio_source). `derived` rows come from the `ratios` job
@@ -315,7 +370,7 @@ export const stockRatios = pgTable("stock_ratios", {
   ...provenance,
 }, (t) => [
   primaryKey({ name: "stock_ratios_pk", columns: [t.symbol, t.ratio, t.ratioSource] }),
-  check("stock_ratios_ratio_source_check", sql`${t.ratioSource} in ('derived', 'pasardana')`),
+  check("stock_ratios_ratio_source_check", sql`${t.ratioSource} in ('derived', 'idx', 'pasardana')`),
 ]);
 
 // ── Ownership (E6, HAKA-66): the owner's monthly ≥1% list uploads → HAKA-33 snapshot sets, changes, HAKA-34 draft ──
