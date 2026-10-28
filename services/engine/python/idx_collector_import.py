@@ -18,7 +18,7 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 from urllib.error import HTTPError, URLError
-from urllib.request import Request, urlopen
+from urllib.request import Request, ProxyHandler, build_opener
 from urllib.parse import urlsplit
 
 REQUIRED_RRG_CODES = frozenset({
@@ -27,6 +27,7 @@ REQUIRED_RRG_CODES = frozenset({
 })
 MAX_RECORD_BYTES = 4_000_000
 RETRYABLE_STATUSES = frozenset({408, 425, 429, 500, 502, 503, 504})
+DIRECT_OPENER = build_opener(ProxyHandler({}))
 
 
 def validate_record(record: dict[str, Any]) -> None:
@@ -102,7 +103,7 @@ def import_record(
     )
     for attempt in range(max_retries + 1):
         try:
-            with urlopen(request, timeout=timeout) as response:
+            with DIRECT_OPENER.open(request, timeout=timeout) as response:
                 result = json.loads(response.read())
                 if not isinstance(result, dict):
                     raise RuntimeError("engine returned a non-object response")
