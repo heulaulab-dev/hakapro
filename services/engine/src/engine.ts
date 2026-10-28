@@ -1,3 +1,6 @@
+import { IDX_BEI_SOURCE_ID, IdxBeiApi } from "./sources/idx-bei-api";
+import { idxBeiIssuerImportJob } from "./jobs/idx-bei-issuer-import";
+import { defineSource } from "./registry";
 // Wires config → DB, raw store, fetcher, registry, scheduler and the HTTP handler. Shared by main.ts and the e2e test.
 import { mkdir } from "node:fs/promises";
 import type { EngineConfig } from "./config";
@@ -82,8 +85,11 @@ export function defaultRegistry(services: EngineServices): Registry {
   const idxTransport = makeIdxIndexTransport(services.config.idxPrimary, services.log);
   if (idxTransport?.close) services.onShutdown.push(() => idxTransport.close!());
   const idxSource = idxPrimarySource(services.config.idxPrimary.baseUrl);
+  // Private IDX-BEI microservice (internal network only): company reference snapshot → issuer profiles.
+  const idxBeiConfig = services.config.idxBei ?? { enabled: false, baseUrl: "http://idx-bei:8000" };
+  const idxBeiSource = defineSource({ id: IDX_BEI_SOURCE_ID, host: new URL(idxBeiConfig.baseUrl).host, kind: "reference", policy: { minIntervalMs: 1000, concurrency: 1 }, description: "Private IDX-BEI microservice: company reference snapshot (classification, board, shareholders, subsidiaries)" });
   return {
-    sources: [sources.tradingview, sources.yahoo, sources.pasardana, ...(sources.arjum ? [sources.arjum] : []), ...sources.news, sources.bi, sources.yahooFundamentals, sources.worldBank, ...(idxTransport ? [idxSource] : [])],
+    sources: [sources.tradingview, sources.yahoo, sources.pasardana, ...(sources.arjum ? [sources.arjum] : []), ...sources.news, sources.bi, sources.yahooFundamentals, sources.worldBank, ...(idxTransport ? [idxSource] : []), ...(idxBeiConfig.enabled ? [idxBeiSource] : [])],
     jobs: [
       universeJob(jobServices, { tradingview: sources.tradingview, pasardana: sources.pasardana }),
       indicesEodJob(jobServices, sources.tradingview),
@@ -122,6 +128,7 @@ export function defaultRegistry(services: EngineServices): Registry {
         idxActionsBackfillJob(jobServices, idxSource, idxTransport),
         idxDisclosuresSyncJob(jobServices, idxSource, idxTransport),
       ] : []),
+      ...(idxBeiConfig.enabled ? [idxBeiIssuerImportJob(jobServices, new IdxBeiApi({ ...idxBeiConfig, log: services.log }))] : []),
     ],
   };
 }
@@ -162,7 +169,9 @@ export async function createEngine(config: EngineConfig, options: EngineOptions 
     setParseStatus: (id, status, error) => documents.setParseStatus(id, status, error ?? null),
   });
   const scheduler = new Scheduler({ jobs: registry.jobs, pause, runs: new DbRunRecorder(db), cursors: new DbCursorStore(db), sourceState, log, now });
+  const idxBei = new IdxBeiApi({ ...(config.idxBei ?? { enabled: false, baseUrl: "http://idx-bei:8000" }), log });
   const app = createApp({
+    idxBeiInventory: () => idxBei.inventory(),
     apiToken: config.apiToken, adminToken: config.adminToken, ping, pause, scheduler, rawStoreKind: rawStore.kind, log, now,
     sourceHealth: () => sourceHealth(db, now()), unblockSource: (id) => sourceState.unblock(id), jobHistory: () => recentJobHistory(db),
     importIdxIndexRows: async (_date, rows) => {

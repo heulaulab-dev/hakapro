@@ -26,6 +26,8 @@ const ENGINE_LANES = new Set(["arjum", "idx-bei"]);
 
 /** The product name for the data engine, shown wherever a dataset's source reaches the user. */
 export const ENGINE_SOURCE_LABEL = "HAKA PRO Engine";
+/** Readable names for dataset ids that reach the UI through the engine. */
+const SOURCE_LABELS: Record<string, string> = { "idx-bei-api": "IDX-BEI (company snapshot)" };
 
 /**
  * User-facing label for a provider/lane id. Engine lanes collapse to {@link ENGINE_SOURCE_LABEL};
@@ -33,7 +35,7 @@ export const ENGINE_SOURCE_LABEL = "HAKA PRO Engine";
  * unchanged. Only the displayed text changes; the stored `source` id that logic keys on is untouched.
  */
 export function sourceLabel(source: string): string {
-  return ENGINE_LANES.has(source) ? ENGINE_SOURCE_LABEL : source;
+  return ENGINE_LANES.has(source) ? ENGINE_SOURCE_LABEL : SOURCE_LABELS[source] ?? source;
 }
 
 export { classifySessionDate, jakartaClock, marketPhase, previousTradingDay, isTradingDay } from "./session";

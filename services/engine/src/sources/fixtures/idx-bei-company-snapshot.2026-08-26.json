@@ -1,0 +1,104 @@
+{
+ "_note": "Synthetic. Mirrors the shape of the IDX-BEI company snapshot (/data/network_alpha_data.json): top-level last_updated + companies[]; board_members {name, role, title}; shareholders {name, percentage, is_controller}; subsidiaries {name, percentage, bidang_usaha}. Names and values are fictional. Price fields and generated verdicts are present on purpose: the parser must drop them.",
+ "last_updated": "2026-08-26 17:31:48",
+ "companies": [
+  {
+   "code": "BBCA",
+   "name": "Contoh Bank Nusantara Tbk.",
+   "sector": "Financials",
+   "sub_sector": "Banks",
+   "industry": "Banks",
+   "sub_industry": "Banks",
+   "roe": 20.5,
+   "per": 21.0,
+   "fs_date": "2024-09-30",
+   "board_members": [
+    { "name": "Director One", "role": "Director", "title": "PRESIDEN DIREKTUR" },
+    { "name": "Director Two", "role": "Director", "title": "WAKIL PRESIDEN DIREKTUR" },
+    { "name": "Commissioner One", "role": "Commissioner", "title": "PRESIDEN KOMISARIS" }
+   ],
+   "shareholders": [
+    { "name": "PT Contoh Induk Investama", "percentage": 55.5, "is_controller": true },
+    { "name": "Masyarakat Non Warkat", "percentage": 41.25, "is_controller": false },
+    { "name": "Director One", "percentage": 0.03, "is_controller": false }
+   ],
+   "subsidiaries": [
+    { "name": "PT Contoh Asuransi Jiwa", "percentage": 90.0, "bidang_usaha": "Asuransi Jiwa" },
+    { "name": "PT Contoh Pembiayaan", "percentage": 100.0, "bidang_usaha": "Pembiayaan investasi, modal\r\nkerja" }
+   ],
+   "price": 1234.0,
+   "daily_change": -5.0,
+   "previous_price": 1239.0,
+   "valuation_badge": "Premium Quality",
+   "compounder_score": 70.0,
+   "dca_verdict": "ACCUMULATE",
+   "dca_rating": "ACCUMULATE (Layak Koleksi)",
+   "ai_thesis": "Synthetic generated opinion that must never be stored or shown."
+  },
+  {
+   "code": "TLKM",
+   "name": "Contoh Telekomunikasi Tbk.",
+   "sector": "Infrastructures",
+   "sub_sector": "Telecommunication",
+   "industry": "Telecommunication Service",
+   "sub_industry": "Integrated Telecommunication Service",
+   "fs_date": "2024-09-30",
+   "board_members": [
+    { "name": "Director Three", "role": "Director", "title": "DIREKTUR" },
+    { "name": "Commissioner Two", "role": "Commissioner", "title": "KOMISARIS" },
+    { "name": "", "role": "Director", "title": "DIREKTUR" },
+    { "name": "Unknown Role", "role": "Advisor", "title": "PENASIHAT" }
+   ],
+   "shareholders": [
+    { "name": "PT Contoh Pengelola Aset", "percentage": 52.25, "is_controller": true },
+    { "name": "Broken Percentage", "percentage": 151.2, "is_controller": false }
+   ],
+   "subsidiaries": [],
+   "price": 999.0,
+   "is_undervalued": true,
+   "dca_verdict": "ACCUMULATE",
+   "ai_thesis": "Synthetic generated opinion."
+  },
+  {
+   "code": "GOTOM",
+   "name": "Contoh Saham Seri Tbk.",
+   "sector": "Technology",
+   "sub_sector": "Software & IT Services",
+   "industry": "Online Applications & Services",
+   "sub_industry": "Online Applications & Services",
+   "board_members": [],
+   "shareholders": [],
+   "subsidiaries": [],
+   "price": 68.0,
+   "dca_verdict": "SPECULATIVE"
+  },
+  {
+   "code": "EMAS",
+   "name": "EMAS",
+   "sector": "N/A",
+   "sub_sector": "N/A",
+   "industry": "N/A",
+   "sub_industry": "N/A",
+   "fs_date": "N/A",
+   "board_members": [
+    { "name": "Director Four", "role": "Director", "title": "PRESIDEN DIREKTUR" }
+   ],
+   "shareholders": [
+    { "name": "PT Contoh Tambang Induk", "percentage": 63.5, "is_controller": true }
+   ],
+   "subsidiaries": [
+    { "name": "PT Contoh Jasa Tambang", "percentage": 99.9, "bidang_usaha": "Aktivitas penunjang pertambangan" }
+   ],
+   "price": 4321.0,
+   "dca_verdict": "SPECULATIVE"
+  },
+  {
+   "code": "ZZZZ",
+   "name": "Not Listed In HakaPro Tbk.",
+   "sector": "Energy",
+   "board_members": [],
+   "shareholders": [],
+   "subsidiaries": []
+  }
+ ]
+}

@@ -171,6 +171,8 @@ const profileRecords = z.array(z.record(z.string(), z.unknown())).transform((rec
 export const profileSchema = z.object({
   symbol: symbolSchema, companyName: z.string().nullable(), website: z.string().nullable(), description: z.string().nullable(),
   directors: profileRecords, commissioners: profileRecords, shareholders: profileRecords, subsidiaries: profileRecords,
+  /** Which source wrote this profile, when it was captured upstream and when the engine stored it (WIB ISO). */
+  provenance: z.object({ source: z.string(), capturedAt: z.string(), retrievedAt: z.string() }).nullable().optional(),
 }).strip();
 export const actionsSchema = z.array(z.object({ date: z.string().nullable(), type: z.string().nullable(), description: z.string().nullable(), documentUrl: z.string().nullable() }));
 

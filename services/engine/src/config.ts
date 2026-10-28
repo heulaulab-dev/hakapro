@@ -43,6 +43,8 @@ const envSchema = z.object({
   // E4 strategy scans on the HAKA-17 DRAFT rules (not owner-approved): off by default (job not registered, /v1/strategies empty).
   ENGINE_STRATEGY_SCANS_ENABLED: flag(false),
   // IDX /primary historical index backfill (GetIndexSummary). Off by default; enabling it starts the curl_cffi worker.
+  IDX_BEI_ENABLED: flag(false),
+  IDX_BEI_API_URL: z.string().url().default("http://idx-bei:8000"),
   ENGINE_IDX_PRIMARY_ENABLED: flag(false),
   ENGINE_IDX_PRIMARY_BASE_URL: z.string().optional(),
   ENGINE_IDX_PRIMARY_PYTHON: z.string().min(1).default("python3"),
@@ -85,6 +87,7 @@ export type EngineConfig = {
   /** false → strategy-scan-eod is not registered and /v1/strategies serves the empty UNAVAILABLE board. */
   strategyScans: { enabled: boolean };
   /** IDX /primary historical index backfill. Disabled → the backfill job and its source are not registered. */
+  idxBei?: { enabled: boolean; baseUrl: string };
   idxPrimary: { enabled: boolean; baseUrl: string; python: string; workerScript?: string; maxRetries: number; timeoutSeconds: number; delaySeconds: number; impersonate: string; backfillRevision: string };
 };
 
@@ -141,6 +144,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
       : null,
     ownership: { maxUploadBytes: e.ENGINE_OWNERSHIP_MAX_UPLOAD_MB * 1024 * 1024, freeFloatEnabled: e.ENGINE_FREE_FLOAT_ENABLED },
     strategyScans: { enabled: e.ENGINE_STRATEGY_SCANS_ENABLED },
+    idxBei: { enabled: e.IDX_BEI_ENABLED, baseUrl: e.IDX_BEI_API_URL },
     idxPrimary: {
       enabled: e.ENGINE_IDX_PRIMARY_ENABLED,
       baseUrl: (e.ENGINE_IDX_PRIMARY_BASE_URL ?? "https://www.idx.co.id/primary").replace(/\/+$/, ""),
