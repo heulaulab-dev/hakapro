@@ -100,6 +100,7 @@ describe.skipIf(!enabled)("engine sources (docker postgres + fixtures)", { timeo
       "macro-jisdor": { kind: "cron", spec: "0 17 * * *" },
       "macro-bi-rate": { kind: "cron", spec: "5 17 * * *" },
       "macro-commodities": { kind: "cron", spec: "30 6 4 * *" },
+      "ksei-ownership-sync": { kind: "cron", spec: "30 20 * * *" },
       fundamentals: { kind: "cron", spec: "5-55/10 19-23,0-5 * * *" },
       ratios: { kind: "cron", spec: "15 6,17,21 * * *" },
     });
