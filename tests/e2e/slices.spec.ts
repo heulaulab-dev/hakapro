@@ -266,6 +266,20 @@ test.describe("slice 6: Chart, Insiders, History, Ownership tabs", () => {
     await page.goto("/en/stock/BBCA/ownership");
     await expect(page.getByTestId("stock-ownership-view").getByTestId("data-state-code").first()).toHaveText("UNSUPPORTED");
   });
+
+  test("ownership tab opens the investor network detail modal from a KSEI holder", async ({ page }) => {
+    await page.route("**/api/stocks/BBCA/ownership", (route) => route.fulfill({ json: {
+      data: { symbol: "BBCA", issuerName: "Bank Central Asia Tbk.", month: "2026-09", snapshotDate: "2026-09-30", thresholdPercent: "1.000000", issuedShares: "123000000000", source: { dataset: "ksei", reference: "ownership-2026-09", retrievedAt: "2026-10-01T00:00:00.000Z", uploadId: "fixture" },
+        holders: [{ holderKey: "consilium-frontier-equity-fund-lp", holderName: "Consilium Frontier Equity Fund LP", holderKind: "organisation", shares: "2300000000", percent: "6.790000", investorType: "CP", localForeign: "Foreign", reference: "fixture#1" }], comparison: null, freeFloat: null },
+      freshness: "HISTORICAL", asOf: "2026-09-30", source: "engine",
+    } }));
+    await page.goto("/en/stock/BBCA/ownership");
+    await page.getByTestId("ownership-holder-consilium-frontier-equity-fund-lp").click();
+    const modal = page.getByTestId("investor-network-dialog");
+    await expect(modal).toContainText("Consilium Frontier Equity Fund LP");
+    await expect(modal.getByTestId("investor-network-holdings")).toContainText("6.79%");
+    await expect(modal.getByTestId("investor-network-graph")).toBeVisible();
+  });
 });
 
 test.describe("alerts", () => {

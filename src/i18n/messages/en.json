@@ -862,7 +862,18 @@
     "kseiTitle": "≥1% shareholders (KSEI)",
     "kseiNote": "From the monthly KSEI list of ≥1% shareholders. Holders below 1% are not disclosed, which is not the same as zero.",
     "kseiNone": "No ≥1% shareholder list for this stock yet. It appears once an admin uploads the monthly KSEI list.",
-    "kseiAsOf": "Position {date} · source: {source}"
+    "kseiAsOf": "Position {date} · source: {source}",
+    "networkHoldingsCount": "{count} holdings",
+    "networkHoldings": "Holdings",
+    "networkUpdated": "Updated {date}",
+    "networkUndated": "Date unavailable",
+    "networkCode": "Code",
+    "networkCompany": "Company name",
+    "networkShares": "Total shares",
+    "networkPercentage": "Percentage",
+    "networkGraph": "Investor Network",
+    "networkGraphAria": "Investor to issuer relationship",
+    "networkLimited": "Only verified holdings in this snapshot are shown. Cross-holdings are unavailable in the current dataset."
   },
   "errors": {
     "title": "Something went wrong",
