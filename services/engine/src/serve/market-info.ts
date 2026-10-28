@@ -10,6 +10,7 @@ import { addDays, wibDateOf, wibIso, wibToday } from "../sources/session";
 import { indexCoverageReport } from "./index-quality";
 import { sessionFreshness, type Served } from "./market";
 import type { MarketStore } from "./store";
+import { IDX_BEI_SOURCE_ID } from "../sources/idx-bei-api";
 
 export const NEWS_DEFAULT_PAGE_SIZE = 20;
 export const NEWS_MAX_PAGE_SIZE = 100;
@@ -122,8 +123,11 @@ export async function serveIssuerProfile(store: MarketStore, symbol: string): Pr
       website: typeof profile.Website === "string" ? profile.Website : null,
       description: typeof profile.KegiatanUsahaUtama === "string" ? profile.KegiatanUsahaUtama : null,
       directors: row.directors, commissioners: row.commissioners, shareholders: row.shareholders, subsidiaries: row.subsidiaries,
+      provenance: row.source && row.asOf ? { source: row.source, capturedAt: wibIso(row.asOf), retrievedAt: wibIso(row.retrievedAt) } : null,
     },
-    dataAsOf: null, freshness: "HISTORICAL",
+    // Native IDX profiles carry no disclosure date (undated). The IDX-BEI snapshot does have a capture time, so
+    // its age is stated instead of hidden: it is reference data as of that snapshot, never a current reading.
+    dataAsOf: row.source === IDX_BEI_SOURCE_ID && row.asOf ? wibIso(row.asOf) : null, freshness: "HISTORICAL",
   };
 }
 

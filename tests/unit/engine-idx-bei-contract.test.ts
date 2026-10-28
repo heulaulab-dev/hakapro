@@ -23,6 +23,10 @@ import { computeRotation } from "@/lib/sector-rotation";
 import { parseIdxIndexSummary } from "../../services/engine/src/sources/idx-primary";
 import { FIXTURE_DATE, IDX_INDEX_SUMMARY_FIXTURE } from "../../services/engine/src/sources/idx-primary.fixture";
 import { fixtureStrategyStore } from "../../services/engine/test/strategy-fixtures";
+import { idxBeiCompanySnapshotSchema, idxBeiProfiles } from "../../services/engine/src/sources/idx-bei-companies";
+import idxBeiSnapshotFixture from "../../services/engine/src/sources/fixtures/idx-bei-company-snapshot.2026-08-26.json";
+import { profileSchema as clientProfileSchema } from "@/lib/api/market";
+import { sourceLabel } from "@/lib/freshness";
 
 const BASE = "http://engine.test";
 const NOW = new Date("2026-10-14T10:00:00Z");
@@ -433,5 +437,35 @@ describe("engine ownership routes via IdxBeiSource (E6, synthetic uploads)", () 
     expect(stealth.data.stocks).toHaveLength(1);
     expect(stealth.data.stocks[0]).toMatchObject({ symbol: "TEST1", combinedShareDelta: "10000000", holders: [{ holderName: "PT CONTOH INDUK FIKTIF", investorType: "CP", kind: "INCREASE" }] });
     expect(stealth.data.stocks[0].price!.changePercent).toBeCloseTo(-1, 9);
+  });
+});
+
+describe("IDX-BEI company snapshot → engine → app (Ownership tab profile)", () => {
+  let dir: string;
+  beforeEach(async () => { dir = await mkdtemp(join(tmpdir(), "engine-idx-bei-")); });
+  afterEach(async () => { await rm(dir, { recursive: true, force: true }); });
+
+  it("carries the snapshot's capture time and dataset through to the UI contract", async () => {
+    const snapshot = idxBeiCompanySnapshotSchema.parse(idxBeiSnapshotFixture);
+    const parsed = idxBeiProfiles(snapshot, new Set(["BBCA"]));
+    const market = new MemoryMarketStore({
+      issuerProfiles: parsed.rows.map((row) => ({ ...row, retrievedAt: NOW, source: "idx-bei-api", asOf: parsed.capturedAt })),
+    });
+    const source = new IdxBeiSource(BASE, () => NOW, engineFetch(dir, NOW, market));
+
+    const profile = await source.profile("BBCA");
+    expect(profile).toMatchObject({ freshness: "HISTORICAL", asOf: "2026-08-26T17:31:48+07:00" });
+    expect(profile.data).toMatchObject({
+      symbol: "BBCA", companyName: "Contoh Bank Nusantara Tbk.", dataset: "idx-bei-api",
+      capturedAt: "2026-08-26T17:31:48+07:00", retrievedAt: "2026-10-14T17:00:00+07:00",
+    });
+    expect(sourceLabel(profile.data.dataset!)).toBe("IDX-BEI (company snapshot)");
+    // The app client's own schema (what the Ownership view renders) accepts it.
+    const client = clientProfileSchema.parse(profile.data);
+    expect(client.directors.map((person) => person.Nama)).toEqual(["Director One", "Director Two"]);
+    expect(JSON.stringify(client)).not.toMatch(/ai_thesis|dca_verdict|ACCUMULATE|1234/);
+
+    // A symbol the snapshot does not cover stays unsupported (the section is hidden), never an invented profile.
+    await expect(source.profile("TLKM")).rejects.toMatchObject({ code: "UNSUPPORTED" });
   });
 });

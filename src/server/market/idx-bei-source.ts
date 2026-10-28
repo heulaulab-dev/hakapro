@@ -119,9 +119,11 @@ export class IdxBeiSource extends BaseMarketDataSource {
   async profile(symbol: string) {
     // The upstream company details carry no disclosure date, so asOf stays null (→ UNAVAILABLE). The UI labels
     // the data with when we retrieved it and from which dataset instead — never as a data date.
-    // The Data Engine has no profiles (IDX, their only source, blocks it) and answers 404: unsupported, not an outage.
+    // A symbol without a stored profile (native IDX or the IDX-BEI snapshot) is a 404: unsupported, not an outage.
     const { data, meta, retrievedAt } = await this.get(`/v1/stocks/${encodeURIComponent(symbolSchema.parse(symbol))}/profile`, profileSchema, TTL_MS.profile, undefined, () => unsupported(this.id, "profile"));
-    return this.wrap({ ...data, retrievedAt, dataset: meta.source }, "HISTORICAL", meta.dataAsOf);
+    // Row provenance (engine ≥ IDX-BEI import) names the actual dataset and its capture time; older engines omit it.
+    const { provenance, ...profile } = data;
+    return this.wrap({ ...profile, retrievedAt: provenance?.retrievedAt ?? retrievedAt, capturedAt: provenance?.capturedAt ?? null, dataset: provenance?.source ?? meta.source }, "HISTORICAL", meta.dataAsOf);
   }
 
   async securities(q: string) {
