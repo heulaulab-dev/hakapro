@@ -28,7 +28,7 @@ export function StockOwnershipView({ symbol }: { symbol: string }) {
   const profile = useProfile(symbol);
   const ownership = useOwnership(symbol);
   const actions = useCorporateActions(symbol);
-  // No current source has issuer profiles (IDX blocks the engine): leave the section out instead of an outage message.
+  // A lane without issuer profiles answers UNSUPPORTED: leave the section out instead of an outage message.
   const profileUnsupported = profile.error instanceof ApiError && profile.error.code === "UNSUPPORTED";
   const people = (title: string, records: Array<Record<string, unknown>>, kind: "holder" | "person") => (
     <Panel title={title}>
@@ -77,9 +77,11 @@ export function StockOwnershipView({ symbol }: { symbol: string }) {
       {!profileUnsupported && <DataState query={profile}>
         {(envelope) => (
           <div className="flex flex-col gap-4">
-            <SectionHeader title={t("title")} description={t("profileNote")} meta={freshnessMeta(envelope)} />
+            <SectionHeader title={t("title")} description={envelope.data.capturedAt ? t("profileNoteSnapshot") : t("profileNote")} meta={freshnessMeta(envelope)} />
             <p className="caption-style text-subtle" data-testid="profile-provenance">
-              {t("retrieved", { date: formatDate(envelope.data.retrievedAt, locale), dataset: sourceLabel(envelope.data.dataset ?? envelope.source) })}
+              {envelope.data.capturedAt
+                ? t("snapshot", { date: formatDate(envelope.data.capturedAt, locale), dataset: sourceLabel(envelope.data.dataset ?? envelope.source) })
+                : t("retrieved", { date: formatDate(envelope.data.retrievedAt, locale), dataset: sourceLabel(envelope.data.dataset ?? envelope.source) })}
             </p>
             {envelope.data.description && <p className="text-sm text-muted-foreground">{envelope.data.description}</p>}
             {safeUrl(envelope.data.website) && <a href={safeUrl(envelope.data.website)!} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-link hover:underline">{t("website")}<ExternalLink className="size-3" /></a>}

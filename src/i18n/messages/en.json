@@ -862,7 +862,9 @@
     "kseiTitle": "≥1% shareholders (KSEI)",
     "kseiNote": "From the monthly KSEI list of ≥1% shareholders. Holders below 1% are not disclosed, which is not the same as zero.",
     "kseiNone": "No ≥1% shareholder list for this stock yet. It appears once an admin uploads the monthly KSEI list.",
-    "kseiAsOf": "Position {date} · source: {source}"
+    "kseiAsOf": "Position {date} · source: {source}",
+    "profileNoteSnapshot": "Company profile from a dated snapshot of IDX issuer disclosures: board, shareholders and classification as published when the snapshot was taken. It can lag recent changes.",
+    "snapshot": "Snapshot {date} · source: {dataset}"
   },
   "errors": {
     "title": "Something went wrong",

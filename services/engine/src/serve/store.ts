@@ -38,7 +38,9 @@ export type IntradayRecord = {
 export type IndexDailyRecord = { code: string; name: string | null; date: string; close: number; previousClose: number | null; changePercent: number | null };
 export type IndexIntradayRecord = { code: string; name: string | null; ts: Date; last: number; changePercent: number | null };
 export type BrokerDailySummaryRecord = { date: string; brokerCode: string; firmName: string | null; volume: number | null; value: number | null; frequency: number | null; source: string; asOf: Date };
-export type IssuerProfileRecord = { symbol: string; language: string; profile: Record<string, unknown>; directors: Record<string, unknown>[]; commissioners: Record<string, unknown>[]; auditCommittee: Record<string, unknown>[]; shareholders: Record<string, unknown>[]; subsidiaries: Record<string, unknown>[]; retrievedAt: Date };
+export type IssuerProfileRecord = { symbol: string; language: string; profile: Record<string, unknown>; directors: Record<string, unknown>[]; commissioners: Record<string, unknown>[]; auditCommittee: Record<string, unknown>[]; shareholders: Record<string, unknown>[]; subsidiaries: Record<string, unknown>[]; retrievedAt: Date;
+  /** Row provenance: which source wrote the profile and when it was captured (IDX-BEI: the snapshot's own time). */
+  source?: string; asOf?: Date };
 
 export type ActionRecord = { exDate: string | null; type: string; description: string | null; asOf: Date };
 export type ActionCalendarRecord = { symbol: string; exDate: string; type: string; sourceCategory?: string | null; description: string | null; amount: number | null; ratio: string | null; shares: number | null; sharesAfter: number | null; asOf: Date };

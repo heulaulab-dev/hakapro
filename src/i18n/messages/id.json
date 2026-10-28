@@ -862,7 +862,9 @@
     "kseiTitle": "Pemegang saham ≥1% (KSEI)",
     "kseiNote": "Dari daftar bulanan pemegang saham ≥1% KSEI. Pemegang di bawah 1% tidak diungkapkan, bukan berarti nol.",
     "kseiNone": "Belum ada daftar pemegang saham ≥1% untuk saham ini. Data muncul setelah admin mengunggah daftar KSEI bulanan.",
-    "kseiAsOf": "Posisi {date} · sumber: {source}"
+    "kseiAsOf": "Posisi {date} · sumber: {source}",
+    "profileNoteSnapshot": "Profil emiten dari snapshot bertanggal atas keterbukaan informasi emiten IDX: direksi, komisaris, pemegang saham, dan klasifikasi sesuai saat snapshot diambil. Bisa tertinggal dari perubahan terbaru.",
+    "snapshot": "Snapshot {date} · sumber: {dataset}"
   },
   "errors": {
     "title": "Terjadi kesalahan",
