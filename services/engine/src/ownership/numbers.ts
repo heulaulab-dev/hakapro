@@ -60,18 +60,7 @@ export function parsePercent(raw: string): string | null {
   const match = /^(\d+)(?:\.(\d*))?$/.exec(value);
   if (!match) throw new ParseValueError(`unreadable percentage "${raw.trim()}"`);
   const whole = match[1].replace(/^0+(?=\d)/, "");
-  let decimals = (match[2] ?? "").replace(/0+$/, "");
-  // XLSX readers can expose a two-decimal cell as a binary floating-point
-  // artifact (for example 1.1500000000000001). Accept it only when rounding
-  // to six decimals is numerically lossless; genuinely over-precise input is
-  // still rejected below.
-  if (decimals.length > 6) {
-    const numeric = Number(value);
-    const rounded = numeric.toFixed(6).replace(/0+$/, "").replace(/\.$/, "");
-    if (Number.isFinite(numeric) && Math.abs(numeric - Number(rounded)) <= 1e-9 && rounded.startsWith(`${whole}.`)) {
-      decimals = rounded.slice(whole.length + 1);
-    }
-  }
+  const decimals = (match[2] ?? "").replace(/0+$/, "");
   if (decimals.length > 6) throw new ParseValueError(`percentage "${raw.trim()}" has more than 6 decimals`);
   if (whole.length > 3 || Number(whole) > 100 || (Number(whole) === 100 && decimals !== "")) {
     throw new ParseValueError(`percentage "${raw.trim()}" is above 100`);
