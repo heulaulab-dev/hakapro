@@ -28,7 +28,8 @@ COPY services/engine/tsconfig.json ./services/engine/tsconfig.json
 COPY services/engine/db ./services/engine/db
 COPY services/engine/src ./services/engine/src
 RUN bun build services/engine/src/main.ts --target=bun --outfile=dist/main.js \
-    && bun build services/engine/src/db/migrate.ts --target=bun --outfile=dist/migrate.js
+    && bun build services/engine/src/db/migrate.ts --target=bun --outfile=dist/migrate.js \
+    && bun build services/engine/src/verify-issuers.ts --target=bun --outfile=dist/verify-issuers.js
 
 FROM oven/bun:1.3.14-slim AS runner
 WORKDIR /app
@@ -39,6 +40,7 @@ ENV NODE_ENV=production \
     ENGINE_IDX_PRIMARY_PYTHON=/opt/idx-venv/bin/python \
     ENGINE_IDX_PRIMARY_WORKER_SCRIPT=/app/services/engine/python/idx_curl_worker.py
 COPY --from=build /build/dist/main.js /build/dist/migrate.js ./
+COPY --from=build /build/dist/verify-issuers.js ./
 COPY --from=build /build/services/engine/db/migrations ./migrations
 COPY services/engine/python/idx_curl_worker.py services/engine/python/idx_transport.py ./services/engine/python/
 # /data holds the PAUSE flag and the raw-store fallback; mount a persistent volume there in Coolify.
