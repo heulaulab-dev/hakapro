@@ -2,7 +2,7 @@
 import { mkdir } from "node:fs/promises";
 import type { EngineConfig } from "./config";
 import { createDb, migrationsDir, runMigrations, waitForDatabase, type EngineDb } from "./db/client";
-import { recentEodSessions } from "./db/ingest";
+import { recentEodSessions, upsertIndexDaily } from "./db/ingest";
 import { deleteNewsOlderThan } from "./db/market-info";
 import { DbMarketStore } from "./db/market-store";
 import { DbOwnershipStore } from "./db/ownership";
@@ -165,6 +165,11 @@ export async function createEngine(config: EngineConfig, options: EngineOptions 
   const app = createApp({
     apiToken: config.apiToken, adminToken: config.adminToken, ping, pause, scheduler, rawStoreKind: rawStore.kind, log, now,
     sourceHealth: () => sourceHealth(db, now()), unblockSource: (id) => sourceState.unblock(id), jobHistory: () => recentJobHistory(db),
+    importIdxIndexRows: async (_date, rows) => {
+      const stored = await upsertIndexDaily(db, rows, { source: "idx-primary", asOf: now(), rawRef: null }, { primary: false });
+      await sourceState.recordSuccess("idx-primary", stored);
+      return stored;
+    },
     market: new DbMarketStore(db),
     ownership: { service: ownership, maxUploadBytes: config.ownership.maxUploadBytes, freeFloatEnabled: config.ownership.freeFloatEnabled },
     strategies: { enabled: config.strategyScans.enabled, store: new DbStrategyStore(db) },
