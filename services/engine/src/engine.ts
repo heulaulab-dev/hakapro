@@ -1,3 +1,4 @@
+import { IdxBeiApi } from "./sources/idx-bei-api";
 // Wires config → DB, raw store, fetcher, registry, scheduler and the HTTP handler. Shared by main.ts and the e2e test.
 import { mkdir } from "node:fs/promises";
 import type { EngineConfig } from "./config";
@@ -162,7 +163,9 @@ export async function createEngine(config: EngineConfig, options: EngineOptions 
     setParseStatus: (id, status, error) => documents.setParseStatus(id, status, error ?? null),
   });
   const scheduler = new Scheduler({ jobs: registry.jobs, pause, runs: new DbRunRecorder(db), cursors: new DbCursorStore(db), sourceState, log, now });
+  const idxBei = new IdxBeiApi({ ...(config.idxBei ?? { enabled: false, baseUrl: "http://idx-bei:8000" }), log });
   const app = createApp({
+    idxBeiInventory: () => idxBei.inventory(),
     apiToken: config.apiToken, adminToken: config.adminToken, ping, pause, scheduler, rawStoreKind: rawStore.kind, log, now,
     sourceHealth: () => sourceHealth(db, now()), unblockSource: (id) => sourceState.unblock(id), jobHistory: () => recentJobHistory(db),
     importIdxIndexRows: async (_date, rows) => {
