@@ -36,6 +36,7 @@ import { intradayJob } from "./jobs/intraday";
 import { commoditiesJob } from "./jobs/commodities";
 import { biRateJob, jisdorJob } from "./jobs/macro";
 import { newsJob } from "./jobs/news";
+import { kseiOwnershipJob } from "./jobs/ksei-ownership";
 import { strategyScanJob } from "./jobs/strategy-scan";
 import { universeJob } from "./jobs/universe";
 import { log as defaultLog, type Logger } from "./log";
@@ -56,6 +57,7 @@ export type EngineServices = {
   log: Logger;
   now: () => Date;
   onShutdown: Array<() => Promise<void>>;
+  ownership?: OwnershipService;
 };
 
 /**
@@ -128,6 +130,7 @@ export function defaultRegistry(services: EngineServices): Registry {
         idxActionsBackfillJob(jobServices, idxSource, idxTransport),
         idxDisclosuresSyncJob(jobServices, idxSource, idxTransport),
       ] : []),
+      ...(services.config.kseiOwnership.enabled && services.ownership ? [kseiOwnershipJob(services.ownership, services.config.kseiOwnership.mirrorUrl, services.now)] : []),
       ...(idxBeiConfig.enabled ? [idxBeiIssuerImportJob(jobServices, new IdxBeiApi({ ...idxBeiConfig, log: services.log }))] : []),
     ],
   };
@@ -159,15 +162,16 @@ export async function createEngine(config: EngineConfig, options: EngineOptions 
   const onShutdown: Array<() => Promise<void>> = [];
   const services: EngineServices = { config, db, fetcher, rawStore, documents, sourceState, log, now, onShutdown };
 
-  const registry = validateRegistry((options.registry ?? defaultRegistry)(services));
-  await syncSources(db, registry.sources);
-
-  const pause = new PauseGuard(config.dataDir, config.diskStopPercent);
-  // Ownership (E6): owner uploads only; there is no fetcher or job for IDX/KSEI (§8.5d).
   const ownership = new OwnershipService({
     store: new DbOwnershipStore(db), rawStore, documents, log, now,
     setParseStatus: (id, status, error) => documents.setParseStatus(id, status, error ?? null),
   });
+  services.ownership = ownership;
+
+  const registry = validateRegistry((options.registry ?? defaultRegistry)(services));
+  await syncSources(db, registry.sources);
+
+  const pause = new PauseGuard(config.dataDir, config.diskStopPercent);
   const scheduler = new Scheduler({ jobs: registry.jobs, pause, runs: new DbRunRecorder(db), cursors: new DbCursorStore(db), sourceState, log, now });
   const idxBei = new IdxBeiApi({ ...(config.idxBei ?? { enabled: false, baseUrl: "http://idx-bei:8000" }), log });
   const app = createApp({
