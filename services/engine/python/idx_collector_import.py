@@ -13,11 +13,12 @@ import math
 import os
 import re
 import sys
+import time
 from datetime import date
 from pathlib import Path
 from typing import Any
 from urllib.error import HTTPError, URLError
-from urllib.request import Request, urlopen
+from urllib.request import Request, ProxyHandler, build_opener
 from urllib.parse import urlsplit
 
 REQUIRED_RRG_CODES = frozenset({
@@ -25,6 +26,8 @@ REQUIRED_RRG_CODES = frozenset({
     "IDXHEALTH", "IDXFINANCE", "IDXPROPERT", "IDXTECHNO", "IDXINFRA", "IDXTRANS",
 })
 MAX_RECORD_BYTES = 4_000_000
+RETRYABLE_STATUSES = frozenset({408, 425, 429, 500, 502, 503, 504})
+DIRECT_OPENER = build_opener(ProxyHandler({}))
 
 
 def validate_record(record: dict[str, Any]) -> None:
@@ -72,9 +75,19 @@ def validate_record(record: dict[str, Any]) -> None:
         raise ValueError(f"incomplete RRG sector coverage: missing {', '.join(missing)}")
 
 
-def import_record(base_url: str, token: str, record: dict[str, Any], *, timeout: float = 20) -> dict[str, Any]:
+def import_record(
+    base_url: str,
+    token: str,
+    record: dict[str, Any],
+    *,
+    timeout: float = 20,
+    max_retries: int = 3,
+    retry_delay: float = 1,
+) -> dict[str, Any]:
     """POST one raw IDX response envelope through HakaPro's HTTPS admin gateway."""
     validate_record(record)
+    if timeout <= 0 or max_retries < 0 or max_retries > 8 or retry_delay < 0 or retry_delay > 60:
+        raise ValueError("timeout must be positive, max_retries 0–8, and retry_delay 0–60 seconds")
     target = urlsplit(base_url)
     local_http = target.scheme == "http" and target.hostname in {"127.0.0.1", "localhost", "::1"}
     if (target.scheme != "https" and not local_http) or not target.hostname or target.username or target.password:
@@ -88,18 +101,23 @@ def import_record(base_url: str, token: str, record: dict[str, Any], *, timeout:
         headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
         method="POST",
     )
-    try:
-        with urlopen(request, timeout=timeout) as response:
-            result = json.loads(response.read())
-            if not isinstance(result, dict):
-                raise RuntimeError("engine returned a non-object response")
-            return result
-    except HTTPError as exc:
-        # Surface status and a bounded response body, but never echo request headers/token.
-        detail = exc.read(2048).decode("utf-8", errors="replace")
-        raise RuntimeError(f"engine import failed with HTTP {exc.code}: {detail}") from exc
-    except URLError as exc:
-        raise RuntimeError(f"engine import connection failed: {exc.reason}") from exc
+    for attempt in range(max_retries + 1):
+        try:
+            with DIRECT_OPENER.open(request, timeout=timeout) as response:
+                result = json.loads(response.read())
+                if not isinstance(result, dict):
+                    raise RuntimeError("engine returned a non-object response")
+                return result
+        except HTTPError as exc:
+            # Surface bounded response details; authentication failures are never retried.
+            detail = exc.read(2048).decode("utf-8", errors="replace")
+            if exc.code not in RETRYABLE_STATUSES or attempt == max_retries:
+                raise RuntimeError(f"engine import failed with HTTP {exc.code}: {detail}") from exc
+        except URLError as exc:
+            if attempt == max_retries:
+                raise RuntimeError(f"engine import connection failed: {exc.reason}") from exc
+        time.sleep(retry_delay * (2**attempt))
+    raise RuntimeError("engine import exhausted retries")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -107,6 +125,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("input", type=Path, help="NDJSON file with date/body records")
     parser.add_argument("--url", default=os.environ.get("ENGINE_COLLECTOR_URL"), help="HakaPro engine base URL")
     parser.add_argument("--timeout", type=float, default=20)
+    parser.add_argument("--max-retries", type=int, choices=range(0, 9), default=3, help="bounded retries for transient network/HTTP failures; auth failures are never retried")
+    parser.add_argument("--retry-delay", type=float, default=1, help="base exponential-backoff delay in seconds (0–60)")
     args = parser.parse_args(argv)
     token = os.environ.get("ENGINE_ADMIN_TOKEN")
     if not args.url or not token:
@@ -122,7 +142,7 @@ def main(argv: list[str] | None = None) -> int:
                     record = json.loads(line)
                     if not isinstance(record, dict):
                         raise ValueError("record must be a JSON object")
-                    result = import_record(args.url, token, record, timeout=args.timeout)
+                    result = import_record(args.url, token, record, timeout=args.timeout, max_retries=args.max_retries, retry_delay=args.retry_delay)
                 except (json.JSONDecodeError, ValueError, RuntimeError) as exc:
                     print(f"line {line_number}: {exc}", file=sys.stderr)
                     return 1
