@@ -2,14 +2,17 @@
 
 import { ExternalLink } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
+import { useState } from "react";
 import { DataState } from "@/components/feedback/data-state";
 import { Panel } from "@/components/layout/panel";
 import { SectionHeader } from "@/components/layout/section-header";
 import { EmptyState } from "@/components/feedback/empty-state";
 import { ApiError } from "@/lib/api/envelope";
 import { useCorporateActions, useOwnership, useProfile } from "@/lib/api/hooks";
+import type { StockOwnership } from "@/lib/api/market";
 import { freshnessMeta, sourceLabel } from "@/lib/freshness";
 import { formatDate, formatNumber, type Locale } from "@/lib/format";
+import { Dialog, DialogBody, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 /** Reads only the verified IDX company-detail keys (Nama, Jabatan, Persentase, Kategori); anything else is ignored. */
 function field(record: Record<string, unknown>, ...keys: string[]): string | null {
@@ -28,7 +31,8 @@ export function StockOwnershipView({ symbol }: { symbol: string }) {
   const profile = useProfile(symbol);
   const ownership = useOwnership(symbol);
   const actions = useCorporateActions(symbol);
-  // A lane without issuer profiles answers UNSUPPORTED: leave the section out instead of an outage message.
+  const [selectedHolder, setSelectedHolder] = useState<StockOwnership["holders"][number] | null>(null);
+  // No current source has issuer profiles (IDX blocks the engine): leave the section out instead of an outage message.
   const profileUnsupported = profile.error instanceof ApiError && profile.error.code === "UNSUPPORTED";
   const people = (title: string, records: Array<Record<string, unknown>>, kind: "holder" | "person") => (
     <Panel title={title}>
@@ -58,7 +62,8 @@ export function StockOwnershipView({ symbol }: { symbol: string }) {
                 </p>
                 <ul className="flex flex-col divide-y divide-border rounded-xl border border-border px-4 text-sm">
                   {envelope.data.holders.map((holder) => (
-                    <li key={holder.holderKey} className="flex items-center justify-between gap-3 py-2">
+                    <li key={holder.holderKey}>
+                      <button type="button" onClick={() => setSelectedHolder(holder)} className="flex w-full items-center justify-between gap-3 py-2 text-left transition-colors hover:bg-(--overlay-soft)" data-testid={`ownership-holder-${holder.holderKey}`}>
                       <span className="flex min-w-0 flex-col">
                         <span className="truncate">{holder.holderName}</span>
                         {holder.localForeign && <span className="text-[11px] text-muted-foreground">{holder.localForeign}</span>}
@@ -66,6 +71,7 @@ export function StockOwnershipView({ symbol }: { symbol: string }) {
                       <span className="num shrink-0 text-xs text-muted-foreground">
                         {holder.shares !== null && `${formatNumber(Number(holder.shares), locale)} · `}{holder.percent === null ? "—" : `${Number(holder.percent).toFixed(2)}%`}
                       </span>
+                      </button>
                     </li>
                   ))}
                 </ul>
@@ -74,14 +80,13 @@ export function StockOwnershipView({ symbol }: { symbol: string }) {
           </section>
         )}
       </DataState>
+      <InvestorNetworkDialog holder={selectedHolder} ownership={ownership.data?.data ?? null} onClose={() => setSelectedHolder(null)} />
       {!profileUnsupported && <DataState query={profile}>
         {(envelope) => (
           <div className="flex flex-col gap-4">
-            <SectionHeader title={t("title")} description={envelope.data.capturedAt ? t("profileNoteSnapshot") : t("profileNote")} meta={freshnessMeta(envelope)} />
+            <SectionHeader title={t("title")} description={t("profileNote")} meta={freshnessMeta(envelope)} />
             <p className="caption-style text-subtle" data-testid="profile-provenance">
-              {envelope.data.capturedAt
-                ? t("snapshot", { date: formatDate(envelope.data.capturedAt, locale), dataset: sourceLabel(envelope.data.dataset ?? envelope.source) })
-                : t("retrieved", { date: formatDate(envelope.data.retrievedAt, locale), dataset: sourceLabel(envelope.data.dataset ?? envelope.source) })}
+              {t("retrieved", { date: formatDate(envelope.data.retrievedAt, locale), dataset: sourceLabel(envelope.data.dataset ?? envelope.source) })}
             </p>
             {envelope.data.description && <p className="text-sm text-muted-foreground">{envelope.data.description}</p>}
             {safeUrl(envelope.data.website) && <a href={safeUrl(envelope.data.website)!} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-link hover:underline">{t("website")}<ExternalLink className="size-3" /></a>}
@@ -111,5 +116,50 @@ export function StockOwnershipView({ symbol }: { symbol: string }) {
         )}
       </DataState>
     </div>
+  );
+}
+
+function InvestorNetworkDialog({ holder, ownership, onClose }: { holder: StockOwnership["holders"][number] | null; ownership: StockOwnership | null; onClose: () => void }) {
+  const t = useTranslations("stockOwnership");
+  const locale = useLocale() as Locale;
+  const open = holder !== null && ownership !== null;
+  if (!holder || !ownership) return null;
+  const percentage = holder.percent === null ? "—" : `${Number(holder.percent).toFixed(2)}%`;
+  return (
+    <Dialog open={open} onOpenChange={(next) => { if (!next) onClose(); }}>
+      <DialogContent className="max-w-[900px] bg-[#202020] text-[#f4f4f4]" data-testid="investor-network-dialog">
+        <DialogHeader className="border-[#3a3a3a] bg-[#202020]">
+          <DialogTitle className="text-lg tracking-tight">{holder.holderName}</DialogTitle>
+          <DialogDescription className="text-[#a6a6a6]">{holder.holderKind} · {t("networkHoldingsCount", { count: 1 })}</DialogDescription>
+        </DialogHeader>
+        <DialogBody className="bg-[#202020]">
+          <section className="border-b border-[#3a3a3a] px-6 py-5">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-sm font-semibold">{t("networkHoldings")}</h3>
+              <span className="caption-style text-[#a6a6a6]">{ownership.snapshotDate ? t("networkUpdated", { date: formatDate(ownership.snapshotDate, locale) }) : t("networkUndated")}</span>
+            </div>
+            <div className="overflow-hidden rounded-lg border border-[#3a3a3a]">
+              <table className="w-full text-sm" data-testid="investor-network-holdings">
+                <thead className="bg-[#2c2c2c] text-left text-xs text-[#c7c7c7]"><tr><th className="px-3 py-2">{t("networkCode")}</th><th className="px-3 py-2">{t("networkCompany")}</th><th className="px-3 py-2 text-right">{t("networkShares")}</th><th className="px-3 py-2 text-right">{t("networkPercentage")}</th></tr></thead>
+                <tbody><tr className="border-t border-[#3a3a3a]"><td className="ticker px-3 py-2">{ownership.symbol}</td><td className="px-3 py-2">{ownership.issuerName ?? ownership.symbol}</td><td className="num px-3 py-2 text-right">{holder.shares === null ? "—" : formatNumber(Number(holder.shares), locale)}</td><td className="num px-3 py-2 text-right font-semibold">{percentage}</td></tr></tbody>
+              </table>
+            </div>
+          </section>
+          <section className="px-6 py-5">
+            <div className="mb-3 flex items-center justify-between"><h3 className="text-sm font-semibold">{t("networkGraph")}</h3><span className="caption-style text-[#a6a6a6]">{ownership.snapshotDate ? t("networkUpdated", { date: formatDate(ownership.snapshotDate, locale) }) : t("networkUndated")}</span></div>
+            <div className="relative min-h-64 overflow-hidden rounded-lg border border-[#3a3a3a] bg-[#1b1b1b]" data-testid="investor-network-graph">
+              <svg viewBox="0 0 720 280" className="h-64 w-full" role="img" aria-label={t("networkGraphAria")}>
+                <line x1="200" y1="140" x2="520" y2="140" stroke="#777" strokeDasharray="4 5" />
+                <circle cx="200" cy="140" r="28" fill="#ef4444" stroke="#ff6b6b" strokeWidth="2" />
+                <circle cx="520" cy="140" r="28" fill="#bc3150" />
+                <text x="200" y="190" fill="#c7c7c7" textAnchor="middle" fontSize="13">{holder.holderName.slice(0, 24)}{holder.holderName.length > 24 ? "…" : ""}</text>
+                <text x="520" y="190" fill="#c7c7c7" textAnchor="middle" fontSize="13">{ownership.symbol} {percentage}</text>
+              </svg>
+              <p className="absolute bottom-3 left-0 right-0 text-center text-[11px] text-[#9b9b9b]">{t("networkLimited")}</p>
+            </div>
+          </section>
+        </DialogBody>
+      </DialogContent>
+    </Dialog>
   );
 }
