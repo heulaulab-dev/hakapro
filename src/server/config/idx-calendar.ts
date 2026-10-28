@@ -32,6 +32,7 @@ export const IDX_CALENDAR = {
    * moveable religious holidays and cuti bersama for each year are TODO(verify).
    */
   holidays: {
+    2020: ["2020-01-01"],
     2026: ["2026-01-01", "2026-05-01", "2026-06-01", "2026-08-17", "2026-12-25"],
   } as Record<number, string[]>,
 } as const;

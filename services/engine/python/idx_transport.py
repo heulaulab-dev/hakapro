@@ -132,6 +132,8 @@ class IDXTransportClient:
                     if self.success_delay:
                         await asyncio.sleep(self.success_delay)
                     return {"ok": True, "status": status, "attempts": attempt, "body": body}
+                if status == 403 and str(cf_mitigated).lower() == "challenge":
+                    return {"ok": False, "status": status, "attempts": attempt, "error": "cloudflare-challenge", "cfRay": cf_ray}
                 if status not in RETRYABLE_STATUS or retry == self.max_retries:
                     return {"ok": False, "status": status, "attempts": attempt, "error": "http-status", "cfRay": cf_ray}
                 if status == 403:

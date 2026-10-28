@@ -4,9 +4,10 @@ from idx_transport import IDXTransportClient
 
 
 class Response:
-    def __init__(self, status_code, payload=None):
+    def __init__(self, status_code, payload=None, headers=None):
         self.status_code = status_code
         self._payload = payload
+        self.headers = headers or {}
         self.text = "challenge" if status_code == 403 else ""
 
     def json(self):
@@ -70,6 +71,16 @@ class IdxTransportTests(unittest.IsolatedAsyncioTestCase):
             result = await client.fetch_index_summary("2026-01-05")
         self.assertEqual(result["status"], 200)
         self.assertEqual([call[1]["impersonate"] for call in session.calls], ["chrome", "chrome124"])
+
+    async def test_stops_on_explicit_cloudflare_challenge_and_preserves_ray_id(self):
+        challenge = Response(403, headers={"cf-mitigated": "challenge", "cf-ray": "test-ray-SIN"})
+        session = Session([challenge, Response(200, {"data": []})])
+        client = IDXTransportClient("https://idx-test.example/primary", session_factory=lambda: session, retry_delay=0)
+        async with client:
+            result = await client.fetch_index_summary("2026-01-05")
+
+        self.assertEqual(result, {"ok": False, "status": 403, "attempts": 1, "error": "cloudflare-challenge", "cfRay": "test-ray-SIN"})
+        self.assertEqual(len(session.calls), 1)
 
     async def test_stops_after_bounded_retries(self):
         session = Session([Response(503), Response(503), Response(503)])
