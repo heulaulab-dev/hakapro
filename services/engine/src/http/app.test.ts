@@ -309,6 +309,8 @@ describe("engine HTTP app: E3 market info", () => {
     expect(idxBeiEnvelope(profileSchema).parse(await response.json()).data).toEqual({
       symbol: "AADI", companyName: "PT Adaro Andalan Indonesia Tbk", website: "www.adaroindonesia.com", description: "Holding",
       directors: [{ Nama: "Direktur" }], commissioners: [], shareholders: [], subsidiaries: [],
+      // No row provenance in this fixture: stated explicitly rather than guessed.
+      provenance: null,
     });
   });
 

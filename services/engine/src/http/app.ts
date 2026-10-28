@@ -1,3 +1,4 @@
+import type { IdxBeiResult } from "../sources/idx-bei-api";
 // HTTP surface: liveness/readiness, /v1/meta/health, admin endpoints and the idx-bei /v1 contract.
 // A plain (Request) => Response handler, served by Bun.serve in main.ts and called directly in tests.
 import { timingSafeEqual } from "node:crypto";
@@ -44,6 +45,7 @@ import { ownershipAdmin, type OwnershipDeps } from "./ownership-admin";
 export type EodSessionHealth = { date: string; status: string; expected: number; present: number; attempts: number; finalizedAt: string | null };
 
 export type AppDeps = {
+  idxBeiInventory?: () => Promise<IdxBeiResult>;
   apiToken?: string;
   adminToken?: string;
   ping(): Promise<boolean>;
@@ -194,6 +196,11 @@ export function createApp(deps: AppDeps): (request: Request) => Promise<Response
         },
         meta: unavailableMeta(at),
       });
+    }
+
+    if (path === "/v1/integrations/idx-bei") {
+      if (!get) return error(405, "METHOD_NOT_ALLOWED", "Use GET");
+      return json({ data: deps.idxBeiInventory ? await deps.idxBeiInventory() : { status: "DISABLED", source: "idx-bei-api", checkedAt: null, data: null } });
     }
 
     // The screener over the newest session (E5); the contract's empty form until a session is stored.

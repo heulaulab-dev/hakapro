@@ -218,6 +218,8 @@ All are runtime-only. None is needed at build time.
 | `ENGINE_DATABASE_URL` | — (required) | Engine PostgreSQL (not the app DB) |
 | `PORT` | `8080` | |
 | `ENGINE_API_TOKEN` | unset | Bearer token for `/v1/*` |
+| `IDX_BEI_ENABLED` | `false` | Registers the private IDX-BEI source and the `idx-bei-issuer-import` job (company snapshot → issuer profiles) |
+| `IDX_BEI_API_URL` | `http://idx-bei:8000` | IDX-BEI base URL on the internal Docker network; origin only (no path, query or credentials) |
 | `ENGINE_ADMIN_TOKEN` | unset | Bearer token for `/v1/admin/*`; admin is disabled when unset |
 | `ENGINE_DATA_DIR` | `.engine-data` (`/data` in the image) | Volume for the pause flag and the local raw-store fallback; the disk guard measures it |
 | `ENGINE_DISK_STOP_PERCENT` | `85` | Crawling pauses above this |

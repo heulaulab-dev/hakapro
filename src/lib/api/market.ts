@@ -195,6 +195,8 @@ export const profileSchema = z.object({
   directors: z.array(personRecord), commissioners: z.array(personRecord), shareholders: z.array(personRecord), subsidiaries: z.array(personRecord),
   /** When HAKAPRO retrieved the snapshot (not a disclosure date) and which dataset it came from. */
   retrievedAt: z.string(), dataset: z.string().nullable(),
+  /** Upstream capture time of a dated snapshot (IDX-BEI); absent for undated IDX company details. */
+  capturedAt: z.string().nullable().optional(),
 });
 export type CompanyProfile = z.infer<typeof profileSchema>;
 export const corporateActionSchema = z.object({ date: z.string().nullable(), type: z.string().nullable(), description: z.string().nullable(), documentUrl: z.string().nullable() });
