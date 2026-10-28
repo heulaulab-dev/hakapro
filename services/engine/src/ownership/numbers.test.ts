@@ -33,6 +33,11 @@ describe("parseShares", () => {
 });
 
 describe("parsePercent", () => {
+  it("normalizes XLSX floating-point artifacts", () => {
+    expect(parsePercent("1.1500000000000001")).toBe("1.15");
+    expect(parsePercent("54.94000000000001")).toBe("54.94");
+  });
+
   it.each([
     ["41,10", "41.1"],
     ["41.10", "41.1"],
