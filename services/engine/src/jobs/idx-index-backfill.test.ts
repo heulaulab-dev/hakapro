@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { MemoryCursorStore } from "../fetch/stores";
+import { MemoryCursorStore, MemorySourceStateStore } from "../fetch/stores";
 import type { JobContext } from "../schedule/scheduler";
 import type { IdxFetchResult, IdxIndexTransport } from "../sources/idx-primary";
 import { FIXTURE_DATE, IDX_INDEX_SUMMARY_FIXTURE } from "../sources/idx-primary.fixture";
@@ -11,8 +11,8 @@ import type { JobServices, SourceRef } from "./common";
 const SOURCE: SourceRef = { id: "idx-primary", policy: { minIntervalMs: 2000, concurrency: 1 } };
 
 // Only db/log/now are exercised by the job; the rest of JobServices is irrelevant here.
-const services = (now: string): JobServices =>
-  ({ db: {} as never, log: { info: () => {}, warn: () => {}, error: () => {} }, now: () => new Date(now) }) as unknown as JobServices;
+const services = (now: string, sourceState = new MemorySourceStateStore()): JobServices =>
+  ({ db: {} as never, sourceState, log: { info: () => {}, warn: () => {}, error: () => {} }, now: () => new Date(now) }) as unknown as JobServices;
 
 function context(cursors: MemoryCursorStore, jobId: string): JobContext & { rows: number } {
   const ctx = {
@@ -78,6 +78,21 @@ describe("idxIndexBackfillJob — fixture → adapter → validation → backfil
     await expect(job.run(ctx)).rejects.toThrow(/IDX transport unavailable/);
     expect(persist).not.toHaveBeenCalled();
     expect(ctx.rows).toBe(0);
+    expect(await cursors.get(job.id)).toBeNull();
+  });
+
+  it("marks IDX challenged with its Ray ID and leaves the history cursor unchanged", async () => {
+    const sourceState = new MemorySourceStateStore();
+    const job = idxIndexBackfillJob(services("2026-01-07T00:00:00Z", sourceState), SOURCE, {
+      id: "challenged", async fetchIndexSummary() {
+        return { ok: false, reason: "cloudflare-challenge (status=403, attempts=1, cf-ray=test-ray-SIN)" };
+      },
+    }, { from: FIXTURE_DATE, batchDays: 1 });
+    const cursors = new MemoryCursorStore();
+    await expect(job.run(context(cursors, job.id))).rejects.toThrow(/IDX transport unavailable/);
+    expect(sourceState.state.get("idx-primary")?.blocked).toMatchObject({
+      reason: "CLOUDFLARE_CHALLENGE", status: 403, headers: { "cf-ray": "test-ray-SIN", "cf-mitigated": "challenge" },
+    });
     expect(await cursors.get(job.id)).toBeNull();
   });
 });

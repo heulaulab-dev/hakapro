@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   actionsCalendarSchema, actionsSchema, announcementItemSchema, fundamentalsSchema, heatmapSchema, idxBeiEnvelope, macroSchema, marketOverviewSchema, newsItemSchema,
   screenResultSchema, securitySchema, signalsSchema, stockSchema, profileSchema,
@@ -131,6 +131,20 @@ describe("engine HTTP app", () => {
     expect(await (await call("/v1/admin/jobs/demo-job/run", { method: "POST", headers: auth })).json()).toEqual({ data: { status: "paused", reason: "flag" } });
     expect(await (await call("/v1/admin/resume", { method: "POST", headers: auth })).json()).toMatchObject({ data: { paused: false } });
     expect((await call("/v1/admin/sources/fixture/unblock", { method: "POST", headers: auth })).status).toBe(200);
+  });
+
+  it("imports IDX collector snapshots only through the admin bearer and validates before persistence", async () => {
+    const persist = vi.fn(async (_date: string, rows: Array<{ code: string }>) => rows.length);
+    const { call } = app({ adminToken: "admin-secret-for-tests", importIdxIndexRows: persist });
+    const payload = { date: "2026-10-26", body: { recordsTotal: 1, recordsFiltered: 1, data: [{ IndexCode: "IDXENERGY", Date: "2026-10-26T00:00:00", Close: 100, Previous: 90, OpenPrice: 95, High: 102, Low: 94 }] } };
+    expect((await call("/v1/admin/indices/import", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) })).status).toBe(401);
+    const headers = { authorization: "Bearer admin-secret-for-tests", "content-type": "application/json" };
+    const imported = await call("/v1/admin/indices/import", { method: "POST", headers, body: JSON.stringify(payload) });
+    expect(imported.status).toBe(200);
+    expect(await imported.json()).toMatchObject({ data: { date: "2026-10-26", received: 1, rejected: 0, stored: 1 } });
+    expect(persist).toHaveBeenCalledWith("2026-10-26", [expect.objectContaining({ code: "IDXENERGY", close: 100, previousClose: 90 })]);
+    expect((await call("/v1/admin/indices/import", { method: "POST", headers, body: JSON.stringify({ ...payload, date: "2026-02-30" }) })).status).toBe(400);
+    expect((await call("/v1/admin/indices/import", { method: "POST", headers, body: JSON.stringify({ ...payload, body: { data: [{ IndexCode: "BAD", Date: "2026-10-25", Close: -1 }] } }) })).status).toBe(422);
   });
 });
 

@@ -19,7 +19,7 @@ export type JobServices = {
   now: () => Date;
 };
 
-export type SourceRef = { id: string; policy: HostPolicy };
+export type SourceRef = { id: string; policy: HostPolicy; host?: string };
 
 export const provenanceOf = (result: FetchResult): Provenance => ({ source: result.document.source, asOf: result.document.fetchedAt, rawRef: result.document.id });
 
