@@ -105,9 +105,9 @@ export function matchesConditions(conditions: ScreenCondition[], values: ScreenV
   return any || group;
 }
 
-/** The stored ratio a screen uses: derived when there is a derived row (even a null one), else Pasardana's. */
+/** Prefer locally-derived ratios, then official IDX, then Pasardana fallback; null values still reserve precedence. */
 export function pickRatio(rows: RatioRecord[]): RatioRecord | null {
-  return rows.find((row) => row.ratioSource === "derived") ?? rows.find((row) => row.ratioSource === "pasardana") ?? null;
+  return rows.find((row) => row.ratioSource === "derived") ?? rows.find((row) => row.ratioSource === "idx") ?? rows.find((row) => row.ratioSource === "pasardana") ?? null;
 }
 
 export async function serveScreener(store: MarketStore, request: { conditions: ScreenCondition[]; limit: number }, now: Date): Promise<Served<ScreenResult> | null> {
@@ -149,7 +149,7 @@ export async function serveScreener(store: MarketStore, request: { conditions: S
       ...windowMetrics(priorBars.get(day.symbol), day),
       per: null, pbv: null, roe: null, roa: null, eps: null, der: null, dividendYield: null,
     };
-    const sources: Record<string, "derived" | "pasardana"> = {};
+    const sources: Record<string, "derived" | "idx" | "pasardana"> = {};
     for (const field of RATIO_FIELDS) {
       const picked = pickRatio(ratios.get(`${day.symbol}|${field}`) ?? []);
       if (!picked) continue;

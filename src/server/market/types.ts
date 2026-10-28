@@ -2,14 +2,14 @@
  * Domain types shared by every MarketDataSource. Units are explicit in field names or docs:
  * shares vs lots, IDR, and percent units (1.25 = 1.25%), never fractions.
  */
-import type { NewsItem, AnnouncementItem, ScreenRequest, Radar, StealthOwnership as StealthOwnershipData, Macro, IndicesHistory } from "@/server/schemas/idx-bei";
+import type { NewsItem, AnnouncementItem, ScreenRequest, Radar, StealthOwnership as StealthOwnershipData, Macro, IndicesHistory, MarketBrokerSummary, BrokerDirectory } from "@/server/schemas/idx-bei";
 import type { InsiderRow } from "@/server/services/arjum-normalize";
 export type {
   BrokerAccumulation, BrokerFlow, BrokerSummary, DoneDetails, FinancialStatements, History, Insiders, LastPrice, MarketCap, SearchResult, Seasonality,
 } from "@/server/services/arjum-normalize";
 export type { StockAnalysis } from "@/server/services/analysis-parse";
 export type { StrategyScreen } from "@/server/services/why-matched";
-export type { NewsItem, AnnouncementItem, ScreenRequest, Macro, IndicesHistory };
+export type { NewsItem, AnnouncementItem, ScreenRequest, Macro, IndicesHistory, MarketBrokerSummary, BrokerDirectory };
 
 export type Quote = {
   symbol: string;
@@ -105,7 +105,7 @@ export type GroupsView = {
   groups: GroupPerformance[];
 };
 /** One market-wide corporate action by ex-date (Data Engine calendar). */
-export type ActionCalendarItem = { symbol: string; date: string; type: string; description: string | null; amount: number | null; ratio: string | null; documentUrl: string | null };
+export type ActionCalendarItem = { symbol: string; date: string; type: string; sourceCategory?: string | null; description: string | null; amount: number | null; ratio: string | null; shares?: number | null; sharesAfter?: number | null; documentUrl: string | null };
 export type { OwnershipChanges, StockOwnership } from "@/server/schemas/ownership";
 /** One insider transaction in the market-wide feed: the per-stock row plus its symbol and |shares| × price (IDR). */
 export type RecentInsiderTransaction = InsiderRow & { symbol: string; valueIdr: number | null };

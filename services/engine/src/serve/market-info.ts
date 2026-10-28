@@ -3,7 +3,7 @@
 //   News: newest first, served DELAYED while the newest headline is under a day old, STALE after (never LIVE).
 //   Macro and actions: dated by their newest data and classified with the IDX session clock.
 import type { z } from "zod";
-import type { actionsCalendarSchema, indicesHistorySchema, macroSchema, newsItemSchema } from "@/server/schemas/idx-bei";
+import type { actionsCalendarSchema, indicesHistorySchema, macroSchema, newsItemSchema, marketBrokerSummarySchema, profileSchema, announcementItemSchema, brokerDirectorySchema } from "@/server/schemas/idx-bei";
 import { MACRO_SERIES } from "../sources/bi";
 import { WORLD_BANK_COMMODITIES } from "../sources/worldbank";
 import { addDays, wibDateOf, wibIso, wibToday } from "../sources/session";
@@ -16,6 +16,7 @@ export const NEWS_MAX_PAGE_SIZE = 100;
 export const NEWS_MAX_PAGE = 500;
 /** Observations per macro series in /v1/macro (BI: first table page = 10 rows; commodities: 10 months). */
 export const MACRO_OBSERVATIONS = 10;
+export const BROKER_SUMMARY_DEFAULT_LIMIT = 20;
 
 /** Display metadata for every macro series, in served order: Bank Indonesia first, then World Bank commodities. */
 export const MACRO_SERIES_META: { id: string; name: string; unit: string }[] = [
@@ -40,6 +41,16 @@ export async function serveNews(store: MarketStore, query: { page: number; pageS
     })),
     dataAsOf: wibIso(latest),
     freshness: now.getTime() - latest.getTime() <= NEWS_FRESH_MS ? "DELAYED" : "STALE",
+  };
+}
+
+export async function serveAnnouncements(store: MarketStore, query: { page: number; pageSize: number; symbol?: string }, now: Date): Promise<Served<z.input<typeof announcementItemSchema>[]> | null> {
+  const latest = await store.latestAnnouncementAt();
+  if (!latest) return null;
+  const rows = await store.announcements({ offset: (query.page - 1) * query.pageSize, limit: query.pageSize, symbol: query.symbol });
+  return {
+    data: rows.map((row) => ({ date: wibIso(row.publishedAt), symbol: row.symbol, title: row.title, documentUrl: row.documentUrl })),
+    dataAsOf: wibIso(latest), freshness: now.getTime() - latest.getTime() <= NEWS_FRESH_MS ? "DELAYED" : "STALE",
   };
 }
 
@@ -80,6 +91,42 @@ export async function serveIndicesHistory(store: MarketStore, from: string, to: 
   return { data: { series, coverage: indexCoverageReport(series, wibToday(now)) }, dataAsOf, freshness: sessionFreshness(dataAsOf, now) };
 }
 
+/** Market-wide date×broker totals, ranked by traded value independently for each date. */
+export async function serveMarketBrokerSummary(store: MarketStore, from: string, to: string, limit: number, now: Date): Promise<Served<z.input<typeof marketBrokerSummarySchema>> | null> {
+  const [latest, rows] = await Promise.all([store.latestBrokerSummaryDate(), store.brokerDailySummaryBetween(from, to)]);
+  if (!latest) return null;
+  const grouped = new Map<string, typeof rows>();
+  for (const row of rows) grouped.set(row.date, [...(grouped.get(row.date) ?? []), row]);
+  const dates = [...grouped].sort(([a], [b]) => a.localeCompare(b)).map(([date, entries]) => ({
+    date,
+    brokers: entries.sort((a, b) => (b.value ?? -1) - (a.value ?? -1) || a.brokerCode.localeCompare(b.brokerCode)).slice(0, limit)
+      .map((row) => ({ code: row.brokerCode, name: row.firmName, volume: row.volume, value: row.value, frequency: row.frequency })),
+  }));
+  return { data: { dates }, dataAsOf: latest, freshness: sessionFreshness(latest, now) };
+}
+
+export async function serveBrokerDirectory(store: MarketStore, now: Date): Promise<Served<z.input<typeof brokerDirectorySchema>> | null> {
+  const [latest, rows] = await Promise.all([store.latestBrokerDirectoryAsOf(), store.brokerDirectory()]);
+  if (!latest || !rows.length) return null;
+  const dataAsOf = wibIso(latest);
+  return { data: { brokers: rows.map(({ code, name, license }) => ({ code, name, license })) }, dataAsOf, freshness: sessionFreshness(wibDateOf(latest), now) };
+}
+
+export async function serveIssuerProfile(store: MarketStore, symbol: string): Promise<Served<z.input<typeof profileSchema>> | null> {
+  const row = await store.issuerProfile(symbol);
+  if (!row) return null;
+  const profile = row.profile;
+  return {
+    data: {
+      symbol: row.symbol, companyName: typeof profile.NamaEmiten === "string" ? profile.NamaEmiten : null,
+      website: typeof profile.Website === "string" ? profile.Website : null,
+      description: typeof profile.KegiatanUsahaUtama === "string" ? profile.KegiatanUsahaUtama : null,
+      directors: row.directors, commissioners: row.commissioners, shareholders: row.shareholders, subsidiaries: row.subsidiaries,
+    },
+    dataAsOf: null, freshness: "HISTORICAL",
+  };
+}
+
 // ── /v1/actions ─────────────────────────────────────────────────────────────────────────────────────────────────
 
 export type ActionsRange = { from: string; to: string };
@@ -96,7 +143,7 @@ export async function serveActionsCalendar(store: MarketStore, range: ActionsRan
   const rows = await store.actionsBetween(range.from, range.to);
   const dataAsOf = wibDateOf(asOf);
   return {
-    data: rows.map((row) => ({ symbol: row.symbol, date: row.exDate, type: row.type, description: row.description, amount: row.amount, ratio: row.ratio, documentUrl: null })),
+    data: rows.map((row) => ({ symbol: row.symbol, date: row.exDate, type: row.type, sourceCategory: row.sourceCategory ?? null, description: row.description, amount: row.amount, ratio: row.ratio, shares: row.shares, sharesAfter: row.sharesAfter, documentUrl: null })),
     dataAsOf, freshness: sessionFreshness(dataAsOf, now),
   };
 }

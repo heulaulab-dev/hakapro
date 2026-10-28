@@ -22,6 +22,8 @@ export type IdxIndexBackfillOptions = {
   from?: string;
   /** Trading days fetched per night-window run. */
   batchDays?: number;
+  /** Cursor revision; changing it deliberately replays this IDX date range from `from`. */
+  cursorRevision?: string;
   /** Persistence hook; defaults to the shared upsertIndexDaily. Injected in tests. */
   persist?: (db: EngineDb, rows: IndexDailyUpsert[], prov: Provenance, policy: { primary: boolean }) => Promise<number>;
 };
@@ -33,6 +35,7 @@ export function idxIndexBackfillJob(services: JobServices, source: SourceRef, tr
     sourceId: source.id,
     from: options.from ?? BACKFILL_START,
     batchDays: options.batchDays,
+    cursorRevision: options.cursorRevision,
     // The daily TradingView index job owns today and forward; the backfill fills everything strictly before it.
     until: () => wibToday(services.now()),
     async processDay(date) {

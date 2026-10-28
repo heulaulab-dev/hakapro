@@ -31,6 +31,26 @@ class Session:
 
 
 class IdxTransportTests(unittest.IsolatedAsyncioTestCase):
+    async def test_fetch_json_forwards_an_allowlisted_idx_endpoint_and_typed_params(self):
+        session = Session([Response(200, {"recordsTotal": 1, "data": [{"StockCode": "BBCA"}]})])
+        client = IDXTransportClient("https://idx-test.example/primary", session_factory=lambda: session, retry_delay=0)
+        async with client:
+            result = await client.fetch_json("/TradingSummary/GetStockSummary", {"date": "20260807", "start": 0, "length": 9999})
+
+        self.assertTrue(result["ok"])
+        self.assertEqual(session.calls[0][0], "https://idx-test.example/primary/TradingSummary/GetStockSummary")
+        self.assertEqual(session.calls[0][1]["params"], {"date": "20260807", "start": 0, "length": 9999})
+
+    async def test_fetch_json_rejects_unknown_and_traversal_paths_before_request(self):
+        session = Session([])
+        client = IDXTransportClient("https://idx-test.example/primary", session_factory=lambda: session, retry_delay=0)
+        async with client:
+            for path in ("/custom/endpoint", "/TradingSummary/../admin", "https://other.example/data"):
+                with self.subTest(path=path), self.assertRaises(ValueError):
+                    await client.fetch_json(path, {})
+
+        self.assertEqual(session.calls, [])
+
     async def test_formats_date_and_maps_datatables_body(self):
         session = Session([Response(200, {"draw": 1, "recordsTotal": 1, "recordsFiltered": 1, "data": []})])
         client = IDXTransportClient("https://idx-test.example/primary", session_factory=lambda: session, retry_delay=0)

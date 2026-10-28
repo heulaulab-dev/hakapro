@@ -3,9 +3,9 @@
 import { timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 import {
-  actionsCalendarSchema, actionsSchema, announcementItemSchema, fundamentalsSchema, HEATMAP_DEFAULT_LIMIT, HEATMAP_LIMITS, heatmapLimitSchema,
-  heatmapSchema, indicesHistorySchema, insidersRecentSchema, macroSchema, marketOverviewSchema, newsItemSchema, sectorsSchema, screenRequestSchema, screenResultSchema,
-  securitySchema, signalsSchema, stockSchema, groupWindowSchema, groupsSchema, radarSchema, stealthOwnershipSchema,
+  actionsCalendarSchema, actionsSchema, announcementItemSchema, brokerDirectorySchema, fundamentalsSchema, HEATMAP_DEFAULT_LIMIT, HEATMAP_LIMITS, heatmapLimitSchema,
+  heatmapSchema, indicesHistorySchema, insidersRecentSchema, macroSchema, marketOverviewSchema, newsItemSchema, sectorsSchema, screenRequestSchema, screenResultSchema, marketBrokerSummarySchema,
+  securitySchema, signalsSchema, stockSchema, groupWindowSchema, groupsSchema, radarSchema, stealthOwnershipSchema, profileSchema,
 } from "@/server/schemas/idx-bei";
 import { dateSchema, symbolSchema } from "@/server/schemas/inputs";
 import { ownershipChangesSchema, ownershipMonthSchema, stockOwnershipSchema } from "@/server/schemas/ownership";
@@ -20,7 +20,7 @@ import {
 } from "../serve/market";
 import {
   ACTIONS_MAX_RANGE_DAYS, defaultActionsRange, NEWS_DEFAULT_PAGE_SIZE, NEWS_MAX_PAGE, NEWS_MAX_PAGE_SIZE, serveActionsCalendar, serveIndicesHistory, serveMacro,
-  serveNews,
+  serveNews, serveMarketBrokerSummary, serveBrokerDirectory, serveIssuerProfile, serveAnnouncements,
 } from "../serve/market-info";
 import { serveFundamentals, serveScreener } from "../serve/fundamentals";
 import { serveGroups } from "../serve/groups";
@@ -83,13 +83,7 @@ function tokenMatches(header: string | null, expected: string): boolean {
 const jobIdSchema = z.string().regex(/^[a-z0-9][a-z0-9-]{0,63}$/);
 
 /** Contract routes answered with an empty `UNAVAILABLE` form (or a typed 404), and why; listed on /v1/meta/health. */
-export const UNAVAILABLE_ROUTES = [
-  {
-    route: "/v1/announcements", status: "SOURCE_BLOCKED",
-    reason: "IDX disclosures (keterbukaan informasi) are published only on www.idx.co.id, which answers the engine's user agent with a Cloudflare HTTP 403 (DATA-ENGINE.md §5.0, §5.4). No fetcher is configured, and none will be until an IDX allowlist or data licence exists (§8.5).",
-  },
-  { route: "/v1/stocks/{s}/profile", status: "SOURCE_BLOCKED", reason: "Company profiles come from IDX (blocked, §5.0); answered with 404 NO_DATA." },
-] as const;
+export const UNAVAILABLE_ROUTES = [] as const;
 
 /** Listed under `unavailable` while ENGINE_STRATEGY_SCANS_ENABLED is off (the default). */
 export const STRATEGIES_DISABLED = {
@@ -215,6 +209,19 @@ export function createApp(deps: AppDeps): (request: Request) => Promise<Response
       const codes = codesParam ? codesParam.split(",").map((code) => code.trim().toUpperCase()).filter(Boolean).slice(0, 40) : null;
       return respond(indicesHistorySchema, market ? await serveIndicesHistory(market, from.data, to.data, codes, at) : null, { series: [] });
     }
+    if (path === "/v1/brokers/market-summary") {
+      const defaultTo = at.toISOString().slice(0, 10);
+      const defaultFromDate = new Date(`${defaultTo}T00:00:00Z`);
+      defaultFromDate.setUTCDate(defaultFromDate.getUTCDate() - 30);
+      const from = dateSchema.safeParse(param(url, "from") ?? defaultFromDate.toISOString().slice(0, 10));
+      const to = dateSchema.safeParse(param(url, "to") ?? defaultTo);
+      const limit = pageParam(100, 20).safeParse(param(url, "limit"));
+      if (!from.success || !to.success || !realDate(from.data) || !realDate(to.data) || from.data > to.data || !limit.success) return error(400, "BAD_REQUEST", "Invalid date range or limit (1–100)");
+      const span = (Date.parse(to.data) - Date.parse(from.data)) / DAY_MS;
+      if (span > 366) return error(400, "BAD_REQUEST", "Date range must be at most 366 days");
+      return respond(marketBrokerSummarySchema, market ? await serveMarketBrokerSummary(market, from.data, to.data, limit.data, at) : null, { dates: [] });
+    }
+    if (path === "/v1/brokers/directory") return respond(brokerDirectorySchema, market ? await serveBrokerDirectory(market, at) : null, { brokers: [] });
     if (path === "/v1/securities") {
       return respond(securitySchema.array(), market ? await serveSecurities(market, (url.searchParams.get("q") ?? "").slice(0, 64), at) : null, []);
     }
@@ -224,8 +231,11 @@ export function createApp(deps: AppDeps): (request: Request) => Promise<Response
       const { page, page_size: pageSize, symbol } = query.data;
       return respond(newsItemSchema.array(), market ? await serveNews(market, { page, pageSize, symbol }, at) : null, []);
     }
-    // Blocked at the source (see UNAVAILABLE_ROUTES): always the contract's empty form, whatever the query.
-    if (path === "/v1/announcements") return json(envelope(announcementItemSchema.array(), [], unavailableMeta(at)));
+    if (path === "/v1/announcements") {
+      const query = newsQuerySchema.safeParse({ page: param(url, "page"), page_size: param(url, "page_size"), symbol: param(url, "symbol") });
+      if (!query.success) return error(400, "BAD_REQUEST", "Invalid page, page_size or symbol");
+      return respond(announcementItemSchema.array(), market ? await serveAnnouncements(market, { page: query.data.page, pageSize: query.data.page_size, symbol: query.data.symbol }, at) : null, []);
+    }
     if (path === "/v1/macro") {
       const served = market ? await serveMacro(market, at) : null;
       return respond(macroSchema, served, { series: [] });
@@ -340,7 +350,10 @@ export function createApp(deps: AppDeps): (request: Request) => Promise<Response
       }
       if (stock[2] === "fundamentals") return respond(fundamentalsSchema, market ? await serveFundamentals(market, symbol.data) : null, []);
       if (stock[2] === "actions") return respond(actionsSchema, market ? await serveActions(market, symbol.data, at) : null, []);
-      if (stock[2] === "profile") return error(404, "NO_DATA", `No profile data for ${symbol.data}`);
+      if (stock[2] === "profile") {
+        const served = market ? await serveIssuerProfile(market, symbol.data) : null;
+        return served ? json(envelope(profileSchema, served.data, servedMeta(served, at))) : error(404, "NO_DATA", `No profile data for ${symbol.data}`);
+      }
       const limit = Number(url.searchParams.get("limit") ?? DEFAULT_CANDLES);
       if (!Number.isInteger(limit) || limit < 1) return error(400, "BAD_REQUEST", "Invalid limit");
       const served = market ? await serveStock(market, symbol.data, Math.min(limit, MAX_CANDLES), at) : null;

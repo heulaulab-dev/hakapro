@@ -50,9 +50,9 @@ describe("loadConfig", () => {
   });
 
   it("keeps IDX history opt-in and bounds curl_cffi retry and timeout settings", () => {
-    expect(loadConfig(BASE).idxPrimary).toMatchObject({ enabled: false, baseUrl: "https://www.idx.co.id/primary", maxRetries: 3, timeoutSeconds: 30, delaySeconds: 2, impersonate: "chrome" });
-    expect(loadConfig({ ...BASE, ENGINE_IDX_PRIMARY_ENABLED: "true", ENGINE_IDX_PRIMARY_BASE_URL: "https://idx-prerelease.example/primary", ENGINE_IDX_PRIMARY_MAX_RETRIES: "5", ENGINE_IDX_PRIMARY_TIMEOUT_SECONDS: "15", ENGINE_IDX_PRIMARY_IMPERSONATE: "chrome124" }).idxPrimary)
-      .toMatchObject({ enabled: true, baseUrl: "https://idx-prerelease.example/primary", maxRetries: 5, timeoutSeconds: 15, impersonate: "chrome124" });
+    expect(loadConfig(BASE).idxPrimary).toMatchObject({ enabled: false, baseUrl: "https://www.idx.co.id/primary", maxRetries: 3, timeoutSeconds: 30, delaySeconds: 2, impersonate: "chrome", backfillRevision: "3" });
+    expect(loadConfig({ ...BASE, ENGINE_IDX_PRIMARY_ENABLED: "true", ENGINE_IDX_PRIMARY_BASE_URL: "https://idx-prerelease.example/primary", ENGINE_IDX_PRIMARY_MAX_RETRIES: "5", ENGINE_IDX_PRIMARY_TIMEOUT_SECONDS: "15", ENGINE_IDX_PRIMARY_IMPERSONATE: "chrome124", ENGINE_IDX_PRIMARY_BACKFILL_REVISION: "3" }).idxPrimary)
+      .toMatchObject({ enabled: true, baseUrl: "https://idx-prerelease.example/primary", maxRetries: 5, timeoutSeconds: 15, impersonate: "chrome124", backfillRevision: "3" });
     expect(() => loadConfig({ ...BASE, ENGINE_IDX_PRIMARY_MAX_RETRIES: "9" })).toThrow(/ENGINE_IDX_PRIMARY_MAX_RETRIES/);
     expect(() => loadConfig({ ...BASE, ENGINE_IDX_PRIMARY_TIMEOUT_SECONDS: "0" })).toThrow(/ENGINE_IDX_PRIMARY_TIMEOUT_SECONDS/);
   });

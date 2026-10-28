@@ -6,6 +6,8 @@ import type {
   RatioRecord, SecurityRecord,
 } from "../serve/store";
 import { normalizeSectorLabel } from "../serve/store";
+import { brokerDailyBetween, idxBrokerMembers, latestIdxBrokerMembersAsOf, latestBrokerSummaryDate } from "./idx-broker";
+import { getIdxIssuerProfile } from "./idx-issuer";
 import type { EngineDb } from "./client";
 
 const dailyColumns = {
@@ -119,6 +121,12 @@ export class DbMarketStore implements MarketStore {
     }).from(t.indexDaily).where(and(...filters)).orderBy(asc(t.indexDaily.code), asc(t.indexDaily.date));
   }
 
+  async brokerDailySummaryBetween(from: string, to: string) { return brokerDailyBetween(this.db, from, to); }
+  async latestBrokerSummaryDate() { return latestBrokerSummaryDate(this.db); }
+  async brokerDirectory() { return idxBrokerMembers(this.db); }
+  async latestBrokerDirectoryAsOf() { return latestIdxBrokerMembersAsOf(this.db); }
+  async issuerProfile(symbol: string, language = "id-id") { return getIdxIssuerProfile(this.db, symbol, language); }
+
   async latestIndexIntraday(): Promise<IndexIntradayRecord[]> {
     return this.db.selectDistinctOn([t.indexIntraday.code], {
       code: t.indexIntraday.code, name: t.indexIntraday.name, ts: t.indexIntraday.ts, last: t.indexIntraday.last, changePercent: t.indexIntraday.changePercent,
@@ -144,8 +152,8 @@ export class DbMarketStore implements MarketStore {
 
   async actionsBetween(from: string, to: string): Promise<ActionCalendarRecord[]> {
     const rows = await this.db.select({
-      symbol: t.corporateActions.symbol, exDate: t.corporateActions.exDate, type: t.corporateActions.type, description: t.corporateActions.description,
-      amount: t.corporateActions.amount, ratio: t.corporateActions.ratio, asOf: t.corporateActions.asOf,
+      symbol: t.corporateActions.symbol, exDate: t.corporateActions.exDate, type: t.corporateActions.type, sourceCategory: t.corporateActions.sourceCategory, description: t.corporateActions.description,
+      amount: t.corporateActions.amount, ratio: t.corporateActions.ratio, shares: t.corporateActions.shares, sharesAfter: t.corporateActions.sharesAfter, asOf: t.corporateActions.asOf,
     }).from(t.corporateActions).where(and(gte(t.corporateActions.exDate, from), lte(t.corporateActions.exDate, to)))
       .orderBy(asc(t.corporateActions.exDate), asc(t.corporateActions.symbol), asc(t.corporateActions.type));
     return rows.map((row) => ({ ...row, exDate: row.exDate! }));
@@ -167,6 +175,16 @@ export class DbMarketStore implements MarketStore {
   async latestNewsAt(): Promise<Date | null> {
     const [row] = await this.db.select({ at: max(t.newsItems.publishedAt) }).from(t.newsItems);
     return row?.at ?? null;
+  }
+
+  async announcements(query: NewsQuery) {
+    const filters = query.symbol ? [eq(t.announcements.symbol, query.symbol)] : [];
+    return this.db.select({ externalId: t.announcements.externalId, symbol: t.announcements.symbol, publishedAt: t.announcements.publishedAt, title: t.announcements.title, documentUrl: t.announcements.documentUrl })
+      .from(t.announcements).where(filters.length ? and(...filters) : undefined).orderBy(desc(t.announcements.publishedAt)).offset(query.offset).limit(query.limit);
+  }
+  async latestAnnouncementAt(): Promise<Date | null> {
+    const [row] = await this.db.select({ publishedAt: max(t.announcements.publishedAt) }).from(t.announcements);
+    return row?.publishedAt ?? null;
   }
 
   async fundamentals(symbol: string): Promise<FundamentalRecord[]> {

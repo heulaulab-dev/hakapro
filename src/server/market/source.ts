@@ -4,7 +4,7 @@ import type {
   ActionCalendarItem, AnnouncementItem, BrokerAccumulation, BrokerFlow, BrokerSummary, CompanyProfile, CorporateAction, DoneDetails,
   FinancialStatements, ForeignFlow, FundamentalPeriod, Heatmap, History, Insiders, LastPrice, MarketCap, MarketOverview, NewsItem, ScreenRequest,
   ScreenResult, OwnershipChanges, RecentInsiders, SearchResult, Seasonality, SectorPerformance, Security, StockAnalysis, StockOwnership,
-  StockSnapshot, StrategyScreen, GroupsView, GroupWindow, RadarSnapshot, StealthOwnership, Macro, IndicesHistory,
+  StockSnapshot, StrategyScreen, GroupsView, GroupWindow, RadarSnapshot, StealthOwnership, Macro, IndicesHistory, MarketBrokerSummary, BrokerDirectory,
 } from "./types";
 
 export type HistoryQuery = { limit?: number; frame?: "daily" | "weekly" | "monthly"; startDate?: string; endDate?: string };
@@ -28,6 +28,7 @@ export type InsidersQuery = { page?: number; limit?: number; actionType?: "buy" 
 export type RecentInsidersQuery = { days?: number; action?: "buy" | "sell" | "cross"; limit?: number };
 /** Index daily-close history (sector rotation). Without `codes`, every stored index; dates are YYYY-MM-DD inclusive. */
 export type IndicesHistoryQuery = { codes?: string[]; from?: string; to?: string };
+export type MarketBrokerSummaryQuery = { from?: string; to?: string; limit?: number };
 
 type R<T> = Promise<WithFreshness<T>>;
 
@@ -71,6 +72,12 @@ export interface MarketDataSource {
   macro(): R<Macro>;
   /** Index daily-close history (`/v1/indices/history`): IHSG and IDX-IC sector indices, for sector rotation. */
   indicesHistory(query?: IndicesHistoryQuery, signal?: AbortSignal): R<IndicesHistory>;
+  /** IDX GetBrokerSummary market-wide turnover, separate from per-stock broker flows. */
+  marketBrokerSummary(query?: MarketBrokerSummaryQuery, signal?: AbortSignal): R<MarketBrokerSummary>;
+  /** IDX exchange member names and licenses (`GetBrokerSearch`). */
+  brokerDirectory(signal?: AbortSignal): R<BrokerDirectory>;
+  /** IDX exchange member names and licenses (`GetBrokerSearch`). */
+  brokerDirectory(signal?: AbortSignal): R<BrokerDirectory>;
   // Data Engine lane
   sectors(): R<SectorPerformance[]>;
   /** The most-traded stocks of the newest view with per-sector totals (net foreign value is an estimate). */
@@ -122,6 +129,8 @@ export abstract class BaseMarketDataSource implements MarketDataSource {
   async announcements(..._args: unknown[]): R<AnnouncementItem[]> { return this.fail("announcements"); }
   async macro(..._args: unknown[]): R<Macro> { return this.fail("macro"); }
   async indicesHistory(..._args: unknown[]): R<IndicesHistory> { return this.fail("indicesHistory"); }
+  async marketBrokerSummary(..._args: unknown[]): R<MarketBrokerSummary> { return this.fail("marketBrokerSummary"); }
+  async brokerDirectory(..._args: unknown[]): R<BrokerDirectory> { return this.fail("brokerDirectory"); }
   async sectors(..._args: unknown[]): R<SectorPerformance[]> { return this.fail("sectors"); }
   async heatmap(..._args: unknown[]): R<Heatmap> { return this.fail("heatmap"); }
   async groups(..._args: unknown[]): R<GroupsView> { return this.fail("groups"); }

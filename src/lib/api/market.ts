@@ -38,6 +38,8 @@ export type BrokerRow = z.infer<typeof brokerRowSchema>;
 export type BrokerSummary = z.infer<typeof brokerSummarySchema>;
 export type BrokerLevel = BrokerSummary["levels"][number];
 export type BrokerSummaryQuery = { startDate?: string; endDate?: string; flow?: BrokerFlow; net?: boolean; brokerLimit?: number; levelLimit?: number };
+export const brokerDirectorySchema = z.object({ brokers: z.array(z.object({ code: z.string(), name: z.string(), license: z.string().nullable() })) });
+export type BrokerDirectory = z.infer<typeof brokerDirectorySchema>;
 
 
 export const insiderRowSchema = z.object({
@@ -69,6 +71,7 @@ export const marketApi = {
     fetchEnvelope(`/api/history/${sym(symbol)}${qs({ frame: query.frame, limit: query.limit, start_date: query.startDate, end_date: query.endDate })}`, historySchema, { signal }),
   brokerSummary: (symbol: string, query: BrokerSummaryQuery = {}, signal?: AbortSignal) =>
     fetchEnvelope(`/api/broker-summary/${sym(symbol)}${qs({ start_date: query.startDate, end_date: query.endDate, flow: query.flow === "all" ? undefined : query.flow, net: query.net, broker_limit: query.brokerLimit, level_limit: query.levelLimit })}`, brokerSummarySchema, { signal }),
+  brokerDirectory: (signal?: AbortSignal) => fetchEnvelope("/api/brokers/directory", brokerDirectorySchema, { signal }),
   /** Strategy Engine contract (src/lib/strategies/contract.ts), whichever engines are registered. */
   strategies: (signal?: AbortSignal) => fetchEnvelope("/api/strategies", strategyBoardSchema, { signal }),
   insiders: (symbol: string, signal?: AbortSignal) => fetchEnvelope(`/api/insiders/${sym(symbol)}`, insidersSchema, { signal }),
@@ -327,11 +330,18 @@ export const stealthOwnershipSchema = z.object({
 export type StealthOwnership = z.infer<typeof stealthOwnershipSchema>;
 
 /** IHSG + IDX-IC sector-index daily closes (`/api/indices/history`), for the sector-rotation RRG. */
+const indexCoverageSchema = z.object({
+  code: z.string(), name: z.string().nullable(), count: z.number().int(), firstDate: z.string().nullable(), lastDate: z.string().nullable(),
+  spanTradingDays: z.number().int(), missingSessions: z.number().int(), staleTradingDays: z.number().int(),
+  flags: z.array(z.enum(["STALE", "NON_POSITIVE_CLOSE", "UNORDERED"])),
+});
 export const indicesHistorySchema = z.object({
   series: z.array(z.object({ code: z.string(), name: z.string().nullable(), points: z.array(z.object({ date: z.string(), close: z.number() })) })),
+  coverage: z.array(indexCoverageSchema).optional(),
 });
 export type IndicesHistory = z.infer<typeof indicesHistorySchema>;
 export type IndexSeries = IndicesHistory["series"][number];
+export type IndexCoverageReport = NonNullable<IndicesHistory["coverage"]>[number];
 
 export const engineApi = {
   radar: (signal?: AbortSignal) => fetchEnvelope("/api/radar", radarSchema, { signal }),
