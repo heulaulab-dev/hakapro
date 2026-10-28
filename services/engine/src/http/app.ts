@@ -34,6 +34,8 @@ import {
 import { emptyStockOwnership, serveOwnershipChanges, serveStockOwnership } from "../serve/ownership";
 import { emptyRadar, emptyStealth, serveRadar, serveStealth } from "../serve/radar";
 import type { MarketStore } from "../serve/store";
+import { parseIdxIndexSummary } from "../sources/idx-primary";
+import type { IndexDailyUpsert } from "../db/ingest";
 import { EMPTY_BOARD, serveStrategies, strategyScanHealth, type StrategyStore } from "../serve/strategies";
 import { STRATEGY_RULES, type StrategyRules } from "../strategies/rules";
 import { envelope, servedMeta, unavailableMeta } from "./envelope";
@@ -64,6 +66,8 @@ export type AppDeps = {
   insiders?: { store: InsiderStore; revisitDays: number };
   /** The curated conglomerate groups behind /v1/groups (tests pass their own). */
   groups?: GroupCatalog;
+  /** Authenticated collector import; persists validated IDX rows through the existing index_daily upsert. */
+  importIdxIndexRows?: (date: string, rows: IndexDailyUpsert[]) => Promise<number>;
   now?: () => Date;
   log?: Logger;
 };
@@ -135,6 +139,25 @@ export function createApp(deps: AppDeps): (request: Request) => Promise<Response
       if (path.startsWith("/v1/admin/ownership/")) {
         if (!deps.ownership) return error(404, "NOT_FOUND", "Ownership uploads are not configured");
         return ownershipAdmin(deps.ownership, request, url, path, method, { pause: deps.pause, now: now(), log });
+      }
+      if (path === "/v1/admin/indices/import") {
+        if (method !== "POST") return error(405, "METHOD_NOT_ALLOWED", "Use POST");
+        if (!deps.importIdxIndexRows) return error(404, "NOT_FOUND", "IDX collector import is not configured");
+        const declaredBytes = Number(request.headers.get("content-length") ?? 0);
+        if (declaredBytes > 4_000_000) return error(413, "PAYLOAD_TOO_LARGE", "IDX import payload exceeds 4 MB");
+        const text = await request.text();
+        if (new TextEncoder().encode(text).byteLength > 4_000_000) return error(413, "PAYLOAD_TOO_LARGE", "IDX import payload exceeds 4 MB");
+        let input: unknown;
+        try { input = JSON.parse(text); } catch { return error(400, "BAD_REQUEST", "Invalid JSON body"); }
+        const requestBody = z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), body: z.unknown() }).strict().safeParse(input);
+        if (!requestBody.success || !realDate(requestBody.data.date)) return error(400, "BAD_REQUEST", "Expected a real ISO date and IDX response body");
+        let parsed: ReturnType<typeof parseIdxIndexSummary>;
+        try { parsed = parseIdxIndexSummary(requestBody.data.body, requestBody.data.date); }
+        catch { return error(422, "INVALID_IDX_RESPONSE", "IDX response did not match the historical index contract"); }
+        if (!parsed.rows.length) return error(422, "NO_VALID_ROWS", "IDX response contained no valid rows for the requested date");
+        const stored = await deps.importIdxIndexRows(requestBody.data.date, parsed.rows);
+        log.info("idx_collector_imported", { date: requestBody.data.date, received: parsed.rows.length, rejected: parsed.rejected.length, stored });
+        return json({ data: { date: requestBody.data.date, received: parsed.rows.length, rejected: parsed.rejected.length, stored } }, 200);
       }
       if (method !== "POST") return error(405, "METHOD_NOT_ALLOWED", "Use POST");
       return admin(path);
