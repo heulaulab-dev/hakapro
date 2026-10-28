@@ -40,6 +40,8 @@ const envSchema = z.object({
   // Ownership uploads (E6, §8.5d): file size cap, and the HAKA-34 draft estimate on /v1 (off until the owner approves).
   ENGINE_OWNERSHIP_MAX_UPLOAD_MB: z.coerce.number().int().min(1).max(100).default(20),
   ENGINE_FREE_FLOAT_ENABLED: flag(false),
+  ENGINE_KSEI_OWNERSHIP_ENABLED: flag(true),
+  ENGINE_KSEI_OWNERSHIP_MIRROR_URL: z.string().url().default("https://github.com/fzn0x/idx/releases/download/ownership-data/index.json"),
   // E4 strategy scans on the HAKA-17 DRAFT rules (not owner-approved): off by default (job not registered, /v1/strategies empty).
   ENGINE_STRATEGY_SCANS_ENABLED: flag(false),
   // IDX /primary historical index backfill (GetIndexSummary). Off by default; enabling it starts the curl_cffi worker.
@@ -84,6 +86,7 @@ export type EngineConfig = {
   arjum: ArjumConfig | null;
   /** Ownership uploads: largest accepted file, and whether the free-float draft estimate is served. */
   ownership: { maxUploadBytes: number; freeFloatEnabled: boolean };
+  kseiOwnership: { enabled: boolean; mirrorUrl: string };
   /** false → strategy-scan-eod is not registered and /v1/strategies serves the empty UNAVAILABLE board. */
   strategyScans: { enabled: boolean };
   /** IDX /primary historical index backfill. Disabled → the backfill job and its source are not registered. */
@@ -111,6 +114,10 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
   }
   if (e.ENGINE_IDX_PRIMARY_BASE_URL && !/^https?:\/\/[^/]/.test(e.ENGINE_IDX_PRIMARY_BASE_URL)) {
     throw new Error("Invalid engine configuration: ENGINE_IDX_PRIMARY_BASE_URL must be an http(s) URL");
+  }
+  const kseiMirror = new URL(e.ENGINE_KSEI_OWNERSHIP_MIRROR_URL);
+  if (kseiMirror.origin !== "https://github.com" || kseiMirror.pathname !== "/fzn0x/idx/releases/download/ownership-data/index.json" || kseiMirror.search || kseiMirror.hash) {
+    throw new Error("Invalid engine configuration: ENGINE_KSEI_OWNERSHIP_MIRROR_URL must be the pinned ownership-data release");
   }
   // The two engine budgets together must fit in what the reserve leaves of the shared quota. Checked only when the
   // insider feed is on, so configurations from before it existed keep loading unchanged.
@@ -143,6 +150,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
       }
       : null,
     ownership: { maxUploadBytes: e.ENGINE_OWNERSHIP_MAX_UPLOAD_MB * 1024 * 1024, freeFloatEnabled: e.ENGINE_FREE_FLOAT_ENABLED },
+    kseiOwnership: { enabled: e.ENGINE_KSEI_OWNERSHIP_ENABLED, mirrorUrl: e.ENGINE_KSEI_OWNERSHIP_MIRROR_URL },
     strategyScans: { enabled: e.ENGINE_STRATEGY_SCANS_ENABLED },
     idxBei: { enabled: e.IDX_BEI_ENABLED, baseUrl: e.IDX_BEI_API_URL },
     idxPrimary: {
