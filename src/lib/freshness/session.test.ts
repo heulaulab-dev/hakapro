@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { wib } from "../../../tests/support/fixtures";
-import { classifySessionDate, previousTradingDay, withFreshness } from "./index";
+import { classifySessionDate, isTradingDay, previousTradingDay, withFreshness } from "./index";
 
 describe("classifySessionDate (MIGRATION §9.4)", () => {
   // 2026-09-18 is a Friday; 2026-09-21 is the following Monday.
@@ -64,5 +64,10 @@ describe("IDX calendar config (TODO(verify) times)", () => {
     expect(previousTradingDay("2026-08-18")).toBe("2026-08-14");
     expect(classifySessionDate("2026-08-14", wib("2026-08-17T12:00:00"))).toBe("EOD");
     expect(classifySessionDate("2026-08-17", wib("2026-08-18T12:00:00"))).toBe("UNAVAILABLE");
+  });
+
+  test("New Year's Day 2020 is not an exchange trading day", () => {
+    expect(isTradingDay("2020-01-01")).toBe(false);
+    expect(isTradingDay("2020-01-02")).toBe(true);
   });
 });
