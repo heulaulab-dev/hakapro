@@ -42,6 +42,18 @@ export function idxIndexBackfillJob(services: JobServices, source: SourceRef, tr
       const result = await collectIndexSummary(transport, date);
       if (result.status === "UNAVAILABLE") {
         services.log.info("idx_index_backfill_unavailable", { job: IDX_INDEX_BACKFILL_ID, date, reason: result.reason });
+        if (result.reason.startsWith("cloudflare-challenge")) {
+          const cfRay = result.reason.match(/cf-ray=([^,)\s]+)/i)?.[1];
+          await services.sourceState.markBlocked(source.id, {
+            reason: "CLOUDFLARE_CHALLENGE",
+            url: `https://${source.host ?? "www.idx.co.id"}/primary/TradingSummary/GetIndexSummary`,
+            status: 403,
+            markers: ["header:cf-mitigated=challenge"],
+            headers: cfRay ? { "cf-ray": cfRay, "cf-mitigated": "challenge" } : { "cf-mitigated": "challenge" },
+            detectedAt: services.now().toISOString(),
+          });
+          services.log.warn("idx_source_degraded", { source: source.id, date, status: 403, cfRay });
+        }
         // Throw before the shared backfill writes its date cursor; a WAF/timeout must be retried next run, not skipped.
         throw new Error(`IDX transport unavailable for ${date}: ${result.reason}`);
       }

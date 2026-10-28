@@ -11,6 +11,7 @@ import { loadConfig } from "../src/config";
 import { createEngine } from "../src/engine";
 import { ENGINE_USER_AGENT } from "../src/fetch/fetcher";
 import { nullLogger } from "../src/log";
+import indexSummary from "../src/sources/idx-index-summary.2026-10-26.fixture.json";
 import { FIXTURE_CSV, fixtureRegistry, startFixtureServer, type FixtureServer } from "./fixture-source";
 import { tempDir } from "./support";
 
@@ -123,5 +124,39 @@ describe.skipIf(!enabled)("engine e2e (docker postgres)", () => {
 
   it("is ready when the DB is reachable", async () => {
     expect((await call("/ready")).status).toBe(200);
+  });
+
+  it("imports a captured IDX response, serves it to RRG, and remains idempotent", async () => {
+    const payload = JSON.stringify({ date: "2026-10-26", body: indexSummary });
+    const importOnce = () => call("/v1/admin/indices/import", {
+      method: "POST", headers: { ...ADMIN, "content-type": "application/json" }, body: payload,
+    });
+    const unauthorized = await call("/v1/admin/indices/import", {
+      method: "POST", headers: { "content-type": "application/json" }, body: payload,
+    });
+    expect(unauthorized.status).toBe(401);
+
+    const first = await importOnce();
+    expect(first.status).toBe(200);
+    expect(await first.json()).toMatchObject({ data: { date: "2026-10-26", received: 45, rejected: 0, stored: 45 } });
+    const stored = await engine.services.db.select().from(t.indexDaily).where(eq(t.indexDaily.date, "2026-10-26"));
+    expect(stored).toHaveLength(45);
+    expect(new Set(stored.map((row) => row.code)).size).toBe(45);
+    expect(stored.every((row) => row.close > 0 && row.source === "idx-primary" && row.asOf !== null)).toBe(true);
+
+    const history = await call("/v1/indices/history?from=2026-10-26&to=2026-10-26");
+    expect(history.status).toBe(200);
+    const historyBody = await history.json() as { data: { series: Array<{ code: string; points: Array<{ date: string; close: number }> }>; coverage: Array<{ count: number; firstDate: string; lastDate: string }> }; meta: { dataAsOf: string } };
+    expect(historyBody.data.series).toHaveLength(45);
+    expect(historyBody.data.series.every((series) => series.points.length === 1 && series.points[0].close > 0)).toBe(true);
+    expect(historyBody.data.coverage).toHaveLength(45);
+    expect(historyBody.meta.dataAsOf).toBe("2026-10-26");
+
+    const second = await importOnce();
+    expect(second.status).toBe(200);
+    expect(await second.json()).toMatchObject({ data: { received: 45, rejected: 0, stored: 45 } });
+    const afterRepeat = await engine.services.db.select().from(t.indexDaily).where(eq(t.indexDaily.date, "2026-10-26"));
+    expect(afterRepeat).toHaveLength(45);
+    expect(new Set(afterRepeat.map((row) => `${row.code}:${row.date}`)).size).toBe(45);
   });
 });
