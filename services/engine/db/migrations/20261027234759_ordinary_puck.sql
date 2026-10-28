@@ -1,0 +1,1 @@
+ALTER TABLE "idx_broker_members" ADD COLUMN "active" boolean DEFAULT true NOT NULL;

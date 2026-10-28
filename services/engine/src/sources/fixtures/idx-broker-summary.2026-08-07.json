@@ -1,0 +1,17 @@
+{
+  "draw": 0,
+  "recordsTotal": 1,
+  "recordsFiltered": 1,
+  "data": [
+    {
+      "No": 1,
+      "IDBrokerSummary": 960758,
+      "Date": "2026-08-07T00:00:00",
+      "IDFirm": "AD",
+      "FirmName": "Sukadana Prima Sekuritas",
+      "Volume": 35415900.0,
+      "Value": 4351965300.0,
+      "Frequency": 461.0
+    }
+  ]
+}

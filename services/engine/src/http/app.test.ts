@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   actionsCalendarSchema, actionsSchema, announcementItemSchema, fundamentalsSchema, heatmapSchema, idxBeiEnvelope, macroSchema, marketOverviewSchema, newsItemSchema,
-  screenResultSchema, securitySchema, signalsSchema, stockSchema,
+  screenResultSchema, securitySchema, signalsSchema, stockSchema, profileSchema,
 } from "@/server/schemas/idx-bei";
 import { tempDir } from "../../test/support";
 import { MemoryCursorStore, MemoryRunRecorder, MemorySourceStateStore } from "../fetch/stores";
@@ -99,9 +99,9 @@ describe("engine HTTP app", () => {
     expect(body.data.sources[0]).toMatchObject({ id: "fixture", blocked: true, blockReason: "CLOUDFLARE_CHALLENGE", rowsIngested: 0 });
     expect(body.data.scheduler).toMatchObject({ paused: false, diskStopPercent: 85, jobs: [{ id: "demo-job", running: false }] });
     expect(body.meta.freshness).toBe("UNAVAILABLE");
-    // Announcements stay empty on purpose; health says why.
+    // Announcement ingestion is configured; before its first completed sync it is absent from health's unavailable list.
     const unavailable = (body.data as unknown as { unavailable: Array<{ route: string; status: string; reason: string }> }).unavailable;
-    expect(unavailable.find((row) => row.route === "/v1/announcements")).toMatchObject({ status: "SOURCE_BLOCKED", reason: expect.stringContaining("Cloudflare HTTP 403") });
+    expect(unavailable.some((row) => row.route === "/v1/announcements")).toBe(false);
   });
 
   it("restores last job outcomes from persisted run history after a restart", async () => {
@@ -262,12 +262,48 @@ describe("engine HTTP app: E3 market info", () => {
     expect(empty).toMatchObject({ data: { series: [] }, meta: { freshness: "UNAVAILABLE" } });
   });
 
+  it("serves market-wide broker totals separately and validates its range", async () => {
+    const brokerStore = new MemoryMarketStore({ brokerDaily: [
+      { date: "2026-10-15", brokerCode: "AD", firmName: "A", volume: 100, value: 2000, frequency: 4, source: "idx-primary", asOf: new Date("2026-10-15T10:00:00Z") },
+      { date: "2026-10-15", brokerCode: "YP", firmName: "Y", volume: 200, value: 5000, frequency: 8, source: "idx-primary", asOf: new Date("2026-10-15T10:00:00Z") },
+    ] });
+    const response = await call("/v1/brokers/market-summary?from=2026-10-15&to=2026-10-15&limit=1", undefined, brokerStore);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ data: { dates: [{ date: "2026-10-15", brokers: [{ code: "YP", value: 5000 }] }] } });
+    expect((await call("/v1/brokers/market-summary?from=2026-10-15&to=2026-10-15&limit=101")).status).toBe(400);
+    expect((await call("/v1/brokers/market-summary?from=2020-01-01&to=2026-10-15")).status).toBe(400);
+  });
+
+  it("serves the IDX exchange-member directory separately from traded broker totals", async () => {
+    const store = new MemoryMarketStore({ brokerMembers: [
+      { code: "YP", name: "Yapindo", license: "Broker-dealer", active: true, source: "idx-primary", asOf: new Date("2026-10-15T10:00:00Z") },
+      { code: "ZZ", name: "Removed member", license: null, active: false, source: "idx-primary", asOf: new Date("2026-10-15T10:00:00Z") },
+      { code: "AD", name: "Ajaib", license: null, active: true, source: "idx-primary", asOf: new Date("2026-10-15T10:00:00Z") },
+    ] });
+    const response = await call("/v1/brokers/directory", undefined, store);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ data: { brokers: [{ code: "AD", name: "Ajaib", license: null }, { code: "YP", name: "Yapindo", license: "Broker-dealer" }] } });
+  });
+
+  it("serves the stored IDX issuer profile using the existing profile contract", async () => {
+    const store = new MemoryMarketStore({ issuerProfiles: [{
+      symbol: "AADI", language: "id-id", profile: { NamaEmiten: "PT Adaro Andalan Indonesia Tbk", Website: "www.adaroindonesia.com", KegiatanUsahaUtama: "Holding" },
+      directors: [{ Nama: "Direktur", NPWP: "must not be served" }], commissioners: [], auditCommittee: [], shareholders: [], subsidiaries: [], retrievedAt: new Date("2026-10-15T12:00:00Z"),
+    }] });
+    const response = await call("/v1/stocks/AADI/profile", undefined, store);
+    expect(response.status).toBe(200);
+    expect(idxBeiEnvelope(profileSchema).parse(await response.json()).data).toEqual({
+      symbol: "AADI", companyName: "PT Adaro Andalan Indonesia Tbk", website: "www.adaroindonesia.com", description: "Holding",
+      directors: [{ Nama: "Direktur" }], commissioners: [], shareholders: [], subsidiaries: [],
+    });
+  });
+
   it("serves the /v1/actions calendar oldest first within from/to (default: 30 days back, 60 ahead)", async () => {
     const body = idxBeiEnvelope(actionsCalendarSchema).parse(await (await call("/v1/actions")).json());
     expect(body.meta).toMatchObject({ dataAsOf: "2026-10-16" });
     expect(body.data).toEqual([
-      { symbol: "AALI", date: "2026-10-01", type: "DIVIDEND", description: "Cash dividend IDR 100 per share", amount: 100, ratio: null, documentUrl: null },
-      { symbol: "BBCA", date: "2026-10-01", type: "DIVIDEND", description: "Cash dividend IDR 50 per share", amount: 50, ratio: null, documentUrl: null },
+      { symbol: "AALI", date: "2026-10-01", type: "DIVIDEND", sourceCategory: null, description: "Cash dividend IDR 100 per share", amount: 100, ratio: null, shares: null, sharesAfter: null, documentUrl: null },
+      { symbol: "BBCA", date: "2026-10-01", type: "DIVIDEND", sourceCategory: null, description: "Cash dividend IDR 50 per share", amount: 50, ratio: null, shares: null, sharesAfter: null, documentUrl: null },
     ]);
     const wide = idxBeiEnvelope(actionsCalendarSchema).parse(await (await call("/v1/actions?from=2026-01-01&to=2026-12-31")).json());
     expect(wide.data.map((row) => `${row.symbol} ${row.type} ${row.ratio}`)).toEqual(["BBRI SPLIT 2:1", "AALI DIVIDEND null", "BBCA DIVIDEND null"]);
@@ -276,7 +312,7 @@ describe("engine HTTP app: E3 market info", () => {
     }
   });
 
-  it("keeps /v1/announcements the empty UNAVAILABLE form even with stored data", async () => {
+  it("serves an UNAVAILABLE announcement form until IDX announcement rows are ingested", async () => {
     const body = idxBeiEnvelope(announcementItemSchema.array()).parse(await (await call("/v1/announcements?page=1&page_size=20&keywords=dividen")).json());
     expect(body).toMatchObject({ data: [], meta: { freshness: "UNAVAILABLE", dataAsOf: null } });
   });

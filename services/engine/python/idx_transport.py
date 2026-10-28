@@ -3,6 +3,7 @@
 import asyncio
 import json
 import logging
+import math
 import random
 import re
 from datetime import date
@@ -11,6 +12,18 @@ from typing import Any, Callable
 log = logging.getLogger("hakapro.idx_transport")
 
 RETRYABLE_STATUS = {403, 429, 500, 502, 503, 504}
+ALLOWED_ENDPOINTS = frozenset({
+    "/TradingSummary/GetStockSummary",
+    "/TradingSummary/GetBrokerSummary",
+    "/TradingSummary/GetIndexSummary",
+    "/ListedCompany/GetCompanyProfiles",
+    "/ListedCompany/GetCompanyProfilesDetail",
+    "/DigitalStatistic/GetApiDataPaginated",
+    "/ListingActivity/GetIssuedHistory",
+    "/ExchangeMember/GetBrokerSearch",
+    "/NewsAnnouncement/GetNewsSearch",
+    "/NewsAnnouncement/GetAllAnnouncement",
+})
 IMPERSONATION_ROTATION = ("chrome124", "chrome120", "safari18_0", "safari17_0", "edge101", "chrome110")
 # Keep curl_cffi's impersonated browser defaults. Coolify's egress received a
 # Cloudflare challenge when these application-level headers were forced.
@@ -70,8 +83,6 @@ class IDXTransportClient:
             log.info(json.dumps({"event": "idx_session_close"}))
 
     async def fetch_index_summary(self, iso_date: str) -> dict[str, Any]:
-        if self._session is None:
-            raise RuntimeError("open IDX transport with 'async with' before requesting")
         try:
             parsed = date.fromisoformat(iso_date)
         except ValueError as exc:
@@ -79,8 +90,24 @@ class IDXTransportClient:
         if parsed.isoformat() != iso_date:
             raise ValueError("iso_date must use YYYY-MM-DD")
 
-        url = f"{self.base_url}/TradingSummary/GetIndexSummary"
         params = {"date": parsed.strftime("%Y%m%d"), "start": 0, "length": 9999}
+        return await self.fetch_json("/TradingSummary/GetIndexSummary", params)
+
+    async def fetch_json(self, path: str, params: dict[str, str | int | float | bool]) -> dict[str, Any]:
+        """Fetch JSON from one exact allowlisted IDX path; caller owns endpoint-specific params and validation."""
+        if path not in ALLOWED_ENDPOINTS:
+            raise ValueError("endpoint path is not allowlisted")
+        if not isinstance(params, dict) or any(
+            not isinstance(key, str) or not key or len(key) > 64
+            or not isinstance(value, (str, int, float, bool))
+            or (isinstance(value, float) and not math.isfinite(value))
+            for key, value in params.items()
+        ):
+            raise ValueError("params must be a mapping of short string keys to scalar values")
+        if self._session is None:
+            raise RuntimeError("open IDX transport with 'async with' before requesting")
+
+        url = f"{self.base_url}{path}"
         current_impersonate = self.impersonate
         for retry in range(self.max_retries + 1):
             attempt = retry + 1
@@ -96,7 +123,7 @@ class IDXTransportClient:
                 headers = getattr(response, "headers", {})
                 cf_ray = headers.get("cf-ray")
                 cf_mitigated = headers.get("cf-mitigated")
-                log.info(json.dumps({"event": "idx_http_response", "status": status, "attempt": attempt, "date": iso_date, "cfRay": cf_ray, "cfMitigated": cf_mitigated}))
+                log.info(json.dumps({"event": "idx_http_response", "status": status, "attempt": attempt, "path": path, "cfRay": cf_ray, "cfMitigated": cf_mitigated}))
                 if status == 200:
                     try:
                         body = response.json()

@@ -175,3 +175,28 @@ are asserted without it.
 **Net:** the legitimately feasible crawler improvement (index-series quality + coverage observability) is implemented,
 tested, and builds clean; the headline historical-sector-index capability stays blocked by data access and licensing,
 documented here rather than worked around.
+
+---
+
+## 9. Follow-up IDX-BEI integration status (2026-10-28)
+
+Sections 1–8 above are a historical assessment and must not be read as the current implementation inventory. The owner
+subsequently authorized a bounded prerelease study, then selected native integration into the existing HakaPro engine.
+The feature-parity design and implementation plan track the current code. The production WAF itself is unchanged.
+
+The current work extends the one persistent `curl_cffi` worker behind an exact IDX endpoint allowlist and adds typed,
+fixture-driven adapters/jobs for historical index, stock summary, market-wide broker summary, issuer directory/detail,
+financial ratios, corporate actions, news, and announcement metadata. Data lands in existing HakaPro tables where the
+grain matches; distinct market-wide broker totals, issuer snapshots, and period ratios have dedicated storage. Existing
+source precedence, job cursor, API auth, and product routes remain the system boundaries. Announcement attachments are
+validated official links only; their contents are not downloaded.
+
+The five sectors `IDXNONCYC`, `IDXCYCLIC`, `IDXTECHNO`, `IDXINFRA`, and `IDXTRANS` are accepted by the index
+normalizer and present in the captured 45-row response fixture. That proves the parser and persistence path can retain
+them. It does **not** establish production coverage or a successful live fetch. Production remains unverified until the
+revisioned backfill runs against the authorized endpoint and database, the history API returns persisted dated rows, and
+RRG reports sufficient aligned history.
+
+At this checkpoint the workspace changes are not yet promoted. Local verification and the deploy/migration gates remain
+the release criteria; do not report these new datasets as live until Coolify deployment and database-backed freshness
+checks pass.

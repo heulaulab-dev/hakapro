@@ -1,6 +1,8 @@
 // Read port behind the idx-bei /v1 routes. The Drizzle implementation is src/db/market-store.ts; the in-memory one
 // backs route and contract tests without a database.
 
+import type { BrokerMemberRecord } from "../db/idx-broker";
+
 export type SecurityRecord = {
   symbol: string; name: string; sector: string | null; subsector: string | null; board: string | null;
   sharesOutstanding: number | null; freeFloatPct: number | null; asOf: Date;
@@ -21,7 +23,7 @@ export type FundamentalRecord = {
   currency: string | null; source: string;
 };
 
-export type RatioRecord = { symbol: string; ratio: string; ratioSource: "derived" | "pasardana"; value: number | null; date: string };
+export type RatioRecord = { symbol: string; ratio: string; ratioSource: "derived" | "idx" | "pasardana"; value: number | null; date: string };
 
 export type DailyRecord = {
   symbol: string; date: string; open: number | null; high: number | null; low: number | null; close: number; previousClose: number | null;
@@ -35,13 +37,16 @@ export type IntradayRecord = {
 
 export type IndexDailyRecord = { code: string; name: string | null; date: string; close: number; previousClose: number | null; changePercent: number | null };
 export type IndexIntradayRecord = { code: string; name: string | null; ts: Date; last: number; changePercent: number | null };
+export type BrokerDailySummaryRecord = { date: string; brokerCode: string; firmName: string | null; volume: number | null; value: number | null; frequency: number | null; source: string; asOf: Date };
+export type IssuerProfileRecord = { symbol: string; language: string; profile: Record<string, unknown>; directors: Record<string, unknown>[]; commissioners: Record<string, unknown>[]; auditCommittee: Record<string, unknown>[]; shareholders: Record<string, unknown>[]; subsidiaries: Record<string, unknown>[]; retrievedAt: Date };
 
 export type ActionRecord = { exDate: string | null; type: string; description: string | null; asOf: Date };
-export type ActionCalendarRecord = { symbol: string; exDate: string; type: string; description: string | null; amount: number | null; ratio: string | null; asOf: Date };
+export type ActionCalendarRecord = { symbol: string; exDate: string; type: string; sourceCategory?: string | null; description: string | null; amount: number | null; ratio: string | null; shares: number | null; sharesAfter: number | null; asOf: Date };
 
 export type NewsRecord = {
   publishedAt: Date; publishedAtEstimated: boolean; title: string; url: string; outlet: string; summary: string | null; symbols: string[];
 };
+export type AnnouncementRecord = { externalId: string; symbol: string | null; publishedAt: Date; title: string; documentUrl: string | null };
 export type NewsQuery = { offset: number; limit: number; symbol?: string };
 export type MacroRecord = { series: string; date: string; value: number; link: string | null };
 
@@ -71,6 +76,12 @@ export interface MarketStore {
   latestIndexDaily(): Promise<IndexDailyRecord[]>;
   /** index_daily rows for `codes` (all when null) between `from` and `to` (inclusive), oldest first. */
   indexDailyBetween(codes: string[] | null, from: string, to: string): Promise<IndexDailyRecord[]>;
+  /** Market-wide date×broker totals from IDX GetBrokerSummary. */
+  brokerDailySummaryBetween(from: string, to: string): Promise<BrokerDailySummaryRecord[]>;
+  latestBrokerSummaryDate(): Promise<string | null>;
+  brokerDirectory(): Promise<BrokerMemberRecord[]>;
+  latestBrokerDirectoryAsOf(): Promise<Date | null>;
+  issuerProfile(symbol: string, language?: string): Promise<IssuerProfileRecord | null>;
   /** Newest index_intraday row per code. */
   latestIndexIntraday(): Promise<IndexIntradayRecord[]>;
   /** Newest session date with foreign buy/sell. */
@@ -86,6 +97,8 @@ export interface MarketStore {
   news(query: NewsQuery): Promise<NewsRecord[]>;
   /** Newest publication time among stored headlines. */
   latestNewsAt(): Promise<Date | null>;
+  announcements(query: NewsQuery): Promise<AnnouncementRecord[]>;
+  latestAnnouncementAt(): Promise<Date | null>;
   /** The newest `perSeries` observations of each macro series, newest first. */
   macro(perSeries: number): Promise<MacroRecord[]>;
   /** Every stored statement line of a symbol (any source, any period). */
@@ -100,8 +113,11 @@ const contains = (haystack: string, needle: string) => haystack.toLowerCase().in
 export class MemoryMarketStore implements MarketStore {
   constructor(readonly data: {
     securities?: SecurityRecord[]; daily?: DailyRecord[]; intraday?: IntradayRecord[];
-    indexDaily?: IndexDailyRecord[]; indexIntraday?: IndexIntradayRecord[]; actions?: Array<ActionRecord & { symbol: string; amount?: number | null; ratio?: string | null }>;
-    news?: NewsRecord[]; macro?: MacroRecord[];
+    indexDaily?: IndexDailyRecord[]; indexIntraday?: IndexIntradayRecord[]; actions?: Array<ActionRecord & { symbol: string; sourceCategory?: string | null; amount?: number | null; ratio?: string | null; shares?: number | null; sharesAfter?: number | null }>;
+    brokerDaily?: BrokerDailySummaryRecord[];
+    brokerMembers?: BrokerMemberRecord[];
+    issuerProfiles?: IssuerProfileRecord[];
+    news?: NewsRecord[]; announcements?: AnnouncementRecord[]; macro?: MacroRecord[];
     fundamentals?: Array<FundamentalRecord & { symbol: string }>; ratios?: RatioRecord[];
   } = {}) {}
 
@@ -165,6 +181,14 @@ export class MemoryMarketStore implements MarketStore {
       .filter((row) => row.date >= from && row.date <= to && (!set || set.has(row.code)))
       .sort((a, b) => a.code.localeCompare(b.code) || a.date.localeCompare(b.date));
   }
+  async brokerDailySummaryBetween(from: string, to: string) {
+    return (this.data.brokerDaily ?? []).filter((row) => row.date >= from && row.date <= to)
+      .sort((a, b) => a.date.localeCompare(b.date) || (b.value ?? -1) - (a.value ?? -1) || a.brokerCode.localeCompare(b.brokerCode));
+  }
+  async latestBrokerSummaryDate() { return (this.data.brokerDaily ?? []).map((row) => row.date).sort().at(-1) ?? null; }
+  async brokerDirectory() { return (this.data.brokerMembers ?? []).filter((row) => row.active).sort((a, b) => a.code.localeCompare(b.code)); }
+  async latestBrokerDirectoryAsOf() { return (this.data.brokerMembers ?? []).map((row) => row.asOf).sort((a, b) => b.getTime() - a.getTime())[0] ?? null; }
+  async issuerProfile(symbol: string, language = "id-id") { return (this.data.issuerProfiles ?? []).find((row) => row.symbol === symbol && row.language === language) ?? null; }
   async latestForeignDate() { return this.daily.filter((row) => row.foreignBuy !== null).map((row) => row.date).sort().at(-1) ?? null; }
   async foreignHistory(endDate: string, sessions: number) {
     const dates = [...new Set(this.daily.filter((row) => row.foreignBuy !== null && row.date <= endDate).map((row) => row.date))].sort().slice(-sessions);
@@ -176,7 +200,7 @@ export class MemoryMarketStore implements MarketStore {
   async actionsBetween(from: string, to: string) {
     return (this.data.actions ?? []).filter((row) => row.exDate !== null && row.exDate >= from && row.exDate <= to)
       .sort((a, b) => a.exDate!.localeCompare(b.exDate!) || a.symbol.localeCompare(b.symbol))
-      .map((row) => ({ symbol: row.symbol, exDate: row.exDate!, type: row.type, description: row.description, amount: row.amount ?? null, ratio: row.ratio ?? null, asOf: row.asOf }));
+      .map((row) => ({ symbol: row.symbol, exDate: row.exDate!, type: row.type, sourceCategory: row.sourceCategory ?? null, description: row.description, amount: row.amount ?? null, ratio: row.ratio ?? null, shares: row.shares ?? null, sharesAfter: row.sharesAfter ?? null, asOf: row.asOf }));
   }
   async latestActionAsOf() { return (this.data.actions ?? []).map((row) => row.asOf).sort((a, b) => b.getTime() - a.getTime())[0] ?? null; }
   async news(query: NewsQuery) {
@@ -184,6 +208,11 @@ export class MemoryMarketStore implements MarketStore {
       .sort((a, b) => b.publishedAt.getTime() - a.publishedAt.getTime()).slice(query.offset, query.offset + query.limit);
   }
   async latestNewsAt() { return (this.data.news ?? []).map((row) => row.publishedAt).sort((a, b) => b.getTime() - a.getTime())[0] ?? null; }
+  async announcements(query: NewsQuery) {
+    return (this.data.announcements ?? []).filter((row) => !query.symbol || row.symbol === query.symbol)
+      .sort((a, b) => b.publishedAt.getTime() - a.publishedAt.getTime()).slice(query.offset, query.offset + query.limit);
+  }
+  async latestAnnouncementAt() { return (this.data.announcements ?? []).map((row) => row.publishedAt).sort((a, b) => b.getTime() - a.getTime())[0] ?? null; }
   async fundamentals(symbol: string) {
     return (this.data.fundamentals ?? []).filter((row) => row.symbol === symbol).map(({ symbol: _symbol, ...row }) => row);
   }

@@ -22,6 +22,8 @@ export type BackfillOptions = {
   until: () => string;
   /** Trading days per run. */
   batchDays?: number;
+  /** Optional version for an intentional replay of this date range; changing it restarts only this job at `from`. */
+  cursorRevision?: string;
   cron?: string;
   processDay(date: string): Promise<{ rows: number; documentNew?: boolean }>;
 };
@@ -77,7 +79,9 @@ export function backfillJob(options: BackfillOptions): JobDefinition {
     background: true,
     async run(ctx) {
       const saved = await ctx.cursor.get();
-      let date = typeof saved?.next === "string" ? saved.next : from;
+      const cursorIdentity = options.cursorRevision === undefined ? from : `${from}:${options.cursorRevision}`;
+      let date = from;
+      if (typeof saved?.next === "string" && (options.cursorRevision === undefined || saved.updatedFor === cursorIdentity)) date = saved.next;
       const until = options.until();
       let done = 0;
       while (date < until && done < (options.batchDays ?? 5)) {
@@ -90,7 +94,7 @@ export function backfillJob(options: BackfillOptions): JobDefinition {
         }
         date = nextDay(date);
         // Persist after every day so a crash or yield resumes at the next unfetched date.
-        await ctx.cursor.set({ next: date, updatedFor: from });
+        await ctx.cursor.set({ next: date, updatedFor: cursorIdentity });
       }
       return { status: "SUCCEEDED" };
     },

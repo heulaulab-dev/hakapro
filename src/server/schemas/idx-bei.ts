@@ -219,10 +219,24 @@ export const indicesHistorySchema = z.object({
 export type IndicesHistory = z.infer<typeof indicesHistorySchema>;
 export type IndexCoverageReport = NonNullable<IndicesHistory["coverage"]>[number];
 
+/** Market-wide IDX GetBrokerSummary rows, date×broker (not stock-specific broker flow). */
+export const marketBrokerSummarySchema = z.object({
+  dates: z.array(z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), brokers: z.array(z.object({
+    code: z.string(), name: z.string().nullable(), volume: num, value: num, frequency: num,
+  })) })),
+});
+export type MarketBrokerSummary = z.infer<typeof marketBrokerSummarySchema>;
+
+/** IDX exchange-member directory (`GetBrokerSearch`), separate from traded broker totals. */
+export const brokerDirectorySchema = z.object({
+  brokers: z.array(z.object({ code: z.string(), name: z.string(), license: z.string().nullable() })),
+});
+export type BrokerDirectory = z.infer<typeof brokerDirectorySchema>;
+
 /** Data Engine `/v1/actions?from&to` (E3): market-wide corporate actions by ex-date, oldest first. */
 export const actionsCalendarSchema = z.array(z.object({
-  symbol: symbolSchema, date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), type: z.string(), description: z.string().nullable(),
-  amount: num, ratio: z.string().nullable(), documentUrl: z.string().nullable(),
+  symbol: symbolSchema, date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), type: z.string(), sourceCategory: z.string().nullable().optional(), description: z.string().nullable(),
+  amount: num, ratio: z.string().nullable(), shares: num.optional(), sharesAfter: num.optional(), documentUrl: z.string().nullable(),
 }));
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
@@ -350,7 +364,7 @@ export const screenConditionSchema = z.object({
 export const screenRequestSchema = z.object({ conditions: z.array(screenConditionSchema).max(20), limit: z.number().int().min(1).max(1000).default(500) });
 export const screenRowSchema = z.object({ symbol: symbolSchema, name: z.string().nullable() }).catchall(z.number().nullable());
 /** Which source each returned ratio came from (Data Engine E5, optional): symbol → field → `derived` | `pasardana`. */
-export const ratioSourcesSchema = z.record(z.string(), z.record(z.string(), z.enum(["derived", "pasardana"])));
+export const ratioSourcesSchema = z.record(z.string(), z.record(z.string(), z.enum(["derived", "idx", "pasardana"])));
 export const screenResultSchema = z.object({
   rows: z.array(screenRowSchema), total: z.number().int().nonnegative(), supportedFields: z.array(screenFieldSchema),
   ratioSources: ratioSourcesSchema.optional(),

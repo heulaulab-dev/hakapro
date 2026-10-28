@@ -50,6 +50,55 @@
       "when": 1792573341413,
       "tag": "20261021090221_insider_transactions",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793142903846,
+      "tag": "20261027231503_smooth_leech",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793143297561,
+      "tag": "20261027232137_flashy_mongu",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793143406796,
+      "tag": "20261027232326_massive_katie_power",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793143715840,
+      "tag": "20261027232835_tough_quicksilver",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1793143821589,
+      "tag": "20261027233021_thankful_spacker_dave",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1793144742879,
+      "tag": "20261027234542_adorable_umar",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1793144879409,
+      "tag": "20261027234759_ordinary_puck",
+      "breakpoints": true
     }
   ]
 }
