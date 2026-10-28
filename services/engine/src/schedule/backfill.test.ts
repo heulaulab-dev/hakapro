@@ -22,12 +22,12 @@ describe("backfillJob", () => {
     expect(job.trigger).toEqual({ kind: "cron", spec: "*/10 19-23,0-5 * * *" });
 
     await job.run(context(cursors, job.id));
-    // 2020-01-01 (Wed) is not in the 2026-only holiday list, so it counts as a trading day here.
-    expect(seen).toEqual(["2020-01-01", "2020-01-02", "2020-01-03"]);
-    expect(await cursors.get(job.id)).toMatchObject({ next: "2020-01-04" });
+    // New Year's Day is skipped; the first three sessions are Jan 2, 3, and 6.
+    expect(seen).toEqual(["2020-01-02", "2020-01-03", "2020-01-06"]);
+    expect(await cursors.get(job.id)).toMatchObject({ next: "2020-01-07" });
 
     await job.run(context(cursors, job.id));
-    expect(seen.slice(3)).toEqual(["2020-01-06", "2020-01-07", "2020-01-08"]); // weekend skipped
+    expect(seen.slice(3)).toEqual(["2020-01-07", "2020-01-08", "2020-01-09"]);
   });
 
   it("stops before `until` (the daily job's territory) and yields when asked", async () => {
@@ -69,8 +69,8 @@ describe("backfillJob", () => {
 
     await job.run(context(cursors, "idx"));
 
-    expect(seen).toEqual(["2020-01-01"]);
-    expect(await cursors.get("idx")).toMatchObject({ next: "2020-01-02", updatedFor: "2020-01-01:r2" });
+    expect(seen).toEqual(["2020-01-02"]);
+    expect(await cursors.get("idx")).toMatchObject({ next: "2020-01-03", updatedFor: "2020-01-01:r2" });
   });
 
   it("keeps legacy date-backfill resume behavior when no revision is configured", async () => {
