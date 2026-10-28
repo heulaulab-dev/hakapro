@@ -21,6 +21,13 @@ import { fundamentalsJob } from "./jobs/fundamentals";
 import { ratiosJob } from "./jobs/ratios";
 import { indicesEodJob } from "./jobs/indices";
 import { idxIndexBackfillJob } from "./jobs/idx-index-backfill";
+import { idxStockBackfillJob } from "./jobs/idx-stock-backfill";
+import { idxBrokerBackfillJob } from "./jobs/idx-broker-backfill";
+import { idxBrokerDirectoryJob } from "./jobs/idx-broker-directory";
+import { idxCompanyDetailJob, idxCompanyProfilesJob } from "./jobs/idx-company";
+import { idxRatiosBackfillJob } from "./jobs/idx-ratios";
+import { idxActionsBackfillJob } from "./jobs/idx-corporate-actions";
+import { idxDisclosuresSyncJob } from "./jobs/idx-disclosures-sync";
 import { idxPrimarySource, makeIdxIndexTransport } from "./sources/idx-primary";
 import { intradayJob } from "./jobs/intraday";
 import { commoditiesJob } from "./jobs/commodities";
@@ -104,7 +111,17 @@ export function defaultRegistry(services: EngineServices): Registry {
       fundamentalsJob(jobServices, sources.yahooFundamentals, { hostSources: [sources.yahoo.id] }),
       ratiosJob(jobServices, { fundamentals: sources.yahooFundamentals.id, chart: sources.yahoo.id }),
       ...(services.config.strategyScans.enabled ? [strategyScanJob(jobServices)] : []),
-      ...(idxTransport ? [idxIndexBackfillJob(jobServices, idxSource, idxTransport)] : []),
+      ...(idxTransport ? [
+        idxIndexBackfillJob(jobServices, idxSource, idxTransport, { cursorRevision: services.config.idxPrimary.backfillRevision }),
+        idxStockBackfillJob(jobServices, idxSource, idxTransport, { cursorRevision: services.config.idxPrimary.backfillRevision }),
+        idxBrokerBackfillJob(jobServices, idxSource, idxTransport, { cursorRevision: services.config.idxPrimary.backfillRevision }),
+        idxBrokerDirectoryJob(jobServices, idxSource, idxTransport),
+        idxCompanyProfilesJob(jobServices, idxSource, idxTransport),
+        idxCompanyDetailJob(jobServices, idxSource, idxTransport),
+        idxRatiosBackfillJob(jobServices, idxSource, idxTransport),
+        idxActionsBackfillJob(jobServices, idxSource, idxTransport),
+        idxDisclosuresSyncJob(jobServices, idxSource, idxTransport),
+      ] : []),
     ],
   };
 }

@@ -36,7 +36,10 @@ async def run():
                 if message.get("op") == "close":
                     emit({"id": request_id, "ok": True, "closed": True})
                     break
-                result = await client.fetch_index_summary(message["date"])
+                if message.get("op") == "request":
+                    result = await client.fetch_json(message["path"], message.get("params", {}))
+                else:
+                    result = await client.fetch_index_summary(message["date"])
                 emit({"id": request_id, "result": result})
             except Exception as exc:
                 emit({"id": message.get("id") if isinstance(message, dict) else None, "error": type(exc).__name__})

@@ -709,9 +709,8 @@ describe.skipIf(!enabled)("engine sources (docker postgres + fixtures)", { timeo
       "bank-indonesia": "NEVER_RUN", "news-antara": "NEVER_RUN", "news-cnbcindonesia": "NEVER_RUN", "news-detik": "NEVER_RUN", "news-investortrust": "NEVER_RUN",
       "yahoo-fundamentals": "NEVER_RUN", "world-bank-pinksheet": "NEVER_RUN",
     });
-    expect(health.data.unavailable.map((row) => row.route)).toEqual(["/v1/announcements", "/v1/stocks/{s}/profile", "/v1/strategies"]);
+    expect(health.data.unavailable.map((row) => row.route)).toEqual(["/v1/strategies"]);
     expect(health.data.unavailable.find((row) => row.route === "/v1/strategies")?.status).toBe("DISABLED");
-    expect(health.data.unavailable.find((row) => row.route === "/v1/announcements")?.status).toBe("SOURCE_BLOCKED");
     expect(health.data.eodSessions[0]).toMatchObject({ date: "2026-10-16", status: "PARTIAL" });
   });
 });

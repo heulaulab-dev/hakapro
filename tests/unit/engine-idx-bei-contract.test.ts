@@ -241,7 +241,7 @@ describe("engine /v1 real responses via IdxBeiSource", () => {
 
     // The market-wide calendar over an explicit range; the engine has no issuer profiles, so profile is unsupported.
     const calendar = await source.actionsCalendar({ from: "2021-10-01", to: "2021-10-31" });
-    expect(calendar.data).toEqual([{ symbol: "BBCA", date: "2021-10-13", type: "SPLIT", description: "Stock split 5:1", amount: null, ratio: null, documentUrl: null }]);
+    expect(calendar.data).toEqual([{ symbol: "BBCA", date: "2021-10-13", type: "SPLIT", description: "Stock split 5:1", amount: null, ratio: null, documentUrl: null, sourceCategory: null, shares: null, sharesAfter: null }]);
     await expect(source.profile("BBCA")).rejects.toMatchObject({ code: "UNSUPPORTED" });
 
     const macro = await source.macro();

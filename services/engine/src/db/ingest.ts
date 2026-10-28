@@ -23,7 +23,7 @@ const ownOrKeep = (table: string, column: string, always: boolean): SQL =>
 // ── securities ──────────────────────────────────────────────────────────────────────────────────────────────────
 
 export type SecurityUpsert = {
-  symbol: string; name: string | null; sector?: string | null; subsector?: string | null; industry?: string | null;
+  symbol: string; name: string | null; board?: string | null; listingDate?: string | null; sector?: string | null; subsector?: string | null; industry?: string | null;
   sharesOutstanding?: number | null; marketCap?: number | null; freeFloatPct?: number | null;
 };
 
@@ -32,7 +32,8 @@ export async function upsertSecurities(db: EngineDb, rows: SecurityUpsert[], pro
   const keep = (column: string) => sql`coalesce(${ex(column)}, ${cur("securities", column)})`;
   for (const batch of chunks(rows)) {
     await db.insert(t.securities).values(batch.map((row) => ({
-      symbol: row.symbol, name: row.name ?? row.symbol, sector: row.sector ?? null, subsector: row.subsector ?? null, industry: row.industry ?? null,
+      symbol: row.symbol, name: row.name ?? row.symbol, board: row.board ?? null, listingDate: row.listingDate ?? null,
+      sector: row.sector ?? null, subsector: row.subsector ?? null, industry: row.industry ?? null,
       sharesOutstanding: row.sharesOutstanding ?? null, marketCap: row.marketCap ?? null, freeFloatPct: row.freeFloatPct ?? null,
       active: true, source: prov.source, asOf: prov.asOf, rawRef: prov.rawRef,
     }))).onConflictDoUpdate({
@@ -40,7 +41,7 @@ export async function upsertSecurities(db: EngineDb, rows: SecurityUpsert[], pro
       set: {
         // A source without a real name (symbol placeholder) never overwrites one.
         name: sql`case when ${ex("name")} = ${ex("symbol")} then ${cur("securities", "name")} else ${ex("name")} end`,
-        sector: keep("sector"), subsector: keep("subsector"), industry: keep("industry"),
+        sector: keep("sector"), subsector: keep("subsector"), industry: keep("industry"), board: keep("board"), listingDate: keep("listing_date"),
         sharesOutstanding: keep("shares_outstanding"), marketCap: keep("market_cap"), freeFloatPct: keep("free_float_pct"),
         active: sql`true`, source: ex("source"), asOf: ex("as_of"), rawRef: ex("raw_ref"), updatedAt: sql`now()`,
       },
@@ -151,16 +152,17 @@ export async function symbolsByLiquidity(db: EngineDb, date: string): Promise<st
 
 // ── corporate_actions ───────────────────────────────────────────────────────────────────────────────────────────
 
-export type ActionUpsert = { symbol: string; type: "SPLIT" | "DIVIDEND"; exDate: string; ratio?: string | null; amount?: number | null; description: string };
+export type ActionUpsert = { symbol: string; type: string; sourceCategory?: string | null; exDate: string; ratio?: string | null; amount?: number | null; shares?: number | null; sharesAfter?: number | null; description: string };
 
 export async function upsertCorporateActions(db: EngineDb, rows: ActionUpsert[], prov: Provenance): Promise<number> {
   for (const batch of chunks(rows)) {
     await db.insert(t.corporateActions).values(batch.map((row) => ({
-      symbol: row.symbol, type: row.type, exDate: row.exDate, ratio: row.ratio ?? null, amount: row.amount ?? null, description: row.description,
+      symbol: row.symbol, type: row.type, sourceCategory: row.sourceCategory ?? null, exDate: row.exDate, ratio: row.ratio ?? null, amount: row.amount ?? null,
+      shares: row.shares ?? null, sharesAfter: row.sharesAfter ?? null, description: row.description,
       source: prov.source, asOf: prov.asOf, rawRef: prov.rawRef,
     }))).onConflictDoUpdate({
       target: [t.corporateActions.source, t.corporateActions.symbol, t.corporateActions.type, t.corporateActions.exDate],
-      set: { ratio: ex("ratio"), amount: ex("amount"), description: ex("description"), asOf: ex("as_of"), rawRef: ex("raw_ref") },
+      set: { sourceCategory: ex("source_category"), ratio: ex("ratio"), amount: ex("amount"), shares: ex("shares"), sharesAfter: ex("shares_after"), description: ex("description"), asOf: ex("as_of"), rawRef: ex("raw_ref") },
     });
   }
   return rows.length;

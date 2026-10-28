@@ -1,0 +1,29 @@
+{
+  "totalRecords": 1,
+  "data": [
+    {
+      "code": "AADI",
+      "stockName": "Adaro Andalan Indonesia Tbk.",
+      "fsDate": "2024-06-30",
+      "fiscalYearEnd": "Dec",
+      "sharia": "S",
+      "assets": 89069.22,
+      "liabilities": 44461.68,
+      "equity": 44607.55,
+      "sales": 43550.84,
+      "ebt": 16970.54,
+      "profitPeriod": 15127.84,
+      "profitAttrOwner": 14081.17,
+      "eps": 2710.63,
+      "audit": "A",
+      "opini": "WTM",
+      "bookValue": 5728.54,
+      "per": 3.13,
+      "priceBV": 1.48,
+      "deRatio": 1.0,
+      "roa": 23.6977,
+      "roe": 47.318,
+      "npm": 48.4661
+    }
+  ]
+}

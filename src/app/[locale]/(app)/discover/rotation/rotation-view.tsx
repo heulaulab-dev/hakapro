@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RrgChart, type RrgChartSeries } from "@/components/charts/rrg-chart";
 import { useIndicesHistory } from "@/lib/api/hooks";
-import type { IndexSeries } from "@/lib/api/market";
+import type { IndexCoverageReport, IndexSeries } from "@/lib/api/market";
 import { freshnessMeta } from "@/lib/freshness";
 import { formatDate, type Locale } from "@/lib/format";
 import {
@@ -39,14 +39,14 @@ export function RotationView() {
       <SectionHeader as="h1" title={t("title")} description={t("intro")} />
       <p className="caption-style text-subtle" data-testid="rotation-experimental">{t("experimental")}</p>
       <DataState query={query}>
-        {(envelope) => <Workspace series={envelope.data.series} meta={freshnessMeta(envelope)} />}
+        {(envelope) => <Workspace series={envelope.data.series} coverage={envelope.data.coverage ?? []} meta={freshnessMeta(envelope)} />}
       </DataState>
       <ResearchDisclaimer />
     </div>
   );
 }
 
-function Workspace({ series, meta }: { series: IndexSeries[]; meta: ReturnType<typeof freshnessMeta> }) {
+function Workspace({ series, coverage, meta }: { series: IndexSeries[]; coverage: IndexCoverageReport[]; meta: ReturnType<typeof freshnessMeta> }) {
   const t = useTranslations("sectorRotation");
   const [benchmark, setBenchmark] = useState("COMPOSITE");
   const [interval, setIntervalState] = useState<RrgInterval>("daily");
@@ -125,6 +125,8 @@ function Workspace({ series, meta }: { series: IndexSeries[]; meta: ReturnType<t
           </div>
         } />
 
+      <SourceHistoryCoverage coverage={coverage} interval={interval} />
+
       {!result || !result.sufficient ? (
         <Insufficient result={result} required={required} interval={interval} />
       ) : (
@@ -143,6 +145,39 @@ function Workspace({ series, meta }: { series: IndexSeries[]; meta: ReturnType<t
       )}
       <MethodologyNote />
     </div>
+  );
+}
+
+function SourceHistoryCoverage({ coverage, interval }: { coverage: IndexCoverageReport[]; interval: RrgInterval }) {
+  const t = useTranslations("sectorRotation");
+  const locale = useLocale() as Locale;
+  const byCode = new Map(coverage.map((row) => [row.code, row]));
+  const required = minObservations(RRG_PARAM_DEFAULTS[interval]);
+  return (
+    <section className="flex flex-col gap-2 rounded-xl border border-border p-3" data-testid="rotation-source-coverage">
+      <SectionHeader as="h2" title={t("historyCoverageTitle")} description={t("historyCoverageDescription", { required })} />
+      <div className="overflow-x-auto rounded-lg border border-border">
+        <table className="w-full text-data">
+          <thead><tr className="text-left text-xs text-muted-foreground">
+            <th className="px-cell-x py-cell-y font-medium">{t("sector")}</th>
+            <th className="px-cell-x py-cell-y text-right font-medium">{t("historyObservations")}</th>
+            <th className="px-cell-x py-cell-y text-right font-medium">{t("historyLatest")}</th>
+          </tr></thead>
+          <tbody>
+            {SECTOR_ORDER.map((code) => {
+              const row = byCode.get(code);
+              return (
+                <tr key={code} className="h-row border-t border-border" data-testid={`source-coverage-${code}`}>
+                  <td className="px-cell-x py-cell-y"><span className="ticker">{code}</span> <span className="text-muted-foreground">{SECTOR_NAMES[code]}</span></td>
+                  <td className="num px-cell-x py-cell-y text-right">{row?.count ?? 0}</td>
+                  <td className="px-cell-x py-cell-y text-right">{row?.lastDate ? formatDate(row.lastDate, locale) : t("noHistory")}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }
 

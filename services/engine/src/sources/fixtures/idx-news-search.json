@@ -1,0 +1,20 @@
+{
+  "total": 1,
+  "data": [
+    {
+      "Id": 11259,
+      "PublishedDate": "2025-07-07T22:50:39",
+      "Locale": "en-us",
+      "Title": "Pencatatan Perdana Saham PT Asia Pramulia Tbk (ASPR) di Bursa Efek Indonesia",
+      "Tags": "ASPR",
+      "Summary": "Pencatatan Perdana Saham PT Asia Pramulia Tbk (ASPR) di Bursa Efek Indonesia",
+      "Links": [
+        {
+          "Rel": "self",
+          "Href": "/api/api/publication/news/11259",
+          "Method": "GET"
+        }
+      ]
+    }
+  ]
+}

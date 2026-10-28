@@ -97,12 +97,33 @@ export type IdxFetchResult =
   | { ok: true; body: unknown }
   | { ok: false; reason: string };
 
+/** Exact Get paths accepted by the persistent IDX worker. The worker enforces the same allowlist at runtime. */
+export const IDX_ENDPOINT_PATHS = [
+  "/TradingSummary/GetStockSummary",
+  "/TradingSummary/GetBrokerSummary",
+  "/TradingSummary/GetIndexSummary",
+  "/ListedCompany/GetCompanyProfiles",
+  "/ListedCompany/GetCompanyProfilesDetail",
+  "/DigitalStatistic/GetApiDataPaginated",
+  "/ListingActivity/GetIssuedHistory",
+  "/ExchangeMember/GetBrokerSearch",
+  "/NewsAnnouncement/GetNewsSearch",
+  "/NewsAnnouncement/GetAllAnnouncement",
+] as const;
+export type IdxEndpointPath = (typeof IDX_ENDPOINT_PATHS)[number];
+export type IdxJsonParams = Record<string, string | number | boolean>;
+
 export type IdxIndexTransport = {
   id: string;
   /** Fetch raw GetIndexSummary JSON for one WIB trading date (ISO `YYYY-MM-DD`). */
   fetchIndexSummary(isoDate: string, signal?: AbortSignal): Promise<IdxFetchResult>;
   /** Release persistent session resources when the engine shuts down. */
   close?(): Promise<void>;
+};
+
+/** Generic JSON request capability, still restricted to the finite IDX endpoint path union. */
+export type IdxJsonTransport = IdxIndexTransport & {
+  fetchJson(path: IdxEndpointPath, params: IdxJsonParams, signal?: AbortSignal): Promise<IdxFetchResult>;
 };
 
 export const IDX_TRANSPORT_UNAVAILABLE_REASON =
@@ -126,7 +147,7 @@ export function idxPrimarySource(baseUrl: string = IDX_PRIMARY_BASE_URL): Source
 /** Build the index transport from config. Disabled → null; enabled → the persistent curl_cffi worker. */
 export function makeIdxIndexTransport(cfg: {
   enabled: boolean; baseUrl: string; python?: string; workerScript?: string; maxRetries?: number; timeoutSeconds?: number; delaySeconds?: number; impersonate?: string;
-}, log?: Logger): IdxIndexTransport | null {
+}, log?: Logger): IdxJsonTransport | null {
   if (!cfg.enabled) return null;
   return new CurlCffiIdxTransport({
     baseUrl: cfg.baseUrl,

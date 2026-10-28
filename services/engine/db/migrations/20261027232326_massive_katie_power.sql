@@ -1,0 +1,2 @@
+ALTER TABLE "stock_ratios" DROP CONSTRAINT "stock_ratios_ratio_source_check";--> statement-breakpoint
+ALTER TABLE "stock_ratios" ADD CONSTRAINT "stock_ratios_ratio_source_check" CHECK ("stock_ratios"."ratio_source" in ('derived', 'idx', 'pasardana'));

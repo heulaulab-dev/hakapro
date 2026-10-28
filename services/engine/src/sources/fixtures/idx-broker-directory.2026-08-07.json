@@ -1,0 +1,21 @@
+{
+  "recordsTotal": 90,
+  "recordsFiltered": 90,
+  "data": [
+    {
+      "Code": "XC",
+      "Name": "AJAIB SEKURITAS ASIA",
+      "License": "Penjamin Emisi Efek, Perantara Pedagang Efek"
+    },
+    {
+      "Code": "PP",
+      "Name": "ALDIRACITA SEKURITAS INDONESIA",
+      "License": "Penjamin Emisi Efek, Perantara Pedagang Efek"
+    },
+    {
+      "Code": "YO",
+      "Name": "AMANTARA SEKURITAS INDONESIA",
+      "License": "Penjamin Emisi Efek, Perantara Pedagang Efek"
+    }
+  ]
+}

@@ -51,6 +51,8 @@ const envSchema = z.object({
   ENGINE_IDX_PRIMARY_TIMEOUT_SECONDS: z.coerce.number().positive().max(120).default(30),
   ENGINE_IDX_PRIMARY_DELAY_SECONDS: z.coerce.number().min(0).max(30).default(2),
   ENGINE_IDX_PRIMARY_IMPERSONATE: z.string().min(1).default("chrome"),
+  // Changing this version deliberately replays IDX history from BACKFILL_START; keep stable after rollout.
+  ENGINE_IDX_PRIMARY_BACKFILL_REVISION: z.string().min(1).max(64).default("3"),
 });
 
 /** arjum's daily request quota for one key, shared by the engine (foreign flow, insider feed) and the app environments. */
@@ -83,7 +85,7 @@ export type EngineConfig = {
   /** false → strategy-scan-eod is not registered and /v1/strategies serves the empty UNAVAILABLE board. */
   strategyScans: { enabled: boolean };
   /** IDX /primary historical index backfill. Disabled → the backfill job and its source are not registered. */
-  idxPrimary: { enabled: boolean; baseUrl: string; python: string; workerScript?: string; maxRetries: number; timeoutSeconds: number; delaySeconds: number; impersonate: string };
+  idxPrimary: { enabled: boolean; baseUrl: string; python: string; workerScript?: string; maxRetries: number; timeoutSeconds: number; delaySeconds: number; impersonate: string; backfillRevision: string };
 };
 
 /** Parses env; error messages name variables, never values. */
@@ -148,6 +150,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
       timeoutSeconds: e.ENGINE_IDX_PRIMARY_TIMEOUT_SECONDS,
       delaySeconds: e.ENGINE_IDX_PRIMARY_DELAY_SECONDS,
       impersonate: e.ENGINE_IDX_PRIMARY_IMPERSONATE,
+      backfillRevision: e.ENGINE_IDX_PRIMARY_BACKFILL_REVISION,
     },
   };
 }

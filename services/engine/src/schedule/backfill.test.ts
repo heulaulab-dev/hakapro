@@ -43,6 +43,49 @@ describe("backfillJob", () => {
     expect(await yielding.run(context(cursors, "y", () => true))).toEqual({ status: "YIELDED" });
     expect(calls).toBe(0);
   });
+
+  it("resumes an IDX-style backfill when the cursor revision is unchanged", async () => {
+    const cursors = new MemoryCursorStore();
+    await cursors.set("idx", { next: "2020-01-06", updatedFor: "2020-01-01:r2" });
+    const seen: string[] = [];
+    const job = backfillJob({
+      id: "idx", sourceId: "idx-primary", from: "2020-01-01", cursorRevision: "r2", until: () => "2020-01-10", batchDays: 1,
+      processDay: async (date) => { seen.push(date); return { rows: 1 }; },
+    });
+
+    await job.run(context(cursors, "idx"));
+
+    expect(seen).toEqual(["2020-01-06"]);
+  });
+
+  it("restarts only this backfill from its configured date when its revision changes", async () => {
+    const cursors = new MemoryCursorStore();
+    await cursors.set("idx", { next: "2020-01-06", updatedFor: "2020-01-01:r1" });
+    const seen: string[] = [];
+    const job = backfillJob({
+      id: "idx", sourceId: "idx-primary", from: "2020-01-01", cursorRevision: "r2", until: () => "2020-01-10", batchDays: 1,
+      processDay: async (date) => { seen.push(date); return { rows: 1 }; },
+    });
+
+    await job.run(context(cursors, "idx"));
+
+    expect(seen).toEqual(["2020-01-01"]);
+    expect(await cursors.get("idx")).toMatchObject({ next: "2020-01-02", updatedFor: "2020-01-01:r2" });
+  });
+
+  it("keeps legacy date-backfill resume behavior when no revision is configured", async () => {
+    const cursors = new MemoryCursorStore();
+    await cursors.set("legacy", { next: "2020-01-06", updatedFor: "a-previous-value" });
+    const seen: string[] = [];
+    const job = backfillJob({
+      id: "legacy", sourceId: "s", from: "2020-01-01", until: () => "2020-01-10", batchDays: 1,
+      processDay: async (date) => { seen.push(date); return { rows: 1 }; },
+    });
+
+    await job.run(context(cursors, "legacy"));
+
+    expect(seen).toEqual(["2020-01-06"]);
+  });
 });
 
 describe("itemBackfillJob", () => {
