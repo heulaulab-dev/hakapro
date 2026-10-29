@@ -1,6 +1,6 @@
 "use client";
 
-import { ExternalLink, Landmark } from "lucide-react";
+import { ExternalLink, Landmark } from "@/components/kit/icons";
 import { parseAsString, useQueryState } from "nuqs";
 import { useLocale, useTranslations } from "next-intl";
 import { stockHref } from "@/components/layout/nav-config";

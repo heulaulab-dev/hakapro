@@ -101,7 +101,7 @@ export function universeJob(services: JobServices, sources: { tradingview: Sourc
         const final = sessionFinal(dataTime) && wibToday(dataTime) === wibToday(now);
         for (const page of pages) {
           const prov = provenanceOf(page.result);
-          written += await upsertSecurities(services.db, page.rows.map((row) => ({ symbol: row.symbol, name: row.name, sector: row.sector, marketCap: row.marketCap === null ? null : Math.round(row.marketCap) })), prov);
+          written += await upsertSecurities(services.db, page.rows.map((row) => ({ symbol: row.symbol, name: row.name, sector: row.sector, marketCap: row.marketCap === null ? null : Math.round(row.marketCap), logoId: row.logoId })), prov);
           if (final) written += await upsertDaily(services.db, tvDailyRows(page.rows, wibToday(now)), prov, { primary: false, value: "fill" });
         }
         return { value: { symbols: rows.map((row) => row.symbol), final }, rows: written };

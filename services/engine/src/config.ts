@@ -57,6 +57,10 @@ const envSchema = z.object({
   ENGINE_IDX_PRIMARY_IMPERSONATE: z.string().min(1).default("chrome"),
   // Changing this version deliberately replays IDX history from BACKFILL_START; keep stable after rollout.
   ENGINE_IDX_PRIMARY_BACKFILL_REVISION: z.string().min(1).max(64).default("3"),
+  // Ticker logos proxied from TradingView's logo CDN (HAKA-74). TradingView is accepted for the internal experiment
+  // only (DATA-ENGINE.md §8 decision 6), so this is off by default: no logo source is registered and /v1/logos answers
+  // 404 DISABLED. Pair with the app's NEXT_PUBLIC_TICKER_LOGOS=1.
+  ENGINE_TICKER_LOGOS_ENABLED: flag(false),
 });
 
 /** arjum's daily request quota for one key, shared by the engine (foreign flow, insider feed) and the app environments. */
@@ -92,6 +96,8 @@ export type EngineConfig = {
   /** IDX /primary historical index backfill. Disabled → the backfill job and its source are not registered. */
   idxBei?: { enabled: boolean; baseUrl: string };
   idxPrimary: { enabled: boolean; baseUrl: string; python: string; workerScript?: string; maxRetries: number; timeoutSeconds: number; delaySeconds: number; impersonate: string; backfillRevision: string };
+  /** false → the logo CDN source is not registered and /v1/logos/{s} answers 404 DISABLED. */
+  tickerLogos: { enabled: boolean };
 };
 
 /** Parses env; error messages name variables, never values. */
@@ -153,6 +159,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     kseiOwnership: { enabled: e.ENGINE_KSEI_OWNERSHIP_ENABLED, mirrorUrl: e.ENGINE_KSEI_OWNERSHIP_MIRROR_URL },
     strategyScans: { enabled: e.ENGINE_STRATEGY_SCANS_ENABLED },
     idxBei: { enabled: e.IDX_BEI_ENABLED, baseUrl: e.IDX_BEI_API_URL },
+    tickerLogos: { enabled: e.ENGINE_TICKER_LOGOS_ENABLED },
     idxPrimary: {
       enabled: e.ENGINE_IDX_PRIMARY_ENABLED,
       baseUrl: (e.ENGINE_IDX_PRIMARY_BASE_URL ?? "https://www.idx.co.id/primary").replace(/\/+$/, ""),

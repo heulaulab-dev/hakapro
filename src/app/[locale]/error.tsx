@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle } from "@/components/kit/icons";
 import { useTranslations } from "next-intl";
 import { useEffect } from "react";
 import { Logo } from "@/components/brand/logo";

@@ -1,12 +1,13 @@
 "use client";
 
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight } from "@/components/kit/icons";
 import { useLocale, useTranslations } from "next-intl";
 import { Fragment, useState } from "react";
 import { Tag, type TagColor } from "@/components/kit/tag";
 import { StatusBadge } from "@/components/feedback/status-badge";
 import { FreshnessBadge } from "@/components/feedback/freshness-badge";
 import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { HolderGroup, HolderKind } from "@/lib/insider-holders";
 import { type FreshnessMeta, sourceLabel } from "@/lib/freshness";
 import { formatDate, formatIdr, formatPercent, formatVolume, type Locale } from "@/lib/format";
@@ -46,29 +47,29 @@ export function InsiderHolders({ groups, meta, coverage }: { groups: HolderGroup
         </div>
       </div>
       <div className="overflow-x-auto">
-        <table aria-label={t("title")} className="w-full border-separate border-spacing-0 text-data">
-          <thead>
-            <tr>
-              <th scope="col" className="caption-style h-[38px] w-8 border-b border-border px-2 font-normal" />
-              <th scope="col" className="caption-style h-[38px] border-b border-border px-3 text-left font-normal text-subtle">{t("holder")}</th>
-              <th scope="col" className="caption-style h-[38px] border-b border-border px-3 text-right font-normal whitespace-nowrap text-subtle">{t("latest")}</th>
-              <th scope="col" className="caption-style hidden h-[38px] border-b border-border px-3 text-left font-normal whitespace-nowrap text-subtle sm:table-cell">{t("asOf")}</th>
-              <th scope="col" className="caption-style hidden h-[38px] border-b border-border px-3 text-right font-normal text-subtle sm:table-cell">{t("disclosures")}</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table aria-label={t("title")}>
+          <TableHeader>
+            <TableRow interactive={false}>
+              <TableHead className="w-8 px-2" />
+              <TableHead className="whitespace-normal">{t("holder")}</TableHead>
+              <TableHead numeric>{t("latest")}</TableHead>
+              <TableHead className="hidden sm:table-cell">{t("asOf")}</TableHead>
+              <TableHead numeric className="hidden whitespace-normal sm:table-cell">{t("disclosures")}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {groups.map((group) => {
               const expanded = open.has(group.key);
               const name = group.names[0];
               return (
                 <Fragment key={group.key}>
-                  <tr className="align-top transition-colors hover:bg-(--overlay-soft)" data-testid="holder-row" data-kind={group.kind}>
-                    <td className="border-b border-border px-2 py-cell-y">
+                  <TableRow className="align-top" data-testid="holder-row" data-kind={group.kind}>
+                    <TableCell className="px-2 align-top">
                       <Button variant="ghost" size="icon" className="size-7" aria-expanded={expanded} aria-label={expanded ? t("hideHistory", { name }) : t("showHistory", { name })} onClick={() => toggle(group.key)}>
                         {expanded ? <ChevronDown /> : <ChevronRight />}
                       </Button>
-                    </td>
-                    <td className="border-b border-border px-3 py-cell-y">
+                    </TableCell>
+                    <TableCell className="align-top">
                       <div className="flex flex-col gap-1">
                         <span className="flex flex-wrap items-center gap-1.5">
                           <span className="font-medium" data-testid="holder-name">{name}</span>
@@ -81,8 +82,8 @@ export function InsiderHolders({ groups, meta, coverage }: { groups: HolderGroup
                         {group.identityUnverified && <span className="text-[11px] text-muted-foreground">{t("unverified")}</span>}
                         {group.possiblySameAs.length > 0 && <span className="text-[11px] text-muted-foreground">{t("possiblySame", { names: group.possiblySameAs.join(" · ") })}</span>}
                       </div>
-                    </td>
-                    <td className="ticker border-b border-border px-3 py-cell-y text-right whitespace-nowrap">
+                    </TableCell>
+                    <TableCell numeric className="align-top">
                       {group.latest.ambiguous ? (
                         <span className="flex flex-col items-end gap-1" data-testid="holding-ambiguous" title={t("ambiguousNote", { date: formatDate(group.latest.date, locale) })}>
                           <StatusBadge tone="warning">{t("ambiguous")}</StatusBadge>
@@ -95,14 +96,14 @@ export function InsiderHolders({ groups, meta, coverage }: { groups: HolderGroup
                           <span className="num text-[11px] text-muted-foreground sm:hidden">{formatDate(group.latest.date, locale)}</span>
                         </span>
                       )}
-                    </td>
-                    <td className="num hidden border-b border-border px-3 py-cell-y whitespace-nowrap sm:table-cell">{formatDate(group.latest.date, locale)}</td>
-                    <td className="num hidden border-b border-border px-3 py-cell-y text-right whitespace-nowrap sm:table-cell">{group.events.length}</td>
-                  </tr>
+                    </TableCell>
+                    <TableCell className="num hidden whitespace-nowrap align-top sm:table-cell">{formatDate(group.latest.date, locale)}</TableCell>
+                    <TableCell className="num hidden text-right whitespace-nowrap align-top sm:table-cell">{group.events.length}</TableCell>
+                  </TableRow>
                   {expanded && (
-                    <tr data-testid="holder-history">
+                    <TableRow interactive={false} data-testid="holder-history">
                       <td />
-                      <td colSpan={4} className="border-b border-border bg-(--overlay-soft) px-3 py-2">
+                      <TableCell colSpan={4} className="bg-(--overlay-soft) py-2">
                         {group.latest.ambiguous && <p className="mb-2 text-xs text-muted-foreground">{t("ambiguousNote", { date: formatDate(group.latest.date, locale) })}</p>}
                         <ul className="flex flex-col divide-y divide-border text-xs">
                           {group.events.map((event, index) => (
@@ -117,14 +118,14 @@ export function InsiderHolders({ groups, meta, coverage }: { groups: HolderGroup
                           ))}
                         </ul>
                         <p className="caption-style mt-2 text-subtle">{t("source", { source: sourceLabel(meta.source), first: formatDate(group.firstDate, locale), last: formatDate(group.latest.date, locale) })}</p>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   )}
                 </Fragment>
               );
             })}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
       <div className={cn("flex flex-wrap items-center gap-2 px-cell-x py-2", groups.length > 0 && "border-t border-border")}>
         <p className="text-[11px] text-muted-foreground">{t("note")}</p>

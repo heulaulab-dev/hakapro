@@ -5,13 +5,14 @@ import {
   type ColumnDef, type RowData, type SortingState,
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown } from "@/components/kit/icons";
 import { useTranslations } from "next-intl";
 import { useRef, useState, type ReactNode } from "react";
 import { FreshnessBadge } from "@/components/feedback/freshness-badge";
 import type { FreshnessMeta } from "@/lib/freshness";
 import { useMediaQuery, MEDIA } from "@/lib/use-media-query";
 import { cn } from "@/lib/utils";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { TableCards } from "./table-cards";
 
 declare module "@tanstack/react-table" {
@@ -87,19 +88,20 @@ export function DataTable<T>({ columns, data, meta, caption, getRowId, initialSo
       </div>
       {cards && <TableCards table={table} render={renderCard} empty={empty} />}
       {!cards && <div ref={scrollRef} className="overflow-auto" style={{ maxHeight }}>
-        <table aria-label={caption} aria-rowcount={rows.length + 1} className="w-full border-separate border-spacing-0 text-data">
-          <thead className="sticky top-0 z-10 bg-background">
+        <Table aria-label={caption} aria-rowcount={rows.length + 1}>
+          <TableHeader sticky>
             {table.getHeaderGroups().map((group) => (
-              <tr key={group.id}>
+              <TableRow key={group.id} interactive={false}>
                 {group.headers.map((header) => {
                   const sorted = header.column.getIsSorted();
                   const numeric = header.column.columnDef.meta?.numeric;
                   return (
-                    <th
+                    <TableHead
                       key={header.id}
                       scope="col"
+                      numeric={numeric}
                       aria-sort={sorted === "asc" ? "ascending" : sorted === "desc" ? "descending" : undefined}
-                      className={cn("caption-style h-[38px] border-b border-border px-3 font-normal whitespace-nowrap text-subtle", numeric ? "text-right" : "text-left", header.column.columnDef.meta?.className)}
+                      className={header.column.columnDef.meta?.className}
                     >
                       {header.isPlaceholder ? null : header.column.getCanSort() ? (
                         <button
@@ -114,37 +116,38 @@ export function DataTable<T>({ columns, data, meta, caption, getRowId, initialSo
                       ) : (
                         flexRender(header.column.columnDef.header, header.getContext())
                       )}
-                    </th>
+                    </TableHead>
                   );
                 })}
-              </tr>
+              </TableRow>
             ))}
-          </thead>
-          <tbody>
+          </TableHeader>
+          <TableBody>
             {rows.length === 0 && (
-              <tr>
+              <TableRow interactive={false}>
                 <td colSpan={colSpan}>{empty}</td>
-              </tr>
+              </TableRow>
             )}
             {padTop > 0 && <tr aria-hidden style={{ height: padTop }} />}
             {items.map((item) => {
               const row = rows[item.index];
               return (
-                <tr key={row.id} ref={virtualizer.measureElement} data-index={item.index} aria-rowindex={item.index + 2} className="h-row transition-colors hover:bg-(--overlay-soft)">
+                <TableRow key={row.id} ref={virtualizer.measureElement} data-index={item.index} aria-rowindex={item.index + 2} className="h-row">
                   {row.getVisibleCells().map((cell) => (
-                    <td
+                    <TableCell
                       key={cell.id}
-                      className={cn("border-b border-border px-3 py-cell-y align-middle", cell.column.columnDef.meta?.numeric && "ticker text-right whitespace-nowrap", cell.column.columnDef.meta?.className)}
+                      numeric={cell.column.columnDef.meta?.numeric}
+                      className={cell.column.columnDef.meta?.className}
                     >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </td>
+                    </TableCell>
                   ))}
-                </tr>
+                </TableRow>
               );
             })}
             {padBottom > 0 && <tr aria-hidden style={{ height: padBottom }} />}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>}
     </div>
   );

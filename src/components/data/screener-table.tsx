@@ -1,12 +1,13 @@
 "use client";
 
 import type { ColumnDef } from "@tanstack/react-table";
-import { HelpCircle } from "lucide-react";
+import { HelpCircle } from "@/components/kit/icons";
 import { useTranslations } from "next-intl";
 import { useMemo } from "react";
 import { StatusBadge } from "@/components/feedback/status-badge";
 import { Button } from "@/components/ui/button";
 import { stockHref } from "@/components/layout/nav-config";
+import { TickerLogo } from "@/components/market/ticker-logo";
 import { Link } from "@/i18n/navigation";
 import type { FreshnessMeta } from "@/lib/freshness";
 import { criteriaOf, textsOf, type Reason, type ScreenerCandidate } from "@/lib/strategies/contract";
@@ -44,7 +45,8 @@ export function ScreenerTable({ candidates, meta, caption, maxHeight, onWhy }: {
       header: t("symbol"),
       meta: { className: "w-20" },
       cell: ({ row }) => (
-        <Link href={stockHref(row.original.symbol)} className="ticker font-medium text-link hover:underline" data-testid={`screener-symbol-${row.original.symbol}`}>
+        <Link href={stockHref(row.original.symbol)} className="ticker inline-flex items-center gap-2 font-medium text-link hover:underline" data-testid={`screener-symbol-${row.original.symbol}`}>
+          <TickerLogo symbol={row.original.symbol} size="sm" />
           {row.original.symbol}
         </Link>
       ),
@@ -75,7 +77,7 @@ export function ScreenerTable({ candidates, meta, caption, maxHeight, onWhy }: {
     <div className="flex flex-col gap-2" data-testid={`screener-card-${candidate.symbol}`}>
       <div className="flex items-center justify-between gap-3">
         <span className="flex min-w-0 items-baseline gap-2">
-          <Link href={stockHref(candidate.symbol)} className="ticker touch-target font-medium text-link hover:underline" data-testid={`screener-symbol-${candidate.symbol}`}>{candidate.symbol}</Link>
+          <Link href={stockHref(candidate.symbol)} className="ticker touch-target inline-flex items-center gap-2 font-medium text-link hover:underline" data-testid={`screener-symbol-${candidate.symbol}`}><TickerLogo symbol={candidate.symbol} size="sm" />{candidate.symbol}</Link>
           <span className="truncate text-muted-foreground">{candidate.name}</span>
         </span>
         {onWhy && <Button variant="outline" size="sm" className="shrink-0" onClick={() => onWhy(candidate)} data-testid={`why-${candidate.symbol}`}>{tWhy("why")}</Button>}

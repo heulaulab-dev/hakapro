@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, ExternalLink, Network } from "lucide-react";
+import { ExternalLink, Network } from "@/components/kit/icons";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useLocale, useTranslations } from "next-intl";
 import { DataState } from "@/components/feedback/data-state";
@@ -10,6 +10,8 @@ import { SectionHeader } from "@/components/layout/section-header";
 import { stockHref } from "@/components/layout/nav-config";
 import { ChangeValue } from "@/components/market/change-value";
 import { DivergenceCallout, groupName, signedIdr, StockDivergence, UnverifiedBadge } from "@/components/market/group-parts";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Link } from "@/i18n/navigation";
 import { useGroups } from "@/lib/api/hooks";
@@ -134,12 +136,11 @@ function GroupCard({ group, intraday }: { group: GroupPerformance; intraday: boo
           </dl>
         )}
         <DivergenceCallout group={group} />
-        <details className="group/members">
-          <summary className="caption-style flex cursor-pointer list-none items-center gap-1 text-link hover:underline" data-testid={`group-${group.id}-toggle`}>
-            <ChevronDown aria-hidden className="size-3 transition-transform group-open/members:rotate-180" />
+        <Collapsible>
+          <CollapsibleTrigger className="caption-style text-link hover:underline" data-testid={`group-${group.id}-toggle`}>
             {t("showMembers", { count: group.members })}
-          </summary>
-          <div className="flex flex-col gap-3 pt-3">
+          </CollapsibleTrigger>
+          <CollapsibleContent className="flex flex-col gap-3 pt-3">
             {group.stocks.length > 0 && <MemberTable group={group} intraday={intraday} />}
             <DataGaps group={group} />
             {group.note && <p className="caption-style text-subtle"><span className="text-muted-foreground">{t("curatorNote")}: </span>{group.note}</p>}
@@ -155,8 +156,8 @@ function GroupCard({ group, intraday }: { group: GroupPerformance; intraday: boo
                 ))}
               </ul>
             </div>
-          </div>
-        </details>
+          </CollapsibleContent>
+        </Collapsible>
       </div>
     </li>
   );
@@ -167,20 +168,20 @@ function MemberTable({ group, intraday }: { group: GroupPerformance; intraday: b
   const locale = useLocale() as Locale;
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[36rem] text-xs" data-testid={`group-${group.id}-members`}>
-        <thead>
-          <tr className="border-b border-border text-left text-muted-foreground">
-            <th className="py-1.5 pr-3 font-normal">{t("colStock")}</th>
-            <th className="py-1.5 pr-3 text-right font-normal">{t("colClose")}</th>
-            <th className="py-1.5 pr-3 text-right font-normal">{t("colChange")}</th>
-            <th className="py-1.5 pr-3 text-right font-normal">{t("colValue")}</th>
-            <th className="py-1.5 text-right font-normal">{t("colForeign")}</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-border">
+      <Table className="min-w-[36rem] text-xs" data-testid={`group-${group.id}-members`}>
+        <TableHeader>
+          <TableRow interactive={false}>
+            <TableHead className="h-auto px-0 py-1.5 text-xs whitespace-normal text-muted-foreground pr-3">{t("colStock")}</TableHead>
+            <TableHead numeric className="h-auto px-0 py-1.5 text-xs whitespace-normal text-muted-foreground pr-3">{t("colClose")}</TableHead>
+            <TableHead numeric className="h-auto px-0 py-1.5 text-xs whitespace-normal text-muted-foreground pr-3">{t("colChange")}</TableHead>
+            <TableHead numeric className="h-auto px-0 py-1.5 text-xs whitespace-normal text-muted-foreground pr-3">{t("colValue")}</TableHead>
+            <TableHead numeric className="h-auto px-0 py-1.5 text-xs whitespace-normal text-muted-foreground">{t("colForeign")}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody className="[&>tr:last-child>td]:border-b-0">
           {group.stocks.map((stock) => (
-            <tr key={stock.symbol} className="align-top">
-              <td className="py-1.5 pr-3">
+            <TableRow key={stock.symbol} className="align-top">
+              <TableCell className="px-0 py-1.5 pr-3 align-top">
                 <div className="flex flex-col gap-0.5">
                   <span className="flex flex-wrap items-center gap-1.5">
                     <Link href={stockHref(stock.symbol)} className="ticker text-link hover:underline">{stock.symbol}</Link>
@@ -190,22 +191,22 @@ function MemberTable({ group, intraday }: { group: GroupPerformance; intraday: b
                   {stock.note && <span className="max-w-80 text-[11px] text-subtle">{stock.note}</span>}
                   <StockDivergence stock={stock} />
                 </div>
-              </td>
-              <td className="num py-1.5 pr-3 text-right">{formatValue(stock.close, "number", locale)}</td>
-              <td className="py-1.5 pr-3 text-right">
+              </TableCell>
+              <TableCell className="num px-0 py-1.5 pr-3 text-right align-top">{formatValue(stock.close, "number", locale)}</TableCell>
+              <TableCell className="px-0 py-1.5 pr-3 text-right align-top">
                 {stock.corporateAction ? <span className="text-[11px] text-muted-foreground" title={t("corporateActionHint")}>{t("corporateAction")}</span> : <ChangeValue percent={stock.changePercent} />}
-              </td>
-              <td className="num py-1.5 pr-3 text-right">{formatIdr(stock.valueIdr, locale, { compact: true })}</td>
-              <td className="num py-1.5 text-right">
+              </TableCell>
+              <TableCell className="num px-0 py-1.5 pr-3 text-right align-top">{formatIdr(stock.valueIdr, locale, { compact: true })}</TableCell>
+              <TableCell className="num px-0 py-1.5 text-right align-top">
                 {intraday ? "—" : signedIdr(stock.netForeignValueEstimateIdr, locale)}
                 {!intraday && stock.foreignSessions > 0 && stock.foreignSessions < stock.sessions && (
                   <span className="block text-[11px] text-muted-foreground">{t("foreignSessions", { covered: stock.foreignSessions, sessions: stock.sessions })}</span>
                 )}
-              </td>
-            </tr>
+              </TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   );
 }

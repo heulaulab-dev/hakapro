@@ -8,7 +8,7 @@ test.describe("landing page at the locale root", () => {
     await expect(page.getByTestId("landing-facts").locator("dd")).toHaveCount(4);
     await expect(page.getByTestId("landing-freshness").locator("[data-freshness]")).toHaveCount(5);
     await expect(page.getByTestId("landing-freshness").locator('[data-freshness="LIVE"]')).toHaveCount(0);
-    await expect(page.getByTestId("landing-faq").locator("details")).toHaveCount(6);
+    await expect(page.getByTestId("landing-faq").locator("[data-slot=accordion-item]")).toHaveCount(6);
     // e2e runs with the dev auth bypass, so the CTA opens the app.
     await expect(page.getByTestId("landing-hero-cta").getByRole("link")).toHaveAttribute("href", "/id/dashboard");
     await page.goto("/en");

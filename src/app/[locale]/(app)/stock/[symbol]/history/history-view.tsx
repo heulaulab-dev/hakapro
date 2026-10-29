@@ -10,7 +10,7 @@ import { DataState } from "@/components/feedback/data-state";
 import { SectionHeader } from "@/components/layout/section-header";
 import { OVERVIEW_HISTORY } from "@/components/market/stock-header-live";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ARJUM_LIMITS } from "@/lib/api/provider-limits";
 import { useDoneDetails, useHistory, useSeasonality } from "@/lib/api/hooks";
@@ -78,10 +78,10 @@ export function HistoryView({ symbol }: { symbol: string }) {
           actions={
             <form onSubmit={applyRange} className="grid w-full grid-cols-2 items-end gap-2 sm:flex sm:w-auto sm:flex-wrap" data-testid="history-range">
               <label className="flex min-w-0 flex-col gap-0.5 text-xs text-muted-foreground">{t("stockHistory.from")}
-                <Input type="date" value={draft.from} min={overview.data?.data.available?.from} max={draft.to || undefined} onChange={(event) => setDraft({ ...draft, from: event.target.value })} className="h-8 w-full text-xs sm:w-36" />
+                <DatePicker value={draft.from} min={overview.data?.data.available?.from} max={draft.to || overview.data?.data.available?.to} onChange={(value) => setDraft({ ...draft, from: value ?? "" })} className="w-full sm:w-40 [&_button]:h-8 [&_button]:text-xs" />
               </label>
               <label className="flex min-w-0 flex-col gap-0.5 text-xs text-muted-foreground">{t("stockHistory.to")}
-                <Input type="date" value={draft.to} min={draft.from || undefined} max={overview.data?.data.available?.to} onChange={(event) => setDraft({ ...draft, to: event.target.value })} className="h-8 w-full text-xs sm:w-36" />
+                <DatePicker value={draft.to} min={draft.from || overview.data?.data.available?.from} max={overview.data?.data.available?.to} onChange={(value) => setDraft({ ...draft, to: value ?? "" })} className="w-full sm:w-40 [&_button]:h-8 [&_button]:text-xs" />
               </label>
               <Button type="submit" variant="outline" size="sm">{t("stockHistory.apply")}</Button>
               {ranged && <Button type="button" variant="ghost" size="sm" onClick={() => { setDraft({ from: "", to: "" }); void setFrom(null); void setTo(null); }}>{t("stockHistory.reset")}</Button>}

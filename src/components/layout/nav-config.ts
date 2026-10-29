@@ -1,14 +1,14 @@
 import {
   Activity, ArrowUpDown, Bell, Bookmark, Briefcase, Compass, House, Info, Landmark, LayoutGrid, ListChecks, Newspaper,
-  SlidersHorizontal, type LucideIcon, Network, BookOpen, Building2, Radar, Coins, TrendingUp, Zap, Waves,
-} from "lucide-react";
+  SlidersHorizontal, type Icon, Network, BookOpen, Building2, Radar, Coins, TrendingUp, Zap, Waves,
+} from "@/components/kit/icons";
 
 export type NavKey =
   | "home" | "discover" | "screener" | "strategies" | "movers" | "heatmap" | "groups" | "radar" | "ownership" | "stealth"
   | "macro" | "rotation" | "watchlist" | "news" | "alerts" | "methodology" | "about"
   // Module groups (BDMFlow-style terminal menu).
   | "pulse" | "bandar" | "scalp" | "whale" | "investor";
-export type NavItem = { key: NavKey; href: string; icon: LucideIcon; children?: NavItem[] };
+export type NavItem = { key: NavKey; href: string; icon: Icon; children?: NavItem[] };
 
 // Leaf destinations, defined once and arranged into module groups below.
 const PAGES = {

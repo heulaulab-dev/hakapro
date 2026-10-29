@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { formatMonthName, formatShortDate, direction, EMPTY, formatChange, formatCompact, formatDate, formatIdr, formatNumber, formatPercent, formatPeriod, formatVolume } from "./index";
+import { formatBytes, formatMonthName, formatShortDate, direction, EMPTY, formatChange, formatCompact, formatDate, formatIdr, formatNumber, formatPercent, formatPeriod, formatVolume } from "./index";
 
 describe("abbreviation collision (init prompt §6)", () => {
   test("1.5e12 → Rp1,5 T (id) and Rp1.5T (en)", () => {
@@ -112,4 +112,13 @@ test("missing values never become zero", () => {
     expect(direction(value)).toBe("neutral");
   }
   expect(formatDate("not a date", "id")).toBe(EMPTY);
+});
+
+test("formatBytes steps by 1024 with locale decimals", () => {
+  expect(formatBytes(512, "en")).toBe("512 B");
+  expect(formatBytes(1536, "en")).toBe("1.5 KB");
+  expect(formatBytes(1536, "id")).toBe("1,5 KB");
+  expect(formatBytes(5 * 1024 * 1024, "en")).toBe("5 MB");
+  expect(formatBytes(-1, "en")).toBe(EMPTY);
+  expect(formatBytes(null, "en")).toBe(EMPTY);
 });

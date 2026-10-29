@@ -1,6 +1,6 @@
 "use client";
 
-import { Radar as RadarIcon } from "lucide-react";
+import { Radar as RadarIcon } from "@/components/kit/icons";
 import { useLocale, useTranslations } from "next-intl";
 import { parseAsInteger, parseAsString, useQueryState } from "nuqs";
 import { StockRow } from "@/components/data/stock-row";
@@ -10,6 +10,7 @@ import { ResearchDisclaimer } from "@/components/feedback/research-disclaimer";
 import { StatusBadge } from "@/components/feedback/status-badge";
 import { SectionHeader } from "@/components/layout/section-header";
 import { CounterChip, SignalChip, useRadarText } from "@/components/radar/radar-chips";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from "@/i18n/navigation";
 import { useRadar } from "@/lib/api/hooks";
@@ -58,8 +59,9 @@ function RadarBody({ radar }: { radar: Radar }) {
           {t("coverage", { listed: radar.coverage.listed, stocks: radar.coverage.stocks })}
           {radar.coverage.returned < radar.coverage.listed && ` ${t("coverageCapped", { returned: radar.coverage.returned })}`}
         </p>
-        <details className="caption-style text-subtle">
-          <summary className="cursor-pointer">{t("coverageDetails")}</summary>
+        <Collapsible className="caption-style text-subtle">
+          <CollapsibleTrigger className="hover:text-soft">{t("coverageDetails")}</CollapsibleTrigger>
+          <CollapsibleContent>
           <ul className="mt-1 grid gap-x-4 gap-y-0.5 sm:grid-cols-2" data-testid="radar-signal-coverage">
             {RADAR_SIGNAL_KEYS.map((key) => (
               <li key={key} className="flex justify-between gap-2">
@@ -68,7 +70,8 @@ function RadarBody({ radar }: { radar: Radar }) {
               </li>
             ))}
           </ul>
-        </details>
+          </CollapsibleContent>
+        </Collapsible>
       </div>
 
       <div className="flex flex-wrap items-center gap-2" data-testid="radar-filters">

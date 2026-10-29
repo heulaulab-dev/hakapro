@@ -1,7 +1,7 @@
 "use client";
 
 import type { ColumnDef } from "@tanstack/react-table";
-import { Info } from "lucide-react";
+import { Info } from "@/components/kit/icons";
 import { parseAsString, useQueryState } from "nuqs";
 import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";

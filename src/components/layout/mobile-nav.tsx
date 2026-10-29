@@ -1,6 +1,6 @@
 "use client";
 
-import { Bookmark, House, Menu, Search } from "lucide-react";
+import { Bookmark, House, Menu, Search } from "@/components/kit/icons";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetHeader } from "@/components/ui/sheet";

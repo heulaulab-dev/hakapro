@@ -1,4 +1,4 @@
-import { SearchX } from "lucide-react";
+import { SearchX } from "@/components/kit/icons";
 import { getTranslations } from "next-intl/server";
 import { Logo } from "@/components/brand/logo";
 import { EmptyState } from "@/components/feedback/empty-state";

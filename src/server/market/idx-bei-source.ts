@@ -9,6 +9,7 @@ import {
   stealthOwnershipSchema,
 } from "@/server/schemas/idx-bei";
 import { symbolSchema } from "@/server/schemas/inputs";
+import { MAX_LOGO_BYTES, sanitizeSvg } from "@/server/schemas/ticker-logo";
 import { ownershipChangesSchema, ownershipMonthSchema, stockOwnershipSchema } from "@/server/schemas/ownership";
 import { PROVIDER_USER_AGENT } from "@/server/config/provider-identity";
 import { logWarn } from "@/server/log";
@@ -18,7 +19,7 @@ import {
   BaseMarketDataSource, type ActionsCalendarQuery, type HeatmapQuery, type OwnershipChangesQuery, type PageQuery, type RecentInsidersQuery,
   type GroupsQuery,
 } from "./source";
-import type { Candle, Quote } from "./types";
+import type { Candle, Quote, TickerLogo } from "./types";
 import type { Clock } from "./arjum-source";
 
 const pct = (fraction: number | null | undefined) => (typeof fraction === "number" ? fraction * 100 : null);
@@ -199,6 +200,35 @@ export class IdxBeiSource extends BaseMarketDataSource {
   async brokerDirectory(signal?: AbortSignal) {
     const { data, meta } = await this.get("/v1/brokers/directory", brokerDirectorySchema, TTL_MS.market, { signal });
     return this.snapshot(data, meta.dataAsOf);
+  }
+
+  /**
+   * Data Engine `/v1/logos/{s}` (HAKA-74): the sanitized SVG, re-checked here before the app serves it from its own
+   * origin. 404 (no logo, logos disabled, or a service without the route) and anything that fails the check → null.
+   */
+  async logo(symbol: string, signal?: AbortSignal): Promise<TickerLogo | null> {
+    const path = `/v1/logos/${encodeURIComponent(symbolSchema.parse(symbol))}`;
+    let response: Response;
+    try {
+      const timeout = AbortSignal.timeout(10_000);
+      response = await this.fetcher(`${this.baseUrl}${path}`, {
+        headers: { accept: "image/svg+xml", "user-agent": PROVIDER_USER_AGENT }, signal: signal ? AbortSignal.any([signal, timeout]) : timeout, cache: "no-store",
+      });
+    } catch {
+      throw new MarketDataError("PROVIDER_UNAVAILABLE", "Market service could not be reached", 503);
+    }
+    if (response.status === 404) { await response.body?.cancel().catch(() => {}); return null; }
+    if (!response.ok) {
+      await response.body?.cancel().catch(() => {});
+      throw new MarketDataError("PROVIDER_UNAVAILABLE", `Market service returned ${response.status}`, 503);
+    }
+    if (Number(response.headers.get("content-length")) > MAX_LOGO_BYTES) { await response.body?.cancel().catch(() => {}); return null; }
+    const checked = sanitizeSvg(new Uint8Array(await response.arrayBuffer()), response.headers.get("content-type"));
+    if (!checked.ok) {
+      logWarn("logo_rejected", { source: this.id, path, reason: checked.reason });
+      return null;
+    }
+    return { svg: checked.svg };
   }
 
   /** Data Engine `/v1/sectors`: per-sector performance of the newest session, the same rows as the movers. */
