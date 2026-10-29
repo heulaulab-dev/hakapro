@@ -5,6 +5,7 @@ import { strategyBoardSchema } from "@/lib/strategies/contract";
 import {
   actionsCalendarSchema, actionsSchema, announcementItemSchema, brokerDirectorySchema, fundamentalsSchema, HEATMAP_DEFAULT_LIMIT, heatmapLimitSchema, heatmapSchema, marketBrokerSummarySchema,
   idxBeiEnvelope, indicesHistorySchema, issuerRaceSchema, issuerRaceWindowSchema, insidersRecentSchema, macroSchema, marketOverviewSchema, newsItemSchema, groupsSchema, groupWindowSchema, profileSchema,
+  stockSectorRotationSchema, stockSectorRotationIntervalSchema,
   screenRequestSchema, screenResultSchema, sectorsSchema, securitySchema, signalsSchema, stockSchema, type ScreenRequest, radarSchema,
   stealthOwnershipSchema,
 } from "@/server/schemas/idx-bei";
@@ -16,7 +17,7 @@ import { logWarn } from "@/server/log";
 import { ProviderBackoff } from "@/server/providers/backoff";
 import { MarketDataError, unsupported } from "./errors";
 import {
-  BaseMarketDataSource, type ActionsCalendarQuery, type HeatmapQuery, type OwnershipChangesQuery, type PageQuery, type RecentInsidersQuery, type IssuerRaceQuery,
+  BaseMarketDataSource, type ActionsCalendarQuery, type HeatmapQuery, type OwnershipChangesQuery, type PageQuery, type RecentInsidersQuery, type IssuerRaceQuery, type StockSectorRotationQuery,
   type GroupsQuery, type BreadthWindow,
 } from "./source";
 import type { Candle, Quote, TickerLogo } from "./types";
@@ -198,6 +199,16 @@ export class IdxBeiSource extends BaseMarketDataSource {
   async issuerRace(query: IssuerRaceQuery) {
     const params = new URLSearchParams({ window: issuerRaceWindowSchema.parse(query.window ?? "3M"), sector: query.sector ?? "all" });
     const { data, meta } = await this.get(`/v1/issuer-race?${params}`, issuerRaceSchema, TTL_MS.market);
+    return this.snapshot(data, meta.dataAsOf);
+  }
+
+  /** Engine issuer RRG versus its leave-one-out synthetic basket of current sector peers. */
+  async stockSectorRotation(query: StockSectorRotationQuery, signal?: AbortSignal) {
+    const params = new URLSearchParams({
+      sector: query.sector,
+      interval: stockSectorRotationIntervalSchema.parse(query.interval ?? "weekly"),
+    });
+    const { data, meta } = await this.get(`/v1/sector-rotation/stocks?${params}`, stockSectorRotationSchema, TTL_MS.market, { signal });
     return this.snapshot(data, meta.dataAsOf);
   }
 

@@ -15,7 +15,7 @@ const QUADRANT_FILL: Record<Quadrant, string> = {
 };
 
 /** Arrowhead at the latest point, rotated along the tail's last segment; label shows the sector code. */
-function arrow(colorIndex: number, angleDeg: number, code: string, dim: boolean) {
+function arrow(colorIndex: number, angleDeg: number, code: string, dim: boolean, showLabel: boolean) {
   const color = seriesColor(colorIndex);
   // eslint-disable-next-line react/display-name
   return (props: { cx?: number; cy?: number }) => {
@@ -27,7 +27,7 @@ function arrow(colorIndex: number, angleDeg: number, code: string, dim: boolean)
         <g transform={`rotate(${angleDeg})`}>
           <path d={`M ${s} 0 L ${-s * 0.7} ${s * 0.7} L ${-s * 0.2} 0 L ${-s * 0.7} ${-s * 0.7} Z`} fill={color} stroke="var(--card)" strokeWidth={1} />
         </g>
-        <text x={9} y={-8} fontSize={11} fontWeight={600} fill="var(--foreground)" className="ticker">{code}</text>
+        {showLabel && <text x={9} y={-8} fontSize={11} fontWeight={600} fill="var(--foreground)" className="ticker">{code}</text>}
       </g>
     );
   };
@@ -48,7 +48,7 @@ function dot(colorIndex: number, dim: boolean) {
 }
 
 /** Four-quadrant RRG scatter. `domainPad` widens the square around 100; `highlight` dims the others. */
-export function RrgChart({ series, highlight, height = 420 }: { series: RrgChartSeries[]; highlight: string | null; height?: number }) {
+export function RrgChart({ series, highlight, height = 420, labelMode = "all" }: { series: RrgChartSeries[]; highlight: string | null; height?: number; labelMode?: "all" | "highlight" }) {
   const t = useTranslations("sectorRotation");
   const bound = useMemo(() => {
     let max = 2;
@@ -92,7 +92,8 @@ export function RrgChart({ series, highlight, height = 420 }: { series: RrgChart
           if (!last) return null;
           // Screen Y grows downward, so negate the momentum delta for the on-screen angle.
           const angle = prev ? -(Math.atan2(last.rsMomentum - prev.rsMomentum, last.rsRatio - prev.rsRatio) * 180) / Math.PI : 0;
-          return <Scatter key={`head-${s.code}`} data={[{ ...last }]} shape={arrow(s.colorIndex, angle, s.code, dim)} isAnimationActive={false} />;
+          const showLabel = labelMode === "all" || (highlight !== null && highlight === s.code);
+          return <Scatter key={`head-${s.code}`} data={[{ ...last }]} shape={arrow(s.colorIndex, angle, s.code, dim, showLabel)} isAnimationActive={false} />;
         })}
       </ScatterChart>
     </ChartContainer>
