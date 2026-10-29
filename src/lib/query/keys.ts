@@ -33,6 +33,8 @@ export const queryKeys = {
   ownership: (symbol: string) => ["market", "ownership", symbol.toUpperCase()] as const,
   ownershipChanges: (month?: string, symbol?: string) => ["market", "ownership-changes", month ?? null, symbol?.toUpperCase() ?? null] as const,
   recentInsiders: (days = 0, action: string | null = null, limit = 0) => ["market", "insiders-recent", days, action, limit] as const,
+  catalysts: (symbol: string) => ["market", "catalysts", symbol.toUpperCase()] as const,
+  breadth: () => ["market", "breadth"] as const,
   insidersPage:(symbol: string, page: number, limit: number, action: string | null) => ["market", "insiders", symbol.toUpperCase(), page, limit, action] as const,
   insiderDisclosures: (symbol: string, limit: number) => ["market", "insiders", symbol.toUpperCase(), "disclosures", limit] as const,
   research: (code: string) => ["market", "research", code.toUpperCase()] as const,

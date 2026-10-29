@@ -20,6 +20,7 @@ import {
   type GroupsQuery,
 } from "./source";
 import type { Candle, Quote, TickerLogo } from "./types";
+import { breadthSchema, catalystsSchema } from "@/server/schemas/market-intelligence";
 import type { Clock } from "./arjum-source";
 
 const pct = (fraction: number | null | undefined) => (typeof fraction === "number" ? fraction * 100 : null);
@@ -229,6 +230,14 @@ export class IdxBeiSource extends BaseMarketDataSource {
       return null;
     }
     return { svg: checked.svg };
+  }
+  async catalysts(symbol: string, signal?: AbortSignal) {
+    const { data, meta } = await this.get(`/v1/stocks/${encodeURIComponent(symbolSchema.parse(symbol))}/catalysts`, catalystsSchema, TTL_MS.news, { signal });
+    return this.wrap(data, meta.freshness as Freshness, meta.dataAsOf);
+  }
+  async breadth(signal?: AbortSignal) {
+    const { data, meta } = await this.get("/v1/breadth", breadthSchema, TTL_MS.market, { signal });
+    return this.wrap(data, meta.freshness as Freshness, meta.dataAsOf);
   }
 
   /** Data Engine `/v1/sectors`: per-sector performance of the newest session, the same rows as the movers. */

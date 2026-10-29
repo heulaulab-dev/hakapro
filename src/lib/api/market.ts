@@ -6,6 +6,8 @@ import { z } from "zod";
 import { RADAR_COUNTER_KEYS, RADAR_SIGNAL_KEYS } from "@/lib/radar/rules";
 import { strategyBoardSchema } from "@/lib/strategies/contract";
 import { fetchEnvelope } from "./envelope";
+import { breadthSchema, catalystsSchema } from "@/server/schemas/market-intelligence";
+export { breadthSchema, catalystsSchema } from "@/server/schemas/market-intelligence";
 
 const n = z.number();
 const nn = z.number().nullable();
@@ -351,6 +353,8 @@ export type IndexSeries = IndicesHistory["series"][number];
 export type IndexCoverageReport = NonNullable<IndicesHistory["coverage"]>[number];
 
 export const engineApi = {
+  catalysts: (symbol: string, signal?: AbortSignal) => fetchEnvelope(`/api/stocks/${encodeURIComponent(symbol.toUpperCase())}/catalysts`, catalystsSchema, { signal }),
+  breadth: (signal?: AbortSignal) => fetchEnvelope("/api/breadth", breadthSchema, { signal }),
   radar: (signal?: AbortSignal) => fetchEnvelope("/api/radar", radarSchema, { signal }),
   indicesHistory: (query: { codes?: string[]; from?: string; to?: string } = {}, signal?: AbortSignal) =>
     fetchEnvelope(`/api/indices/history${qs({ codes: query.codes?.join(","), from: query.from, to: query.to })}`, indicesHistorySchema, { signal }),

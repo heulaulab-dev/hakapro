@@ -23,7 +23,7 @@ describe("ownership routes", () => {
   beforeEach(async () => { dir = await tempDir(); disk = 40; });
   afterEach(async () => { await dir.cleanup(); });
 
-  function app(options: { freeFloatEnabled?: boolean; maxUploadBytes?: number; overrides?: Partial<AppDeps> } = {}) {
+  function app(options: { freeFloatEnabled?: boolean; ownershipNetworkEnabled?: boolean; maxUploadBytes?: number; overrides?: Partial<AppDeps> } = {}) {
     const pause = new PauseGuard(dir.path, 85, { cacheMs: 0, measure: async () => disk });
     const scheduler = new Scheduler({ jobs: [], pause, runs: new MemoryRunRecorder(), cursors: new MemoryCursorStore(), sourceState: new MemorySourceStateStore() });
     const store = new MemoryOwnershipStore();
@@ -32,6 +32,7 @@ describe("ownership routes", () => {
       adminToken: "admin-token", ping: async () => true, pause, scheduler, rawStoreKind: "local", sourceHealth: async () => [], unblockSource: async () => false,
       now: () => new Date("2026-10-16T09:00:00Z"),
       ownership: { service, maxUploadBytes: options.maxUploadBytes ?? 20 * 1024 * 1024, freeFloatEnabled: options.freeFloatEnabled ?? false },
+      intelligence: { catalysts: false, breadth: false, ownershipNetwork: options.ownershipNetworkEnabled ?? false },
       ...options.overrides,
     });
     const call = (path: string, init?: RequestInit) => handler(new Request(`${BASE}${path}`, init));
@@ -181,6 +182,14 @@ describe("ownership routes", () => {
     await upload(committed("synthetic-1pct-2026-03.pdf"), "asOf=2026-03");
     const stock = idxBeiEnvelope(stockOwnershipSchema).parse(await (await call("/v1/stocks/TEST1/ownership")).json());
     expect(stock.data.freeFloat).toMatchObject({ methodologyStatus: "draft", figureType: "ESTIMATE", isOfficial: false, estimate: { headline: "26.400000" } });
+  });
+
+  it("serves an exact-match ownership network only when enabled", async () => {
+    const { upload, call } = app({ ownershipNetworkEnabled: true });
+    await upload(committed("synthetic-1pct-2026-02.pdf"), "asOf=2026-02");
+    const stock = idxBeiEnvelope(stockOwnershipSchema).parse(await (await call("/v1/stocks/TEST1/ownership")).json());
+    expect(stock.data.network).toMatchObject({ nodes: expect.any(Array), edges: expect.any(Array), ambiguous: expect.any(Number) });
+    expect(stock.data.network?.edges.every((edge) => edge.confidence === "exact")).toBe(true);
   });
 
   it("answers with empty forms when nothing is stored, and validates parameters", async () => {

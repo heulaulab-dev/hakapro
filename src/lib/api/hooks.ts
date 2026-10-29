@@ -66,6 +66,8 @@ export const useOwnershipChanges = (query: { month?: string; symbol?: string } =
 /** Market-wide insider feed; keeps the previous list on screen while the action filter changes. */
 export const useRecentInsiders = (query: RecentInsidersQuery = {}) =>
   useQuery({ queryKey: queryKeys.recentInsiders(query.days, query.action ?? null, query.limit), queryFn: ({ signal }) => engineApi.recentInsiders(query, signal), placeholderData: (previous) => previous });
+export const useCatalysts = (symbol: string) => useQuery({ queryKey: queryKeys.catalysts(symbol), queryFn: ({ signal }) => engineApi.catalysts(symbol, signal) });
+export const useBreadth = () => useQuery({ queryKey: queryKeys.breadth(), queryFn: ({ signal }) => engineApi.breadth(signal) });
 export const useCorporateActions =(symbol: string) => useQuery({ queryKey: queryKeys.actions(symbol), queryFn: ({ signal }) => stockApi.actions(symbol, signal) });
 /**
  * Newest-first insider disclosures, one provider page per user "load older" action (no background crawling).

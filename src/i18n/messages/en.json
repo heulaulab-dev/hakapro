@@ -121,7 +121,20 @@
     "stealth": "KSEI Corporate",
     "macro": "Rates & Commodities",
     "methodology": "Methodology",
-    "rotation": "Sector Rotation"
+    "rotation": "Sector Rotation",
+    "intelligence": "Market Intelligence"
+  },
+  "intelligence": {
+    "title": "Market intelligence",
+    "intro": "A measured view of participation and regime from the latest stored market session.",
+    "regime": "Regime",
+    "participation": "Participation",
+    "coverage": "Unchanged",
+    "advancersDecliners": "advancers / decliners",
+    "unchanged": "stocks without a move",
+    "sectors": "Sector participation",
+    "unavailable": "Breadth is unavailable",
+    "unavailableDescription": "The engine has not stored a usable market session yet."
   },
   "macro": {
     "title": "Rates & commodities",
@@ -401,6 +414,9 @@
     "ownershipTitle": "Ownership & insiders",
     "financialTitle": "Financials",
     "chartTitle": "Price chart",
+    "catalystsTitle": "Catalyst radar",
+    "catalystsDescription": "Recent issuer, market, ownership, news and fundamental events. Each item keeps its source and date.",
+    "catalystsEmpty": "No catalyst events are available for this symbol yet.",
     "deepDive": "Go deeper",
     "hints": {
       "chart": "Candles, volume and time ranges",
