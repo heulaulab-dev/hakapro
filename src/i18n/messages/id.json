@@ -122,7 +122,8 @@
     "macro": "Suku Bunga & Komoditas",
     "methodology": "Metodologi",
     "rotation": "Rotasi Sektor",
-    "intelligence": "Intelijen Pasar"
+    "intelligence": "Intelijen Pasar",
+    "compare": "Bandingkan Saham"
   },
   "intelligence": {
     "title": "Intelijen pasar",
@@ -135,6 +136,29 @@
     "sectors": "Partisipasi sektor",
     "unavailable": "Breadth belum tersedia",
     "unavailableDescription": "Engine belum menyimpan sesi pasar yang dapat digunakan."
+  },
+  "comparison": {
+    "title": "Bandingkan saham",
+    "intro": "Bandingkan kinerja ternormalisasi dan data pasar terukur untuk hingga empat saham IDX.",
+    "pickTitle": "Saham yang dibandingkan",
+    "pickHint": "Tambahkan kode saham IDX untuk membuat tampilan berdampingan.",
+    "addPlaceholder": "Kode saham, contoh BBCA",
+    "add": "Tambah",
+    "remove": "Hapus {symbol}",
+    "max": "Maksimal {count} saham · data dari HAKA PRO Engine",
+    "performanceTitle": "Harga, mulai dari 100",
+    "performanceHint": "Setiap garis dimulai dari 100 agar kinerja relatif mudah terlihat selama {range}.",
+    "rangeLabel": "Rentang perbandingan",
+    "tableTitle": "Berdampingan",
+    "tableHint": "Nilai terukur terbaru untuk periode yang dipilih.",
+    "stock": "Saham",
+    "latest": "Penutupan terakhir",
+    "periodReturn": "Imbal hasil periode",
+    "dailyMove": "Pergerakan harian",
+    "foreignNet": "Net saham asing",
+    "asOf": "Per tanggal",
+    "partial": "Sebagian kode saham tidak dapat dimuat; data yang tersedia tetap ditampilkan.",
+    "empty": "Tambahkan minimal satu kode saham IDX untuk mulai membandingkan."
   },
   "macro": {
     "title": "Suku bunga & komoditas",
