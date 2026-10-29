@@ -522,6 +522,7 @@
       "flow": "Broker Summary dan Foreign Flow",
       "running": "Transaksi hari ini, per tick",
       "financials": "Laporan laba rugi, neraca, arus kas",
+      "dividends": "Riwayat, yield, dan pola dividen",
       "ownership": "Struktur pemegang saham",
       "insiders": "Transaksi direksi, komisaris, dan pemegang besar",
       "history": "Tabel harga harian",
