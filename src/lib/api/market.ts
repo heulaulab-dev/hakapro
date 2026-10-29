@@ -7,6 +7,8 @@ import { RADAR_COUNTER_KEYS, RADAR_SIGNAL_KEYS } from "@/lib/radar/rules";
 import { strategyBoardSchema } from "@/lib/strategies/contract";
 import { fetchEnvelope } from "./envelope";
 import { breadthSchema, catalystsSchema } from "@/server/schemas/market-intelligence";
+import { dividendPatternsSchema } from "@/server/schemas/dividend-patterns";
+export { dividendPatternsSchema } from "@/server/schemas/dividend-patterns";
 export { breadthSchema, catalystsSchema } from "@/server/schemas/market-intelligence";
 
 const n = z.number();
@@ -353,6 +355,7 @@ export type IndexSeries = IndicesHistory["series"][number];
 export type IndexCoverageReport = NonNullable<IndicesHistory["coverage"]>[number];
 
 export const engineApi = {
+  dividendPatterns: (symbol: string, signal?: AbortSignal) => fetchEnvelope(`/api/stocks/${sym(symbol)}/dividend-patterns`, dividendPatternsSchema, { signal }),
   catalysts: (symbol: string, signal?: AbortSignal) => fetchEnvelope(`/api/stocks/${encodeURIComponent(symbol.toUpperCase())}/catalysts`, catalystsSchema, { signal }),
   breadth: (signal?: AbortSignal) => fetchEnvelope("/api/breadth", breadthSchema, { signal }),
   radar: (signal?: AbortSignal) => fetchEnvelope("/api/radar", radarSchema, { signal }),

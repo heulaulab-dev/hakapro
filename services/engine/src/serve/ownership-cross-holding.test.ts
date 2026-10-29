@@ -40,4 +40,29 @@ describe("KSEI reciprocal cross-holdings", () => {
 
     expect(await crossHoldingsFor(store, "AAA", "2026-09")).toEqual([]);
   });
+
+  it("requires matching snapshot dates, not just the same calendar month", async () => {
+    const store = new MemoryOwnershipStore();
+    await store.replaceSets([
+      set("AAA", "PT ALPHA TBK", "2026-09", [row("PT BETA TBK", "12000000", "1.200000")]),
+      { ...set("BBB", "PT BETA TBK", "2026-09", [row("PT ALPHA TBK", "34000000", "3.400000")]), snapshotDate: "2026-09-29" },
+    ]);
+    expect(await crossHoldingsFor(store, "AAA", "2026-09")).toEqual([]);
+  });
+
+  it("does not guess when issuer names collide or a listed pair is duplicated", async () => {
+    const store = new MemoryOwnershipStore();
+    await store.replaceSets([
+      set("AAA", "PT ALPHA TBK", "2026-09", [row("PT BETA TBK", "12000000", "1.200000")]),
+      set("AAB", "PT ALPHA, Tbk.", "2026-09", []),
+      set("BBB", "PT BETA TBK", "2026-09", [row("PT ALPHA TBK", "34000000", "3.400000")]),
+    ]);
+    expect(await crossHoldingsFor(store, "AAA", "2026-09")).toEqual([]);
+
+    await store.replaceSets([
+      set("AAA", "PT ALPHA TBK", "2026-09", [row("PT BETA TBK", "12000000", "1.200000")]),
+      set("BBB", "PT BETA TBK", "2026-09", [row("PT ALPHA TBK", "34000000", "3.400000"), { ...row("ALPHA", "1", "0.000001"), lineNo: 2 }]),
+    ]);
+    expect(await crossHoldingsFor(store, "AAA", "2026-09")).toEqual([]);
+  });
 });

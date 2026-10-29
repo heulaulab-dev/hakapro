@@ -1,6 +1,6 @@
 "use client";
 
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQueries, useQuery } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query/keys";
 import {
   accumulationApi, analysisApi, engineApi, financialsApi, marketApi, overviewApi, priceApi, quotesApi, screenerApi, stockApi,
@@ -17,6 +17,15 @@ function keepSameSymbol<E extends { data: { symbol: string } }>(previous: E | un
 
 export const useHistory = (symbol: string, query: HistoryQuery = {}, options: { enabled?: boolean } = {}) =>
   useQuery({ queryKey: queryKeys.history(symbol, query.frame, query.limit, query.startDate, query.endDate), queryFn: ({ signal }) => marketApi.history(symbol, query, signal), enabled: options.enabled ?? true, placeholderData: (previous) => keepSameSymbol(previous, symbol) });
+export const useComparisonHistory = (symbol: string, query: HistoryQuery = {}, options: { enabled?: boolean } = {}) =>
+  useQuery({ queryKey: queryKeys.comparisonHistory(symbol, query.startDate ?? query.endDate ?? "all"), queryFn: ({ signal }) => marketApi.history(symbol, { ...query, frame: "daily" }, signal), enabled: options.enabled ?? true, placeholderData: (previous) => keepSameSymbol(previous, symbol) });
+export const useComparisonHistories = (symbols: string[], query: HistoryQuery = {}) => useQueries({
+  queries: symbols.map((symbol) => ({
+    queryKey: queryKeys.comparisonHistory(symbol, `${query.startDate ?? ""}:${query.endDate ?? ""}`),
+    queryFn: ({ signal }: { signal: AbortSignal }) => marketApi.history(symbol, { ...query, frame: "daily" }, signal),
+    placeholderData: (previous: Awaited<ReturnType<typeof marketApi.history>> | undefined) => keepSameSymbol(previous, symbol),
+  })),
+});
 export const useBrokerSummary = (symbol: string, query: BrokerSummaryQuery = {}, options: { enabled?: boolean } = {}) =>
   useQuery({ queryKey: queryKeys.brokerSummary(symbol, query), queryFn: ({ signal }) => marketApi.brokerSummary(symbol, query, signal), enabled: options.enabled ?? true, placeholderData: (previous) => keepSameSymbol(previous, symbol) });
 export const useStrategies = () => useQuery({ queryKey: queryKeys.strategies(), queryFn: ({ signal }) => marketApi.strategies(signal) });
@@ -67,6 +76,7 @@ export const useOwnershipChanges = (query: { month?: string; symbol?: string } =
 export const useRecentInsiders = (query: RecentInsidersQuery = {}) =>
   useQuery({ queryKey: queryKeys.recentInsiders(query.days, query.action ?? null, query.limit), queryFn: ({ signal }) => engineApi.recentInsiders(query, signal), placeholderData: (previous) => previous });
 export const useCatalysts = (symbol: string) => useQuery({ queryKey: queryKeys.catalysts(symbol), queryFn: ({ signal }) => engineApi.catalysts(symbol, signal) });
+export const useDividendPatterns = (symbol: string) => useQuery({ queryKey: queryKeys.dividendPatterns(symbol), queryFn: ({ signal }) => engineApi.dividendPatterns(symbol, signal) });
 export const useBreadth = () => useQuery({ queryKey: queryKeys.breadth(), queryFn: ({ signal }) => engineApi.breadth(signal) });
 export const useCorporateActions =(symbol: string) => useQuery({ queryKey: queryKeys.actions(symbol), queryFn: ({ signal }) => stockApi.actions(symbol, signal) });
 /**

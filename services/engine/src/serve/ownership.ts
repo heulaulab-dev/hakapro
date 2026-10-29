@@ -18,56 +18,61 @@ export function emptyStockOwnership(symbol: string): StockOwnership {
 const issuerKey = (name: string | null) => name?.toUpperCase().replace(/&/g, " AND ").replace(/[^A-Z0-9]+/g, " ").replace(/\b(PT|TBK|PERSERO)\b/g, " ").replace(/\s+/g, " ").trim() ?? "";
 
 export async function crossHoldingsFor(store: OwnershipStore, symbol: string, month: string): Promise<StockOwnership["crossHoldings"]> {
-  const sets = await store.setsInMonth(month);
+  const sets = await store.setsWithRowsInMonth(month);
   const issuers = new Map<string, SetHeader | null>();
-  for (const header of sets) {
-    const set = await store.getSet(header.symbol, header.month);
-    if (!set) continue;
+  for (const set of sets) {
     const key = issuerKey(set.issuerName);
     if (!key) continue;
     if (!issuers.has(key)) issuers.set(key, set);
     else issuers.set(key, null);
   }
-  const directed = new Map<string, { from: SetHeader; to: SetHeader; shares: string | null; percent: string | null; reference: string }>();
-  for (const header of sets) {
-    const set = await store.getSet(header.symbol, header.month);
-    if (!set) continue;
+  const directed = new Map<string, { owner: SetHeader; held: SetHeader; shares: string | null; percent: string | null; reference: string }>();
+  const ambiguousDirections = new Set<string>();
+  for (const set of sets) {
     for (const row of set.rows) {
       if (row.holderKind !== "organisation") continue;
-      const held = issuers.get(issuerKey(row.holderName));
-      if (!held || held.symbol === set.symbol) continue;
-      directed.set(`${held.symbol}:${set.symbol}`, { from: held, to: set, shares: row.shares, percent: row.percent, reference: row.sourceReference });
+      const owner = issuers.get(issuerKey(row.holderName));
+      if (!owner || owner.symbol === set.symbol) continue;
+      const key = `${owner.symbol}:${set.symbol}`;
+      if (ambiguousDirections.has(key)) continue;
+      if (directed.has(key)) {
+        // Never silently choose or sum duplicate lines for the same listed issuer pair.
+        directed.delete(key);
+        ambiguousDirections.add(key);
+        continue;
+      }
+      directed.set(key, { owner, held: set, shares: row.shares, percent: row.percent, reference: row.sourceReference });
     }
   }
   const edges: StockOwnership["crossHoldings"] = [];
   for (const edge of directed.values()) {
-    const reverse = directed.get(`${edge.to.symbol}:${edge.from.symbol}`);
-    if (!reverse || (edge.from.symbol !== symbol && edge.to.symbol !== symbol) || edge.from.symbol > edge.to.symbol) continue;
+    const reverse = directed.get(`${edge.held.symbol}:${edge.owner.symbol}`);
+    if (!reverse || (edge.owner.symbol !== symbol && edge.held.symbol !== symbol) || edge.owner.symbol > edge.held.symbol) continue;
+    if (edge.owner.month !== edge.held.month || edge.owner.snapshotDate !== edge.held.snapshotDate ||
+        reverse.owner.snapshotDate !== edge.owner.snapshotDate || reverse.held.snapshotDate !== edge.held.snapshotDate) continue;
     edges.push({
-      ownerSymbol: edge.from.symbol, ownerName: edge.from.issuerName ?? edge.from.symbol,
-      heldSymbol: edge.to.symbol, heldName: edge.to.issuerName ?? edge.to.symbol,
+      ownerSymbol: edge.owner.symbol, ownerName: edge.owner.issuerName ?? edge.owner.symbol,
+      heldSymbol: edge.held.symbol, heldName: edge.held.issuerName ?? edge.held.symbol,
       shares: edge.shares, percent: edge.percent, reciprocalShares: reverse.shares, reciprocalPercent: reverse.percent,
-      snapshotDate: edge.to.snapshotDate, sourceReference: edge.reference, reciprocalSourceReference: reverse.reference,
+      snapshotDate: edge.held.snapshotDate, sourceReference: edge.reference, reciprocalSourceReference: reverse.reference,
     });
   }
   return edges.sort((a, b) => a.ownerSymbol.localeCompare(b.ownerSymbol) || a.heldSymbol.localeCompare(b.heldSymbol));
 }
 
 export async function ownershipNetworkFor(store: OwnershipStore, month: string): Promise<NonNullable<StockOwnership["network"]>> {
-  const headers = await store.setsInMonth(month);
+  const sets = await store.setsWithRowsInMonth(month);
   const issuers = new Map<string, SetHeader>();
   const nodes = new Map<string, { id: string; label: string; kind: "issuer" | "holder" }>();
   const ambiguous = new Set<string>();
-  for (const header of headers) {
-    const set = await store.getSet(header.symbol, month); if (!set) continue;
+  for (const set of sets) {
     nodes.set(`issuer:${set.symbol}`, { id: `issuer:${set.symbol}`, label: set.issuerName ?? set.symbol, kind: "issuer" });
     const key = issuerKey(set.issuerName);
     if (!key) continue;
     if (issuers.has(key)) { ambiguous.add(key); issuers.delete(key); } else if (!ambiguous.has(key)) issuers.set(key, set);
   }
   const edges: NonNullable<StockOwnership["network"]>["edges"] = [];
-  for (const header of headers) {
-    const set = await store.getSet(header.symbol, month); if (!set) continue;
+  for (const set of sets) {
     for (const row of set.rows) {
       if (row.holderKind !== "organisation") continue;
       const held = issuers.get(issuerKey(row.holderName));
