@@ -123,7 +123,8 @@
     "methodology": "Methodology",
     "rotation": "Sector Rotation",
     "intelligence": "Market Intelligence",
-    "compare": "Compare Stocks"
+    "compare": "Compare Stocks",
+    "portfolio": "Portfolio"
   },
   "intelligence": {
     "title": "Market intelligence",
@@ -159,6 +160,31 @@
     "asOf": "As of",
     "partial": "Some symbols could not be loaded; available data is shown.",
     "empty": "Add at least one IDX symbol to start comparing."
+  },
+  "portfolio": {
+    "title": "Portfolio",
+    "intro": "Track your own IDX positions against the latest stored market prices.",
+    "signIn": "Sign in to use your portfolio",
+    "signInAction": "Sign in",
+    "symbol": "Ticker",
+    "quantity": "Shares",
+    "price": "Transaction price",
+    "add": "Add transaction",
+    "type": "Transaction type",
+    "buy": "Buy",
+    "sell": "Sell",
+    "transactions": "Transactions",
+    "loading": "Loading portfolio…",
+    "invalid": "Enter a valid ticker, share count, and price.",
+    "failed": "The transaction could not be saved.",
+    "cost": "Cost",
+    "value": "Market value",
+    "pnl": "Profit / loss",
+    "empty": "Add your first position to start tracking it.",
+    "stock": "Stock",
+    "average": "Average",
+    "last": "Last",
+    "remove": "Remove"
   },
   "macro": {
     "title": "Rates & commodities",
