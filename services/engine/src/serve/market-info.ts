@@ -94,16 +94,24 @@ export async function serveIndicesHistory(store: MarketStore, from: string, to: 
 
 /** Market-wide date×broker totals, ranked by traded value independently for each date. */
 export async function serveMarketBrokerSummary(store: MarketStore, from: string, to: string, limit: number, now: Date): Promise<Served<z.input<typeof marketBrokerSummarySchema>> | null> {
-  const [latest, rows] = await Promise.all([store.latestBrokerSummaryDate(), store.brokerDailySummaryBetween(from, to)]);
+  const [latest, rows, sessionDates] = await Promise.all([
+    store.latestBrokerSummaryDate(),
+    store.brokerDailySummaryBetween(from, to),
+    // A 366-calendar-day request has fewer than 300 normal IDX sessions; this is a bounded EOD reference calendar.
+    store.sessionDates(to, 300),
+  ]);
   if (!latest) return null;
   const grouped = new Map<string, typeof rows>();
   for (const row of rows) grouped.set(row.date, [...(grouped.get(row.date) ?? []), row]);
+  const expectedDates = sessionDates.filter((date) => date >= from && date <= to).sort();
+  const reportedDates = new Set(expectedDates.filter((date) => (grouped.get(date)?.length ?? 0) > 0));
   const dates = [...grouped].sort(([a], [b]) => a.localeCompare(b)).map(([date, entries]) => ({
-    date,
+    date, rowCount: entries.length,
     brokers: entries.sort((a, b) => (b.value ?? -1) - (a.value ?? -1) || a.brokerCode.localeCompare(b.brokerCode)).slice(0, limit)
       .map((row) => ({ code: row.brokerCode, name: row.firmName, volume: row.volume, value: row.value, frequency: row.frequency })),
   }));
-  return { data: { dates }, dataAsOf: latest, freshness: sessionFreshness(latest, now) };
+  const coverage = { expectedDates, reportedSessions: reportedDates.size, missingDates: expectedDates.filter((date) => !reportedDates.has(date)) };
+  return { data: { dates, coverage }, dataAsOf: latest, freshness: sessionFreshness(latest, now) };
 }
 
 export async function serveBrokerDirectory(store: MarketStore, now: Date): Promise<Served<z.input<typeof brokerDirectorySchema>> | null> {
