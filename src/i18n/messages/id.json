@@ -57,6 +57,21 @@
     "source": "Sumber: {source}",
     "ariaLabel": "Kesegaran data: {state}"
   },
+  "morningBrief": {
+    "title": "Ringkasan pagi",
+    "dailyFeed": "Feed harian",
+    "description": "Ringkasan pasar untuk {date}. Tanggal data ditampilkan pada tiap bagian.",
+    "marketTitle": "Sesi pasar terakhir",
+    "marketAsOf": "Sesi {date}",
+    "dateUnknown": "Tanggal data pasar tidak tersedia",
+    "noMarket": "Data indeks tidak tersedia",
+    "breadth": "{up} naik · {down} turun · {flat} tetap",
+    "newsTitle": "Berita terbaru",
+    "noRecentNews": "Tidak ada berita bertanggal dalam tiga hari terakhir.",
+    "agendaTitle": "Tujuh hari ke depan",
+    "noAgenda": "Tidak ada aksi korporasi pada periode ini.",
+    "seeAll": "Lihat semua"
+  },
   "home": {
     "title": "Beranda",
     "placeholder": "Ringkasan pasar akan tampil di sini.",
