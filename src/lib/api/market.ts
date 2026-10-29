@@ -266,10 +266,15 @@ const ownershipHolderSchema = z.object({
   holderKey: z.string(), holderName: z.string(), holderKind: z.string(), shares: z.string().nullable(), percent: z.string().nullable(),
   investorType: z.string().nullable(), localForeign: z.string().nullable(),
 });
+const ownershipCrossHoldingSchema = z.object({
+  ownerSymbol: z.string(), ownerName: z.string(), heldSymbol: z.string(), heldName: z.string(),
+  shares: z.string().nullable(), percent: z.string().nullable(), reciprocalShares: z.string().nullable(), reciprocalPercent: z.string().nullable(), snapshotDate: z.string(),
+  sourceReference: z.string(), reciprocalSourceReference: z.string(),
+});
 export const stockOwnershipSchema = z.object({
   symbol: z.string(), issuerName: z.string().nullable(), month: z.string().nullable(), snapshotDate: z.string().nullable(), thresholdPercent: z.string().nullable(),
   issuedShares: z.string().nullable(), source: z.object({ dataset: z.string(), reference: z.string(), retrievedAt: z.string() }).nullable(),
-  holders: z.array(ownershipHolderSchema),
+  holders: z.array(ownershipHolderSchema), crossHoldings: z.array(ownershipCrossHoldingSchema).default([]),
 });
 export type StockOwnership = z.infer<typeof stockOwnershipSchema>;
 export const ownershipChangeSchema = z.object({

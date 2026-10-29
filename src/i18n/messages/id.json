@@ -873,7 +873,9 @@
     "networkPercentage": "Persentase",
     "networkGraph": "Jaringan Investor",
     "networkGraphAria": "Relasi investor ke emiten",
-    "networkLimited": "Hanya kepemilikan terverifikasi dalam snapshot ini yang ditampilkan. Cross-holding belum tersedia di dataset saat ini."
+    "networkLimited": "Hanya kepemilikan terverifikasi dalam snapshot ini yang ditampilkan. Cross-holding belum tersedia di dataset saat ini.",
+    "networkCrossHoldings": "Cross-holding terverifikasi",
+    "networkCrossHoldingAvailable": "{count} edge cross-holding terverifikasi"
   },
   "errors": {
     "title": "Terjadi kesalahan",
