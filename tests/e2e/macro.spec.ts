@@ -20,4 +20,5 @@ test("official BI meeting dates are visible with their source and publication da
   await expect(calendar).toContainText("Keputusan kebijakan Federal Reserve");
   await expect(calendar).toContainText("Inflasi Indonesia (perkiraan)");
   await expect(calendar.getByRole("link", { name: /Kalender Federal Reserve/i })).toHaveAttribute("href", /federalreserve\.gov/);
+  await expect(calendar).toContainText("Rilis ekonomi Yahoo dan tanggal laporan laba tidak disertakan");
 });

@@ -19,6 +19,8 @@ import { freshnessMeta } from "@/lib/freshness";
 import { formatDate, formatIdr, formatShortDate, type Locale } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
+const KSEI_CASH_DIVIDENDS_SOURCE = "https://web.ksei.co.id/publications/corporate-action-schedules/cash-dividend";
+
 /** Only http(s) links from the provider are rendered as links. */
 const safeUrl = (url: string | null) => (url && /^https?:\/\//i.test(url) ? url : null);
 
@@ -219,6 +221,9 @@ function ActionsCalendar() {
   return (
     <section className="flex flex-col gap-3" data-testid="actions-calendar" aria-labelledby="calendar-heading">
       <SectionHeader title={<span id="calendar-heading">{t("calendar")}</span>} description={t("calendarHint")} meta={query.data ? freshnessMeta(query.data) : undefined} />
+      <p className="text-xs text-muted-foreground">
+        {t("kseiActionsUnavailable")} <a href={KSEI_CASH_DIVIDENDS_SOURCE} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-link hover:underline">{t("kseiActionsSource")}<ExternalLink aria-hidden className="size-3" /></a>
+      </p>
       <DataState query={query} compact skeleton={<FeedSkeleton rows={4} />} isEmpty={(envelope) => envelope.data.length === 0}>
         {(envelope) => {
           const groups = groupByDay(envelope.data, (item) => item.date, "asc");
@@ -288,6 +293,7 @@ function MacroCalendar() {
       <a href={BI_RDG_2026_SOURCE} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1 text-link hover:underline">{t("biSource")}<ExternalLink aria-hidden className="size-3" /></a>
       <p className="mt-3">{t("fedSourceLabel")} <a href={FOMC_2026_SOURCE} target="_blank" rel="noopener noreferrer" className="text-link hover:underline">{t("fedSource")}</a></p>
       <p className="mt-2">{t("bpsEstimateHint")} <a href={BPS_RELEASES_SOURCE} target="_blank" rel="noopener noreferrer" className="text-link hover:underline">{t("bpsSource")}</a></p>
+      <p className="mt-3 border-t border-border pt-3 text-muted-foreground">{t("unsupportedCalendarSources")}</p>
     </div>
     <div>
       <h3 className="text-sm font-semibold">{t("upcoming")}</h3>
