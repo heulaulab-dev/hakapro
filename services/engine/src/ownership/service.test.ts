@@ -44,7 +44,7 @@ describe("OwnershipService", () => {
   it("stores the raw copy, parses, and records the upload", async () => {
     const upload = await created(FEB_PDF(), "2026-02", { sourceLabel: "SYNTHETIC announcement 001" });
     expect(upload).toMatchObject({ status: "PARSED", asOfMonth: "2026-02", snapshotDate: "2026-02-27", format: "pdf", error: null, issues: [] });
-    expect(upload.stats).toMatchObject({ parserVersion: "ksei-1pct-layout@0.1", rowsAccepted: 9, issuers: 3, setsReplaced: 0, changes: 0 });
+    expect(upload.stats).toMatchObject({ parserVersion: "ksei-1pct-layout@0.2", rowsAccepted: 9, issuers: 3, setsReplaced: 0, changes: 0 });
     const [doc] = documents.docs;
     expect(doc).toMatchObject({ source: "ownership-upload", url: `upload://ownership/${upload.sha256}`, contentType: "application/pdf", httpStatus: 200 });
     expect(doc.r2Key).toBe(`ownership-upload/2026-10-16/${upload.sha256}.pdf`);

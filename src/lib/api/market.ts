@@ -293,6 +293,9 @@ export const ownershipChangesSchema = z.object({
   comparisons: z.array(z.object({ symbol: z.string(), status: z.string(), fromMonth: z.string().nullable(), fromDate: z.string().nullable(), toDate: z.string(), counts: z.record(z.string(), z.number()).nullable(), issuedShares: z.object({ before: z.string(), after: z.string(), delta: z.string() }).nullable(), detail: z.string().nullable() })).default([]),
   changes: z.array(ownershipChangeSchema),
 });
+export const ownershipScreenerSchema = z.object({ month: z.string(), snapshotDate: z.string(), issuers: n, investors: n, holdings: n,
+  localForeign: z.object({ local: n, foreign: n, unknown: n }), classifications: z.array(z.object({ name: z.string(), holdings: n })),
+  rows: z.array(z.object({ symbol: z.string(), issuerName: z.string().nullable(), holderName: z.string(), holderKind: z.string(), investorType: z.string().nullable(), localForeign: z.string().nullable(), shares: z.string().nullable(), percent: z.string().nullable() })) });
 export type OwnershipChange = z.infer<typeof ownershipChangeSchema>;
 /** Market-wide insider feed (Data Engine rotation): the per-stock row plus symbol and value, and the crawl's coverage. */
 export const recentInsiderSchema = insiderRowSchema.extend({ symbol: z.string(), valueIdr: nn });
@@ -375,6 +378,7 @@ export const engineApi = {
   actionsCalendar: (range: { from?: string; to?: string } = {}, signal?: AbortSignal) => fetchEnvelope(`/api/actions${qs(range)}`, z.array(actionCalendarItemSchema), { signal }),
   ownership: (symbol: string, signal?: AbortSignal) => fetchEnvelope(`/api/stocks/${encodeURIComponent(symbol.toUpperCase())}/ownership`, stockOwnershipSchema, { signal }),
   ownershipChanges: (query: { month?: string; symbol?: string } = {}, signal?: AbortSignal) => fetchEnvelope(`/api/ownership/changes${qs(query)}`, ownershipChangesSchema, { signal }),
+  ownershipScreener: (signal?: AbortSignal) => fetchEnvelope("/api/ownership/screener", ownershipScreenerSchema, { signal }),
   recentInsiders: (query: RecentInsidersQuery = {}, signal?: AbortSignal) => fetchEnvelope(`/api/insiders/recent${qs(query)}`, recentInsidersSchema, { signal }),
 };
 

@@ -14,7 +14,7 @@ import { stockHref } from "@/components/layout/nav-config";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link, useRouter } from "@/i18n/navigation";
-import { useOwnershipChanges } from "@/lib/api/hooks";
+import { useOwnershipChanges, useOwnershipScreener } from "@/lib/api/hooks";
 import { marketApi } from "@/lib/api/market";
 import { freshnessMeta, leastFresh } from "@/lib/freshness";
 import { formatMonthName, type Locale } from "@/lib/format";
@@ -44,6 +44,7 @@ export function OwnershipView({ viewer, canUpload = false }: { viewer: ViewerSum
     <div className="flex flex-col gap-section p-4 md:p-6" data-testid="ownership-view">
       <SectionHeader as="h1" title={t("title")} description={t("intro")} />
       <KseiChanges canUpload={canUpload} />
+      <OnePercentScreener />
       <InsiderFeedSection />
       <form onSubmit={go} className="flex max-w-sm items-center gap-2">
         <Input aria-label={t("checkStock")} placeholder={t("checkStock")} value={symbol} onChange={(event) => setSymbol(event.target.value)} className="ticker h-8 uppercase" data-testid="ownership-symbol" />
@@ -57,6 +58,24 @@ export function OwnershipView({ viewer, canUpload = false }: { viewer: ViewerSum
       </section>
     </div>
   );
+}
+
+function OnePercentScreener() {
+  const t = useTranslations("ownershipChanges");
+  const [search, setSearch] = useState("");
+  const query = useOwnershipScreener();
+  const needle = search.trim().toLocaleLowerCase();
+  return <section className="flex flex-col gap-3" data-testid="one-percent-screener">
+    <SectionHeader title={t("screenerTitle")} description={t("screenerHint")} meta={query.data ? freshnessMeta(query.data) : undefined} />
+    <DataState query={query} compact>{(env) => <>
+      <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+        {[[t("screenerIssuers"), env.data.issuers], [t("screenerInvestors"), env.data.investors], [t("screenerHoldings"), env.data.holdings], [t("screenerForeign"), env.data.localForeign.foreign]] .map(([label, value]) => <div key={String(label)} className="rounded-xl border border-border p-3"><div className="caption-style text-subtle">{label}</div><div className="num text-lg">{value}</div></div>)}
+      </div>
+      <Input aria-label={t("screenerSearch")} placeholder={t("screenerSearch")} value={search} onChange={(e) => setSearch(e.target.value)} />
+      <div className="overflow-auto rounded-xl border border-border"><table className="w-full text-sm"><thead><tr className="border-b border-border text-left"><th className="p-2">{t("screenerStock")}</th><th className="p-2">{t("screenerInvestor")}</th><th className="p-2">{t("screenerClass")}</th><th className="p-2">{t("screenerShares")}</th><th className="p-2">{t("screenerPercent")}</th></tr></thead><tbody>{env.data.rows.filter((r) => !needle || `${r.symbol} ${r.issuerName ?? ""} ${r.holderName} ${r.investorType ?? ""}`.toLocaleLowerCase().includes(needle)).slice(0, 500).map((r, i) => <tr key={`${r.symbol}:${r.holderName}:${i}`} className="border-b border-border"><td className="p-2"><Link href={stockHref(r.symbol, "ownership")} className="text-link hover:underline">{r.symbol}</Link><div className="caption-style text-subtle">{r.issuerName}</div></td><td className="p-2">{r.holderName}</td><td className="p-2">{r.investorType ?? "—"}{r.localForeign ? ` · ${r.localForeign}` : " · ?"}</td><td className="num p-2">{r.shares ? Number(r.shares).toLocaleString() : "—"}</td><td className="num p-2">{r.percent ? `${Number(r.percent).toFixed(2)}%` : "—"}</td></tr>)}</tbody></table></div>
+      <p className="caption-style text-subtle">{t("screenerDisclosure", { date: env.data.snapshotDate, local: env.data.localForeign.local, unknown: env.data.localForeign.unknown })}</p>
+    </>}</DataState>
+  </section>;
 }
 
 /** Percent strings from the engine are exact decimals ("12.345678"); shown to two places, never recomputed. */
