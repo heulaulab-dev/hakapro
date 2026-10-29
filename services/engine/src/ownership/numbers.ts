@@ -1,7 +1,7 @@
 // Number and date parsing for the ≥1% shareholder list (CONNECTION-NETWORK.md §1.3: "3.200.142.830", "41,10").
 // Pure and strict: anything ambiguous or malformed throws a ParseValueError with a readable message, which the
-// normalizer records as a per-row validation error. Values come back as the exact decimal strings the HAKA-33 types
-// use (`shares` integer string, `percent` ≤ 6 decimals); no floating point is involved.
+// normalizer records as a per-row validation error. Values come back as decimal strings compatible with the HAKA-33
+// types (`shares` integer string, `percent` ≤ 6 decimals); no floating point is involved.
 
 export class ParseValueError extends Error {}
 
@@ -41,7 +41,8 @@ function normalizeInteger(digits: string, raw: string): string {
 /**
  * Percentage of issued shares: "41,10", "41.10", "41,10%", "0,9", "5". A percentage never needs a thousands separator
  * (it is at most 100), so a single "," or "." is the decimal mark. With both, the last one is the decimal mark and the
- * value must still be at most 100. Returns null for an empty cell; at most 6 decimals (`numeric(9,6)`).
+ * value must still be at most 100. Returns null for an empty cell; rounds excess source precision to the database's
+ * 6 decimals (`numeric(9,6)`) using decimal string arithmetic.
  */
 export function parsePercent(raw: string): string | null {
   let value = clean(raw).replace(/%$/, "");
@@ -60,23 +61,18 @@ export function parsePercent(raw: string): string | null {
   const match = /^(\d+)(?:\.(\d*))?$/.exec(value);
   if (!match) throw new ParseValueError(`unreadable percentage "${raw.trim()}"`);
   const whole = match[1].replace(/^0+(?=\d)/, "");
-  let decimals = (match[2] ?? "").replace(/0+$/, "");
-  // XLSX readers can expose a two-decimal cell as a binary floating-point
-  // artifact (for example 1.1500000000000001). Accept it only when rounding
-  // to six decimals is numerically lossless; genuinely over-precise input is
-  // still rejected below.
-  if (decimals.length > 6) {
-    const numeric = Number(value);
-    const rounded = numeric.toFixed(6).replace(/0+$/, "").replace(/\.$/, "");
-    if (Number.isFinite(numeric) && Math.abs(numeric - Number(rounded)) <= 1e-9 && rounded.startsWith(`${whole}.`)) {
-      decimals = rounded.slice(whole.length + 1);
-    }
-  }
-  if (decimals.length > 6) throw new ParseValueError(`percentage "${raw.trim()}" has more than 6 decimals`);
+  const decimals = (match[2] ?? "").replace(/0+$/, "");
   if (whole.length > 3 || Number(whole) > 100 || (Number(whole) === 100 && decimals !== "")) {
     throw new ParseValueError(`percentage "${raw.trim()}" is above 100`);
   }
-  return decimals ? `${whole}.${decimals}` : whole;
+  if (decimals.length <= 6) return decimals ? `${whole}.${decimals}` : whole;
+
+  const scale = BigInt(1_000_000);
+  const retained = BigInt(whole) * scale + BigInt(decimals.slice(0, 6));
+  const rounded = retained + (decimals[6] >= "5" ? BigInt(1) : BigInt(0));
+  const roundedWhole = (rounded / scale).toString();
+  const roundedDecimals = (rounded % scale).toString().padStart(6, "0").replace(/0+$/, "");
+  return roundedDecimals ? `${roundedWhole}.${roundedDecimals}` : roundedWhole;
 }
 
 const MONTHS: Record<string, number> = {
