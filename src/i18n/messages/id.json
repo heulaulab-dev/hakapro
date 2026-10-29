@@ -946,6 +946,7 @@
     "kseiMonths": "{month} dibanding {previous}",
     "kseiNone": "Belum ada daftar pemegang saham ≥1% KSEI yang diunggah. Perubahan lintas pasar akan muncul setelah admin mengunggah daftar bulanannya.",
     "kseiNoChanges": "Tidak ada perubahan porsi pada bulan ini.",
+    "kseiSnapshotOnly": "Daftar terbaru memuat {count} emiten. Belum ada data bulan sebelumnya untuk menghitung perubahan.",
     "kind": {
       "NEW": "Baru",
       "INCREASE": "Bertambah",
