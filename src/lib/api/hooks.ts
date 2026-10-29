@@ -66,6 +66,8 @@ export const useIndicesHistory = (query: { codes?: string[]; from?: string; to?:
   useQuery({ queryKey: queryKeys.indicesHistory(query.codes), queryFn: ({ signal }) => engineApi.indicesHistory(query, signal) });
 export const useIssuerRace = (window: "1M" | "3M" | "6M" | "1Y", sector: string) =>
   useQuery({ queryKey: queryKeys.issuerRace(window, sector), queryFn: ({ signal }) => engineApi.issuerRace({ window, sector }, signal), staleTime: 300_000 });
+export const useStockSectorRotation = (sector: string, interval: "daily" | "weekly") =>
+  useQuery({ queryKey: queryKeys.stockSectorRotation(sector, interval), queryFn: ({ signal }) => engineApi.stockSectorRotation({ sector, interval }, signal), staleTime: 300_000, enabled: Boolean(sector) });
 /** The most-traded `limit` stocks with sector totals; the previous limit's map stays on screen while the next loads. */
 export const useHeatmap = (limit: number) =>
   useQuery({ queryKey: queryKeys.heatmap(limit), queryFn: ({ signal }) => engineApi.heatmap(limit, signal), placeholderData: (previous) => previous });

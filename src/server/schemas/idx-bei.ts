@@ -240,6 +240,26 @@ export const issuerRaceSchema = z.object({
 });
 export type IssuerRace = z.infer<typeof issuerRaceSchema>;
 
+/** Per-issuer RRG versus an equal-weight synthetic basket of current sector peers. */
+export const stockSectorRotationIntervalSchema = z.enum(["daily", "weekly"]);
+export const stockSectorRotationPointSchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  rsRatio: z.number(), rsMomentum: z.number(), quadrant: z.enum(["leading", "weakening", "improving", "lagging"]),
+});
+export const stockSectorRotationSchema = z.object({
+  sector: z.string(), sectors: z.array(z.object({ name: z.string(), members: z.number().int().nonnegative() })),
+  interval: stockSectorRotationIntervalSchema,
+  from: z.string().nullable(), to: z.string().nullable(), sessions: z.number().int().nonnegative(),
+  universe: z.object({ activeMembers: z.number().int().nonnegative(), eligibleIssuers: z.number().int().nonnegative(), returnedIssuers: z.number().int().nonnegative(), truncated: z.boolean() }),
+  minPeerConstituents: z.number().int().nonnegative(), requiredObservations: z.number().int().positive(),
+  stocks: z.array(z.object({
+    symbol: symbolSchema, name: z.string(), peers: z.number().int().nonnegative(), basketCoveragePercent: z.number().min(0).max(100),
+    alignedObservations: z.number().int().nonnegative(), latest: stockSectorRotationPointSchema.nullable(),
+    points: z.array(stockSectorRotationPointSchema),
+  })),
+});
+export type StockSectorRotation = z.infer<typeof stockSectorRotationSchema>;
+
 /** Market-wide IDX GetBrokerSummary rows, date×broker (not stock-specific broker flow). */
 export const marketBrokerSummarySchema = z.object({
   dates: z.array(z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), rowCount: z.number().int().nonnegative().optional(), brokers: z.array(z.object({
