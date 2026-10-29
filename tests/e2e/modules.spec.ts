@@ -14,3 +14,14 @@ test("mobile: More opens the grouped module grid and a module navigates", async 
   await page.getByTestId("module-screener").click();
   await expect(page).toHaveURL(/\/id\/discover\/screener$/);
 });
+
+test("mobile: Broker Activity appears as a standalone module", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "mobile", "mobile flow");
+  await page.goto("/id/dashboard");
+  await page.getByTestId("mobile-more").click();
+  const modules = page.getByTestId("all-modules");
+  await expect(modules.getByTestId("module-brokerActivity")).toBeVisible();
+  await modules.getByTestId("module-brokerActivity").click();
+  await expect(page).toHaveURL(/\/id\/discover\/broker-activity$/);
+  await expect(page.getByRole("heading", { level: 1, name: "Aktivitas Broker" })).toBeVisible();
+});

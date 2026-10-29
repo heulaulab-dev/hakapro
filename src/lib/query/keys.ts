@@ -4,6 +4,7 @@ export const queryKeys = {
   history: (symbol: string, frame = "daily", limit = 0, startDate = "", endDate = "") => ["market", "history", symbol.toUpperCase(), frame, limit, startDate, endDate] as const,
   comparisonHistory: (symbol: string, range: string) => ["market", "comparison-history", symbol.toUpperCase(), range] as const,
   brokerSummary: (symbol: string, query: object = {}) => ["market", "broker-summary", symbol.toUpperCase(), JSON.stringify(query)] as const,
+  marketBrokerSummary: (from = "", to = "", limit = 100) => ["market", "broker-market-summary", from, to, limit] as const,
   strategies: () => ["market", "strategies"] as const,
   insiders: (symbol: string) => ["market", "insiders", symbol.toUpperCase()] as const,
   marketCap: (query: object = {}) => ["market", "market-cap", JSON.stringify(query)] as const,
