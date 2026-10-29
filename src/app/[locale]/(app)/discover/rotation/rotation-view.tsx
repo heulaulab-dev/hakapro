@@ -16,6 +16,7 @@ import { RrgChart, type RrgChartSeries } from "@/components/charts/rrg-chart";
 import { useIndicesHistory } from "@/lib/api/hooks";
 import type { IndexCoverageReport, IndexSeries } from "@/lib/api/market";
 import { freshnessMeta } from "@/lib/freshness";
+import { IssuerRacePanel } from "./issuer-race-panel";
 import { formatDate, type Locale } from "@/lib/format";
 import {
   computeRotation, directionVector, minObservations, QUADRANTS, RRG_PARAM_DEFAULTS,
@@ -43,6 +44,7 @@ export function RotationView() {
       <DataState query={query}>
         {(envelope) => <Workspace series={envelope.data.series} coverage={envelope.data.coverage ?? []} meta={freshnessMeta(envelope)} />}
       </DataState>
+      <IssuerRacePanel />
       <ResearchDisclaimer />
     </div>
   );
