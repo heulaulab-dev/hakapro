@@ -6,8 +6,8 @@ import { csvParser, xlsxParser } from "./tabular";
 
 export const PARSERS: Record<OwnershipFormat, OwnershipFileParser> = { pdf: pdfParser, csv: csvParser, xlsx: xlsxParser };
 
-/** Parser version, stored with each upload so a re-parse after a layout change is traceable. Bump on any layout.ts change. */
-export const OWNERSHIP_PARSER_VERSION = "ksei-1pct-layout@0.2";
+/** Parser version, stored with each upload so a re-parse after a parser change is traceable. */
+export const OWNERSHIP_PARSER_VERSION = "ksei-1pct-layout@0.3";
 
 export type ParsedOwnershipFile = NormalizedFile & { columns: RawTable["columns"]; pages: number | null };
 
