@@ -208,3 +208,9 @@ export class DbMarketStore implements MarketStore {
     return [...result].map((row) => ({ series: row.series, date: row.date, value: Number(row.value), link: row.link }));
   }
 }
+
+/** Stored TradingView logo id of a symbol (null when unknown or never captured). */
+export async function securityLogoId(db: EngineDb, symbol: string): Promise<string | null> {
+  const rows = await db.select({ logoId: t.securities.logoId }).from(t.securities).where(eq(t.securities.symbol, symbol)).limit(1);
+  return rows[0]?.logoId ?? null;
+}

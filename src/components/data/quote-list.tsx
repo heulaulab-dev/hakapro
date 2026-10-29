@@ -1,6 +1,6 @@
 "use client";
 
-import { X } from "lucide-react";
+import { X } from "@/components/kit/icons";
 import { useLocale, useTranslations } from "next-intl";
 import { FreshnessBadge } from "@/components/feedback/freshness-badge";
 import { Button } from "@/components/ui/button";

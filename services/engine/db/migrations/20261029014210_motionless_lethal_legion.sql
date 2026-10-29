@@ -1,0 +1,1 @@
+ALTER TABLE "securities" ADD COLUMN "logo_id" text;

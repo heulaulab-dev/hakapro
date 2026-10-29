@@ -1,6 +1,5 @@
 "use client";
 
-import { CalendarDays } from "lucide-react";
 import { parseAsInteger, parseAsString, parseAsStringLiteral, useQueryState } from "nuqs";
 import { useLocale, useTranslations } from "next-intl";
 import { DataState } from "@/components/feedback/data-state";
@@ -9,9 +8,10 @@ import { Panel } from "@/components/layout/panel";
 import { SectionHeader } from "@/components/layout/section-header";
 import { ChangeValue } from "@/components/market/change-value";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { DatePicker, toIsoDate } from "@/components/ui/date-picker";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { TickerLogo } from "@/components/market/ticker-logo";
 import { Link } from "@/i18n/navigation";
 import { useMarketCap, useMarketOverview, useSectors } from "@/lib/api/hooks";
 import { barPercent, intensityTier, maxOf, proportions } from "@/lib/bars";
@@ -84,8 +84,8 @@ function MoverRow({ rank, symbol, name, price, changePercent, valueIdr, maxValue
         className={cn(MOVER_GRID, "min-h-14 rounded-lg px-2 py-2 outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring/60", TINT[dir][intensityTier(changePercent)])}>
         <span className="num row-span-2 self-center text-right text-xs text-muted-foreground sm:row-span-1">{rank}</span>
         <span className="flex min-w-0 flex-col">
-          <span className="ticker font-medium">{symbol}</span>
-          <span className="truncate text-xs text-muted-foreground">{name}</span>
+          <span className="flex items-center gap-2"><TickerLogo symbol={symbol} size="sm" /><span className="ticker font-medium">{symbol}</span></span>
+          <span className="truncate pl-7 text-xs text-muted-foreground">{name}</span>
         </span>
         <span className="ticker col-start-2 row-start-2 text-sm sm:col-start-auto sm:row-start-auto sm:text-right">{formatIdr(price, locale)}</span>
         <span className="col-start-3 row-start-1 justify-self-end sm:col-start-auto sm:row-start-auto">
@@ -181,11 +181,16 @@ export function MoversView() {
         </Panel>
         <Panel testId="largest-caps" title={t("movers.largest")} meta={marketCap.data ? freshnessMeta(marketCap.data) : undefined}
           actions={
-            <label className="flex h-10 items-center gap-1.5 rounded-lg border border-border bg-secondary/50 px-2 text-xs text-muted-foreground focus-within:ring-2 focus-within:ring-ring/60 md:h-8">
-              <CalendarDays aria-hidden className="size-3.5" />
-              <span className="sr-only">{t("movers.capDate")}</span>
-              <Input type="date" value={capDate ?? ""} onChange={(event) => { const value = event.target.value; void setCapDate(ISO_DATE.test(value) ? value : null); void setCapPage(null); }} className="h-8 w-32 border-0 bg-transparent p-0 text-xs shadow-none focus-visible:ring-0" data-testid="caps-date" />
-            </label>
+            <DatePicker
+              value={capDate}
+              max={toIsoDate(new Date())}
+              clearable
+              placeholder={t("movers.capDateLatest")}
+              aria-label={t("movers.capDate")}
+              onChange={(value) => { void setCapDate(value && ISO_DATE.test(value) ? value : null); void setCapPage(null); }}
+              className="w-40 [&>button:first-child]:h-8 [&>button:first-child]:text-xs"
+              data-testid="caps-date"
+            />
           }>
           <DataState query={marketCap} compact skeleton={<MoverSkeleton />}>
             {(envelope) => {
@@ -199,7 +204,7 @@ export function MoversView() {
                       <li key={row.symbol}>
                         <Link href={stockHref(row.symbol)} data-testid={`stock-row-${row.symbol}`} className="grid min-h-12 grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 rounded-lg px-2 py-1.5 outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring/60">
                           <span className="num row-span-2 text-right text-xs text-muted-foreground">{(data.page - 1) * data.perPage + index + 1}</span>
-                          <span className="flex min-w-0 items-baseline gap-2"><span className="ticker font-medium">{row.symbol}</span><span className="truncate text-xs text-muted-foreground">{row.name}</span></span>
+                          <span className="flex min-w-0 items-center gap-2"><TickerLogo symbol={row.symbol} size="sm" /><span className="ticker font-medium">{row.symbol}</span><span className="truncate text-xs text-muted-foreground">{row.name}</span></span>
                           <span className="ticker text-sm">{formatIdr(row.marketCapIdr, locale, { compact: true })}</span>
                           <Bar percent={barPercent(row.marketCapIdr, maxCap)} className="col-span-2" />
                         </Link>

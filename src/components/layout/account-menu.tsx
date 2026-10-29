@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, LogIn, LogOut, ShieldAlert, UserRound } from "lucide-react";
+import { Bell, LogIn, LogOut, ShieldAlert, UserRound } from "@/components/kit/icons";
 import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";

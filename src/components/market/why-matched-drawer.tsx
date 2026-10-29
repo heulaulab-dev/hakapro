@@ -1,6 +1,6 @@
 "use client";
 
-import { HelpCircle } from "lucide-react";
+import { HelpCircle } from "@/components/kit/icons";
 import { useLocale, useTranslations } from "next-intl";
 import { FreshnessBadge } from "@/components/feedback/freshness-badge";
 import { StatusBadge } from "@/components/feedback/status-badge";

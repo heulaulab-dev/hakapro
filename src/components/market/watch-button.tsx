@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Bookmark, BookmarkCheck, FileSearch } from "lucide-react";
+import { Bell, Bookmark, BookmarkCheck, FileSearch } from "@/components/kit/icons";
 import { useTranslations } from "next-intl";
 import type { ViewerSummary } from "@/components/layout/types";
 import { Button } from "@/components/ui/button";

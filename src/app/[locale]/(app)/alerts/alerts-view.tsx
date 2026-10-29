@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, LogIn, Trash2 } from "lucide-react";
+import { Bell, LogIn, Trash2 } from "@/components/kit/icons";
 import { parseAsString, useQueryState } from "nuqs";
 import { useLocale, useTranslations } from "next-intl";
 import { useState, type FormEvent } from "react";

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "@/components/kit/icons";
 import { parseAsString, useQueryState } from "nuqs";
 import { useTranslations } from "next-intl";
 import { DataState } from "@/components/feedback/data-state";

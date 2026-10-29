@@ -32,6 +32,7 @@ import {
   DEFAULT_INSIDER_REVISIT_DAYS, emptyRecentInsiders, INSIDER_ACTION_FILTERS, INSIDERS_DEFAULT_DAYS, INSIDERS_DEFAULT_LIMIT, INSIDERS_MAX_DAYS,
   INSIDERS_MAX_LIMIT, serveRecentInsiders, type InsiderStore,
 } from "../serve/insiders";
+import type { LogoService } from "../serve/logos";
 import { emptyStockOwnership, serveOwnershipChanges, serveStockOwnership } from "../serve/ownership";
 import { emptyRadar, emptyStealth, serveRadar, serveStealth } from "../serve/radar";
 import type { MarketStore } from "../serve/store";
@@ -66,6 +67,8 @@ export type AppDeps = {
   strategies?: { enabled: boolean; store: StrategyStore | null; rules?: StrategyRules };
   /** The insider feed's stored reads and the revisit window its coverage is measured over. Absent → the empty form. */
   insiders?: { store: InsiderStore; revisitDays: number };
+  /** Ticker logos (ENGINE_TICKER_LOGOS_ENABLED). Absent → /v1/logos/{s} answers 404 DISABLED. */
+  logos?: LogoService | null;
   /** The curated conglomerate groups behind /v1/groups (tests pass their own). */
   groups?: GroupCatalog;
   /** Authenticated collector import; persists validated IDX rows through the existing index_daily upsert. */
@@ -95,6 +98,20 @@ export const UNAVAILABLE_ROUTES = [] as const;
 export const STRATEGIES_DISABLED = {
   route: "/v1/strategies", status: "DISABLED",
   reason: "ENGINE_STRATEGY_SCANS_ENABLED is off (the default): the HAKA-17 strategy rules are a draft (v0.1) awaiting owner approval, so no scan runs and the route answers with the empty UNAVAILABLE board. See strategyScans.",
+} as const;
+
+/** Listed under `unavailable` while ENGINE_TICKER_LOGOS_ENABLED is off (the default). */
+export const TICKER_LOGOS_DISABLED = {
+  route: "/v1/logos/{s}", status: "DISABLED",
+  reason: "ENGINE_TICKER_LOGOS_ENABLED is off (the default): logos come from TradingView's CDN, accepted for the internal experiment only (DATA-ENGINE.md §8 decision 6), so no logo source is registered and the route answers 404 DISABLED.",
+} as const;
+
+/** Logo responses: cached a week by the caller, never sniffed, and inert if opened directly (no script, no loads). */
+export const LOGO_HEADERS = {
+  "content-type": "image/svg+xml; charset=utf-8",
+  "cache-control": "public, max-age=604800, stale-while-revalidate=604800",
+  "x-content-type-options": "nosniff",
+  "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'; sandbox",
 } as const;
 
 const pageParam = (max: number, fallback: number) => z.string().regex(/^\d{1,6}$/).transform(Number).pipe(z.number().int().min(1).max(max)).optional().transform((value) => value ?? fallback);
@@ -192,7 +209,7 @@ export function createApp(deps: AppDeps): (request: Request) => Promise<Response
       return json({
         data: {
           sources, scheduler: { paused: pause.paused, pauseReason: pause.reason, diskPercent: pause.diskPercent, diskStopPercent: pause.diskStopPercent, jobs },
-          rawStore: deps.rawStoreKind, eodSessions, unavailable: [...UNAVAILABLE_ROUTES, ...(scansEnabled ? [] : [STRATEGIES_DISABLED])], strategyScans,
+          rawStore: deps.rawStoreKind, eodSessions, unavailable: [...UNAVAILABLE_ROUTES, ...(scansEnabled ? [] : [STRATEGIES_DISABLED]), ...(deps.logos ? [] : [TICKER_LOGOS_DISABLED])], strategyScans,
         },
         meta: unavailableMeta(at),
       });
@@ -368,6 +385,19 @@ export function createApp(deps: AppDeps): (request: Request) => Promise<Response
       // Corporate ≥1% holders up while the close was flat or lower, in the newest uploaded month; empty before any upload.
       const store = deps.ownership?.service.store;
       return respond(stealthOwnershipSchema, store ? await serveStealth(store, market ?? null) : null, emptyStealth());
+    }
+
+    const logo = path.match(/^\/v1\/logos\/([^/]+)$/);
+    if (logo) {
+      let raw: string;
+      try { raw = decodeURIComponent(logo[1]); } catch { return error(400, "BAD_REQUEST", "Invalid symbol"); }
+      const symbol = symbolSchema.safeParse(raw);
+      if (!symbol.success) return error(400, "BAD_REQUEST", "Invalid symbol");
+      if (!deps.logos) return error(404, "DISABLED", TICKER_LOGOS_DISABLED.reason);
+      const found = await deps.logos.get(symbol.data);
+      // No logo id, a rejected file or an unreachable CDN: a typed miss, never a placeholder image.
+      if (!found) return error(404, "NO_DATA", `No logo for ${symbol.data}`);
+      return new Response(method === "HEAD" ? null : found.svg, { status: 200, headers: LOGO_HEADERS });
     }
 
     const stock = path.match(/^\/v1\/stocks\/([^/]+)(?:\/(fundamentals|actions|profile|ownership))?$/);

@@ -7,12 +7,13 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import type { AddressInfo } from "node:net";
 import { fixture } from "./support";
 
-export type SourceName = "tradingview" | "yahoo" | "pasardana" | "arjum" | "cnbc" | "detik" | "antara" | "investortrust" | "bi";
+export type SourceName = "tradingview" | "tvlogo" | "yahoo" | "pasardana" | "arjum" | "cnbc" | "detik" | "antara" | "investortrust" | "bi";
 export const ARJUM_TEST_ORIGIN = "https://arjum.example.test";
 export const ARJUM_TEST_KEY = "test-arjum-key";
 
 const ORIGINS: Record<SourceName, string> = {
   tradingview: "https://scanner.tradingview.com",
+  tvlogo: "https://s3-symbol-logo.tradingview.com",
   yahoo: "https://query1.finance.yahoo.com",
   pasardana: "https://pasardana.id",
   arjum: ARJUM_TEST_ORIGIN,
@@ -30,6 +31,9 @@ const FEEDS: Record<string, string> = {
   "investortrust /rss/market.rss": "news-investortrust-market.xml",
   "investortrust /rss/macro.rss": "news-investortrust-macro.xml",
 };
+/** Synthetic logo in the shape of TradingView's (a plain 18×18 vector); every other logo id answers like the CDN: 403 XML. */
+export const LOGO_FIXTURE_SVG = '<!-- fixture --><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"><path fill="#0D63B6" d="M0 0h18v18H0z"/></svg>';
+const LOGOS: Record<string, string> = { "/bank-central-asia.svg": LOGO_FIXTURE_SVG };
 const BI_PAGES: Record<string, string> = {
   "/id/statistik/indikator/bi-rate.aspx": "bi-rate.html",
   "/id/statistik/informasi-kurs/jisdor/default.aspx": "bi-jisdor.html",
@@ -134,6 +138,10 @@ export async function startSourceWorld(): Promise<SourceWorld> {
       return send(res, 200, xml, { "content-type": source === "investortrust" ? "application/rss+xml" : "text/xml" });
     }
     if (source === "bi" && BI_PAGES[path] && req.method === "GET") return send(res, 200, fixture(BI_PAGES[path]), { "content-type": "text/html; charset=utf-8" });
+    if (source === "tvlogo" && req.method === "GET") {
+      if (LOGOS[path]) return send(res, 200, LOGOS[path], { "content-type": "image/svg+xml", etag: '"logo-v1"' });
+      return send(res, 403, '<?xml version="1.0" encoding="UTF-8"?><Error><Code>AccessDenied</Code></Error>', { "content-type": "application/xml" });
+    }
     if (source === "tradingview" && req.method === "POST") {
       if (path === "/indonesia/scan") return send(res, 200, scaledScan(fixture("tradingview-indonesia-scan.json"), state.tvPriceFactor));
       if (path === "/global/scan") return send(res, 200, fixture("tradingview-global-indices.json"));

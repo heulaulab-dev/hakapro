@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { ResearchDisclaimer } from "@/components/feedback/research-disclaimer";
 import { Panel } from "@/components/layout/panel";
 import { SectionHeader } from "@/components/layout/section-header";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatRuleValue, useRadarText } from "@/components/radar/radar-chips";
 import { Link } from "@/i18n/navigation";
 import type { Radar } from "@/lib/api/market";
@@ -20,16 +21,13 @@ const RULES = Object.fromEntries(RADAR_SIGNAL_KEYS.map((key) => {
 const SOURCES = ["arjum", "prices", "ksei", "intraday"] as const;
 const PRINCIPLES = ["observe", "trace", "missing", "counter"] as const;
 
-const th = "caption-style h-[38px] border-b border-border px-3 text-left font-normal whitespace-nowrap text-subtle";
-const td = "border-b border-border px-3 py-cell-y align-top";
-
-function Table({ head, children, testId }: { head: string[]; children: ReactNode; testId?: string }) {
+function DocTable({ head, children, testId }: { head: string[]; children: ReactNode; testId?: string }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[640px] border-collapse text-sm" data-testid={testId}>
-        <thead><tr>{head.map((label) => <th key={label} className={th}>{label}</th>)}</tr></thead>
-        <tbody>{children}</tbody>
-      </table>
+      <Table className="min-w-[640px] border-collapse text-sm" data-testid={testId}>
+        <TableHeader><TableRow interactive={false}>{head.map((label) => <TableHead key={label}>{label}</TableHead>)}</TableRow></TableHeader>
+        <TableBody>{children}</TableBody>
+      </Table>
     </div>
   );
 }
@@ -56,34 +54,34 @@ export function MethodologyView() {
       </Panel>
 
       <Panel title={t("sources.title")} description={t("sources.intro")} testId="methodology-sources">
-        <Table head={[t("sources.source"), t("sources.what"), t("sources.when")]}>
+        <DocTable head={[t("sources.source"), t("sources.what"), t("sources.when")]}>
           {SOURCES.map((key) => (
-            <tr key={key} data-testid={`source-${key}`}>
-              <td className={`${td} font-medium`}>{t(`sources.${key}.name`)}</td>
-              <td className={td}>{t(`sources.${key}.what`)}</td>
-              <td className={td}>{t(`sources.${key}.when`)}</td>
-            </tr>
+            <TableRow key={key} data-testid={`source-${key}`}>
+              <TableCell className="font-medium align-top">{t(`sources.${key}.name`)}</TableCell>
+              <TableCell className="align-top">{t(`sources.${key}.what`)}</TableCell>
+              <TableCell className="align-top">{t(`sources.${key}.when`)}</TableCell>
+            </TableRow>
           ))}
-        </Table>
+        </DocTable>
       </Panel>
 
       <Panel title={t("radar.title")} description={t("radar.intro")} testId="methodology-radar"
         actions={<Link href="/discover/radar" className="caption-style text-link hover:underline touch-target">{t("radar.open")}</Link>}>
         <p className="caption-style ticker text-subtle" data-testid="methodology-radar-version">{t("version", { version: RADAR_RULES_V0.version })}</p>
-        <Table head={[t("radar.signal"), t("radar.measures"), t("radar.windowHead"), t("radar.threshold"), t("radar.needs")]} testId="methodology-signals">
+        <DocTable head={[t("radar.signal"), t("radar.measures"), t("radar.windowHead"), t("radar.threshold"), t("radar.needs")]} testId="methodology-signals">
           {RADAR_SIGNAL_KEYS.map((key) => {
             const rule = RADAR_RULES_V0.signals[key];
             return (
-              <tr key={key} data-testid={`rule-${key}`}>
-                <td className={`${td} font-medium`}>{text.name(key, RULES)}</td>
-                <td className={td}>{t(`radar.describe.${key}`, { window: rule.window ?? 0, baseline: rule.baseline ?? 0 })}</td>
-                <td className={`${td} num whitespace-nowrap`}>{windowText(rule.window, rule.baseline)}</td>
-                <td className={`${td} num whitespace-nowrap`} data-testid={`threshold-${key}`}>≥ {formatRuleValue(rule.threshold, rule.unit, locale)}</td>
-                <td className={td}>{rule.inputs.map((input) => t(`inputs.${input}`)).join(", ")}</td>
-              </tr>
+              <TableRow key={key} data-testid={`rule-${key}`}>
+                <TableCell className="font-medium align-top">{text.name(key, RULES)}</TableCell>
+                <TableCell className="align-top">{t(`radar.describe.${key}`, { window: rule.window ?? 0, baseline: rule.baseline ?? 0 })}</TableCell>
+                <TableCell className="num whitespace-nowrap align-top">{windowText(rule.window, rule.baseline)}</TableCell>
+                <TableCell className="num whitespace-nowrap align-top" data-testid={`threshold-${key}`}>≥ {formatRuleValue(rule.threshold, rule.unit, locale)}</TableCell>
+                <TableCell className="align-top">{rule.inputs.map((input) => t(`inputs.${input}`)).join(", ")}</TableCell>
+              </TableRow>
             );
           })}
-        </Table>
+        </DocTable>
         <p className="text-sm">{t("radar.ranking", { limit: RADAR_RULES_V0.listLimit })}</p>
         <p className="text-sm">{t("radar.foreignCoverage")}</p>
       </Panel>

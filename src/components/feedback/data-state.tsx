@@ -1,7 +1,7 @@
 "use client";
 
 import type { UseQueryResult } from "@tanstack/react-query";
-import { AlertTriangle, Database, Lock } from "lucide-react";
+import { AlertTriangle, Database, Lock } from "@/components/kit/icons";
 import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";

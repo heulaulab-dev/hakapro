@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight } from "lucide-react";
+import { ChevronRight } from "@/components/kit/icons";
 import { useLocale, useTranslations } from "next-intl";
 import { ChartRangeToggle, useChartRange } from "@/components/charts/chart-range-toggle";
 import { PriceChart } from "@/components/charts/lazy";

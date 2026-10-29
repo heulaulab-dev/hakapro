@@ -1,7 +1,7 @@
 "use client";
 
 import { useQueries } from "@tanstack/react-query";
-import { Landmark } from "lucide-react";
+import { Landmark } from "@/components/kit/icons";
 import { useLocale, useTranslations } from "next-intl";
 import { useState, type FormEvent } from "react";
 import { InsiderFeedSection } from "@/components/data/insider-feed";

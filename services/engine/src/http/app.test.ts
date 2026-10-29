@@ -8,7 +8,8 @@ import { MemoryCursorStore, MemoryRunRecorder, MemorySourceStateStore } from "..
 import { MemoryMarketStore, type NewsRecord } from "../serve/store";
 import { PauseGuard } from "../schedule/pause";
 import { Scheduler } from "../schedule/scheduler";
-import { createApp, type AppDeps } from "./app";
+import type { LogoService } from "../serve/logos";
+import { createApp, LOGO_HEADERS, type AppDeps } from "./app";
 import { intradayMeta } from "./envelope";
 
 const BASE = "http://engine.test";
@@ -145,6 +146,43 @@ describe("engine HTTP app", () => {
     expect(persist).toHaveBeenCalledWith("2026-10-26", [expect.objectContaining({ code: "IDXENERGY", close: 100, previousClose: 90 })]);
     expect((await call("/v1/admin/indices/import", { method: "POST", headers, body: JSON.stringify({ ...payload, date: "2026-02-30" }) })).status).toBe(400);
     expect((await call("/v1/admin/indices/import", { method: "POST", headers, body: JSON.stringify({ ...payload, body: { data: [{ IndexCode: "BAD", Date: "2026-10-25", Close: -1 }] } }) })).status).toBe(422);
+  });
+
+  it("serves /v1/logos/{s} only when enabled: 404 DISABLED off, SVG with safe headers on, typed 404 on a miss", async () => {
+    const off = app();
+    const disabled = await off.call("/v1/logos/BBCA");
+    expect(disabled.status).toBe(404);
+    expect(await disabled.json()).toMatchObject({ error: { code: "DISABLED", message: expect.stringContaining("ENGINE_TICKER_LOGOS_ENABLED") } });
+    const health = await (await off.call("/v1/meta/health")).json() as { data: { unavailable: Array<{ route: string; status: string }> } };
+    expect(health.data.unavailable.find((row) => row.route === "/v1/logos/{s}")?.status).toBe("DISABLED");
+
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg"><path d="M0 0h18v18H0z"/></svg>';
+    const asked: string[] = [];
+    const logos = { get: async (symbol: string) => { asked.push(symbol); return symbol === "BBCA" ? { svg, logoId: "bank-central-asia" } : null; } } as unknown as LogoService;
+    const on = app({ logos });
+    const ok = await on.call("/v1/logos/bbca");
+    expect(ok.status).toBe(200);
+    expect(Object.fromEntries(ok.headers)).toMatchObject(LOGO_HEADERS);
+    expect(ok.headers.get("content-security-policy")).toContain("default-src 'none'");
+    expect(await ok.text()).toBe(svg);
+    const head = await on.call("/v1/logos/BBCA", { method: "HEAD" });
+    expect(head.status).toBe(200);
+    expect(await head.text()).toBe("");
+    const miss = await on.call("/v1/logos/GOTO");
+    expect(miss.status).toBe(404);
+    expect(await miss.json()).toMatchObject({ error: { code: "NO_DATA" } });
+    expect((await on.call("/v1/logos/bad$sym")).status).toBe(400);
+    expect((await on.call("/v1/logos/%E0%A4%A")).status).toBe(400);
+    expect((await on.call("/v1/logos/BBCA", { method: "POST" })).status).toBe(405);
+    expect(asked).toEqual(["BBCA", "BBCA", "GOTO"]);
+    const healthOn = await (await on.call("/v1/meta/health")).json() as { data: { unavailable: Array<{ route: string }> } };
+    expect(healthOn.data.unavailable.some((row) => row.route === "/v1/logos/{s}")).toBe(false);
+  });
+
+  it("guards /v1/logos with the API token like every /v1 route", async () => {
+    const { call } = app({ apiToken: "secret", logos: { get: async () => null } as unknown as LogoService });
+    expect((await call("/v1/logos/BBCA")).status).toBe(401);
+    expect((await call("/v1/logos/BBCA", { headers: { authorization: "Bearer secret" } })).status).toBe(404);
   });
 });
 

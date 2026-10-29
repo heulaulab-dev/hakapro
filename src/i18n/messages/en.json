@@ -656,7 +656,8 @@
     "capBarHint": "Bars are relative to the largest market cap on this page.",
     "sectorsTitle": "Sectors today",
     "sectorsMore": "Open the market map",
-    "sectorStocks": "{count} stocks"
+    "sectorStocks": "{count} stocks",
+    "capDateLatest": "Latest session"
   },
   "heatmap": {
     "title": "Market Map",
@@ -1882,5 +1883,17 @@
       "crossedUp": "{sector} relative strength crossed above the benchmark average (RS-Ratio ≥ 100).",
       "crossedDown": "{sector} relative strength crossed below the benchmark average (RS-Ratio < 100)."
     }
+  },
+  "datePicker": {
+    "placeholder": "Pick a date",
+    "placeholderMonth": "Pick a month",
+    "clear": "Clear date",
+    "previousYear": "Previous year",
+    "nextYear": "Next year"
+  },
+  "fileDropzone": {
+    "choose": "Choose a file",
+    "orDrop": "or drag it here",
+    "remove": "Remove file"
   }
 }

@@ -7,7 +7,7 @@ import type { EngineConfig } from "./config";
 import { createDb, migrationsDir, runMigrations, waitForDatabase, type EngineDb } from "./db/client";
 import { recentEodSessions, upsertIndexDaily } from "./db/ingest";
 import { deleteNewsOlderThan } from "./db/market-info";
-import { DbMarketStore } from "./db/market-store";
+import { DbMarketStore, securityLogoId } from "./db/market-store";
 import { DbOwnershipStore } from "./db/ownership";
 import { DbStrategyStore } from "./db/strategy-store";
 import { DbCursorStore, DbRawDocumentIndex, DbRunRecorder, DbSourceStateStore, deleteIntradayOlderThan, recentJobHistory, sourceHealth, syncSources } from "./db/repos";
@@ -46,11 +46,15 @@ import { PauseGuard } from "./schedule/pause";
 import { Scheduler } from "./schedule/scheduler";
 import { engineSources } from "./sources";
 import { NEWS_FEEDS } from "./sources/news";
+import { MAX_LOGO_BYTES, TRADINGVIEW_LOGO_SOURCE_ID, tradingviewLogoSource } from "./sources/tradingview-logos";
+import { LogoService } from "./serve/logos";
 
 export type EngineServices = {
   config: EngineConfig;
   db: EngineDb;
   fetcher: Fetcher;
+  /** Per-host limiters shared by every fetcher, so all requests to one host share its spacing. */
+  limiters: LimiterRegistry;
   rawStore: RawStore;
   documents: DbRawDocumentIndex;
   sourceState: DbSourceStateStore;
@@ -79,6 +83,7 @@ export type EngineServices = {
  *                                                                               cycle + earnings-season catch-up
  *   ratios         06:15, 17:15, 21:15 daily (no network)                      derived ratios → stock_ratios
  *   strategy-scan-eod 21:00, 23:00 trading days (only with ENGINE_STRATEGY_SCANS_ENABLED)  HAKA-17 draft rules over daily_prices
+ * Not a job: the TradingView logo CDN source (only with ENGINE_TICKER_LOGOS_ENABLED) is fetched on demand by /v1/logos.
  */
 export function defaultRegistry(services: EngineServices): Registry {
   const sources = engineSources(services.config.arjum);
@@ -91,7 +96,8 @@ export function defaultRegistry(services: EngineServices): Registry {
   const idxBeiConfig = services.config.idxBei ?? { enabled: false, baseUrl: "http://idx-bei:8000" };
   const idxBeiSource = defineSource({ id: IDX_BEI_SOURCE_ID, host: new URL(idxBeiConfig.baseUrl).host, kind: "reference", policy: { minIntervalMs: 1000, concurrency: 1 }, description: "Private IDX-BEI microservice: company reference snapshot (classification, board, shareholders, subsidiaries)" });
   return {
-    sources: [sources.tradingview, sources.yahoo, sources.pasardana, ...(sources.arjum ? [sources.arjum] : []), ...sources.news, sources.bi, sources.yahooFundamentals, sources.worldBank, ...(idxTransport ? [idxSource] : []), ...(idxBeiConfig.enabled ? [idxBeiSource] : [])],
+    sources: [sources.tradingview, sources.yahoo, sources.pasardana, ...(sources.arjum ? [sources.arjum] : []), ...sources.news, sources.bi, sources.yahooFundamentals, sources.worldBank, ...(idxTransport ? [idxSource] : []), ...(idxBeiConfig.enabled ? [idxBeiSource] : []),
+      ...(services.config.tickerLogos.enabled ? [tradingviewLogoSource()] : [])],
     jobs: [
       universeJob(jobServices, { tradingview: sources.tradingview, pasardana: sources.pasardana }),
       indicesEodJob(jobServices, sources.tradingview),
@@ -158,9 +164,10 @@ export async function createEngine(config: EngineConfig, options: EngineOptions 
   const rawStore = createRawStore(config.rawS3, config.dataDir);
   const documents = new DbRawDocumentIndex(db);
   const sourceState = new DbSourceStateStore(db, now);
-  const fetcher = new Fetcher({ rawStore, documents, sourceState, limiters: options.limiters ?? new LimiterRegistry(), fetch: options.fetch });
+  const limiters = options.limiters ?? new LimiterRegistry();
+  const fetcher = new Fetcher({ rawStore, documents, sourceState, limiters, fetch: options.fetch });
   const onShutdown: Array<() => Promise<void>> = [];
-  const services: EngineServices = { config, db, fetcher, rawStore, documents, sourceState, log, now, onShutdown };
+  const services: EngineServices = { config, db, fetcher, limiters, rawStore, documents, sourceState, log, now, onShutdown };
 
   const ownership = new OwnershipService({
     store: new DbOwnershipStore(db), rawStore, documents, log, now,
@@ -170,6 +177,16 @@ export async function createEngine(config: EngineConfig, options: EngineOptions 
 
   const registry = validateRegistry((options.registry ?? defaultRegistry)(services));
   await syncSources(db, registry.sources);
+
+  // Ticker logos: only when enabled AND the registry carries the logo source (its sources row backs raw_documents).
+  const logoSource = config.tickerLogos.enabled ? registry.sources.find((source) => source.id === TRADINGVIEW_LOGO_SOURCE_ID) : undefined;
+  const logos = logoSource
+    ? new LogoService({
+      lookup: (symbol) => securityLogoId(db, symbol), source: logoSource, log,
+      // Served inside a request: one quick retry and a short timeout instead of the jobs' backoff; logos are tiny.
+      fetcher: new Fetcher({ rawStore, documents, sourceState, limiters, fetch: options.fetch, maxAttempts: 2, backoffBaseMs: 500, timeoutMs: 10_000, maxBytes: MAX_LOGO_BYTES }),
+    })
+    : null;
 
   const pause = new PauseGuard(config.dataDir, config.diskStopPercent);
   const scheduler = new Scheduler({ jobs: registry.jobs, pause, runs: new DbRunRecorder(db), cursors: new DbCursorStore(db), sourceState, log, now });
@@ -184,6 +201,7 @@ export async function createEngine(config: EngineConfig, options: EngineOptions 
       return stored;
     },
     market: new DbMarketStore(db),
+    logos,
     ownership: { service: ownership, maxUploadBytes: config.ownership.maxUploadBytes, freeFloatEnabled: config.ownership.freeFloatEnabled },
     strategies: { enabled: config.strategyScans.enabled, store: new DbStrategyStore(db) },
     // Served whatever the budget: stored reads stay visible (with their shrinking coverage) after the feed is turned off.

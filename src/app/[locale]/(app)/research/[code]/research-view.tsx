@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, ArrowLeft, CalendarClock, Database, SearchX } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CalendarClock, Database, SearchX } from "@/components/kit/icons";
 import { useLocale, useTranslations } from "next-intl";
 import { Fragment, type ReactNode } from "react";
 import { DataState } from "@/components/feedback/data-state";
@@ -13,6 +13,7 @@ import { ChangeValue } from "@/components/market/change-value";
 import { StockHeader } from "@/components/market/stock-header";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Link } from "@/i18n/navigation";
 import { ApiError } from "@/lib/api/envelope";
 import { useResearchBrief } from "@/lib/api/hooks";
@@ -28,8 +29,6 @@ const PROVIDER_REASONS = new Set(["NOT_RECORDED", "UNSUPPORTED", "NOT_CONFIGURED
 const num = (raw: BriefComponent["raw"], key: string): number | null => (typeof raw[key] === "number" ? (raw[key] as number) : null);
 const str = (raw: BriefComponent["raw"], key: string): string | null => (typeof raw[key] === "string" ? (raw[key] as string) : null);
 
-const th = "caption-style h-[38px] border-b border-border px-3 font-normal whitespace-nowrap text-subtle";
-const td = "border-b border-border px-3 py-cell-y";
 
 /**
  * Research Brief (spec §3.4): evidence for and against, every figure with its source and as-of date.
@@ -163,28 +162,28 @@ function Brief({ brief, aiEnabled }: { brief: ResearchBrief; aiEnabled: boolean 
       {/* 8. Data quality. */}
       <Panel title={t("research.quality.title")} testId="research-quality" bodyClassName="p-0">
         <div className="overflow-x-auto">
-          <table className="w-full border-separate border-spacing-0 text-data" aria-label={t("research.quality.title")}>
-            <thead>
-              <tr>
-                <th scope="col" className={`${th} text-left`}>{t("research.quality.component")}</th>
-                <th scope="col" className={`${th} text-left`}>{t("research.quality.status")}</th>
-                <th scope="col" className={`${th} text-left`}>{t("research.quality.note")}</th>
-                <th scope="col" className={`${th} text-left`}>{t("research.quality.source")}</th>
-                <th scope="col" className={`${th} text-left`}>{t("research.quality.asOf")}</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table aria-label={t("research.quality.title")}>
+            <TableHeader>
+              <TableRow interactive={false}>
+                <TableHead>{t("research.quality.component")}</TableHead>
+                <TableHead>{t("research.quality.status")}</TableHead>
+                <TableHead>{t("research.quality.note")}</TableHead>
+                <TableHead>{t("research.quality.source")}</TableHead>
+                <TableHead>{t("research.quality.asOf")}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {brief.components.map((item) => (
-                <tr key={item.key} data-testid={`quality-${item.key}`} data-status={item.status}>
-                  <td className={td}>{t(`research.components.${item.key}`)}</td>
-                  <td className={td}><StatusBadge tone={STATUS_TONE[item.status]}>{t(`research.status.${item.status}`)}</StatusBadge></td>
-                  <td className={`${td} text-muted-foreground`}>{item.status === "missing" ? reason(item) : "—"}</td>
-                  <td className={`${td} ticker text-xs`}>{item.source.table}</td>
-                  <td className={`${td} num whitespace-nowrap`}>{formatDate(item.source.asOf, locale)}</td>
-                </tr>
+                <TableRow key={item.key} data-testid={`quality-${item.key}`} data-status={item.status}>
+                  <TableCell>{t(`research.components.${item.key}`)}</TableCell>
+                  <TableCell><StatusBadge tone={STATUS_TONE[item.status]}>{t(`research.status.${item.status}`)}</StatusBadge></TableCell>
+                  <TableCell className="text-muted-foreground">{item.status === "missing" ? reason(item) : "—"}</TableCell>
+                  <TableCell className="ticker text-xs">{item.source.table}</TableCell>
+                  <TableCell className="num whitespace-nowrap">{formatDate(item.source.asOf, locale)}</TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
         <div className="flex flex-col gap-2 p-4">
           <h4 className="eyebrow-style text-soft">{t("research.quality.checks")}</h4>
@@ -202,26 +201,26 @@ function Brief({ brief, aiEnabled }: { brief: ResearchBrief; aiEnabled: boolean 
       {/* 9. Sources and method. */}
       <Panel title={t("research.sources.title")} testId="research-sources" bodyClassName="p-0">
         <div className="overflow-x-auto">
-          <table className="w-full border-separate border-spacing-0 text-data" aria-label={t("research.sources.title")}>
-            <thead>
-              <tr>
-                <th scope="col" className={`${th} text-left`}>{t("research.sources.table")}</th>
-                <th scope="col" className={`${th} text-left`}>{t("research.sources.asOf")}</th>
-                <th scope="col" className={`${th} text-left`}>{t("research.sources.range")}</th>
-                <th scope="col" className={`${th} text-right`}>{t("research.sources.rows")}</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table aria-label={t("research.sources.title")}>
+            <TableHeader>
+              <TableRow interactive={false}>
+                <TableHead>{t("research.sources.table")}</TableHead>
+                <TableHead>{t("research.sources.asOf")}</TableHead>
+                <TableHead>{t("research.sources.range")}</TableHead>
+                <TableHead numeric>{t("research.sources.rows")}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {brief.sources.map((source) => (
-                <tr key={source.table} data-testid="source-row">
-                  <td className={`${td} ticker text-xs`}>{source.table}</td>
-                  <td className={`${td} num whitespace-nowrap`}>{formatDate(source.asOf, locale)}</td>
-                  <td className={`${td} num whitespace-nowrap`}>{source.range ? source.range.split("/").map((date) => formatDate(date, locale)).join(" – ") : "—"}</td>
-                  <td className={`${td} num text-right`}>{formatNumber(source.rows, locale)}</td>
-                </tr>
+                <TableRow key={source.table} data-testid="source-row">
+                  <TableCell className="ticker text-xs">{source.table}</TableCell>
+                  <TableCell className="num whitespace-nowrap">{formatDate(source.asOf, locale)}</TableCell>
+                  <TableCell className="num whitespace-nowrap">{source.range ? source.range.split("/").map((date) => formatDate(date, locale)).join(" – ") : "—"}</TableCell>
+                  <TableCell className="num text-right">{formatNumber(source.rows, locale)}</TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
         <div className="flex flex-col gap-1.5 p-4 text-sm">
           <h4 className="eyebrow-style text-soft">{t("research.sources.methodTitle")}</h4>
@@ -342,32 +341,32 @@ function FlowPanel({ brief, foreign, momentum, broker, reason }: { brief: Resear
       actions={<><StatusBadge tone={STATUS_TONE[foreign.status]}>{t("components.foreign")}: {t(`status.${foreign.status}`)}</StatusBadge><StatusBadge tone={STATUS_TONE[broker.status]}>{t("components.broker")}: {t(`status.${broker.status}`)}</StatusBadge></>}>
       {session && <p className="caption-style px-4 pt-4 leading-snug text-subtle">{t("flow.description", { date: formatDate(session, locale) })}</p>}
       <div className="overflow-x-auto">
-        <table className="w-full border-separate border-spacing-0 text-data" aria-label={t("flow.title")}>
-          <thead>
-            <tr>
-              <th scope="col" className={`${th} text-left`}>{t("flow.window")}</th>
-              <th scope="col" className={`${th} text-right`}>{t("flow.price")}</th>
-              <th scope="col" className={`${th} text-right`}>{t("flow.foreignNet")}</th>
-              <th scope="col" className={`${th} text-right`}>{t("flow.foreignValue")}</th>
-              <th scope="col" className={`${th} text-right`}>{t("flow.domesticValue")}</th>
-              <th scope="col" className={`${th} text-right`}>{t("flow.localInstitution")}</th>
-              <th scope="col" className={`${th} text-right`}>{t("flow.retail")}</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table aria-label={t("flow.title")}>
+          <TableHeader>
+            <TableRow interactive={false}>
+              <TableHead>{t("flow.window")}</TableHead>
+              <TableHead numeric>{t("flow.price")}</TableHead>
+              <TableHead numeric>{t("flow.foreignNet")}</TableHead>
+              <TableHead numeric>{t("flow.foreignValue")}</TableHead>
+              <TableHead numeric>{t("flow.domesticValue")}</TableHead>
+              <TableHead numeric>{t("flow.localInstitution")}</TableHead>
+              <TableHead numeric>{t("flow.retail")}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {brief.windows.map((window) => (
-              <tr key={window} data-testid={`flow-row-${window}`}>
-                <td className={td}><span className="ticker">{window}</span></td>
-                <td className={`${td} text-right`}><ChangeValue percent={num(momentum.raw, `change${window}Pct`)} /></td>
-                <td className={`${td} num text-right`} data-testid={`flow-foreign-${window}`}>{formatVolume(num(foreign.raw, `net${window}`), locale, { compact: true, signed: true })}</td>
-                <td className={`${td} num text-right`}>{brokerValue("foreign", window)}</td>
-                <td className={`${td} num text-right`}>{brokerValue("domestic", window)}</td>
-                <td className={`${td} text-right text-subtle`}>—</td>
-                <td className={`${td} text-right text-subtle`}>—</td>
-              </tr>
+              <TableRow key={window} data-testid={`flow-row-${window}`}>
+                <TableCell><span className="ticker">{window}</span></TableCell>
+                <TableCell className="text-right"><ChangeValue percent={num(momentum.raw, `change${window}Pct`)} /></TableCell>
+                <TableCell className="num text-right" data-testid={`flow-foreign-${window}`}>{formatVolume(num(foreign.raw, `net${window}`), locale, { compact: true, signed: true })}</TableCell>
+                <TableCell className="num text-right">{brokerValue("foreign", window)}</TableCell>
+                <TableCell className="num text-right">{brokerValue("domestic", window)}</TableCell>
+                <TableCell className="text-right text-subtle">—</TableCell>
+                <TableCell className="text-right text-subtle">—</TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
       <div className="flex flex-col gap-1 p-4 text-xs text-muted-foreground">
         {foreign.status !== "missing" && num(foreign.raw, "flowSessions") !== null && (
@@ -402,28 +401,28 @@ function InsiderPanel({ brief, item, reason }: { brief: ResearchBrief; item: Bri
           {num(raw, "truncated") === 1 && <p className="caption-style text-warning">{t("research.insider.truncated")}</p>}
           {brief.insiderTransactions.length > 0 && (
             <div className="overflow-x-auto">
-              <table className="w-full border-separate border-spacing-0 text-data" aria-label={t("insiders.title")}>
-                <thead>
-                  <tr>
-                    <th scope="col" className={`${th} text-left`}>{t("insiders.date")}</th>
-                    <th scope="col" className={`${th} text-left`}>{t("insiders.person")}</th>
-                    <th scope="col" className={`${th} text-left`}>{t("insiders.action")}</th>
-                    <th scope="col" className={`${th} text-right`}>{t("insiders.change")}</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <Table aria-label={t("insiders.title")}>
+                <TableHeader>
+                  <TableRow interactive={false}>
+                    <TableHead>{t("insiders.date")}</TableHead>
+                    <TableHead>{t("insiders.person")}</TableHead>
+                    <TableHead>{t("insiders.action")}</TableHead>
+                    <TableHead numeric>{t("insiders.change")}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {brief.insiderTransactions.map((row, index) => (
-                    <tr key={`${row.date}-${row.person}-${index}`} data-testid="insider-row">
-                      <td className={`${td} num whitespace-nowrap`}>{formatDate(row.date, locale)}</td>
-                      <td className={td}>
+                    <TableRow key={`${row.date}-${row.person}-${index}`} data-testid="insider-row">
+                      <TableCell className="num whitespace-nowrap">{formatDate(row.date, locale)}</TableCell>
+                      <TableCell>
                         <span className="flex flex-col"><span className="block max-w-60 truncate" title={row.person}>{row.person}</span>{row.roles.length > 0 && <span className="text-[11px] text-muted-foreground">{row.roles.join(", ")}</span>}</span>
-                      </td>
-                      <td className={td}><StatusBadge tone="neutral">{t(`research.insider.actions.${row.action}`)}</StatusBadge></td>
-                      <td className={`${td} num text-right`}>{formatVolume(row.changeShares, locale, { compact: true })}</td>
-                    </tr>
+                      </TableCell>
+                      <TableCell><StatusBadge tone="neutral">{t(`research.insider.actions.${row.action}`)}</StatusBadge></TableCell>
+                      <TableCell className="num text-right">{formatVolume(row.changeShares, locale, { compact: true })}</TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           )}
         </>

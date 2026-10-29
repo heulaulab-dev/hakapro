@@ -1,12 +1,13 @@
 "use client";
 
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight } from "@/components/kit/icons";
 import { useLocale } from "next-intl";
 import { useMemo, useState } from "react";
 import { FreshnessBadge } from "@/components/feedback/freshness-badge";
 import type { FreshnessMeta } from "@/lib/freshness";
 import { formatIdr, type Locale } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export type StatementRow = { key: string; label: string; depth: number; expandable: boolean; values: Array<number | null> };
 
@@ -39,16 +40,16 @@ export function StatementTable({ rows, periods, meta, caption, selectedKey, onSe
     <div className="flex flex-col overflow-hidden rounded-xl border border-border" data-testid="statement-table">
       <div className="flex items-center justify-end border-b border-border px-cell-x py-2"><FreshnessBadge {...meta} /></div>
       <div className="overflow-x-auto">
-        <table aria-label={caption} className="w-full border-separate border-spacing-0 text-data">
-          <thead>
-            <tr>
-              <th scope="col" className="sticky left-0 z-10 min-w-40 max-w-44 border-b sm:min-w-56 sm:max-w-none border-border bg-card px-cell-x py-cell-y text-left text-xs font-medium text-muted-foreground">{caption}</th>
-              {periods.map((period) => <th key={period} scope="col" className="border-b border-border px-cell-x py-cell-y text-right text-xs font-medium whitespace-nowrap text-muted-foreground">{period}</th>)}
-            </tr>
-          </thead>
-          <tbody>
+        <Table aria-label={caption}>
+          <TableHeader>
+            <TableRow interactive={false}>
+              <TableHead className="sticky left-0 z-10 h-auto min-w-40 max-w-44 bg-card px-(--spacing-cell-x) py-cell-y text-xs font-medium whitespace-normal text-muted-foreground sm:min-w-56 sm:max-w-none">{caption}</TableHead>
+              {periods.map((period) => <TableHead key={period} numeric className="h-auto px-(--spacing-cell-x) py-cell-y text-xs font-medium text-muted-foreground">{period}</TableHead>)}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {visible.map((row) => (
-              <tr key={row.key} data-key={row.key} className={cn("h-row hover:bg-accent/40", selectedKey === row.key && "bg-accent/60")} aria-selected={selectedKey === row.key || undefined}>
+              <TableRow key={row.key} data-key={row.key} className={cn("h-row hover:bg-accent/40", selectedKey === row.key && "bg-accent/60")} aria-selected={selectedKey === row.key || undefined}>
                 <th scope="row" className={cn("sticky left-0 z-10 border-b border-border bg-card px-cell-x py-cell-y text-left font-normal", row.depth === 0 && "font-medium")}>
                   <span className="flex items-center gap-1" style={{ paddingLeft: row.depth * 16 }}>
                     {row.expandable ? (
@@ -62,12 +63,12 @@ export function StatementTable({ rows, periods, meta, caption, selectedKey, onSe
                   </span>
                 </th>
                 {row.values.map((value, index) => (
-                  <td key={index} className="ticker border-b border-border px-cell-x py-cell-y text-right whitespace-nowrap">{row.expandable && value === null ? "" : formatIdr(value, locale, { compact: true })}</td>
+                  <TableCell key={index} numeric className="px-(--spacing-cell-x)">{row.expandable && value === null ? "" : formatIdr(value, locale, { compact: true })}</TableCell>
                 ))}
-              </tr>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </div>
   );

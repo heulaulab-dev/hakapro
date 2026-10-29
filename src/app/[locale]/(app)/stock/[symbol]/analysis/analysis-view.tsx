@@ -10,6 +10,7 @@ import { StatusBadge } from "@/components/feedback/status-badge";
 import { Meter } from "@/components/kit/meter";
 import { Panel } from "@/components/layout/panel";
 import { SectionHeader } from "@/components/layout/section-header";
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableRow } from "@/components/ui/table";
 import { useAnalysis } from "@/lib/api/hooks";
 import type { AnalysisFactor, AnalysisPattern, StockAnalysis } from "@/lib/api/market";
 import { macdDirection, patternMessage, position, rsiZone, toneStatus, volumeLevel } from "@/lib/analysis";
@@ -141,13 +142,13 @@ function AnalysisBody({ data, meta }: { data: StockAnalysis; meta: FreshnessMeta
             { label: t("price.highLow"), value: `${idr(data.price.highIdr)} / ${idr(data.price.lowIdr)}` },
             { label: t("price.range"), value: `${idr(data.price.rangeIdr)} (${pct(data.price.rangePercent)})` },
           ]} />
-          <table className="w-full text-data" aria-label={t("price.pivots")}>
-            <caption className="caption-style pb-1 text-left text-subtle">{t("price.pivots")}</caption>
-            <tbody>
-              <tr className="text-xs text-muted-foreground">{(["s2", "s1", "p", "r1", "r2"] as const).map((key) => <th key={key} className="px-1 py-1 text-right font-medium">{t(`levels.${key.toUpperCase()}`)}</th>)}</tr>
-              <tr>{(["s2", "s1", "p", "r1", "r2"] as const).map((key) => <td key={key} className="ticker px-1 py-1 text-right">{idr(data.price.pivots[key])}</td>)}</tr>
-            </tbody>
-          </table>
+          <Table aria-label={t("price.pivots")}>
+            <TableCaption className="mt-0 caption-top pb-1 text-left">{t("price.pivots")}</TableCaption>
+            <TableBody>
+              <TableRow interactive={false}>{(["s2", "s1", "p", "r1", "r2"] as const).map((key) => <TableHead key={key} numeric className="h-auto border-b-0 px-1 py-1 text-xs font-medium whitespace-normal text-muted-foreground">{t(`levels.${key.toUpperCase()}`)}</TableHead>)}</TableRow>
+              <TableRow interactive={false}>{(["s2", "s1", "p", "r1", "r2"] as const).map((key) => <TableCell key={key} numeric className="border-b-0 px-1 py-1">{idr(data.price.pivots[key])}</TableCell>)}</TableRow>
+            </TableBody>
+          </Table>
         </Panel>
 
         <Panel testId="analysis-technical" title={t("technical.title")} meta={meta}>

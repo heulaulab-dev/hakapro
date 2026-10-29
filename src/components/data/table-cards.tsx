@@ -1,10 +1,11 @@
 "use client";
 
 import { flexRender, type Row, type Table } from "@tanstack/react-table";
-import { ArrowDown, ArrowUp } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useState, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
+import { ArrowDown, ArrowUp } from "@/components/kit/icons";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cardLayout, CARD_PAGE, visibleCards } from "@/lib/table-cards";
 import { cn } from "@/lib/utils";
 
@@ -15,6 +16,7 @@ import { cn } from "@/lib/utils";
  */
 export function TableCards<T>({ table, render, empty }: { table: Table<T>; render?: (row: T) => ReactNode; empty?: ReactNode }) {
   const t = useTranslations("table");
+  const sortId = useId();
   const [pages, setPages] = useState(1);
   const rows = table.getRowModel().rows;
   const shown = visibleCards(rows.length, pages);
@@ -36,21 +38,23 @@ export function TableCards<T>({ table, render, empty }: { table: Table<T>; rende
     <div data-testid="table-cards" className="flex flex-col">
       {sortable.length > 0 && (
         <div className="flex items-center gap-2 border-b border-border px-cell-x py-2">
-          <label htmlFor="table-cards-sort" className="caption-style shrink-0 text-subtle">{t("sortBy")}</label>
-          <select
-            id="table-cards-sort"
-            value={sorted?.id ?? ""}
-            onChange={(event) => {
-              const column = table.getColumn(event.target.value);
+          <label htmlFor={sortId} className="caption-style shrink-0 text-subtle">{t("sortBy")}</label>
+          <Select
+            value={sorted?.id}
+            onValueChange={(id) => {
+              const column = table.getColumn(id);
               if (column) column.toggleSorting(column.getFirstSortDir() === "desc");
             }}
-            className="h-9 min-w-0 flex-1 rounded-md border border-input bg-background px-2 text-sm"
           >
-            {!sorted && <option value="" disabled>—</option>}
-            {sortable.map((column) => (
-              <option key={column.id} value={column.id}>{typeof column.columnDef.header === "string" ? column.columnDef.header : column.id}</option>
-            ))}
-          </select>
+            <SelectTrigger id={sortId} className="h-9 min-w-0 flex-1" data-testid="table-cards-sort">
+              <SelectValue placeholder="—" />
+            </SelectTrigger>
+            <SelectContent>
+              {sortable.map((column) => (
+                <SelectItem key={column.id} value={column.id}>{typeof column.columnDef.header === "string" ? column.columnDef.header : column.id}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           {sorted && (
             <Button
               variant="outline"

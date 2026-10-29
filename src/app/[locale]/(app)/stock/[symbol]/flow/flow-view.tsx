@@ -18,6 +18,7 @@ import { Segmented } from "@/components/kit/segmented";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { OVERVIEW_HISTORY } from "@/components/market/stock-header-live";
 import { useBrokerAccumulation, useBrokerSummary, useHistory } from "@/lib/api/hooks";
@@ -172,17 +173,17 @@ export function FlowView({ symbol }: { symbol: string }) {
                 }
                 footer={meta.source.startsWith("fixture") ? t("flow.rangeNote") : undefined}
                 table={
-                  <table className="w-full text-data">
-                    <thead><tr className="text-left text-xs text-muted-foreground"><th className="px-cell-x py-cell-y font-medium">{t("flow.broker")}</th><th className="px-cell-x py-cell-y text-right font-medium">{t("flow.total")}</th></tr></thead>
-                    <tbody>
+                  <Table>
+                    <TableHeader><TableRow interactive={false}><TableHead className="h-auto px-(--spacing-cell-x) py-cell-y text-xs font-medium whitespace-normal text-muted-foreground">{t("flow.broker")}</TableHead><TableHead numeric className="h-auto px-(--spacing-cell-x) py-cell-y text-xs font-medium whitespace-normal text-muted-foreground">{t("flow.total")}</TableHead></TableRow></TableHeader>
+                    <TableBody>
                       {data.series.map((series) => (
-                        <tr key={series.code} className="h-row border-t border-border">
-                          <td className="px-cell-x py-cell-y"><span className="ticker">{series.code}</span> <span className="text-muted-foreground">{series.name}</span></td>
-                          <td className="ticker px-cell-x py-cell-y text-right">{formatIdr(series.points.at(-1)?.cumulativeNetValueIdr ?? null, locale, { compact: true })}</td>
-                        </tr>
+                        <TableRow key={series.code} className="h-row">
+                          <TableCell className="px-(--spacing-cell-x)"><span className="ticker">{series.code}</span> <span className="text-muted-foreground">{series.name}</span></TableCell>
+                          <TableCell numeric className="px-(--spacing-cell-x)">{formatIdr(series.points.at(-1)?.cumulativeNetValueIdr ?? null, locale, { compact: true })}</TableCell>
+                        </TableRow>
                       ))}
-                    </tbody>
-                  </table>
+                    </TableBody>
+                  </Table>
                 }>
                 <div className="flex flex-col gap-3">
                   <MultiLineChart series={data.series.map((series) => ({ key: series.code, label: series.name, points: series.points.map((point) => ({ date: point.date, value: point.cumulativeNetValueIdr })) }))} format="idrCompact" ariaLabel={t("flow.accumulationTitle")} />

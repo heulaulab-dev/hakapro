@@ -1,11 +1,12 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { CornerDownLeft, FileText, Filter, LineChart } from "lucide-react";
+import { CornerDownLeft, FileText, Filter, LineChart } from "@/components/kit/icons";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { FreshnessBadge } from "@/components/feedback/freshness-badge";
 import { Command, CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command";
+import { TickerLogo } from "@/components/market/ticker-logo";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { marketApi } from "@/lib/api/market";
 import { queryKeys } from "@/lib/query/keys";
@@ -91,6 +92,7 @@ export function CommandPalette({ viewer }: { viewer: ViewerSummary }) {
               {search.data?.data.slice(0, 8).map((stock) => (
                 <CommandItem key={stock.symbol} value={`${stock.symbol} ${stock.companyName}`} onSelect={() => go(stockHref(stock.symbol))} data-testid={`palette-stock-${stock.symbol}`}>
                   <LineChart />
+                  <TickerLogo symbol={stock.symbol} size="sm" />
                   <span className="ticker w-14 shrink-0">{stock.symbol}</span>
                   <span className="truncate text-muted-foreground">{stock.companyName}</span>
                   <CornerDownLeft className="ml-auto opacity-0 group-data-[selected=true]:opacity-60" />

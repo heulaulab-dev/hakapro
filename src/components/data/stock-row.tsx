@@ -2,6 +2,7 @@ import { useLocale } from "next-intl";
 import type { ReactNode } from "react";
 import { ChangeValue } from "@/components/market/change-value";
 import { stockHref } from "@/components/layout/nav-config";
+import { TickerLogo } from "@/components/market/ticker-logo";
 import { Link } from "@/i18n/navigation";
 import { formatIdr, type Locale } from "@/lib/format";
 
@@ -23,10 +24,13 @@ export function StockRow({ symbol, name, price, changePercent, trailing, rank }:
     <Link
       href={stockHref(symbol)}
       data-testid={`stock-row-${symbol}`}
-      className="flex h-row items-center gap-3 rounded-md px-cell-x text-data transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
+      className="group/row flex h-row items-center gap-3 rounded-lg px-cell-x text-data transition-[background-color,box-shadow] duration-150 ease-power3-out hover:bg-(--overlay-hover) hover:shadow-(--shadow-active) focus-visible:bg-(--overlay-hover) focus-visible:outline-none"
     >
       {rank !== undefined && <span className="num w-6 shrink-0 text-right text-xs text-muted-foreground">{rank}</span>}
-      <span className="ticker w-14 shrink-0 font-medium">{symbol}</span>
+      <span className="flex w-20 shrink-0 items-center gap-2">
+        <TickerLogo symbol={symbol} size="sm" className="transition-transform duration-200 ease-power3-out group-hover/row:scale-110" />
+        <span className="ticker font-medium">{symbol}</span>
+      </span>
       <span className="min-w-0 flex-1 truncate text-muted-foreground">{name}</span>
       {price !== undefined && <span className="ticker shrink-0 text-right">{formatIdr(price, locale)}</span>}
       {changePercent !== undefined && <ChangeValue percent={changePercent} className="w-20 shrink-0 justify-end text-right" />}

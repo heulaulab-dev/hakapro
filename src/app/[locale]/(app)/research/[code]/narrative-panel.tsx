@@ -1,6 +1,6 @@
 "use client";
 
-import { Sparkles } from "lucide-react";
+import { Sparkles } from "@/components/kit/icons";
 import { useLocale, useTranslations } from "next-intl";
 import { Panel } from "@/components/layout/panel";
 import { Skeleton } from "@/components/ui/skeleton";
