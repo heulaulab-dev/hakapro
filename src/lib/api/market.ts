@@ -360,6 +360,13 @@ export const indicesHistorySchema = z.object({
   coverage: z.array(indexCoverageSchema).optional(),
 });
 export type IndicesHistory = z.infer<typeof indicesHistorySchema>;
+export const issuerRaceSchema = z.object({
+  window: z.enum(["1M", "3M", "6M", "1Y"]), sector: z.string(), sectors: z.array(z.string()),
+  from: z.string().nullable(), to: z.string().nullable(), sessions: n, frameStep: n,
+  universe: z.object({ active: n, withBaseline: n, truncated: z.boolean() }),
+  frames: z.array(z.object({ date: z.string(), priced: n, leaders: z.array(z.object({ symbol: z.string(), name: z.string(), sector: z.string().nullable(), close: n, returnPercent: n })) })),
+});
+export type IssuerRace = z.infer<typeof issuerRaceSchema>;
 export type IndexSeries = IndicesHistory["series"][number];
 export type IndexCoverageReport = NonNullable<IndicesHistory["coverage"]>[number];
 
@@ -370,6 +377,8 @@ export const engineApi = {
   radar: (signal?: AbortSignal) => fetchEnvelope("/api/radar", radarSchema, { signal }),
   indicesHistory: (query: { codes?: string[]; from?: string; to?: string } = {}, signal?: AbortSignal) =>
     fetchEnvelope(`/api/indices/history${qs({ codes: query.codes?.join(","), from: query.from, to: query.to })}`, indicesHistorySchema, { signal }),
+  issuerRace: (query: { window?: IssuerRace["window"]; sector?: string } = {}, signal?: AbortSignal) =>
+    fetchEnvelope(`/api/issuer-race${qs({ window: query.window, sector: query.sector })}`, issuerRaceSchema, { signal }),
   stealthOwnership: (signal?: AbortSignal) => fetchEnvelope("/api/ownership/stealth", stealthOwnershipSchema, { signal }),
   sectors: (signal?: AbortSignal) => fetchEnvelope("/api/sectors", z.array(sectorPerformanceSchema), { signal }),
   heatmap: (limit: number, signal?: AbortSignal) => fetchEnvelope(`/api/heatmap${qs({ limit })}`, heatmapSchema, { signal }),
