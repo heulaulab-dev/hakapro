@@ -10,7 +10,7 @@ import {
 } from "@/server/schemas/idx-bei";
 import { symbolSchema } from "@/server/schemas/inputs";
 import { MAX_LOGO_BYTES, sanitizeSvg } from "@/server/schemas/ticker-logo";
-import { ownershipChangesSchema, ownershipMonthSchema, stockOwnershipSchema } from "@/server/schemas/ownership";
+import { ownershipChangesSchema, ownershipMonthSchema, ownershipScreenerSchema, stockOwnershipSchema } from "@/server/schemas/ownership";
 import { PROVIDER_USER_AGENT } from "@/server/config/provider-identity";
 import { logWarn } from "@/server/log";
 import { ProviderBackoff } from "@/server/providers/backoff";
@@ -328,6 +328,11 @@ export class IdxBeiSource extends BaseMarketDataSource {
     if (query.month) params.set("month", ownershipMonthSchema.parse(query.month));
     if (query.symbol) params.set("symbol", symbolSchema.parse(query.symbol));
     const { data, meta } = await this.get(`/v1/ownership/changes${params.size ? `?${params}` : ""}`, ownershipChangesSchema, TTL_MS.securities);
+    return this.wrap(data, "HISTORICAL", meta.dataAsOf);
+  }
+
+  async ownershipScreener() {
+    const { data, meta } = await this.get("/v1/ownership/screener", ownershipScreenerSchema, TTL_MS.securities);
     return this.wrap(data, "HISTORICAL", meta.dataAsOf);
   }
 

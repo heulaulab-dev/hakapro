@@ -4,7 +4,7 @@ import { unsupported } from "./errors";
 import type {
   ActionCalendarItem, AnnouncementItem, BrokerAccumulation, BrokerFlow, BrokerSummary, CompanyProfile, CorporateAction, DoneDetails,
   FinancialStatements, ForeignFlow, FundamentalPeriod, Heatmap, History, Insiders, LastPrice, MarketCap, MarketOverview, NewsItem, ScreenRequest,
-  ScreenResult, OwnershipChanges, RecentInsiders, SearchResult, Seasonality, SectorPerformance, Security, StockAnalysis, StockOwnership,
+  ScreenResult, OwnershipChanges, OwnershipScreener, RecentInsiders, SearchResult, Seasonality, SectorPerformance, Security, StockAnalysis, StockOwnership,
   StockSnapshot, StrategyScreen, GroupsView, GroupWindow, RadarSnapshot, StealthOwnership, Macro, IndicesHistory, MarketBrokerSummary, BrokerDirectory, TickerLogo, CatalystFeed, BreadthSnapshot,
 } from "./types";
 
@@ -88,6 +88,7 @@ export interface MarketDataSource {
   /** The newest KSEI ≥1% list the owner uploaded for a symbol (empty form when none). */
   ownership(symbol: string): R<StockOwnership>;
   ownershipChanges(query: OwnershipChangesQuery): R<OwnershipChanges>;
+  ownershipScreener(): R<OwnershipScreener>;
   /** Market-wide insider transactions from a rotating crawl, with how much of the market it covers (empty form before the first read). */
   recentInsiders(query: RecentInsidersQuery): R<RecentInsiders>;
   /** Documented signals per stock of the newest session, with counter-evidence and data status; never a score. */
@@ -145,6 +146,7 @@ export abstract class BaseMarketDataSource implements MarketDataSource {
   async actionsCalendar(..._args: unknown[]): R<ActionCalendarItem[]> { return this.fail("actionsCalendar"); }
   async ownership(..._args: unknown[]): R<StockOwnership> { return this.fail("ownership"); }
   async ownershipChanges(..._args: unknown[]): R<OwnershipChanges> { return this.fail("ownershipChanges"); }
+  async ownershipScreener(..._args: unknown[]): R<OwnershipScreener> { return this.fail("ownershipScreener"); }
   async recentInsiders(..._args: unknown[]): R<RecentInsiders> { return this.fail("recentInsiders"); }
   async radar(..._args: unknown[]): R<RadarSnapshot> { return this.fail("radar"); }
   async stealthOwnership(..._args: unknown[]): R<StealthOwnership> { return this.fail("stealthOwnership"); }

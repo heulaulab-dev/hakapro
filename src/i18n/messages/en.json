@@ -150,7 +150,12 @@
     "method": "Rules {version}.",
     "radarLink": "See rules and missing inputs",
     "filterLabel": "Activity type",
-    "filters": { "all": "All", "volume": "Volume & trade size", "price": "Price", "flow": "Foreign flow" },
+    "filters": {
+      "all": "All",
+      "volume": "Volume & trade size",
+      "price": "Price",
+      "flow": "Foreign flow"
+    },
     "shown": "{count} stocks",
     "observations": "Observed signals",
     "counterEvidence": "Counter evidence",
@@ -231,7 +236,12 @@
     "liquidity": "20-session average traded value: {value}",
     "insufficient": "The dividend sample or trading-value coverage is insufficient for these filters.",
     "noPattern": "None of the documented filters match this stock's observed history.",
-    "flags": { "lowTrapRisk": "Low historical trap risk", "capture": "Capture pattern", "runUp": "Run-up pattern", "highYield": "High yield" },
+    "flags": {
+      "lowTrapRisk": "Low historical trap risk",
+      "capture": "Capture pattern",
+      "runUp": "Run-up pattern",
+      "highYield": "High yield"
+    },
     "runUp": "15-session run-up",
     "exDrop": "Ex-date drop / dividend",
     "recovery": "Recovery",
@@ -957,7 +967,20 @@
       "AMBIGUOUS": "Ambiguous"
     },
     "kseiUpload": "Upload KSEI list",
-    "marketWideUnavailable": "A market-wide ownership-change feed isn't available from the current data source."
+    "marketWideUnavailable": "A market-wide ownership-change feed isn't available from the current data source.",
+    "screenerTitle": "1% Screener",
+    "screenerHint": "Disclosed KSEI holdings of at least 1%, dated by the latest published snapshot.",
+    "screenerIssuers": "Issuers",
+    "screenerInvestors": "Disclosed investors",
+    "screenerHoldings": "Disclosed holdings",
+    "screenerForeign": "Foreign disclosed lines",
+    "screenerSearch": "Search stock or investor",
+    "screenerStock": "Stock",
+    "screenerInvestor": "Investor",
+    "screenerClass": "Classification · Local/foreign",
+    "screenerShares": "Shares",
+    "screenerPercent": "Holding",
+    "screenerDisclosure": "Snapshot {date} · local disclosed lines: {local} · unknown geography: {unknown}. This is not total foreign ownership or free float."
   },
   "stockChart": {
     "title": "Price chart",

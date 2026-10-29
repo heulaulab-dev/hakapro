@@ -150,7 +150,12 @@
     "method": "Aturan {version}.",
     "radarLink": "Lihat aturan dan input yang belum tersedia",
     "filterLabel": "Jenis aktivitas",
-    "filters": { "all": "Semua", "volume": "Volume & ukuran transaksi", "price": "Harga", "flow": "Arus asing" },
+    "filters": {
+      "all": "Semua",
+      "volume": "Volume & ukuran transaksi",
+      "price": "Harga",
+      "flow": "Arus asing"
+    },
     "shown": "{count} saham",
     "observations": "Sinyal teramati",
     "counterEvidence": "Bukti berlawanan",
@@ -231,7 +236,12 @@
     "liquidity": "Rata-rata nilai perdagangan 20 sesi: {value}",
     "insufficient": "Sampel dividen atau cakupan nilai perdagangan belum cukup untuk filter ini.",
     "noPattern": "Tidak ada filter terdokumentasi yang cocok dengan riwayat saham ini.",
-    "flags": { "lowTrapRisk": "Risiko jebakan historis rendah", "capture": "Pola capture", "runUp": "Pola run-up", "highYield": "Yield tinggi" },
+    "flags": {
+      "lowTrapRisk": "Risiko jebakan historis rendah",
+      "capture": "Pola capture",
+      "runUp": "Pola run-up",
+      "highYield": "Yield tinggi"
+    },
     "runUp": "Kenaikan 15 sesi",
     "exDrop": "Turun ex-date / dividen",
     "recovery": "Pulih",
@@ -957,7 +967,20 @@
       "AMBIGUOUS": "Tidak pasti"
     },
     "kseiUpload": "Unggah daftar KSEI",
-    "marketWideUnavailable": "Umpan perubahan kepemilikan lintas pasar belum tersedia dari sumber data saat ini."
+    "marketWideUnavailable": "Umpan perubahan kepemilikan lintas pasar belum tersedia dari sumber data saat ini.",
+    "screenerTitle": "Screener 1%",
+    "screenerHint": "Kepemilikan KSEI yang dilaporkan sebesar minimal 1%, berdasarkan tanggal snapshot terakhir.",
+    "screenerIssuers": "Emiten",
+    "screenerInvestors": "Investor terungkap",
+    "screenerHoldings": "Kepemilikan terungkap",
+    "screenerForeign": "Baris asing terungkap",
+    "screenerSearch": "Cari saham atau investor",
+    "screenerStock": "Saham",
+    "screenerInvestor": "Investor",
+    "screenerClass": "Klasifikasi · Lokal/asing",
+    "screenerShares": "Saham",
+    "screenerPercent": "Kepemilikan",
+    "screenerDisclosure": "Snapshot {date} · baris lokal: {local} · geografi tidak diketahui: {unknown}. Ini bukan total kepemilikan asing atau free float."
   },
   "stockChart": {
     "title": "Grafik harga",

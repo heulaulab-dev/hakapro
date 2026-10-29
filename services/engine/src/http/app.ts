@@ -11,7 +11,7 @@ import {
 import { breadthSchema, catalystsSchema } from "@/server/schemas/market-intelligence";
 import { dividendPatternsSchema } from "@/server/schemas/dividend-patterns";
 import { dateSchema, symbolSchema } from "@/server/schemas/inputs";
-import { ownershipChangesSchema, ownershipMonthSchema, stockOwnershipSchema } from "@/server/schemas/ownership";
+import { ownershipChangesSchema, ownershipMonthSchema, ownershipScreenerSchema, stockOwnershipSchema } from "@/server/schemas/ownership";
 import { strategyBoardSchema } from "@/lib/strategies/contract";
 import type { SourceHealth } from "../db/repos";
 import type { PauseGuard } from "../schedule/pause";
@@ -35,7 +35,7 @@ import {
   INSIDERS_MAX_LIMIT, serveRecentInsiders, type InsiderStore,
 } from "../serve/insiders";
 import type { LogoService } from "../serve/logos";
-import { emptyStockOwnership, serveOwnershipChanges, serveStockOwnership } from "../serve/ownership";
+import { emptyStockOwnership, serveOwnershipChanges, serveOwnershipScreener, serveStockOwnership } from "../serve/ownership";
 import { serveCatalysts } from "../serve/catalysts";
 import { serveDividendPatterns } from "../serve/dividend-patterns";
 import { serveBreadth } from "../serve/breadth";
@@ -381,6 +381,11 @@ export function createApp(deps: AppDeps): (request: Request) => Promise<Response
       // No trading date can be vouched for without foreign data; the schema has no empty form, so this is a typed miss.
       if (!served) return error(404, "NO_DATA", "No signals available yet");
       return json(envelope(signalsSchema, served.data, servedMeta(served, at)));
+    }
+
+    if (path === "/v1/ownership/screener") {
+      const served = deps.ownership ? await serveOwnershipScreener(deps.ownership.service.store) : null;
+      return respond(ownershipScreenerSchema, served, { month: at.toISOString().slice(0, 7), snapshotDate: at.toISOString().slice(0, 10), issuers: 0, investors: 0, holdings: 0, localForeign: { local: 0, foreign: 0, unknown: 0 }, classifications: [], rows: [] });
     }
 
     if (path === "/v1/ownership/changes") {
