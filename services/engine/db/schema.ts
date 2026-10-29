@@ -320,6 +320,25 @@ export const corporateActions = pgTable("corporate_actions", {
   index("corporate_actions_symbol").on(t.symbol),
 ]);
 
+/** Immutable KSEI cash-dividend notices, including later revisions/postponements/cancellations. */
+export const kseiCashDividendNotices = pgTable("ksei_cash_dividend_notices", {
+  noticeId: text("notice_id").notNull(),
+  supersedesNoticeId: text("supersedes_notice_id"),
+  symbol: text("symbol"),
+  issuer: text("issuer"),
+  amountPerShare: numeric("amount_per_share", { precision: 20, scale: 6, mode: "number" }),
+  cumDate: date("cum_date"),
+  exDate: date("ex_date"),
+  recordDate: date("record_date"),
+  paymentDate: date("payment_date"),
+  status: text("status").notNull(),
+  noticeDate: date("notice_date"),
+  documentUrl: text("document_url").notNull(),
+  documentSha256: text("document_sha256").notNull(),
+  importedAt: timestamp("imported_at", { withTimezone: true }).notNull().defaultNow(),
+  rawRef: uuid("raw_ref").references(() => rawDocuments.id),
+}, (t) => [primaryKey({ name: "ksei_cash_dividend_notice_pk", columns: [t.noticeId, t.documentSha256] }), index("ksei_cash_dividend_symbol_ex_date").on(t.symbol, t.exDate), index("ksei_cash_dividend_supersedes").on(t.supersedesNoticeId)]);
+
 export const FINANCIAL_PERIOD_TYPES = ["annual", "quarterly"] as const;
 export const FINANCIAL_UNITS = ["amount", "per_share", "shares"] as const;
 

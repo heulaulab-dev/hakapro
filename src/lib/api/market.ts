@@ -263,6 +263,8 @@ export type GroupPerformance = z.infer<typeof groupPerformanceSchema>;
 export type GroupsView = z.infer<typeof groupsViewSchema>;
 export const actionCalendarItemSchema = z.object({
   symbol: z.string(), date: z.string(), type: z.string(), description: z.string().nullable(), amount: nn, ratio: z.string().nullable(), documentUrl: z.string().nullable(),
+  sourceCategory: z.string().nullable().optional(), cumDate: z.string().nullable().optional(), recordDate: z.string().nullable().optional(), paymentDate: z.string().nullable().optional(),
+  noticeId: z.string().nullable().optional(), status: z.string().nullable().optional(),
 });
 export type ActionCalendarItem = z.infer<typeof actionCalendarItemSchema>;
 /** Shares and percents arrive as decimal strings (exact); they are formatted, never summed, on the client. */

@@ -1,6 +1,7 @@
 // Drizzle implementation of the /v1 read port (src/serve/store.ts).
 import { and, arrayContains, asc, desc, eq, gte, ilike, inArray, isNotNull, like, lt, lte, max, or, sql } from "drizzle-orm";
 import * as t from "../../db/schema";
+import { latestKseiCashDividendNotices } from "./ksei-cash-dividends";
 import type {
   ActionCalendarRecord, ActionRecord, DailyRecord, FundamentalRecord, IndexDailyRecord, IndexIntradayRecord, IntradayRecord, MacroRecord, MarketStore, NewsQuery, NewsRecord,
   RatioRecord, SecurityRecord,
@@ -156,12 +157,21 @@ export class DbMarketStore implements MarketStore {
       amount: t.corporateActions.amount, ratio: t.corporateActions.ratio, shares: t.corporateActions.shares, sharesAfter: t.corporateActions.sharesAfter, asOf: t.corporateActions.asOf,
     }).from(t.corporateActions).where(and(gte(t.corporateActions.exDate, from), lte(t.corporateActions.exDate, to)))
       .orderBy(asc(t.corporateActions.exDate), asc(t.corporateActions.symbol), asc(t.corporateActions.type));
-    return rows.map((row) => ({ ...row, exDate: row.exDate! }));
+    const existing = rows.map((row) => ({ ...row, exDate: row.exDate! }));
+    const ksei = await latestKseiCashDividendNotices(this.db, from, to);
+    return [...existing, ...[...ksei].map((row) => ({
+      symbol: row.symbol as string, exDate: row.exDate as string, type: "CASH_DIVIDEND", source: "ksei-cash-dividend",
+      sourceCategory: "KSEI_CASH_DIVIDEND", description: `KSEI ${String(row.status).toLowerCase()} cash dividend`, amount: row.amountPerShare as number | null,
+      ratio: null, shares: null, sharesAfter: null, asOf: new Date(row.importedAt as string | Date), cumDate: row.cumDate as string | null,
+      recordDate: row.recordDate as string | null, paymentDate: row.paymentDate as string | null, noticeId: row.noticeId as string,
+      status: row.status as string, documentUrl: row.documentUrl as string,
+    }))];
   }
 
   async latestActionAsOf(): Promise<Date | null> {
     const [row] = await this.db.select({ asOf: max(t.corporateActions.asOf) }).from(t.corporateActions);
-    return row?.asOf ?? null;
+    const [ksei] = await this.db.select({ asOf: max(t.kseiCashDividendNotices.importedAt) }).from(t.kseiCashDividendNotices);
+    return [row?.asOf, ksei?.asOf].filter((value): value is Date => value !== null).sort((a, b) => b.getTime() - a.getTime())[0] ?? null;
   }
 
   async news(query: NewsQuery): Promise<NewsRecord[]> {
