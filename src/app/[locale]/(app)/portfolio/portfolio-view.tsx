@@ -22,8 +22,9 @@ export function PortfolioView({ viewer }: { viewer: ViewerSummary }) {
   const [price, setPrice] = useState("");
   const [transactionType, setTransactionType] = useState<"BUY" | "SELL">("BUY");
   const [message, setMessage] = useState<string | null>(null);
-  const portfolio = usePortfolio(viewer.kind === "user");
-  const { add, remove } = usePortfolioMutations();
+  const userId = viewer.kind === "user" ? viewer.id : null;
+  const portfolio = usePortfolio(userId);
+  const { add, remove } = usePortfolioMutations(userId);
   const transactions = portfolio.data?.transactions ?? [];
   const lots = summarizePortfolio(transactions);
   const quotes = useQuotes(lots.map((lot) => lot.symbol));
@@ -56,7 +57,7 @@ export function PortfolioView({ viewer }: { viewer: ViewerSummary }) {
     {message && <p role="alert" className="text-xs text-negative">{message}</p>}
     {portfolio.isError && <p role="alert" className="text-xs text-negative">{t("failed")}</p>}
     <div className="grid gap-3 sm:grid-cols-3">
-      <Metric label={t("cost")} value={formatIdr(totalCost, locale, { compact: true })} />
+      <Metric label={t("cost")} value={portfolio.isPending ? "—" : formatIdr(totalCost, locale, { compact: true })} />
       <Metric label={t("value")} value={totalValue === null ? "—" : formatIdr(totalValue, locale, { compact: true })} />
       <Metric label={t("pnl")} value={totalValue === null ? "—" : formatIdr(totalValue - totalCost, locale, { compact: true })} />
     </div>
