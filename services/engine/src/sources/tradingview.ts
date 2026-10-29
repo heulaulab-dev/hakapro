@@ -10,7 +10,7 @@ export const MARKET_SCAN_URL = `${TRADINGVIEW_ORIGIN}/indonesia/scan`;
 export const INDEX_SCAN_URL = `${TRADINGVIEW_ORIGIN}/global/scan`;
 
 /** Column order of the market scan; `d[i]` in each row follows it. */
-export const MARKET_COLUMNS = ["name", "description", "sector", "close", "open", "high", "low", "change", "volume", "Value.Traded", "market_cap_basic", "update_mode"] as const;
+export const MARKET_COLUMNS = ["name", "description", "sector", "close", "open", "high", "low", "change", "volume", "Value.Traded", "market_cap_basic", "update_mode", "logoid"] as const;
 export const INDEX_COLUMNS = ["name", "description", "close", "open", "high", "low", "change", "update_mode"] as const;
 /** Index tickers confirmed on 2026-10-16 (others such as IDX80 or IDXTECHNO are not listed under these names). */
 export const INDEX_TICKERS = ["COMPOSITE", "LQ45", "IDX30", "IDXENERGY", "IDXBASIC", "IDXINDUST", "IDXHEALTH", "IDXFINANCE", "IDXPROPERT"] as const;
@@ -30,11 +30,17 @@ const responseSchema = z.object({
   data: z.array(z.object({ s: z.string(), d: z.array(z.unknown()) })),
 });
 
+/** TradingView logo ids are lowercase slugs (`bank-central-asia`); they become part of a CDN URL, so nothing else passes. */
+export const LOGO_ID_PATTERN = /^[a-z0-9-]{1,120}$/;
+export const isLogoId = (value: unknown): value is string => typeof value === "string" && LOGO_ID_PATTERN.test(value);
+
 const num = z.number().nullable();
 const text = z.string().nullable();
 const marketRowSchema = z.object({
   name: z.string(), description: text, sector: text, close: num, open: num, high: num, low: num, change: num,
   volume: num, "Value.Traded": num, market_cap_basic: num, update_mode: text,
+  // A missing or malformed logo id never drops the row: it is just no logo.
+  logoid: z.unknown().transform((value) => (isLogoId(value) ? value : null)),
 });
 const indexRowSchema = z.object({ name: z.string(), description: text, close: num, open: num, high: num, low: num, change: num, update_mode: text });
 
@@ -54,6 +60,8 @@ export type TvStockRow = {
   /** Fraction of the previous close (TradingView sends percent). */
   changePercent: number | null;
   volume: number | null; value: number | null; marketCap: number | null; delaySeconds: number | null;
+  /** Validated TradingView logo id, or null. */
+  logoId: string | null;
 };
 
 export type TvIndexRow = {
@@ -84,7 +92,7 @@ export function parseMarketScan(textBody: string): { totalCount: number; rows: T
     out.push({
       symbol: symbol.data, name: row.description, sector: row.sector, close: row.close, open: row.open, high: row.high, low: row.low,
       changePercent: fraction(row.change), volume: row.volume, value: row["Value.Traded"], marketCap: row.market_cap_basic,
-      delaySeconds: delaySecondsOf(row.update_mode),
+      delaySeconds: delaySecondsOf(row.update_mode), logoId: row.logoid,
     });
   }
   return { totalCount: parsed.totalCount, rows: out, skipped };

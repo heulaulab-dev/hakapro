@@ -13,10 +13,10 @@ import { createEngine } from "../src/engine";
 import { ENGINE_USER_AGENT } from "../src/fetch/fetcher";
 import { LimiterRegistry } from "../src/fetch/rate-limit";
 import { nullLogger } from "../src/log";
-import { upsertDaily } from "../src/db/ingest";
+import { upsertDaily, upsertSecurities } from "../src/db/ingest";
 import { DbSourceStateStore, sourceHealth } from "../src/db/repos";
 import { dockerEnabled, startPostgres, type TestPostgres } from "./postgres";
-import { ARJUM_TEST_KEY, ARJUM_TEST_ORIGIN, startSourceWorld, type SourceWorld } from "./source-fixtures";
+import { ARJUM_TEST_KEY, ARJUM_TEST_ORIGIN, LOGO_FIXTURE_SVG, startSourceWorld, type SourceWorld } from "./source-fixtures";
 import { fakeClock, tempDir, wib } from "./support";
 
 const enabled = dockerEnabled();
@@ -122,7 +122,14 @@ describe.skipIf(!enabled)("engine sources (docker postgres + fixtures)", { timeo
     expect(securities.map((row) => row.symbol)).toEqual([...PASARDANA_SYMBOLS, ...TV_SYMBOLS].sort());
     expect(securities.every((row) => row.active && row.board === null && row.notation === null && row.rawRef && row.source && row.asOf)).toBe(true);
     expect(securities.find((row) => row.symbol === "AADI")).toMatchObject({ name: "Adaro Andalan Indonesia Tbk.", sector: "Energi", freeFloatPct: 18.18, sharesOutstanding: 7786891760, source: "pasardana" });
-    expect(securities.find((row) => row.symbol === "BBCA")).toMatchObject({ name: "PT Bank Central Asia Tbk", sector: "Finance", source: "tradingview-scanner" });
+    expect(securities.find((row) => row.symbol === "BBCA")).toMatchObject({ name: "PT Bank Central Asia Tbk", sector: "Finance", source: "tradingview-scanner", logoId: "bank-central-asia" });
+    expect(securities.find((row) => row.symbol === "AADI")!.logoId).toBeNull();
+    // A later pass without a logo id (Pasardana's shape) keeps the stored one; a new id replaces it.
+    const prov = { source: "pasardana", asOf: new Date(), rawRef: null };
+    await upsertSecurities(h.db, [{ symbol: "BBCA", name: "Bank Central Asia Tbk." }], prov);
+    expect((await h.db.select().from(t.securities).where(eq(t.securities.symbol, "BBCA")))[0].logoId).toBe("bank-central-asia");
+    await upsertSecurities(h.db, [{ symbol: "BBCA", name: "Bank Central Asia Tbk.", logoId: "bca-new" }], { ...prov, source: "tradingview-scanner" });
+    expect((await h.db.select().from(t.securities).where(eq(t.securities.symbol, "BBCA")))[0].logoId).toBe("bca-new");
 
     const session = await h.db.select().from(t.dailyPrices).where(eq(t.dailyPrices.date, "2026-10-16")).orderBy(asc(t.dailyPrices.symbol));
     expect(session.map((row) => row.symbol)).toEqual([...TV_SYMBOLS].sort());
@@ -136,6 +143,38 @@ describe.skipIf(!enabled)("engine sources (docker postgres + fixtures)", { timeo
     expect(docs.find((doc) => doc.source === "tradingview-scanner")!.url).toMatch(/^https:\/\/scanner\.tradingview\.com\/indonesia\/scan#post-/);
     expect(world.hits.every((hit) => hit.userAgent === ENGINE_USER_AGENT)).toBe(true);
     expect(world.hits.map((hit) => `${hit.source} ${hit.method}`)).toEqual(["tradingview POST", "pasardana GET"]);
+  });
+
+  it("ticker logos: off by default (no source, 404 DISABLED); on → universe logo id → sanitized SVG from the CDN, cached", async () => {
+    const off = await harness();
+    expect(off.engine.registry.sources.some((source) => source.id === "tradingview-logos")).toBe(false);
+    await off.run("universe");
+    const disabled = await off.call("/v1/logos/BBCA");
+    expect(disabled.status).toBe(404);
+    expect(await disabled.json()).toMatchObject({ error: { code: "DISABLED" } });
+    expect(world.hits.some((hit) => hit.source === "tvlogo")).toBe(false);
+
+    const h = await harness({ ENGINE_TICKER_LOGOS_ENABLED: "true" });
+    expect(h.engine.registry.sources.find((source) => source.id === "tradingview-logos")).toMatchObject({ host: "s3-symbol-logo.tradingview.com" });
+    await h.run("universe");
+    const before = world.hits.length;
+    const logo = await h.call("/v1/logos/bbca");
+    expect(logo.status).toBe(200);
+    expect(logo.headers.get("content-type")).toBe("image/svg+xml; charset=utf-8");
+    expect(logo.headers.get("x-content-type-options")).toBe("nosniff");
+    expect(await logo.text()).toBe(LOGO_FIXTURE_SVG);
+    expect((await h.call("/v1/logos/BBCA")).status).toBe(200);
+    const logoHits = world.hits.slice(before).filter((hit) => hit.source === "tvlogo");
+    expect(logoHits.map((hit) => `${hit.method} ${hit.path}`)).toEqual(["GET /bank-central-asia.svg"]);
+    expect(logoHits.every((hit) => hit.userAgent === ENGINE_USER_AGENT)).toBe(true);
+    // A raw copy is kept like every other fetched document.
+    expect((await h.db.select().from(t.rawDocuments).where(eq(t.rawDocuments.source, "tradingview-logos"))).map((doc) => doc.url)).toEqual(["https://s3-symbol-logo.tradingview.com/bank-central-asia.svg"]);
+    // Pasardana-only symbol: no logo id, no request.
+    const missing = await h.call("/v1/logos/AADI");
+    expect(missing.status).toBe(404);
+    expect(await missing.json()).toMatchObject({ error: { code: "NO_DATA" } });
+    expect((await h.call("/v1/logos/bad$sym")).status).toBe(400);
+    expect(world.hits.slice(before).filter((hit) => hit.source === "tvlogo")).toHaveLength(1);
   });
 
   it("universe falls back to Pasardana when TradingView blocks; the block is evidenced and never retried", async () => {
@@ -710,7 +749,7 @@ describe.skipIf(!enabled)("engine sources (docker postgres + fixtures)", { timeo
       "bank-indonesia": "NEVER_RUN", "news-antara": "NEVER_RUN", "news-cnbcindonesia": "NEVER_RUN", "news-detik": "NEVER_RUN", "news-investortrust": "NEVER_RUN",
       "yahoo-fundamentals": "NEVER_RUN", "world-bank-pinksheet": "NEVER_RUN",
     });
-    expect(health.data.unavailable.map((row) => row.route)).toEqual(["/v1/strategies"]);
+    expect(health.data.unavailable.map((row) => row.route)).toEqual(["/v1/strategies", "/v1/logos/{s}"]);
     expect(health.data.unavailable.find((row) => row.route === "/v1/strategies")?.status).toBe("DISABLED");
     expect(health.data.eodSessions[0]).toMatchObject({ date: "2026-10-16", status: "PARTIAL" });
   });

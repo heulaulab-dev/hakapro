@@ -126,3 +126,5 @@ export type RecentInsiders = {
 export type RadarSnapshot = Radar;
 /** KSEI corporate holders up while the close was flat or lower (Data Engine `/v1/ownership/stealth`); price change in percentage points. */
 export type StealthOwnership = StealthOwnershipData;
+/** A ticker logo, already sanitized (Data Engine `/v1/logos/{s}`, re-checked by the app before serving). */
+export type TickerLogo = { svg: string };
