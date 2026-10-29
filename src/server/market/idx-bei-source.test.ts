@@ -1,4 +1,5 @@
 import { describe, expect, test, vi } from "vitest";
+import { ZodError } from "zod";
 import { wib } from "../../../tests/support/fixtures";
 import { IdxBeiSource } from "./idx-bei-source";
 
@@ -42,6 +43,18 @@ describe("IdxBeiSource", () => {
     const fetcher = async () => Response.json({ data: { quote: { symbol: "BBCA", timestamp: "2026-09-17", open: 1, high: 1, low: 1, close: 6300, previousClose: 6350, change: -50, changePercent: -0.0079, volume: 1, value: 1, frequency: 1, foreignBuy: 1, foreignSell: 1 }, candles: [] }, meta });
     const result = await new IdxBeiSource("http://market.test", () => wib("2026-09-18T10:30:00"), fetcher as unknown as typeof fetch).stock("BBCA");
     expect(result.data.quote.changePercent).toBeCloseTo(-0.79, 6);
+  });
+
+  test("breadth history validates the window and requests the bounded engine route", async () => {
+    const fetcher = vi.fn(async (url: string | URL | Request) => {
+      expect(String(url)).toBe("http://market.test/v1/breadth/history?window=6M");
+      return Response.json({ data: { window: "6M", snapshotDate: "2026-09-17", source: "daily_prices", freshness: "EOD", series: [] }, meta });
+    });
+    const source = new IdxBeiSource("http://market.test", () => wib("2026-09-18T10:30:00"), fetcher as unknown as typeof fetch);
+    const result = await source.breadthHistory("6M");
+    expect(result.data.window).toBe("6M");
+    expect(result.freshness).toBe("EOD");
+    await expect(source.breadthHistory("bad" as "6M")).rejects.toBeInstanceOf(ZodError);
   });
 
   test("schema drift is MALFORMED_PROVIDER_RESPONSE", async () => {

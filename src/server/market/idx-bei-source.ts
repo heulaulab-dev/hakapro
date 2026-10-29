@@ -17,10 +17,10 @@ import { ProviderBackoff } from "@/server/providers/backoff";
 import { MarketDataError, unsupported } from "./errors";
 import {
   BaseMarketDataSource, type ActionsCalendarQuery, type HeatmapQuery, type OwnershipChangesQuery, type PageQuery, type RecentInsidersQuery, type IssuerRaceQuery,
-  type GroupsQuery,
+  type GroupsQuery, type BreadthWindow,
 } from "./source";
 import type { Candle, Quote, TickerLogo } from "./types";
-import { breadthSchema, catalystsSchema } from "@/server/schemas/market-intelligence";
+import { breadthHistorySchema, breadthHistoryWindowSchema, breadthSchema, catalystsSchema } from "@/server/schemas/market-intelligence";
 import { dividendPatternsSchema } from "@/server/schemas/dividend-patterns";
 import type { Clock } from "./arjum-source";
 
@@ -250,6 +250,11 @@ export class IdxBeiSource extends BaseMarketDataSource {
   }
   async breadth(signal?: AbortSignal) {
     const { data, meta } = await this.get("/v1/breadth", breadthSchema, TTL_MS.market, { signal });
+    return this.wrap(data, meta.freshness as Freshness, meta.dataAsOf);
+  }
+  async breadthHistory(window: BreadthWindow, signal?: AbortSignal) {
+    const parsedWindow = breadthHistoryWindowSchema.parse(window);
+    const { data, meta } = await this.get(`/v1/breadth/history?window=${parsedWindow}`, breadthHistorySchema, TTL_MS.market, { signal });
     return this.wrap(data, meta.freshness as Freshness, meta.dataAsOf);
   }
 
