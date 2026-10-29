@@ -27,7 +27,7 @@ export const queryKeys = {
   actions: (symbol: string) => ["market", "actions", symbol.toUpperCase()] as const,
   sectors: () => ["market", "sectors"] as const,
   macro: () => ["market", "macro"] as const,
-  indicesHistory: (codes?: string[]) => ["market", "indices-history", codes?.join(",") ?? "all"] as const,
+  indicesHistory: (codes?: string[], from = "", to = "") => ["market", "indices-history", codes?.join(",") ?? "all", from, to] as const,
   issuerRace: (window: string, sector: string) => ["market", "issuer-race", window, sector] as const,
   stockSectorRotation: (sector: string, interval: string) => ["market", "stock-sector-rotation", sector, interval] as const,
   heatmap: (limit: number) => ["market", "heatmap", limit] as const,
