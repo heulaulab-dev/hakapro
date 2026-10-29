@@ -14,6 +14,7 @@ import { ENGINE_USER_AGENT } from "../src/fetch/fetcher";
 import { LimiterRegistry } from "../src/fetch/rate-limit";
 import { nullLogger } from "../src/log";
 import { upsertDaily, upsertSecurities } from "../src/db/ingest";
+import { latestKseiCashDividendNotices, storeKseiCashDividendNotice } from "../src/db/ksei-cash-dividends";
 import { DbSourceStateStore, sourceHealth } from "../src/db/repos";
 import { dockerEnabled, startPostgres, type TestPostgres } from "./postgres";
 import { ARJUM_TEST_KEY, ARJUM_TEST_ORIGIN, LOGO_FIXTURE_SVG, startSourceWorld, type SourceWorld } from "./source-fixtures";
@@ -86,6 +87,7 @@ describe.skipIf(!enabled)("engine sources (docker postgres + fixtures)", { timeo
       ["bank-indonesia", "www.bi.go.id", { minIntervalMs: 5000, concurrency: 1 }],
       ["yahoo-fundamentals", "query1.finance.yahoo.com", { minIntervalMs: 5000, concurrency: 1 }],
       ["world-bank-pinksheet", "thedocs.worldbank.org", { minIntervalMs: 2000, concurrency: 1 }],
+      ["ksei-cash-dividend", "web.ksei.co.id", { minIntervalMs: 5000, concurrency: 1 }],
     ]);
     expect(Object.fromEntries(h.engine.scheduler.status().map((job) => [job.id, job.trigger]))).toEqual({
       universe: { kind: "cron", spec: "35 16 * * *", tradingDaysOnly: true },
@@ -101,6 +103,7 @@ describe.skipIf(!enabled)("engine sources (docker postgres + fixtures)", { timeo
       "macro-bi-rate": { kind: "cron", spec: "5 17 * * *" },
       "macro-commodities": { kind: "cron", spec: "30 6 4 * *" },
       "ksei-ownership-sync": { kind: "cron", spec: "30 20 * * *" },
+      "ksei-cash-dividends": { kind: "cron", spec: "15 */6 * * *" },
       fundamentals: { kind: "cron", spec: "5-55/10 19-23,0-5 * * *" },
       ratios: { kind: "cron", spec: "15 6,17,21 * * *" },
     });
@@ -113,6 +116,25 @@ describe.skipIf(!enabled)("engine sources (docker postgres + fixtures)", { timeo
     const response = await h.call("/v1/meta/health");
     const body = await response.json() as { data: { scheduler: { jobs: Array<{ id: string; lastStatus: string | null }> } } };
     expect(body.data.scheduler.jobs.find((job) => job.id === "universe")?.lastStatus).toBe("SUCCEEDED");
+  });
+
+  it("stores KSEI dividend notice versions idempotently and resolves amendment chains to the latest schedule", async () => {
+    const h = await harness();
+    const original = {
+      noticeId: "KSEI-26328/JKU/1026", supersedesNoticeId: null, symbol: "DMAS", issuer: "PURADELTA LESTARI Tbk",
+      amountPerShare: 29, cumDate: "2026-10-28", exDate: "2026-10-29", recordDate: "2026-10-30", paymentDate: "2026-11-13",
+      status: "CONFIRMED" as const, noticeDate: "2026-10-21", documentUrl: "https://web.ksei.co.id/Announcement/Files/DMAS.pdf",
+    };
+    const revision = {
+      ...original, noticeId: "KSEI-26783/JKU/1026", supersedesNoticeId: original.noticeId, cumDate: null, exDate: null, recordDate: null,
+      paymentDate: "2026-11-16", status: "REVISION" as const, noticeDate: "2026-10-28", documentUrl: "https://web.ksei.co.id/Announcement/Files/DMAS-revision.pdf",
+    };
+    expect(await storeKseiCashDividendNotice(h.db, original, "a".repeat(64), null, new Date("2026-10-21T00:00:00Z"))).toBe(true);
+    expect(await storeKseiCashDividendNotice(h.db, original, "a".repeat(64), null, new Date("2026-10-22T00:00:00Z"))).toBe(false);
+    expect(await storeKseiCashDividendNotice(h.db, revision, "b".repeat(64), null, new Date("2026-10-28T00:00:00Z"))).toBe(true);
+    const latest = await latestKseiCashDividendNotices(h.db, "2026-10-01", "2026-11-30");
+    expect([...latest]).toHaveLength(1);
+    expect([...latest][0]).toMatchObject({ noticeId: revision.noticeId, symbol: "DMAS", exDate: "2026-10-29", paymentDate: "2026-11-16", status: "REVISION" });
   });
 
   it("universe: TradingView + Pasardana → securities and fallback session rows with provenance", async () => {
@@ -746,7 +768,7 @@ describe.skipIf(!enabled)("engine sources (docker postgres + fixtures)", { timeo
     };
     expect(Object.fromEntries(health.data.sources.map((row) => [row.id, row.status]))).toEqual({
       arjum: "OK", pasardana: "OK", "tradingview-scanner": "OK", "yahoo-chart": "OK",
-      "bank-indonesia": "NEVER_RUN", "news-antara": "NEVER_RUN", "news-cnbcindonesia": "NEVER_RUN", "news-detik": "NEVER_RUN", "news-investortrust": "NEVER_RUN",
+      "bank-indonesia": "NEVER_RUN", "ksei-cash-dividend": "NEVER_RUN", "news-antara": "NEVER_RUN", "news-cnbcindonesia": "NEVER_RUN", "news-detik": "NEVER_RUN", "news-investortrust": "NEVER_RUN",
       "yahoo-fundamentals": "NEVER_RUN", "world-bank-pinksheet": "NEVER_RUN",
     });
     expect(health.data.unavailable.map((row) => row.route)).toEqual(["/v1/strategies", "/v1/logos/{s}"]);

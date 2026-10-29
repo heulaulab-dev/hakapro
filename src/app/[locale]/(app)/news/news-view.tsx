@@ -222,7 +222,7 @@ function ActionsCalendar() {
     <section className="flex flex-col gap-3" data-testid="actions-calendar" aria-labelledby="calendar-heading">
       <SectionHeader title={<span id="calendar-heading">{t("calendar")}</span>} description={t("calendarHint")} meta={query.data ? freshnessMeta(query.data) : undefined} />
       <p className="text-xs text-muted-foreground">
-        {t("kseiActionsUnavailable")} <a href={KSEI_CASH_DIVIDENDS_SOURCE} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-link hover:underline">{t("kseiActionsSource")}<ExternalLink aria-hidden className="size-3" /></a>
+        {t("kseiActionsImported")} <a href={KSEI_CASH_DIVIDENDS_SOURCE} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-link hover:underline">{t("kseiActionsSource")}<ExternalLink aria-hidden className="size-3" /></a>
       </p>
       <DataState query={query} compact skeleton={<FeedSkeleton rows={4} />} isEmpty={(envelope) => envelope.data.length === 0}>
         {(envelope) => {
@@ -238,7 +238,7 @@ function ActionsCalendar() {
                     <ul className="flex flex-col divide-y divide-border">
                       {group.items.map((item, index) => {
                         const url = safeUrl(item.documentUrl);
-                        const dividend = item.type === "DIVIDEND";
+                        const dividend = item.type === "DIVIDEND" || item.type === "CASH_DIVIDEND";
                         const split = item.type === "SPLIT";
                         return (
                           <li key={`${item.symbol}-${item.date}-${item.type}-${index}`} className={cn("flex flex-wrap items-center gap-x-3 gap-y-1.5 py-3", !week && "opacity-90")}>
@@ -251,6 +251,12 @@ function ActionsCalendar() {
                               {item.ratio && <span className="num text-lg font-semibold">{item.ratio}</span>}
                               {group.day && <ExCountdown day={group.day} today={today} />}
                             </span>
+                            {item.sourceCategory === "KSEI_CASH_DIVIDEND" && <span className="w-full text-right text-xs text-muted-foreground">
+                              {item.cumDate && <span>{t("cumDateLabel")} {formatShortDate(item.cumDate, locale)} · </span>}
+                              {item.recordDate && <span>{t("recordDateLabel")} {formatShortDate(item.recordDate, locale)} · </span>}
+                              {item.paymentDate && <span>{t("paymentDateLabel")} {formatShortDate(item.paymentDate, locale)}</span>}
+                              {item.status && item.status !== "CONFIRMED" && <span className="ml-2 font-medium text-warning">{item.status}</span>}
+                            </span>}
                             {url && <a href={url} target="_blank" rel="noopener noreferrer" aria-label={`${t("openDocument")}: ${item.symbol}`} title={formatShortDate(item.date, locale)} className="inline-flex size-10 items-center justify-center rounded-md text-link hover:bg-accent md:size-7"><ExternalLink aria-hidden className="size-3.5" /></a>}
                           </li>
                         );

@@ -37,6 +37,7 @@ import { commoditiesJob } from "./jobs/commodities";
 import { biRateJob, jisdorJob } from "./jobs/macro";
 import { newsJob } from "./jobs/news";
 import { kseiOwnershipJob } from "./jobs/ksei-ownership";
+import { kseiCashDividendsJob, KSEI_CASH_DIVIDEND_SOURCE_ID } from "./jobs/ksei-cash-dividends";
 import { strategyScanJob } from "./jobs/strategy-scan";
 import { universeJob } from "./jobs/universe";
 import { log as defaultLog, type Logger } from "./log";
@@ -95,8 +96,9 @@ export function defaultRegistry(services: EngineServices): Registry {
   // Private IDX-BEI microservice (internal network only): company reference snapshot → issuer profiles.
   const idxBeiConfig = services.config.idxBei ?? { enabled: false, baseUrl: "http://idx-bei:8000" };
   const idxBeiSource = defineSource({ id: IDX_BEI_SOURCE_ID, host: new URL(idxBeiConfig.baseUrl).host, kind: "reference", policy: { minIntervalMs: 1000, concurrency: 1 }, description: "Private IDX-BEI microservice: company reference snapshot (classification, board, shareholders, subsidiaries)" });
+  const kseiDividendSource = defineSource({ id: KSEI_CASH_DIVIDEND_SOURCE_ID, host: "web.ksei.co.id", kind: "disclosure", policy: { minIntervalMs: 5000, concurrency: 1 }, description: "KSEI official cash-dividend notices and revision circulars" });
   return {
-    sources: [sources.tradingview, sources.yahoo, sources.pasardana, ...(sources.arjum ? [sources.arjum] : []), ...sources.news, sources.bi, sources.yahooFundamentals, sources.worldBank, ...(idxTransport ? [idxSource] : []), ...(idxBeiConfig.enabled ? [idxBeiSource] : []),
+    sources: [sources.tradingview, sources.yahoo, sources.pasardana, ...(sources.arjum ? [sources.arjum] : []), ...sources.news, sources.bi, sources.yahooFundamentals, sources.worldBank, kseiDividendSource, ...(idxTransport ? [idxSource] : []), ...(idxBeiConfig.enabled ? [idxBeiSource] : []),
       ...(services.config.tickerLogos.enabled ? [tradingviewLogoSource()] : [])],
     jobs: [
       universeJob(jobServices, { tradingview: sources.tradingview, pasardana: sources.pasardana }),
@@ -122,6 +124,7 @@ export function defaultRegistry(services: EngineServices): Registry {
       jisdorJob(jobServices, sources.bi),
       biRateJob(jobServices, sources.bi),
       commoditiesJob(jobServices, sources.worldBank),
+      kseiCashDividendsJob(jobServices),
       fundamentalsJob(jobServices, sources.yahooFundamentals, { hostSources: [sources.yahoo.id] }),
       ratiosJob(jobServices, { fundamentals: sources.yahooFundamentals.id, chart: sources.yahoo.id }),
       ...(services.config.strategyScans.enabled ? [strategyScanJob(jobServices)] : []),

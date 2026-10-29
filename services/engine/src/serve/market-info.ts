@@ -147,7 +147,9 @@ export async function serveActionsCalendar(store: MarketStore, range: ActionsRan
   const rows = await store.actionsBetween(range.from, range.to);
   const dataAsOf = wibDateOf(asOf);
   return {
-    data: rows.map((row) => ({ symbol: row.symbol, date: row.exDate, type: row.type, sourceCategory: row.sourceCategory ?? null, description: row.description, amount: row.amount, ratio: row.ratio, shares: row.shares, sharesAfter: row.sharesAfter, documentUrl: null })),
+    data: rows.map((row) => ({ symbol: row.symbol, date: row.exDate, type: row.type, sourceCategory: row.sourceCategory ?? null, description: row.description, amount: row.amount, ratio: row.ratio, shares: row.shares, sharesAfter: row.sharesAfter, documentUrl: row.documentUrl ?? null,
+      ...(row.cumDate !== undefined ? { cumDate: row.cumDate } : {}), ...(row.recordDate !== undefined ? { recordDate: row.recordDate } : {}),
+      ...(row.paymentDate !== undefined ? { paymentDate: row.paymentDate } : {}), ...(row.noticeId !== undefined ? { noticeId: row.noticeId } : {}), ...(row.status !== undefined ? { status: row.status } : {}) })),
     dataAsOf, freshness: sessionFreshness(dataAsOf, now),
   };
 }

@@ -43,7 +43,8 @@ export type IssuerProfileRecord = { symbol: string; language: string; profile: R
   source?: string; asOf?: Date };
 
 export type ActionRecord = { exDate: string | null; type: string; description: string | null; asOf: Date };
-export type ActionCalendarRecord = { symbol: string; exDate: string; type: string; source?: string; sourceCategory?: string | null; description: string | null; amount: number | null; ratio: string | null; shares: number | null; sharesAfter: number | null; asOf: Date };
+export type ActionCalendarRecord = { symbol: string; exDate: string; type: string; source?: string; sourceCategory?: string | null; description: string | null; amount: number | null; ratio: string | null; shares: number | null; sharesAfter: number | null; asOf: Date;
+  cumDate?: string | null; recordDate?: string | null; paymentDate?: string | null; noticeId?: string | null; status?: string | null; documentUrl?: string | null };
 
 export type NewsRecord = {
   publishedAt: Date; publishedAtEstimated: boolean; title: string; url: string; outlet: string; summary: string | null; symbols: string[];
