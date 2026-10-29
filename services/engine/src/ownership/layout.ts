@@ -1,7 +1,7 @@
 // Column layout of the KSEI ≥1% shareholder list, the one place to adjust once a real file is seen.
 //
-// No real PDF has been read (idx.co.id and KSEI block the engine, DATA-ENGINE.md §5.9). The layout follows what
-// CONNECTION-NETWORK.md §1.3 and "Data Engine inputs" document: the extracted columns
+// The official IDX XLSX has been inspected. Its layout includes INVESTOR_CLASSIFICATION; retain that field as
+// investorType so market-wide ownership summaries can use the labels stated in the source.
 //   DATE, SHARE_CODE, ISSUER_NAME, INVESTOR_NAME, TOTAL_HOLDING_SHARES, PERCENTAGE, LOCAL_FOREIGN, INVESTOR_TYPE
 // plus nationality, domicile and a scrip/scripless split in the original PDF. Headers are matched by name (English and
 // Indonesian aliases), never by position, so column order, extra columns and the CSV/XLSX fallback all go through the
@@ -31,7 +31,7 @@ export const HEADER_ALIASES: Record<string, OwnershipField> = {
   "ISSUER NAME": "issuerName", "NAMA EMITEN": "issuerName", "EMITEN": "issuerName", "ISSUER": "issuerName", "NAMA PERUSAHAAN": "issuerName",
   "INVESTOR NAME": "holderName", "NAMA INVESTOR": "holderName", "NAMA PEMEGANG SAHAM": "holderName", "PEMEGANG SAHAM": "holderName",
   "HOLDER NAME": "holderName", "SHAREHOLDER NAME": "holderName", "SHAREHOLDER": "holderName", "NAMA PEMEGANG REKENING": "holderName",
-  "INVESTOR TYPE": "investorType", "TIPE INVESTOR": "investorType", "JENIS INVESTOR": "investorType", "TYPE": "investorType",
+  "INVESTOR TYPE": "investorType", "INVESTOR CLASSIFICATION": "investorType", "TIPE INVESTOR": "investorType", "JENIS INVESTOR": "investorType", "TYPE": "investorType",
   "LOCAL FOREIGN": "localForeign", "LOCAL/FOREIGN": "localForeign", "L/A": "localForeign", "L/F": "localForeign", "LOKAL/ASING": "localForeign",
   "LOKAL ASING": "localForeign", "STATUS": "localForeign",
   "NATIONALITY": "nationality", "KEBANGSAAN": "nationality", "WARGA NEGARA": "nationality", "KEWARGANEGARAAN": "nationality",

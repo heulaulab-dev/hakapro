@@ -127,6 +127,18 @@ export const ownershipChangesSchema = z.object({
   changes: z.array(ownershipChangeSchema),
 });
 
+/** Market-wide disclosed ≥1% positions; counts describe published rows, not all beneficial owners or free float. */
+export const ownershipScreenerSchema = z.object({
+  month: ownershipMonthSchema,
+  snapshotDate: isoDate,
+  issuers: z.number().int().nonnegative(),
+  investors: z.number().int().nonnegative(),
+  holdings: z.number().int().nonnegative(),
+  localForeign: z.object({ local: z.number().int().nonnegative(), foreign: z.number().int().nonnegative(), unknown: z.number().int().nonnegative() }),
+  classifications: z.array(z.object({ name: z.string(), holdings: z.number().int().nonnegative() })),
+  rows: z.array(z.object({ symbol: symbolSchema, issuerName: z.string().nullable(), holderName: z.string(), holderKind: z.enum(OWNERSHIP_HOLDER_KINDS), investorType: z.string().nullable(), localForeign: z.string().nullable(), shares, percent })),
+});
+
 export const ownershipUploadIssueSchema = z.object({
   severity: z.enum(["error", "warning"]), locator: z.string(), field: z.string().optional(), message: z.string(), text: z.string().optional(),
 });
@@ -152,4 +164,5 @@ export const ownershipUploadSchema = z.object({
 
 export type StockOwnership = z.infer<typeof stockOwnershipSchema>;
 export type OwnershipChanges = z.infer<typeof ownershipChangesSchema>;
+export type OwnershipScreener = z.infer<typeof ownershipScreenerSchema>;
 export type OwnershipUpload = z.infer<typeof ownershipUploadSchema>;
