@@ -61,6 +61,9 @@ const envSchema = z.object({
   // only (DATA-ENGINE.md §8 decision 6), so this is off by default: no logo source is registered and /v1/logos answers
   // 404 DISABLED. Pair with the app's NEXT_PUBLIC_TICKER_LOGOS=1.
   ENGINE_TICKER_LOGOS_ENABLED: flag(false),
+  ENGINE_CATALYSTS_ENABLED: flag(false),
+  ENGINE_BREADTH_ENABLED: flag(false),
+  ENGINE_OWNERSHIP_NETWORK_ENABLED: flag(false),
 });
 
 /** arjum's daily request quota for one key, shared by the engine (foreign flow, insider feed) and the app environments. */
@@ -98,6 +101,7 @@ export type EngineConfig = {
   idxPrimary: { enabled: boolean; baseUrl: string; python: string; workerScript?: string; maxRetries: number; timeoutSeconds: number; delaySeconds: number; impersonate: string; backfillRevision: string };
   /** false → the logo CDN source is not registered and /v1/logos/{s} answers 404 DISABLED. */
   tickerLogos: { enabled: boolean };
+  intelligence: { catalysts: boolean; breadth: boolean; ownershipNetwork: boolean };
 };
 
 /** Parses env; error messages name variables, never values. */
@@ -160,6 +164,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     strategyScans: { enabled: e.ENGINE_STRATEGY_SCANS_ENABLED },
     idxBei: { enabled: e.IDX_BEI_ENABLED, baseUrl: e.IDX_BEI_API_URL },
     tickerLogos: { enabled: e.ENGINE_TICKER_LOGOS_ENABLED },
+    intelligence: { catalysts: e.ENGINE_CATALYSTS_ENABLED, breadth: e.ENGINE_BREADTH_ENABLED, ownershipNetwork: e.ENGINE_OWNERSHIP_NETWORK_ENABLED },
     idxPrimary: {
       enabled: e.ENGINE_IDX_PRIMARY_ENABLED,
       baseUrl: (e.ENGINE_IDX_PRIMARY_BASE_URL ?? "https://www.idx.co.id/primary").replace(/\/+$/, ""),

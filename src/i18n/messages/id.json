@@ -121,7 +121,20 @@
     "stealth": "Korporasi KSEI",
     "macro": "Suku Bunga & Komoditas",
     "methodology": "Metodologi",
-    "rotation": "Rotasi Sektor"
+    "rotation": "Rotasi Sektor",
+    "intelligence": "Intelijen Pasar"
+  },
+  "intelligence": {
+    "title": "Intelijen pasar",
+    "intro": "Pandangan terukur tentang partisipasi dan rezim dari sesi pasar tersimpan terbaru.",
+    "regime": "Rezim",
+    "participation": "Partisipasi",
+    "coverage": "Tidak berubah",
+    "advancersDecliners": "naik / turun",
+    "unchanged": "saham tanpa perubahan",
+    "sectors": "Partisipasi sektor",
+    "unavailable": "Breadth belum tersedia",
+    "unavailableDescription": "Engine belum menyimpan sesi pasar yang dapat digunakan."
   },
   "macro": {
     "title": "Suku bunga & komoditas",
@@ -401,6 +414,9 @@
     "ownershipTitle": "Kepemilikan & insider",
     "financialTitle": "Keuangan",
     "chartTitle": "Grafik harga",
+    "catalystsTitle": "Radar katalis",
+    "catalystsDescription": "Peristiwa emiten, pasar, kepemilikan, berita, dan fundamental terbaru dengan sumber dan tanggal.",
+    "catalystsEmpty": "Belum ada peristiwa katalis untuk simbol ini.",
     "deepDive": "Telusuri lebih dalam",
     "hints": {
       "chart": "Candlestick, volume, dan rentang waktu",
