@@ -77,9 +77,15 @@ function KseiChanges({ canUpload }: { canUpload: boolean }) {
       <SectionHeader title={t("kseiTitle")} description={t("kseiHint")} meta={query.data ? freshnessMeta(query.data) : undefined}
         actions={canUpload ? <Link href="/admin/ownership" className="caption-style text-link hover:underline touch-target" data-testid="ksei-upload-link">{t("kseiUpload")}</Link> : undefined} />
       <DataState query={query} compact>
-        {(envelope) => envelope.data.changes.length === 0 ? <EmptyState compact icon={<Landmark />} title={t("kseiNone")} /> : (
+        {(envelope) => envelope.data.changes.length === 0 && envelope.data.comparisons.length === 0 ? <EmptyState compact icon={<Landmark />} title={t("kseiNone")} /> : (
           <div className="flex flex-col gap-2">
             <p className="caption-style text-subtle">{t("kseiMonths", { month: monthLabel(envelope.data.month), previous: monthLabel(envelope.data.previousMonth) })}</p>
+            {envelope.data.changes.length === 0 && <p className="caption-style text-subtle" data-testid="ksei-no-comparison">{t("kseiSnapshotOnly", { count: envelope.data.comparisons.length })}</p>}
+            {envelope.data.changes.length === 0 && envelope.data.comparisons.length > 0 ? (
+              <ul className="flex flex-wrap gap-2" data-testid="ksei-snapshot-symbols">
+                {envelope.data.comparisons.slice(0, 24).map((item) => <li key={item.symbol}><Link href={stockHref(item.symbol, "ownership")} className="ticker rounded border border-border px-2 py-1 text-link hover:bg-accent touch-target">{item.symbol}</Link></li>)}
+              </ul>
+            ) : (
             <ul className="flex flex-col divide-y divide-border rounded-xl border border-border px-4 text-sm">
               {envelope.data.changes.filter((change) => change.kind !== "UNCHANGED").map((change) => (
                 <li key={`${change.symbol}-${change.holderKey}`} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2">
@@ -90,7 +96,8 @@ function KseiChanges({ canUpload }: { canUpload: boolean }) {
                 </li>
               ))}
             </ul>
-            {envelope.data.changes.every((change) => change.kind === "UNCHANGED") && <p className="caption-style text-subtle">{t("kseiNoChanges")}</p>}
+            )}
+            {envelope.data.changes.length > 0 && envelope.data.changes.every((change) => change.kind === "UNCHANGED") && <p className="caption-style text-subtle">{t("kseiNoChanges")}</p>}
           </div>
         )}
       </DataState>
