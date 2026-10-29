@@ -1006,7 +1006,8 @@
     "networkLimited": "Hanya kepemilikan terverifikasi dalam snapshot ini yang ditampilkan. Cross-holding belum tersedia di dataset saat ini.",
     "networkCrossHoldings": "Cross-holding terverifikasi",
     "networkCrossHoldingAvailable": "{count} edge cross-holding terverifikasi",
-    "networkSourceNote": "Pengungkapan bulanan KSEI menampilkan pemegang minimal 1%. Relasi timbal balik mensyaratkan kedua emiten ada pada snapshot bertanggal yang sama; relasi yang tidak ditampilkan bukan bukti tidak ada kepemilikan. Pengungkapan profil emiten IDX adalah dataset terpisah."
+    "networkSourceNote": "Sumber: pengungkapan bulanan KSEI untuk pemegang minimal 1%. Relasi timbal balik mensyaratkan kedua emiten ada pada snapshot bertanggal yang sama; relasi ini menggambarkan hubungan antar emiten tercatat, bukan investor ini. Relasi yang tidak ditampilkan bukan bukti tidak ada kepemilikan. Pengungkapan profil emiten IDX adalah dataset terpisah.",
+    "networkIdxSourceNote": "Sumber: pengungkapan kepemilikan pada profil emiten IDX. Catatan ini berbeda dari daftar bulanan KSEI untuk pemegang minimal 1%; tanggal pengungkapan mungkin tidak tersedia."
   },
   "errors": {
     "title": "Terjadi kesalahan",

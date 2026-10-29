@@ -302,8 +302,8 @@ test.describe("slice 6: Chart, Insiders, History, Ownership tabs", () => {
     await expect(modal).toContainText("Consilium Frontier Equity Fund LP");
     await expect(modal.getByTestId("investor-network-holdings")).toContainText("6.79%");
     await expect(modal.getByTestId("investor-network-graph")).toBeVisible();
-    await expect(modal.getByTestId("investor-network-source-note")).toContainText("at least 1%");
-    await expect(modal.getByTestId("investor-network-source-note")).toContainText("missing links do not prove");
+    await expect(modal.getByTestId("investor-network-source-note")).toContainText("at or above 1%");
+    await expect(modal.getByTestId("investor-network-source-note")).toContainText(/missing links do not prove/i);
     await expect(modal.getByTestId("investor-network-cross-holdings")).toContainText("BBCA ↔ BBRI");
     await expect(modal.getByTestId("investor-network-cross-holdings")).toContainText("1.25% / 0.25%");
   });

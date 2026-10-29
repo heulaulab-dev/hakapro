@@ -1006,7 +1006,8 @@
     "networkLimited": "Only verified holdings in this snapshot are shown. Cross-holdings are unavailable in the current dataset.",
     "networkCrossHoldings": "Verified cross-holdings",
     "networkCrossHoldingAvailable": "{count} verified cross-holding edge(s)",
-    "networkSourceNote": "KSEI monthly disclosures show holders of at least 1%. Reciprocal links require both issuers in the same dated snapshot; missing links do not prove there is no ownership relationship. IDX issuer-profile disclosures are a separate dataset."
+    "networkSourceNote": "Source: KSEI monthly disclosures of holders at or above 1%. Reciprocal issuer links require both issuers in the same dated snapshot; they describe links between the listed companies, not this investor. Missing links do not prove there is no ownership relationship. IDX issuer-profile disclosures are a separate dataset.",
+    "networkIdxSourceNote": "Source: ownership disclosures in the IDX issuer profile. These records are separate from KSEI's monthly list of shareholders at or above 1%; their disclosure date may not be available."
   },
   "errors": {
     "title": "Something went wrong",
