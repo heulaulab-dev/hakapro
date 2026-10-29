@@ -9,6 +9,7 @@ import {
   securitySchema, signalsSchema, stockSchema, groupWindowSchema, groupsSchema, radarSchema, stealthOwnershipSchema, profileSchema,
 } from "@/server/schemas/idx-bei";
 import { breadthSchema, catalystsSchema } from "@/server/schemas/market-intelligence";
+import { dividendPatternsSchema } from "@/server/schemas/dividend-patterns";
 import { dateSchema, symbolSchema } from "@/server/schemas/inputs";
 import { ownershipChangesSchema, ownershipMonthSchema, stockOwnershipSchema } from "@/server/schemas/ownership";
 import { strategyBoardSchema } from "@/lib/strategies/contract";
@@ -36,6 +37,7 @@ import {
 import type { LogoService } from "../serve/logos";
 import { emptyStockOwnership, serveOwnershipChanges, serveStockOwnership } from "../serve/ownership";
 import { serveCatalysts } from "../serve/catalysts";
+import { serveDividendPatterns } from "../serve/dividend-patterns";
 import { serveBreadth } from "../serve/breadth";
 import { emptyRadar, emptyStealth, serveRadar, serveStealth } from "../serve/radar";
 import type { MarketStore } from "../serve/store";
@@ -409,6 +411,15 @@ export function createApp(deps: AppDeps): (request: Request) => Promise<Response
       // No logo id, a rejected file or an unreachable CDN: a typed miss, never a placeholder image.
       if (!found) return error(404, "NO_DATA", `No logo for ${symbol.data}`);
       return new Response(method === "HEAD" ? null : found.svg, { status: 200, headers: LOGO_HEADERS });
+    }
+
+    const dividendPatterns = path.match(/^\/v1\/stocks\/([^/]+)\/dividend-patterns$/);
+    if (dividendPatterns) {
+      const symbol = symbolSchema.safeParse(decodeURIComponent(dividendPatterns[1]));
+      if (!symbol.success) return error(400, "BAD_REQUEST", "Invalid symbol");
+      const served = market ? await serveDividendPatterns(market, symbol.data, at) : null;
+      if (!served) return error(404, "NO_DATA", `No price data for ${symbol.data}`);
+      return json(envelope(dividendPatternsSchema, served.data, servedMeta(served, at)));
     }
 
     const catalyst = path.match(/^\/v1\/stocks\/([^/]+)\/catalysts$/);

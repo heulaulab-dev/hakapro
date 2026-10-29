@@ -58,7 +58,7 @@ export const ALL_PAGES: NavItem[] = [...NAV.flatMap((item) => (item.children ? i
 /** The Discover glyph, still used as the command-palette group label. */
 export const DISCOVER_ICON = Compass;
 
-export const STOCK_TABS = ["overview", "chart", "flow", "running", "analysis", "financials", "ownership", "insiders", "history"] as const;
+export const STOCK_TABS = ["overview", "chart", "flow", "running", "analysis", "financials", "dividends", "ownership", "insiders", "history"] as const;
 export type StockTab = (typeof STOCK_TABS)[number];
 
 export function stockHref(symbol: string, tab: StockTab = "overview"): string {
