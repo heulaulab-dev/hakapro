@@ -221,6 +221,25 @@ export const indicesHistorySchema = z.object({
 export type IndicesHistory = z.infer<typeof indicesHistorySchema>;
 export type IndexCoverageReport = NonNullable<IndicesHistory["coverage"]>[number];
 
+/** Engine EOD issuer performance race. Returns percentage points vs each ticker's exact shared baseline session. */
+export const issuerRaceWindowSchema = z.enum(["1M", "3M", "6M", "1Y"]);
+export const issuerRaceSchema = z.object({
+  window: issuerRaceWindowSchema,
+  sector: z.string(),
+  sectors: z.array(z.string()),
+  from: z.string().nullable(),
+  to: z.string().nullable(),
+  sessions: z.number().int().nonnegative(),
+  frameStep: z.number().int().positive(),
+  universe: z.object({ active: z.number().int().nonnegative(), withBaseline: z.number().int().nonnegative(), truncated: z.boolean() }),
+  frames: z.array(z.object({
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    priced: z.number().int().nonnegative(),
+    leaders: z.array(z.object({ symbol: symbolSchema, name: z.string(), sector: z.string().nullable(), close: z.number().positive(), returnPercent: z.number() })),
+  })),
+});
+export type IssuerRace = z.infer<typeof issuerRaceSchema>;
+
 /** Market-wide IDX GetBrokerSummary rows, date×broker (not stock-specific broker flow). */
 export const marketBrokerSummarySchema = z.object({
   dates: z.array(z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), brokers: z.array(z.object({

@@ -5,7 +5,7 @@ import { timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 import {
   actionsCalendarSchema, actionsSchema, announcementItemSchema, brokerDirectorySchema, fundamentalsSchema, HEATMAP_DEFAULT_LIMIT, HEATMAP_LIMITS, heatmapLimitSchema,
-  heatmapSchema, indicesHistorySchema, insidersRecentSchema, macroSchema, marketOverviewSchema, newsItemSchema, sectorsSchema, screenRequestSchema, screenResultSchema, marketBrokerSummarySchema,
+  heatmapSchema, indicesHistorySchema, issuerRaceSchema, issuerRaceWindowSchema, insidersRecentSchema, macroSchema, marketOverviewSchema, newsItemSchema, sectorsSchema, screenRequestSchema, screenResultSchema, marketBrokerSummarySchema,
   securitySchema, signalsSchema, stockSchema, groupWindowSchema, groupsSchema, radarSchema, stealthOwnershipSchema, profileSchema,
 } from "@/server/schemas/idx-bei";
 import { breadthSchema, catalystsSchema } from "@/server/schemas/market-intelligence";
@@ -27,6 +27,7 @@ import {
 } from "../serve/market-info";
 import { serveFundamentals, serveScreener } from "../serve/fundamentals";
 import { serveGroups } from "../serve/groups";
+import { serveIssuerRace } from "../serve/issuer-race";
 import type { GroupCatalog } from "../groups/catalog";
 import { GROUP_CATALOG } from "../groups/groups";
 import { previousMonth as previousMonthOf } from "../ownership/numbers";
@@ -268,6 +269,15 @@ export function createApp(deps: AppDeps): (request: Request) => Promise<Response
       const codesParam = param(url, "codes");
       const codes = codesParam ? codesParam.split(",").map((code) => code.trim().toUpperCase()).filter(Boolean).slice(0, 40) : null;
       return respond(indicesHistorySchema, market ? await serveIndicesHistory(market, from.data, to.data, codes, at) : null, { series: [] });
+    }
+    if (path === "/v1/issuer-race") {
+      const window = issuerRaceWindowSchema.safeParse(param(url, "window") ?? "3M");
+      const sector = (param(url, "sector") ?? "all").trim().slice(0, 80);
+      if (!window.success || !sector) return error(400, "BAD_REQUEST", "window must be 1M, 3M, 6M or 1Y and sector must not be empty");
+      return respond(issuerRaceSchema, market ? await serveIssuerRace(market, window.data, sector, at) : null, {
+        window: window.data, sector, sectors: [], from: null, to: null, sessions: 0, frameStep: 1,
+        universe: { active: 0, withBaseline: 0, truncated: false }, frames: [],
+      });
     }
     if (path === "/v1/brokers/market-summary") {
       const defaultTo = at.toISOString().slice(0, 10);
