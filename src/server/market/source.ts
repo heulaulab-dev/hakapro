@@ -5,7 +5,7 @@ import type {
   ActionCalendarItem, AnnouncementItem, BrokerAccumulation, BrokerFlow, BrokerSummary, CompanyProfile, CorporateAction, DoneDetails,
   FinancialStatements, ForeignFlow, FundamentalPeriod, Heatmap, History, Insiders, LastPrice, MarketCap, MarketOverview, NewsItem, ScreenRequest,
   ScreenResult, OwnershipChanges, OwnershipScreener, RecentInsiders, SearchResult, Seasonality, SectorPerformance, Security, StockAnalysis, StockOwnership,
-  StockSnapshot, StrategyScreen, GroupsView, GroupWindow, RadarSnapshot, StealthOwnership, Macro, IndicesHistory, MarketBrokerSummary, BrokerDirectory, TickerLogo, CatalystFeed, BreadthSnapshot, IssuerRace,
+  StockSnapshot, StrategyScreen, GroupsView, GroupWindow, RadarSnapshot, StealthOwnership, Macro, IndicesHistory, MarketBrokerSummary, BrokerDirectory, TickerLogo, CatalystFeed, BreadthSnapshot, BreadthHistory, IssuerRace,
 } from "./types";
 
 export type HistoryQuery = { limit?: number; frame?: "daily" | "weekly" | "monthly"; startDate?: string; endDate?: string };
@@ -31,6 +31,7 @@ export type RecentInsidersQuery = { days?: number; action?: "buy" | "sell" | "cr
 /** Index daily-close history (sector rotation). Without `codes`, every stored index; dates are YYYY-MM-DD inclusive. */
 export type IndicesHistoryQuery = { codes?: string[]; from?: string; to?: string };
 export type MarketBrokerSummaryQuery = { from?: string; to?: string; limit?: number };
+export type BreadthWindow = "1M" | "3M" | "6M" | "1Y";
 
 type R<T> = Promise<WithFreshness<T>>;
 
@@ -105,6 +106,7 @@ export interface MarketDataSource {
   logo(symbol: string, signal?: AbortSignal): Promise<TickerLogo | null>;
   catalysts(symbol: string, signal?: AbortSignal): R<CatalystFeed>;
   breadth(signal?: AbortSignal): R<BreadthSnapshot>;
+  breadthHistory(window: BreadthWindow, signal?: AbortSignal): R<BreadthHistory>;
 }
 
 export type Capability = Exclude<keyof MarketDataSource, "id">;
@@ -157,4 +159,5 @@ export abstract class BaseMarketDataSource implements MarketDataSource {
   async logo(..._args: unknown[]): Promise<TickerLogo | null> { return this.fail("logo"); }
   async catalysts(..._args: unknown[]): R<CatalystFeed> { return this.fail("catalysts"); }
   async breadth(..._args: unknown[]): R<BreadthSnapshot> { return this.fail("breadth"); }
+  async breadthHistory(..._args: unknown[]): R<BreadthHistory> { return this.fail("breadthHistory"); }
 }

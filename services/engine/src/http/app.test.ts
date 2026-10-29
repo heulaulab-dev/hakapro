@@ -3,7 +3,7 @@ import {
   actionsCalendarSchema, actionsSchema, announcementItemSchema, fundamentalsSchema, heatmapSchema, idxBeiEnvelope, issuerRaceSchema, macroSchema, marketOverviewSchema, newsItemSchema,
   screenResultSchema, securitySchema, signalsSchema, stockSchema, profileSchema,
 } from "@/server/schemas/idx-bei";
-import { breadthSchema, catalystsSchema } from "@/server/schemas/market-intelligence";
+import { breadthHistorySchema, breadthSchema, catalystsSchema } from "@/server/schemas/market-intelligence";
 import { tempDir } from "../../test/support";
 import { MemoryCursorStore, MemoryRunRecorder, MemorySourceStateStore } from "../fetch/stores";
 import { MemoryMarketStore, type NewsRecord } from "../serve/store";
@@ -68,6 +68,7 @@ describe("engine HTTP app", () => {
       ["/v1/heatmap", heatmapSchema],
       ["/v1/heatmap?limit=30", heatmapSchema],
       ["/v1/breadth", breadthSchema],
+      ["/v1/breadth/history?window=3M", breadthHistorySchema],
       ["/v1/stocks/BBCA/catalysts", catalystsSchema],
     ];
     for (const [path, schema] of cases) {
@@ -103,6 +104,17 @@ describe("engine HTTP app", () => {
     expect(body.data.universe).toMatchObject({ active: 2, withBaseline: 2 });
     expect(body.data.frames.at(-1)?.leaders.map((leader) => leader.symbol)).toEqual(["AAA", "BBB"]);
     expect((await call("/v1/issuer-race?window=day&sector=Finance")).status).toBe(400);
+  });
+
+  it("serves breadth history behind the existing breadth flag and validates its window", async () => {
+    const market = new MemoryMarketStore({ daily: [
+      { symbol: "AAA", date: "2026-10-13", close: 100, previousClose: 90, open: null, high: null, low: null, volume: null, value: 500, frequency: null, foreignBuy: null, foreignSell: null },
+    ] });
+    const { call } = app({ market, intelligence: { catalysts: false, breadth: true, ownershipNetwork: false } });
+    const response = await call("/v1/breadth/history?window=1M");
+    expect(response.status).toBe(200);
+    expect(idxBeiEnvelope(breadthHistorySchema).parse(await response.json()).data).toMatchObject({ window: "1M", snapshotDate: "2026-10-13", source: "daily_prices" });
+    expect((await call("/v1/breadth/history?window=day")).status).toBe(400);
   });
 
   it("requires the API bearer token on /v1/* when configured, never on /health", async () => {
