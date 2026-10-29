@@ -8,7 +8,7 @@ import {
   heatmapSchema, indicesHistorySchema, issuerRaceSchema, issuerRaceWindowSchema, insidersRecentSchema, macroSchema, marketOverviewSchema, newsItemSchema, sectorsSchema, screenRequestSchema, screenResultSchema, marketBrokerSummarySchema,
   securitySchema, signalsSchema, stockSchema, groupWindowSchema, groupsSchema, radarSchema, stealthOwnershipSchema, profileSchema,
 } from "@/server/schemas/idx-bei";
-import { breadthSchema, catalystsSchema } from "@/server/schemas/market-intelligence";
+import { breadthHistorySchema, breadthHistoryWindowSchema, breadthSchema, catalystsSchema } from "@/server/schemas/market-intelligence";
 import { dividendPatternsSchema } from "@/server/schemas/dividend-patterns";
 import { dateSchema, symbolSchema } from "@/server/schemas/inputs";
 import { ownershipChangesSchema, ownershipMonthSchema, ownershipScreenerSchema, stockOwnershipSchema } from "@/server/schemas/ownership";
@@ -39,7 +39,7 @@ import type { LogoService } from "../serve/logos";
 import { emptyStockOwnership, serveOwnershipChanges, serveOwnershipScreener, serveStockOwnership } from "../serve/ownership";
 import { serveCatalysts } from "../serve/catalysts";
 import { serveDividendPatterns } from "../serve/dividend-patterns";
-import { serveBreadth } from "../serve/breadth";
+import { serveBreadth, serveBreadthHistory } from "../serve/breadth";
 import { emptyRadar, emptyStealth, serveRadar, serveStealth } from "../serve/radar";
 import type { MarketStore } from "../serve/store";
 import { parseIdxIndexSummary } from "../sources/idx-primary";
@@ -232,6 +232,16 @@ export function createApp(deps: AppDeps): (request: Request) => Promise<Response
       if (!deps.intelligence?.breadth) return json(envelope(breadthSchema, { snapshotDate: null, source: "none", freshness: "UNAVAILABLE", advancers: 0, decliners: 0, unchanged: 0, participation: null, regime: "UNAVAILABLE", sectors: [] }, unavailableMeta(at)));
       const served = deps.market ? await serveBreadth(deps.market, at) : null;
       return json(envelope(breadthSchema, served?.data ?? { snapshotDate: null, source: "none", freshness: "UNAVAILABLE", advancers: 0, decliners: 0, unchanged: 0, participation: null, regime: "UNAVAILABLE", sectors: [] }, served ? servedMeta(served, at) : unavailableMeta(at)));
+    }
+
+    if (path === "/v1/breadth/history") {
+      const window = breadthHistoryWindowSchema.safeParse(param(url, "window") ?? "3M");
+      if (!window.success) return error(400, "BAD_REQUEST", "Invalid breadth history window");
+      if (!deps.intelligence?.breadth) {
+        return json(envelope(breadthHistorySchema, { window: window.data, snapshotDate: null, source: "none", freshness: "UNAVAILABLE", series: [] }, unavailableMeta(at)));
+      }
+      const served = deps.market ? await serveBreadthHistory(deps.market, window.data, at) : null;
+      return json(envelope(breadthHistorySchema, served?.data ?? { window: window.data, snapshotDate: null, source: "none", freshness: "UNAVAILABLE", series: [] }, served ? servedMeta(served, at) : unavailableMeta(at)));
     }
 
     // The screener over the newest session (E5); the contract's empty form until a session is stored.
