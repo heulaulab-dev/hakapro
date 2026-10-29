@@ -4,7 +4,7 @@ import type {
   ActionCalendarItem, AnnouncementItem, BrokerAccumulation, BrokerFlow, BrokerSummary, CompanyProfile, CorporateAction, DoneDetails,
   FinancialStatements, ForeignFlow, FundamentalPeriod, Heatmap, History, Insiders, LastPrice, MarketCap, MarketOverview, NewsItem, ScreenRequest,
   ScreenResult, OwnershipChanges, RecentInsiders, SearchResult, Seasonality, SectorPerformance, Security, StockAnalysis, StockOwnership,
-  StockSnapshot, StrategyScreen, GroupsView, GroupWindow, RadarSnapshot, StealthOwnership, Macro, IndicesHistory, MarketBrokerSummary, BrokerDirectory,
+  StockSnapshot, StrategyScreen, GroupsView, GroupWindow, RadarSnapshot, StealthOwnership, Macro, IndicesHistory, MarketBrokerSummary, BrokerDirectory, TickerLogo,
 } from "./types";
 
 export type HistoryQuery = { limit?: number; frame?: "daily" | "weekly" | "monthly"; startDate?: string; endDate?: string };
@@ -76,8 +76,6 @@ export interface MarketDataSource {
   marketBrokerSummary(query?: MarketBrokerSummaryQuery, signal?: AbortSignal): R<MarketBrokerSummary>;
   /** IDX exchange member names and licenses (`GetBrokerSearch`). */
   brokerDirectory(signal?: AbortSignal): R<BrokerDirectory>;
-  /** IDX exchange member names and licenses (`GetBrokerSearch`). */
-  brokerDirectory(signal?: AbortSignal): R<BrokerDirectory>;
   // Data Engine lane
   sectors(): R<SectorPerformance[]>;
   /** The most-traded stocks of the newest view with per-sector totals (net foreign value is an estimate). */
@@ -94,6 +92,11 @@ export interface MarketDataSource {
   radar(): R<RadarSnapshot>;
   /** Newest uploaded KSEI month: corporate ≥1% holders up while the close was flat or lower (empty form before any upload). */
   stealthOwnership(): R<StealthOwnership>;
+  /**
+   * The ticker's logo SVG (`/v1/logos/{s}`, behind ENGINE_TICKER_LOGOS_ENABLED), or null when there is none to serve.
+   * Binary, not a freshness envelope: a logo carries no data date.
+   */
+  logo(symbol: string, signal?: AbortSignal): Promise<TickerLogo | null>;
 }
 
 export type Capability = Exclude<keyof MarketDataSource, "id">;
@@ -140,4 +143,5 @@ export abstract class BaseMarketDataSource implements MarketDataSource {
   async recentInsiders(..._args: unknown[]): R<RecentInsiders> { return this.fail("recentInsiders"); }
   async radar(..._args: unknown[]): R<RadarSnapshot> { return this.fail("radar"); }
   async stealthOwnership(..._args: unknown[]): R<StealthOwnership> { return this.fail("stealthOwnership"); }
+  async logo(..._args: unknown[]): Promise<TickerLogo | null> { return this.fail("logo"); }
 }

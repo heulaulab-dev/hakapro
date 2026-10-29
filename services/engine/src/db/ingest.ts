@@ -25,27 +25,39 @@ const ownOrKeep = (table: string, column: string, always: boolean): SQL =>
 export type SecurityUpsert = {
   symbol: string; name: string | null; board?: string | null; listingDate?: string | null; sector?: string | null; subsector?: string | null; industry?: string | null;
   sharesOutstanding?: number | null; marketCap?: number | null; freeFloatPct?: number | null;
+  /** TradingView logo id; a source without one (Pasardana) leaves the stored id alone. */
+  logoId?: string | null;
 };
+
+/** Insert values of one universe row: unknown fields are null (the conflict set below keeps stored values then). */
+export function securityValues(row: SecurityUpsert, prov: Provenance) {
+  return {
+    symbol: row.symbol, name: row.name ?? row.symbol, board: row.board ?? null, listingDate: row.listingDate ?? null,
+    sector: row.sector ?? null, subsector: row.subsector ?? null, industry: row.industry ?? null,
+    sharesOutstanding: row.sharesOutstanding ?? null, marketCap: row.marketCap ?? null, freeFloatPct: row.freeFloatPct ?? null,
+    logoId: row.logoId ?? null, active: true, source: prov.source, asOf: prov.asOf, rawRef: prov.rawRef,
+  };
+}
+
+/** On conflict: a null from this source keeps the stored value (`coalesce(excluded.x, securities.x)`). */
+export function securityConflictSet() {
+  const keep = (column: string) => sql`coalesce(${ex(column)}, ${cur("securities", column)})`;
+  return {
+    // A source without a real name (symbol placeholder) never overwrites one.
+    name: sql`case when ${ex("name")} = ${ex("symbol")} then ${cur("securities", "name")} else ${ex("name")} end`,
+    sector: keep("sector"), subsector: keep("subsector"), industry: keep("industry"), board: keep("board"), listingDate: keep("listing_date"),
+    sharesOutstanding: keep("shares_outstanding"), marketCap: keep("market_cap"), freeFloatPct: keep("free_float_pct"),
+    // Only TradingView sends a logo id; Pasardana's pass (null) leaves it alone.
+    logoId: keep("logo_id"),
+    active: sql`true`, source: ex("source"), asOf: ex("as_of"), rawRef: ex("raw_ref"), updatedAt: sql`now()`,
+  };
+}
 
 /** Upserts the universe. Known values are never replaced by nulls; board/notation/listing date are left alone (unknown). */
 export async function upsertSecurities(db: EngineDb, rows: SecurityUpsert[], prov: Provenance): Promise<number> {
-  const keep = (column: string) => sql`coalesce(${ex(column)}, ${cur("securities", column)})`;
   for (const batch of chunks(rows)) {
-    await db.insert(t.securities).values(batch.map((row) => ({
-      symbol: row.symbol, name: row.name ?? row.symbol, board: row.board ?? null, listingDate: row.listingDate ?? null,
-      sector: row.sector ?? null, subsector: row.subsector ?? null, industry: row.industry ?? null,
-      sharesOutstanding: row.sharesOutstanding ?? null, marketCap: row.marketCap ?? null, freeFloatPct: row.freeFloatPct ?? null,
-      active: true, source: prov.source, asOf: prov.asOf, rawRef: prov.rawRef,
-    }))).onConflictDoUpdate({
-      target: t.securities.symbol,
-      set: {
-        // A source without a real name (symbol placeholder) never overwrites one.
-        name: sql`case when ${ex("name")} = ${ex("symbol")} then ${cur("securities", "name")} else ${ex("name")} end`,
-        sector: keep("sector"), subsector: keep("subsector"), industry: keep("industry"), board: keep("board"), listingDate: keep("listing_date"),
-        sharesOutstanding: keep("shares_outstanding"), marketCap: keep("market_cap"), freeFloatPct: keep("free_float_pct"),
-        active: sql`true`, source: ex("source"), asOf: ex("as_of"), rawRef: ex("raw_ref"), updatedAt: sql`now()`,
-      },
-    });
+    await db.insert(t.securities).values(batch.map((row) => securityValues(row, prov)))
+      .onConflictDoUpdate({ target: t.securities.symbol, set: securityConflictSet() });
   }
   return rows.length;
 }

@@ -16,17 +16,30 @@ describe("TradingView scanner", () => {
     expect(parsed.rows[0]).toEqual({
       symbol: "BBCA", name: "PT Bank Central Asia Tbk", sector: "Finance", close: 5225, open: 5825, high: 5825, low: 5175,
       changePercent: expect.closeTo(-0.13991769547325102, 12), volume: 994464400, value: 5196076490000, marketCap: 755059662109375, delaySeconds: 600,
+      logoId: "bank-central-asia",
     });
+    expect(parsed.rows.map((row) => row.logoId)).toEqual(["bank-central-asia", "bank-rakyat-indonesia", "bank-mandiri", "telekom-indonesia", "goto-gojek-tokopedia-rp-1"]);
     expect(impliedPreviousClose(parsed.rows[0].close, parsed.rows[0].changePercent)).toBe(6075);
     expect(impliedPreviousClose(parsed.rows[4].close, parsed.rows[4].changePercent)).toBe(27);
   });
 
   it("skips non-IDX tickers, odd symbols and malformed rows instead of failing the page", () => {
-    const row = (s: string, name: string) => ({ s, d: [name, "x", null, 1, 1, 1, 1, 0, 1, 1, 1, "delayed_streaming_600"] });
+    const row = (s: string, name: string) => ({ s, d: [name, "x", null, 1, 1, 1, 1, 0, 1, 1, 1, "delayed_streaming_600", null] });
     const parsed = parseMarketScan(JSON.stringify({ totalCount: 4, data: [row("IDX:AAAA", "AAAA"), row("IDX:BRPT_W", "BRPT_W"), row("NYSE:AAAA", "AAAA"), { s: "IDX:BBBB", d: ["BBBB"] }] }));
     expect(parsed.rows.map((r) => r.symbol)).toEqual(["AAAA"]);
     expect(parsed.skipped).toBe(3);
     expect(() => parseMarketScan('{"data":"nope"}')).toThrow();
+  });
+
+  it("keeps only well-formed logo ids (they become part of a CDN URL) without dropping the row", () => {
+    const row = (name: string, logoid: unknown) => ({ s: `IDX:${name}`, d: [name, "x", null, 1, 1, 1, 1, 0, 1, 1, 1, "delayed_streaming_600", logoid] });
+    const parsed = parseMarketScan(JSON.stringify({ totalCount: 6, data: [
+      row("AAAA", "bank-central-asia"), row("BBBB", "../../etc/passwd"), row("CCCC", "Bank Central"), row("DDDD", 42), row("EEEE", "a".repeat(121)), row("FFFF", null),
+    ] }));
+    expect(parsed.skipped).toBe(0);
+    expect(parsed.rows.map((r) => [r.symbol, r.logoId])).toEqual([["AAAA", "bank-central-asia"], ["BBBB", null], ["CCCC", null], ["DDDD", null], ["EEEE", null], ["FFFF", null]]);
+    // A row of the old column count (no logoid) is malformed for the current request body.
+    expect(parseMarketScan(JSON.stringify({ totalCount: 1, data: [{ s: "IDX:AAAA", d: ["AAAA", "x", null, 1, 1, 1, 1, 0, 1, 1, 1, "delayed_streaming_600"] }] })).skipped).toBe(1);
   });
 
   it("parses the index scan (IHSG, LQ45, IDX30, IDX-IC sectors)", () => {

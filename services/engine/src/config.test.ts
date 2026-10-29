@@ -57,6 +57,13 @@ describe("loadConfig", () => {
     expect(() => loadConfig({ ...BASE, ENGINE_IDX_PRIMARY_TIMEOUT_SECONDS: "0" })).toThrow(/ENGINE_IDX_PRIMARY_TIMEOUT_SECONDS/);
   });
 
+  it("keeps ticker logos (TradingView CDN, internal experiment only) off by default", () => {
+    expect(loadConfig(BASE).tickerLogos).toEqual({ enabled: false });
+    expect(loadConfig({ ...BASE, ENGINE_TICKER_LOGOS_ENABLED: "true" }).tickerLogos).toEqual({ enabled: true });
+    expect(loadConfig({ ...BASE, ENGINE_TICKER_LOGOS_ENABLED: "1" }).tickerLogos).toEqual({ enabled: true });
+    expect(() => loadConfig({ ...BASE, ENGINE_TICKER_LOGOS_ENABLED: "yes" })).toThrow(/ENGINE_TICKER_LOGOS_ENABLED/);
+  });
+
   it("caps ownership uploads at 20 MB and keeps the free-float draft off by default", () => {
     expect(loadConfig(BASE).ownership).toEqual({ maxUploadBytes: 20 * 1024 * 1024, freeFloatEnabled: false });
     expect(loadConfig({ ...BASE, ENGINE_OWNERSHIP_MAX_UPLOAD_MB: "5", ENGINE_FREE_FLOAT_ENABLED: "1" }).ownership).toEqual({ maxUploadBytes: 5 * 1024 * 1024, freeFloatEnabled: true });

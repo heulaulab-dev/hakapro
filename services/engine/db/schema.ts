@@ -100,6 +100,8 @@ export const securities = pgTable("securities", {
   marketCap: count("market_cap"),
   /** Percent units (18.18 = 18.18%), as Pasardana publishes it. */
   freeFloatPct: numeric("free_float_pct", { precision: 9, scale: 4, mode: "number" }),
+  /** TradingView logo id (`bank-central-asia`), validated `^[a-z0-9-]{1,120}$`; served only with ENGINE_TICKER_LOGOS_ENABLED. */
+  logoId: text("logo_id"),
   active: boolean("active").notNull().default(true),
   ...provenance,
   updatedAt: ts("updated_at").notNull().defaultNow(),
