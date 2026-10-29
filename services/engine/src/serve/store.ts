@@ -43,7 +43,7 @@ export type IssuerProfileRecord = { symbol: string; language: string; profile: R
   source?: string; asOf?: Date };
 
 export type ActionRecord = { exDate: string | null; type: string; description: string | null; asOf: Date };
-export type ActionCalendarRecord = { symbol: string; exDate: string; type: string; sourceCategory?: string | null; description: string | null; amount: number | null; ratio: string | null; shares: number | null; sharesAfter: number | null; asOf: Date };
+export type ActionCalendarRecord = { symbol: string; exDate: string; type: string; source?: string; sourceCategory?: string | null; description: string | null; amount: number | null; ratio: string | null; shares: number | null; sharesAfter: number | null; asOf: Date };
 
 export type NewsRecord = {
   publishedAt: Date; publishedAtEstimated: boolean; title: string; url: string; outlet: string; summary: string | null; symbols: string[];
@@ -115,7 +115,7 @@ const contains = (haystack: string, needle: string) => haystack.toLowerCase().in
 export class MemoryMarketStore implements MarketStore {
   constructor(readonly data: {
     securities?: SecurityRecord[]; daily?: DailyRecord[]; intraday?: IntradayRecord[];
-    indexDaily?: IndexDailyRecord[]; indexIntraday?: IndexIntradayRecord[]; actions?: Array<ActionRecord & { symbol: string; sourceCategory?: string | null; amount?: number | null; ratio?: string | null; shares?: number | null; sharesAfter?: number | null }>;
+    indexDaily?: IndexDailyRecord[]; indexIntraday?: IndexIntradayRecord[]; actions?: Array<ActionRecord & { symbol: string; source?: string; sourceCategory?: string | null; amount?: number | null; ratio?: string | null; shares?: number | null; sharesAfter?: number | null }>;
     brokerDaily?: BrokerDailySummaryRecord[];
     brokerMembers?: BrokerMemberRecord[];
     issuerProfiles?: IssuerProfileRecord[];
@@ -202,7 +202,7 @@ export class MemoryMarketStore implements MarketStore {
   async actionsBetween(from: string, to: string) {
     return (this.data.actions ?? []).filter((row) => row.exDate !== null && row.exDate >= from && row.exDate <= to)
       .sort((a, b) => a.exDate!.localeCompare(b.exDate!) || a.symbol.localeCompare(b.symbol))
-      .map((row) => ({ symbol: row.symbol, exDate: row.exDate!, type: row.type, sourceCategory: row.sourceCategory ?? null, description: row.description, amount: row.amount ?? null, ratio: row.ratio ?? null, shares: row.shares ?? null, sharesAfter: row.sharesAfter ?? null, asOf: row.asOf }));
+      .map((row) => ({ symbol: row.symbol, exDate: row.exDate!, type: row.type, source: row.source, sourceCategory: row.sourceCategory ?? null, description: row.description, amount: row.amount ?? null, ratio: row.ratio ?? null, shares: row.shares ?? null, sharesAfter: row.sharesAfter ?? null, asOf: row.asOf }));
   }
   async latestActionAsOf() { return (this.data.actions ?? []).map((row) => row.asOf).sort((a, b) => b.getTime() - a.getTime())[0] ?? null; }
   async news(query: NewsQuery) {

@@ -1,4 +1,5 @@
 import type { WithFreshness } from "@/lib/freshness";
+import type { DividendPatterns } from "@/server/schemas/dividend-patterns";
 import { unsupported } from "./errors";
 import type {
   ActionCalendarItem, AnnouncementItem, BrokerAccumulation, BrokerFlow, BrokerSummary, CompanyProfile, CorporateAction, DoneDetails,
@@ -62,6 +63,7 @@ export interface MarketDataSource {
   stock(symbol: string): R<StockSnapshot>;
   fundamentals(symbol: string): R<FundamentalPeriod[]>;
   corporateActions(symbol: string): R<CorporateAction[]>;
+  dividendPatterns(symbol: string): R<DividendPatterns>;
   profile(symbol: string): R<CompanyProfile>;
   securities(q: string): R<Security[]>;
   foreignFlow(): R<ForeignFlow>;
@@ -126,6 +128,7 @@ export abstract class BaseMarketDataSource implements MarketDataSource {
   async stock(..._args: unknown[]): R<StockSnapshot> { return this.fail("stock"); }
   async fundamentals(..._args: unknown[]): R<FundamentalPeriod[]> { return this.fail("fundamentals"); }
   async corporateActions(..._args: unknown[]): R<CorporateAction[]> { return this.fail("corporateActions"); }
+  async dividendPatterns(..._args: unknown[]): R<DividendPatterns> { return this.fail("dividendPatterns"); }
   async profile(..._args: unknown[]): R<CompanyProfile> { return this.fail("profile"); }
   async securities(..._args: unknown[]): R<Security[]> { return this.fail("securities"); }
   async foreignFlow(..._args: unknown[]): R<ForeignFlow> { return this.fail("foreignFlow"); }
