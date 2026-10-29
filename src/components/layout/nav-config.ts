@@ -1,11 +1,11 @@
 import {
-  Activity, ArrowUpDown, Bell, Bookmark, Briefcase, Compass, House, Info, Landmark, LayoutGrid, ListChecks, Newspaper,
+  Activity, ArrowUpDown, Bell, Bookmark, Briefcase, Clock, Compass, House, Info, Landmark, LayoutGrid, ListChecks, Newspaper,
   SlidersHorizontal, type Icon, Network, BookOpen, Building2, Radar, Coins, TrendingUp, Zap, Waves, ChartColumn, Percent, LineChart,
 } from "@/components/kit/icons";
 
 export type NavKey =
   | "home" | "discover" | "screener" | "strategies" | "movers" | "heatmap" | "groups" | "radar" | "ownership" | "onePercent" | "stealth" | "brokerActivity" | "stockRotation"
-  | "macro" | "rotation" | "intelligence" | "compare" | "feed" | "watchlist" | "portfolio" | "news" | "alerts" | "methodology" | "about"
+  | "macro" | "rotation" | "marketReplay" | "intelligence" | "compare" | "feed" | "watchlist" | "portfolio" | "news" | "alerts" | "methodology" | "about"
   // Module groups (BDMFlow-style terminal menu).
   | "pulse" | "bandar" | "scalp" | "whale" | "investor";
 export type NavItem = { key: NavKey; href: string; icon: Icon; children?: NavItem[] };
@@ -17,6 +17,7 @@ const PAGES = {
   heatmap: { key: "heatmap", href: "/discover/heatmap", icon: LayoutGrid },
   macro: { key: "macro", href: "/discover/macro", icon: Coins },
   rotation: { key: "rotation", href: "/discover/rotation", icon: Compass },
+  marketReplay: { key: "marketReplay", href: "/discover/market-replay", icon: Clock },
   intelligence: { key: "intelligence", href: "/discover/intelligence", icon: Radar },
   compare: { key: "compare", href: "/discover/compare", icon: ChartColumn },
   feed: { key: "feed", href: "/discover/feed", icon: Activity },
@@ -42,7 +43,7 @@ const PAGES = {
  */
 export const NAV: NavItem[] = [
   PAGES.home,
-  { key: "pulse", href: PAGES.movers.href, icon: Activity, children: [PAGES.movers, PAGES.heatmap, PAGES.feed, PAGES.rotation, PAGES.macro, PAGES.intelligence, PAGES.compare, PAGES.news] },
+  { key: "pulse", href: PAGES.movers.href, icon: Activity, children: [PAGES.movers, PAGES.heatmap, PAGES.feed, PAGES.rotation, PAGES.marketReplay, PAGES.macro, PAGES.intelligence, PAGES.compare, PAGES.news] },
   { key: "bandar", href: PAGES.radar.href, icon: TrendingUp, children: [PAGES.radar, PAGES.groups, PAGES.strategies] },
   { key: "scalp", href: PAGES.screener.href, icon: Zap, children: [PAGES.screener] },
   { key: "whale", href: PAGES.ownership.href, icon: Waves, children: [PAGES.ownership, PAGES.stealth] },

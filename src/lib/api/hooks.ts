@@ -63,7 +63,7 @@ export const useSectors = () => useQuery({ queryKey: queryKeys.sectors(), queryF
 export const useMacro = () => useQuery({ queryKey: queryKeys.macro(), queryFn: ({ signal }) => engineApi.macro(signal) });
 /** IHSG + IDX-IC sector-index daily closes for the sector-rotation RRG. */
 export const useIndicesHistory = (query: { codes?: string[]; from?: string; to?: string } = {}) =>
-  useQuery({ queryKey: queryKeys.indicesHistory(query.codes), queryFn: ({ signal }) => engineApi.indicesHistory(query, signal) });
+  useQuery({ queryKey: queryKeys.indicesHistory(query.codes, query.from, query.to), queryFn: ({ signal }) => engineApi.indicesHistory(query, signal), enabled: Boolean(query.from && query.to) });
 export const useIssuerRace = (window: "1M" | "3M" | "6M" | "1Y", sector: string) =>
   useQuery({ queryKey: queryKeys.issuerRace(window, sector), queryFn: ({ signal }) => engineApi.issuerRace({ window, sector }, signal), staleTime: 300_000 });
 export const useStockSectorRotation = (sector: string, interval: "daily" | "weekly") =>
