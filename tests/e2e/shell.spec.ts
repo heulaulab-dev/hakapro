@@ -16,8 +16,8 @@ test.describe("desktop", () => {
     await page.goto("/id/dashboard");
     const sidebar = page.getByTestId("app-sidebar");
     await expect(sidebar).toBeVisible();
-    for (const label of ["Beranda", "Screener", "Strategi", "Penggerak Pasar", "Perubahan Kepemilikan", "Screener 1%", "Daftar Pantau", "Berita & Kalender"]) {
-      await expect(sidebar.getByRole("link", { name: label })).toBeVisible();
+    for (const label of ["Beranda", "Screener", "Strategi", "Penggerak Pasar", "Perubahan Kepemilikan", "Screener 1%", "Aktivitas Broker", "Daftar Pantau", "Berita & Kalender"]) {
+      await expect(sidebar.getByRole("link", { name: label, exact: true })).toBeVisible();
     }
     await expect(page.getByTestId("mobile-nav")).toBeHidden();
   });

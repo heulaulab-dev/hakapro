@@ -4,7 +4,7 @@ import { useInfiniteQuery, useQueries, useQuery } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query/keys";
 import {
   accumulationApi, analysisApi, engineApi, financialsApi, marketApi, overviewApi, priceApi, quotesApi, screenerApi, stockApi,
-  type BrokerSummaryQuery, type FinancialsQuery, type HistoryQuery, type MarketCapQuery, type RecentInsidersQuery, type ScreenCondition,
+  type BrokerSummaryQuery, type FinancialsQuery, type HistoryQuery, type MarketBrokerSummaryQuery, type MarketCapQuery, type RecentInsidersQuery, type ScreenCondition,
   type GroupWindow,
   type BreadthWindow,
 } from "./market";
@@ -18,6 +18,8 @@ function keepSameSymbol<E extends { data: { symbol: string } }>(previous: E | un
 
 export const useHistory = (symbol: string, query: HistoryQuery = {}, options: { enabled?: boolean } = {}) =>
   useQuery({ queryKey: queryKeys.history(symbol, query.frame, query.limit, query.startDate, query.endDate), queryFn: ({ signal }) => marketApi.history(symbol, query, signal), enabled: options.enabled ?? true, placeholderData: (previous) => keepSameSymbol(previous, symbol) });
+export const useMarketBrokerSummary = (query: MarketBrokerSummaryQuery) =>
+  useQuery({ queryKey: queryKeys.marketBrokerSummary(query.from, query.to, query.limit), queryFn: ({ signal }) => marketApi.marketBrokerSummary(query, signal), staleTime: 300_000 });
 export const useComparisonHistory = (symbol: string, query: HistoryQuery = {}, options: { enabled?: boolean } = {}) =>
   useQuery({ queryKey: queryKeys.comparisonHistory(symbol, query.startDate ?? query.endDate ?? "all"), queryFn: ({ signal }) => marketApi.history(symbol, { ...query, frame: "daily" }, signal), enabled: options.enabled ?? true, placeholderData: (previous) => keepSameSymbol(previous, symbol) });
 export const useComparisonHistories = (symbols: string[], query: HistoryQuery = {}) => useQueries({

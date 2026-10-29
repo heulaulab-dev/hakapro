@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { indicesHistorySchema } from "./market";
+import { indicesHistorySchema, marketBrokerSummarySchema } from "./market";
 import { brokerDirectorySchema } from "./market";
 
 describe("indicesHistorySchema", () => {
@@ -21,5 +21,21 @@ describe("brokerDirectorySchema", () => {
     expect(brokerDirectorySchema.parse({ brokers: [{ code: "XC", name: "AJAIB SEKURITAS ASIA", license: "Broker-dealer" }] })).toEqual({
       brokers: [{ code: "XC", name: "AJAIB SEKURITAS ASIA", license: "Broker-dealer" }],
     });
+  });
+});
+
+describe("marketBrokerSummarySchema", () => {
+  it("accepts older Engine responses and nullable reported totals", () => {
+    const result = marketBrokerSummarySchema.parse({ dates: [{ date: "2026-10-30", brokers: [{ code: "YP", name: null, value: null, volume: null, frequency: null }] }] });
+    expect(result.coverage).toBeUndefined();
+    expect(result.dates[0]?.brokers[0]?.value).toBeNull();
+  });
+
+  it("parses the additive session coverage response", () => {
+    const result = marketBrokerSummarySchema.parse({
+      dates: [{ date: "2026-10-30", rowCount: 1, brokers: [{ code: "YP", name: "Yapindo", value: 100, volume: 2, frequency: 3 }] }],
+      coverage: { expectedDates: ["2026-10-30", "2026-10-31"], reportedSessions: 1, missingDates: ["2026-10-31"] },
+    });
+    expect(result.coverage?.missingDates).toEqual(["2026-10-31"]);
   });
 });

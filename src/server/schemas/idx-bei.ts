@@ -242,9 +242,15 @@ export type IssuerRace = z.infer<typeof issuerRaceSchema>;
 
 /** Market-wide IDX GetBrokerSummary rows, date×broker (not stock-specific broker flow). */
 export const marketBrokerSummarySchema = z.object({
-  dates: z.array(z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), brokers: z.array(z.object({
+  dates: z.array(z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), rowCount: z.number().int().nonnegative().optional(), brokers: z.array(z.object({
     code: z.string(), name: z.string().nullable(), volume: num, value: num, frequency: num,
   })) })),
+  // Optional for compatibility with Engine images deployed before coverage metadata was added.
+  coverage: z.object({
+    expectedDates: z.array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)),
+    reportedSessions: z.number().int().nonnegative(),
+    missingDates: z.array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)),
+  }).optional(),
 });
 export type MarketBrokerSummary = z.infer<typeof marketBrokerSummarySchema>;
 
