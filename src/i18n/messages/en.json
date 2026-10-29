@@ -122,7 +122,8 @@
     "macro": "Rates & Commodities",
     "methodology": "Methodology",
     "rotation": "Sector Rotation",
-    "intelligence": "Market Intelligence"
+    "intelligence": "Market Intelligence",
+    "compare": "Compare Stocks"
   },
   "intelligence": {
     "title": "Market intelligence",
@@ -135,6 +136,29 @@
     "sectors": "Sector participation",
     "unavailable": "Breadth is unavailable",
     "unavailableDescription": "The engine has not stored a usable market session yet."
+  },
+  "comparison": {
+    "title": "Compare stocks",
+    "intro": "Compare normalized performance and measured market data for up to four IDX stocks.",
+    "pickTitle": "Stocks to compare",
+    "pickHint": "Add IDX symbols to build a side-by-side view.",
+    "addPlaceholder": "Ticker, for example BBCA",
+    "add": "Add",
+    "remove": "Remove {symbol}",
+    "max": "Up to {count} stocks · data comes from HAKA PRO Engine",
+    "performanceTitle": "Price, starting from 100",
+    "performanceHint": "Each line starts at 100 so relative performance is easy to see over {range}.",
+    "rangeLabel": "Comparison range",
+    "tableTitle": "Side by side",
+    "tableHint": "Latest measured values for the selected period.",
+    "stock": "Stock",
+    "latest": "Latest close",
+    "periodReturn": "Period return",
+    "dailyMove": "Daily move",
+    "foreignNet": "Foreign net shares",
+    "asOf": "As of",
+    "partial": "Some symbols could not be loaded; available data is shown.",
+    "empty": "Add at least one IDX symbol to start comparing."
   },
   "macro": {
     "title": "Rates & commodities",
