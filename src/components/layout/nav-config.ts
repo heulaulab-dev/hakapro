@@ -1,6 +1,6 @@
 import {
   Activity, ArrowUpDown, Bell, Bookmark, Briefcase, Compass, House, Info, Landmark, LayoutGrid, ListChecks, Newspaper,
-  SlidersHorizontal, type Icon, Network, BookOpen, Building2, Radar, Coins, TrendingUp, Zap, Waves, ChartColumn,
+  SlidersHorizontal, type Icon, Network, BookOpen, Building2, Radar, Coins, TrendingUp, Zap, Waves, ChartColumn, Percent,
 } from "@/components/kit/icons";
 
 export type NavKey =
@@ -26,7 +26,7 @@ const PAGES = {
   strategies: { key: "strategies", href: "/discover/strategies", icon: ListChecks },
   screener: { key: "screener", href: "/discover/screener", icon: SlidersHorizontal },
   ownership: { key: "ownership", href: "/discover/ownership", icon: Landmark },
-  onePercent: { key: "onePercent", href: "/discover/one-percent", icon: Landmark },
+  onePercent: { key: "onePercent", href: "/discover/one-percent", icon: Percent },
   stealth: { key: "stealth", href: "/discover/stealth", icon: Building2 },
   watchlist: { key: "watchlist", href: "/watchlist", icon: Bookmark },
   portfolio: { key: "portfolio", href: "/portfolio", icon: Briefcase },
@@ -43,7 +43,8 @@ export const NAV: NavItem[] = [
   { key: "pulse", href: PAGES.movers.href, icon: Activity, children: [PAGES.movers, PAGES.heatmap, PAGES.feed, PAGES.rotation, PAGES.macro, PAGES.intelligence, PAGES.compare, PAGES.news] },
   { key: "bandar", href: PAGES.radar.href, icon: TrendingUp, children: [PAGES.radar, PAGES.groups, PAGES.strategies] },
   { key: "scalp", href: PAGES.screener.href, icon: Zap, children: [PAGES.screener] },
-  { key: "whale", href: PAGES.ownership.href, icon: Waves, children: [PAGES.ownership, PAGES.onePercent, PAGES.stealth] },
+  { key: "whale", href: PAGES.ownership.href, icon: Waves, children: [PAGES.ownership, PAGES.stealth] },
+  PAGES.onePercent,
   { key: "investor", href: PAGES.watchlist.href, icon: Briefcase, children: [PAGES.watchlist, PAGES.portfolio, PAGES.alerts] },
 ];
 
