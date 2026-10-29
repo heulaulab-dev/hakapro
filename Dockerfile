@@ -1,7 +1,10 @@
 FROM oven/bun:1.3.14 AS dependencies
 WORKDIR /app
 COPY package.json bun.lock ./
-RUN bun install --frozen-lockfile
+# Bun 1.3.14 has an intermittent streaming tarball extraction failure (notably
+# with platform-specific packages such as lightningcss). Disable streaming for
+# this install until the base image is upgraded to a Bun release with the fix.
+RUN BUN_FEATURE_FLAG_DISABLE_STREAMING_INSTALL=1 bun install --frozen-lockfile
 
 FROM node:22-bookworm-slim AS builder
 WORKDIR /app
