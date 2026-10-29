@@ -11,7 +11,7 @@ test.use({ viewport: { width: 360, height: 740 }, hasTouch: true, isMobile: true
 const ROUTES = [
   "/id", "/en", "/id/login", "/id/signup",
   "/id/dashboard", "/id/discover/screener", "/id/discover/strategies", "/id/discover/strategies/akumulasi-senyap",
-  "/id/discover/heatmap", "/id/discover/groups", "/id/discover/radar", "/id/discover/stealth", "/id/discover/ownership",
+  "/id/discover/heatmap", "/id/discover/groups", "/id/discover/radar", "/id/discover/stealth", "/id/discover/ownership", "/id/discover/one-percent",
   "/id/methodology", "/id/watchlist", "/id/alerts", "/id/news", "/id/discover/movers",
   "/id/stock/BBCA", "/id/stock/BBCA/chart", "/id/stock/BBCA/flow", "/id/stock/BBCA/analysis", "/id/stock/BBCA/financials",
   "/id/stock/BBCA/dividends", "/id/stock/BBCA/ownership", "/id/stock/BBCA/insiders", "/id/stock/BBCA/history", "/id/research/BBCA", "/id/zzz-not-found",
