@@ -124,7 +124,23 @@
     "rotation": "Sector Rotation",
     "intelligence": "Market Intelligence",
     "compare": "Compare Stocks",
-    "portfolio": "Portfolio"
+    "portfolio": "Portfolio",
+    "feed": "Daily Feed"
+  },
+  "dailyFeed": {
+    "title": "Daily Feed",
+    "intro": "Observed IDX market activity from the latest stored trading session. These rule-based signals are research prompts, not recommendations.",
+    "asOf": "Trading session: {date}",
+    "coverage": "Data available for {stocks} of {listed} listed stocks; the signal source returned {returned} stocks.",
+    "method": "Rules {version}.",
+    "radarLink": "See rules and missing inputs",
+    "filterLabel": "Activity type",
+    "filters": { "all": "All", "volume": "Volume & trade size", "price": "Price", "flow": "Foreign flow" },
+    "shown": "{count} stocks",
+    "observations": "Observed signals",
+    "counterEvidence": "Counter evidence",
+    "empty": "No stocks match this activity filter in the stored session.",
+    "noSession": "No stored trading session is available yet."
   },
   "intelligence": {
     "title": "Market intelligence",

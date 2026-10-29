@@ -5,7 +5,7 @@ import {
 
 export type NavKey =
   | "home" | "discover" | "screener" | "strategies" | "movers" | "heatmap" | "groups" | "radar" | "ownership" | "stealth"
-  | "macro" | "rotation" | "intelligence" | "compare" | "watchlist" | "portfolio" | "news" | "alerts" | "methodology" | "about"
+  | "macro" | "rotation" | "intelligence" | "compare" | "feed" | "watchlist" | "portfolio" | "news" | "alerts" | "methodology" | "about"
   // Module groups (BDMFlow-style terminal menu).
   | "pulse" | "bandar" | "scalp" | "whale" | "investor";
 export type NavItem = { key: NavKey; href: string; icon: Icon; children?: NavItem[] };
@@ -19,6 +19,7 @@ const PAGES = {
   rotation: { key: "rotation", href: "/discover/rotation", icon: Compass },
   intelligence: { key: "intelligence", href: "/discover/intelligence", icon: Radar },
   compare: { key: "compare", href: "/discover/compare", icon: ChartColumn },
+  feed: { key: "feed", href: "/discover/feed", icon: Activity },
   news: { key: "news", href: "/news", icon: Newspaper },
   radar: { key: "radar", href: "/discover/radar", icon: Radar },
   groups: { key: "groups", href: "/discover/groups", icon: Network },
@@ -38,7 +39,7 @@ const PAGES = {
  */
 export const NAV: NavItem[] = [
   PAGES.home,
-  { key: "pulse", href: PAGES.movers.href, icon: Activity, children: [PAGES.movers, PAGES.heatmap, PAGES.rotation, PAGES.macro, PAGES.intelligence, PAGES.compare, PAGES.news] },
+  { key: "pulse", href: PAGES.movers.href, icon: Activity, children: [PAGES.movers, PAGES.heatmap, PAGES.feed, PAGES.rotation, PAGES.macro, PAGES.intelligence, PAGES.compare, PAGES.news] },
   { key: "bandar", href: PAGES.radar.href, icon: TrendingUp, children: [PAGES.radar, PAGES.groups, PAGES.strategies] },
   { key: "scalp", href: PAGES.screener.href, icon: Zap, children: [PAGES.screener] },
   { key: "whale", href: PAGES.ownership.href, icon: Waves, children: [PAGES.ownership, PAGES.stealth] },
