@@ -67,9 +67,9 @@ export function parsePercent(raw: string): string | null {
   }
   if (decimals.length <= 6) return decimals ? `${whole}.${decimals}` : whole;
 
-  const scale = 1_000_000n;
+  const scale = BigInt(1_000_000);
   const retained = BigInt(whole) * scale + BigInt(decimals.slice(0, 6));
-  const rounded = retained + (decimals[6] >= "5" ? 1n : 0n);
+  const rounded = retained + (decimals[6] >= "5" ? BigInt(1) : BigInt(0));
   const roundedWhole = (rounded / scale).toString();
   const roundedDecimals = (rounded % scale).toString().padStart(6, "0").replace(/0+$/, "");
   return roundedDecimals ? `${roundedWhole}.${roundedDecimals}` : roundedWhole;
