@@ -4,7 +4,7 @@ import { classifySessionDate, withFreshness, type Freshness, type WithFreshness 
 import { strategyBoardSchema } from "@/lib/strategies/contract";
 import {
   actionsCalendarSchema, actionsSchema, announcementItemSchema, brokerDirectorySchema, fundamentalsSchema, HEATMAP_DEFAULT_LIMIT, heatmapLimitSchema, heatmapSchema, marketBrokerSummarySchema,
-  idxBeiEnvelope, indicesHistorySchema, insidersRecentSchema, macroSchema, marketOverviewSchema, newsItemSchema, groupsSchema, groupWindowSchema, profileSchema,
+  idxBeiEnvelope, indicesHistorySchema, issuerRaceSchema, issuerRaceWindowSchema, insidersRecentSchema, macroSchema, marketOverviewSchema, newsItemSchema, groupsSchema, groupWindowSchema, profileSchema,
   screenRequestSchema, screenResultSchema, sectorsSchema, securitySchema, signalsSchema, stockSchema, type ScreenRequest, radarSchema,
   stealthOwnershipSchema,
 } from "@/server/schemas/idx-bei";
@@ -16,7 +16,7 @@ import { logWarn } from "@/server/log";
 import { ProviderBackoff } from "@/server/providers/backoff";
 import { MarketDataError, unsupported } from "./errors";
 import {
-  BaseMarketDataSource, type ActionsCalendarQuery, type HeatmapQuery, type OwnershipChangesQuery, type PageQuery, type RecentInsidersQuery,
+  BaseMarketDataSource, type ActionsCalendarQuery, type HeatmapQuery, type OwnershipChangesQuery, type PageQuery, type RecentInsidersQuery, type IssuerRaceQuery,
   type GroupsQuery,
 } from "./source";
 import type { Candle, Quote, TickerLogo } from "./types";
@@ -191,6 +191,13 @@ export class IdxBeiSource extends BaseMarketDataSource {
     if (query.codes?.length) params.set("codes", query.codes.join(","));
     const qs = params.toString();
     const { data, meta } = await this.get(`/v1/indices/history${qs ? `?${qs}` : ""}`, indicesHistorySchema, TTL_MS.market);
+    return this.snapshot(data, meta.dataAsOf);
+  }
+
+  /** Engine issuer race: capped, date-stepped leaders over an exact common baseline from stored closes. */
+  async issuerRace(query: IssuerRaceQuery) {
+    const params = new URLSearchParams({ window: issuerRaceWindowSchema.parse(query.window ?? "3M"), sector: query.sector ?? "all" });
+    const { data, meta } = await this.get(`/v1/issuer-race?${params}`, issuerRaceSchema, TTL_MS.market);
     return this.snapshot(data, meta.dataAsOf);
   }
 

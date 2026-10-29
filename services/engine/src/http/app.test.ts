@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  actionsCalendarSchema, actionsSchema, announcementItemSchema, fundamentalsSchema, heatmapSchema, idxBeiEnvelope, macroSchema, marketOverviewSchema, newsItemSchema,
+  actionsCalendarSchema, actionsSchema, announcementItemSchema, fundamentalsSchema, heatmapSchema, idxBeiEnvelope, issuerRaceSchema, macroSchema, marketOverviewSchema, newsItemSchema,
   screenResultSchema, securitySchema, signalsSchema, stockSchema, profileSchema,
 } from "@/server/schemas/idx-bei";
 import { breadthSchema, catalystsSchema } from "@/server/schemas/market-intelligence";
@@ -87,6 +87,22 @@ describe("engine HTTP app", () => {
     expect(idxBeiEnvelope(heatmapSchema).parse(await (await call("/v1/heatmap?limit=50")).json()).data).toEqual({ limit: 50, stocks: [], sectors: [] });
     expect(idxBeiEnvelope(heatmapSchema).parse(await (await call("/v1/heatmap?limit=")).json()).data.limit).toBe(100);
     for (const bad of ["limit=10", "limit=abc", "limit=1000", "limit=30.5"]) expect((await call(`/v1/heatmap?${bad}`)).status, bad).toBe(400);
+  });
+
+  it("serves the bounded issuer race from persisted closes and validates its query", async () => {
+    const stock = (symbol: string, name: string, sector: string) => ({ symbol, name, sector, subsector: null, board: null, sharesOutstanding: null, freeFloatPct: null, asOf: new Date(), active: true });
+    const row = (symbol: string, date: string, close: number) => ({ symbol, date, close, open: null, high: null, low: null, previousClose: null, volume: null, value: null, frequency: null, foreignBuy: null, foreignSell: null });
+    const market = new MemoryMarketStore({
+      securities: [stock("AAA", "Alpha", "Finance"), stock("BBB", "Beta", "Finance"), stock("CCC", "Other", "Energy")],
+      daily: [row("AAA", "2026-10-13", 100), row("BBB", "2026-10-13", 200), row("CCC", "2026-10-13", 10), row("AAA", "2026-10-14", 110), row("BBB", "2026-10-14", 180), row("CCC", "2026-10-14", 11)],
+    });
+    const { call } = app({ market });
+    const response = await call("/v1/issuer-race?window=1M&sector=Finance");
+    expect(response.status).toBe(200);
+    const body = idxBeiEnvelope(issuerRaceSchema).parse(await response.json());
+    expect(body.data.universe).toMatchObject({ active: 2, withBaseline: 2 });
+    expect(body.data.frames.at(-1)?.leaders.map((leader) => leader.symbol)).toEqual(["AAA", "BBB"]);
+    expect((await call("/v1/issuer-race?window=day&sector=Finance")).status).toBe(400);
   });
 
   it("requires the API bearer token on /v1/* when configured, never on /health", async () => {
