@@ -5,7 +5,7 @@ import {
 
 export type NavKey =
   | "home" | "discover" | "screener" | "strategies" | "movers" | "heatmap" | "groups" | "radar" | "ownership" | "stealth"
-  | "macro" | "rotation" | "intelligence" | "compare" | "watchlist" | "news" | "alerts" | "methodology" | "about"
+  | "macro" | "rotation" | "intelligence" | "compare" | "watchlist" | "portfolio" | "news" | "alerts" | "methodology" | "about"
   // Module groups (BDMFlow-style terminal menu).
   | "pulse" | "bandar" | "scalp" | "whale" | "investor";
 export type NavItem = { key: NavKey; href: string; icon: Icon; children?: NavItem[] };
@@ -27,6 +27,7 @@ const PAGES = {
   ownership: { key: "ownership", href: "/discover/ownership", icon: Landmark },
   stealth: { key: "stealth", href: "/discover/stealth", icon: Building2 },
   watchlist: { key: "watchlist", href: "/watchlist", icon: Bookmark },
+  portfolio: { key: "portfolio", href: "/portfolio", icon: Briefcase },
   alerts: { key: "alerts", href: "/alerts", icon: Bell },
 } satisfies Record<string, NavItem>;
 
@@ -41,7 +42,7 @@ export const NAV: NavItem[] = [
   { key: "bandar", href: PAGES.radar.href, icon: TrendingUp, children: [PAGES.radar, PAGES.groups, PAGES.strategies] },
   { key: "scalp", href: PAGES.screener.href, icon: Zap, children: [PAGES.screener] },
   { key: "whale", href: PAGES.ownership.href, icon: Waves, children: [PAGES.ownership, PAGES.stealth] },
-  { key: "investor", href: PAGES.watchlist.href, icon: Briefcase, children: [PAGES.watchlist, PAGES.alerts] },
+  { key: "investor", href: PAGES.watchlist.href, icon: Briefcase, children: [PAGES.watchlist, PAGES.portfolio, PAGES.alerts] },
 ];
 
 /** The ordered module groups (every NAV item that has children). */

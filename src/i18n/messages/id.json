@@ -123,7 +123,8 @@
     "methodology": "Metodologi",
     "rotation": "Rotasi Sektor",
     "intelligence": "Intelijen Pasar",
-    "compare": "Bandingkan Saham"
+    "compare": "Bandingkan Saham",
+    "portfolio": "Portofolio"
   },
   "intelligence": {
     "title": "Intelijen pasar",
@@ -159,6 +160,31 @@
     "asOf": "Per tanggal",
     "partial": "Sebagian kode saham tidak dapat dimuat; data yang tersedia tetap ditampilkan.",
     "empty": "Tambahkan minimal satu kode saham IDX untuk mulai membandingkan."
+  },
+  "portfolio": {
+    "title": "Portofolio",
+    "intro": "Pantau posisi saham IDX milik Anda dengan harga pasar tersimpan terbaru.",
+    "signIn": "Masuk untuk menggunakan portofolio",
+    "signInAction": "Masuk",
+    "symbol": "Kode saham",
+    "quantity": "Lembar",
+    "price": "Harga rata-rata",
+    "add": "Tambah beli",
+    "type": "Jenis transaksi",
+    "buy": "Beli",
+    "sell": "Jual",
+    "transactions": "Transaksi",
+    "loading": "Memuat portofolio…",
+    "invalid": "Masukkan kode saham, jumlah, dan harga yang valid.",
+    "failed": "Transaksi tidak dapat disimpan.",
+    "cost": "Modal",
+    "value": "Nilai pasar",
+    "pnl": "Untung / rugi",
+    "empty": "Tambahkan posisi pertama untuk mulai memantaunya.",
+    "stock": "Saham",
+    "average": "Rata-rata",
+    "last": "Terakhir",
+    "remove": "Hapus"
   },
   "macro": {
     "title": "Suku bunga & komoditas",

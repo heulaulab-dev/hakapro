@@ -12,6 +12,7 @@ export const queryKeys = {
   news: (perPage = 8) => ["market", "news", perPage] as const,
   announcements: (keywords: string) => ["market", "announcements", keywords] as const,
   watchlist: (userId: string) => ["user", "watchlist", userId] as const,
+  portfolio: () => ["user", "portfolio"] as const,
   quotes: (symbols: string[]) => ["market", "quotes", [...symbols].sort().join(",")] as const,
   brokerAccumulation: (symbol: string, startDate = "", top = 0, brokers = "") => ["market", "broker-accumulation", symbol.toUpperCase(), startDate, top, brokers] as const,
   financials: (symbol: string, reportType: string, period: string, limit = 12, year: string | null = null) => ["market", "financials", symbol.toUpperCase(), reportType, period, limit, year] as const,
