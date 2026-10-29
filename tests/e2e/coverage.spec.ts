@@ -1,4 +1,15 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
+
+/** Opens a DatePicker and clicks the ISO day, stepping back month by month until it is shown. */
+async function pickDate(page: Page, trigger: Locator, iso: string) {
+  await trigger.click();
+  const dialog = page.locator("[data-slot=popover-content]");
+  const day = dialog.locator(`[data-day="${iso}"]:not([data-outside]) button`);
+  for (let step = 0; step < 24 && !(await day.isVisible()); step += 1) await dialog.locator(".rdp-button_previous").click();
+  await day.click();
+  await expect(dialog).toBeHidden();
+}
+
 
 // Full arjum coverage (2026-10-04): analysis tab, broker-summary controls, history ranges, tape paging,
 // financial filters and market-cap paging. Fixture mode serves recordings; parameters land in the URL.
@@ -71,8 +82,8 @@ test.describe("history tab: ranges and trade tape", () => {
     await expect(page).toHaveURL(/tdate=\d{4}-\d{2}-\d{2}/);
     await expect(page).not.toHaveURL(/tpage=/);
     const range = page.getByTestId("history-range");
-    await range.getByLabel("From").fill("2026-09-01");
-    await range.getByLabel("To").fill("2026-09-18");
+    await pickDate(page, range.getByLabel("From"), "2026-09-01");
+    await pickDate(page, range.getByLabel("To"), "2026-09-18");
     await range.getByRole("button", { name: "Apply" }).click();
     await expect(page).toHaveURL(/from=2026-09-01/);
     await expect(page).toHaveURL(/to=2026-09-18/);

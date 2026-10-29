@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, Table2 } from "lucide-react";
+import { BarChart3, Table2 } from "@/components/kit/icons";
 import { useTranslations } from "next-intl";
 import { useState, type ReactNode } from "react";
 import { Panel } from "@/components/layout/panel";

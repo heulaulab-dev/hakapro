@@ -1,6 +1,6 @@
 "use client";
 
-import { Landmark } from "lucide-react";
+import { Landmark } from "@/components/kit/icons";
 import { useLocale, useTranslations } from "next-intl";
 import { DataState } from "@/components/feedback/data-state";
 import { EmptyState } from "@/components/feedback/empty-state";

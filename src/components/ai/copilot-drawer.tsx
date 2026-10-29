@@ -1,6 +1,6 @@
 "use client";
 
-import { Send, Sparkles, Square } from "lucide-react";
+import { Send, Sparkles, Square } from "@/components/kit/icons";
 import { useLocale, useTranslations } from "next-intl";
 import { useRef, useState, type FormEvent } from "react";
 import { Drawer } from "@/components/layout/drawer";

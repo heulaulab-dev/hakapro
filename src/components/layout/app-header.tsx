@@ -1,6 +1,6 @@
 "use client";
 
-import { Search } from "lucide-react";
+import { Search } from "@/components/kit/icons";
 import { CopilotDrawer } from "@/components/ai/copilot-drawer";
 import { useTranslations } from "next-intl";
 import { Logo } from "@/components/brand/logo";
@@ -17,7 +17,7 @@ export function AppHeader({ viewer, theme, density, aiEnabled = false }: { viewe
   const t = useTranslations("header");
   const openPalette = useUiStore((state) => state.setPaletteOpen);
   return (
-    <header data-testid="app-header" className="flex h-12 shrink-0 items-center gap-2 border-b border-border bg-background px-4 md:h-[58px]">
+    <header data-testid="app-header" className="relative z-20 flex h-12 shrink-0 items-center gap-2 border-b border-border bg-background/70 px-4 backdrop-blur-xl backdrop-saturate-150 md:h-[58px]">
       <Link href="/dashboard" data-testid="header-brand" aria-label={t("home")} className="-ml-1 inline-flex size-10 shrink-0 items-center justify-center md:hidden">
         <Logo variant="symbol" height={28} priority />
       </Link>

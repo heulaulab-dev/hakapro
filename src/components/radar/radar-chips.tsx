@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle } from "@/components/kit/icons";
 import { useLocale, useTranslations } from "next-intl";
 import { StatusBadge } from "@/components/feedback/status-badge";
 import type { Radar, RadarStock } from "@/lib/api/market";

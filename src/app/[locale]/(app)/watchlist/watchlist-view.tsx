@@ -1,6 +1,6 @@
 "use client";
 
-import { Bookmark, LogIn } from "lucide-react";
+import { Bookmark, LogIn } from "@/components/kit/icons";
 import { useTranslations } from "next-intl";
 import { useState, type FormEvent } from "react";
 import { AnalysisCompare } from "@/components/analysis/analysis-compare";

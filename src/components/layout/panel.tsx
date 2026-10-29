@@ -18,10 +18,10 @@ export function Panel({ title, meta, description, actions, children, className, 
   testId?: string;
 }) {
   return (
-    <section data-testid={testId} className={cn("flex min-w-0 flex-col rounded-xl border border-border", className)}>
-      <div className="flex min-h-12 shrink-0 flex-wrap items-center justify-between gap-x-2 gap-y-1 border-b border-border px-4 py-2">
+    <section data-testid={testId} className={cn("surface-card flex min-w-0 flex-col rounded-xl border border-border", className)}>
+      <div className="surface-header flex min-h-12 shrink-0 flex-wrap items-center justify-between gap-x-2 gap-y-1 rounded-t-xl border-b border-border px-4 py-2">
         <div className="flex min-w-0 items-center gap-2">
-          <h3 className="eyebrow-style truncate font-normal text-soft">{title}</h3>
+          <h3 className="eyebrow-style flex min-w-0 items-center gap-2 truncate font-normal text-soft before:size-1.5 before:shrink-0 before:rounded-full before:bg-primary before:shadow-[0_0_8px_var(--primary)] before:content-['']">{title}</h3>
           {meta && <FreshnessBadge {...meta} />}
         </div>
         {actions && <div className="flex max-w-full flex-wrap items-center gap-2">{actions}</div>}

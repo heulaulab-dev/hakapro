@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Pause, Play, RotateCcw, SkipBack, SkipForward } from "lucide-react";
+import { Pause, Play, RotateCcw, SkipBack, SkipForward } from "@/components/kit/icons";
 import { useLocale, useTranslations } from "next-intl";
 import { DataState } from "@/components/feedback/data-state";
 import { EmptyState } from "@/components/feedback/empty-state";
@@ -9,7 +9,9 @@ import { ResearchDisclaimer } from "@/components/feedback/research-disclaimer";
 import { SectionHeader } from "@/components/layout/section-header";
 import { Segmented } from "@/components/kit/segmented";
 import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { RrgChart, type RrgChartSeries } from "@/components/charts/rrg-chart";
 import { useIndicesHistory } from "@/lib/api/hooks";
 import type { IndexCoverageReport, IndexSeries } from "@/lib/api/market";
@@ -209,29 +211,29 @@ function Rankings({ result, activeDate, highlight, hidden, onHighlight, onToggle
     <section className="flex flex-col gap-2" data-testid="rotation-rankings">
       <SectionHeader title={t("rankingsTitle")} description={t("rankingsDesc")} />
       <div className="overflow-x-auto rounded-xl border border-border">
-        <table className="w-full text-data">
-          <thead><tr className="text-left text-xs text-muted-foreground">
-            <th className="px-cell-x py-cell-y font-medium">{t("sector")}</th>
-            <th className="px-cell-x py-cell-y text-right font-medium">{t("rsRatio")}</th>
-            <th className="px-cell-x py-cell-y text-right font-medium">{t("rsMomentum")}</th>
-            <th className="px-cell-x py-cell-y font-medium">{t("quadrant")}</th>
-            <th className="px-cell-x py-cell-y text-right font-medium">{t("momentumChange")}</th>
-            <th className="px-cell-x py-cell-y" />
-          </tr></thead>
-          <tbody>
+        <Table>
+          <TableHeader><TableRow interactive={false}>
+            <TableHead className="h-auto px-(--spacing-cell-x) py-cell-y text-xs font-medium whitespace-normal text-muted-foreground">{t("sector")}</TableHead>
+            <TableHead numeric className="h-auto px-(--spacing-cell-x) py-cell-y text-xs font-medium whitespace-normal text-muted-foreground">{t("rsRatio")}</TableHead>
+            <TableHead numeric className="h-auto px-(--spacing-cell-x) py-cell-y text-xs font-medium whitespace-normal text-muted-foreground">{t("rsMomentum")}</TableHead>
+            <TableHead className="h-auto px-(--spacing-cell-x) py-cell-y text-xs font-medium whitespace-normal text-muted-foreground">{t("quadrant")}</TableHead>
+            <TableHead numeric className="h-auto px-(--spacing-cell-x) py-cell-y text-xs font-medium whitespace-normal text-muted-foreground">{t("momentumChange")}</TableHead>
+            <TableHead className="h-auto px-(--spacing-cell-x) py-cell-y text-xs font-medium whitespace-normal text-muted-foreground" />
+          </TableRow></TableHeader>
+          <TableBody>
             {rows.map(({ r, point, vector }) => (
-              <tr key={r.sectorId} onMouseEnter={() => onHighlight(r.sectorId)} onMouseLeave={() => onHighlight(null)}
-                className={`h-row border-t border-border transition-colors ${highlight === r.sectorId ? "bg-(--overlay-soft)" : ""} ${hidden.has(r.sectorId) ? "opacity-40" : ""}`} data-testid={`rank-${r.sectorId}`}>
-                <td className="px-cell-x py-cell-y"><span className="ticker font-medium">{r.sectorId}</span> <span className="text-muted-foreground">{r.sectorName}</span></td>
-                <td className="num px-cell-x py-cell-y text-right">{n2(point.rsRatio)}</td>
-                <td className="num px-cell-x py-cell-y text-right">{n2(point.rsMomentum)}</td>
-                <td className="px-cell-x py-cell-y"><QuadrantBadge quadrant={point.quadrant} /></td>
-                <td className={`num px-cell-x py-cell-y text-right ${vector && vector.dy >= 0 ? "text-positive" : "text-negative"}`}>{vector ? `${vector.dy >= 0 ? "+" : ""}${n2(vector.dy)}` : "—"}</td>
-                <td className="px-cell-x py-cell-y text-right"><Button variant="ghost" size="sm" aria-pressed={!hidden.has(r.sectorId)} onClick={() => onToggleHidden(r.sectorId)}>{hidden.has(r.sectorId) ? t("show") : t("hide")}</Button></td>
-              </tr>
+              <TableRow key={r.sectorId} onMouseEnter={() => onHighlight(r.sectorId)} onMouseLeave={() => onHighlight(null)}
+                className={`h-row ${highlight === r.sectorId ? "bg-(--overlay-soft)" : ""} ${hidden.has(r.sectorId) ? "opacity-40" : ""}`} data-testid={`rank-${r.sectorId}`}>
+                <TableCell className="px-(--spacing-cell-x)"><span className="ticker font-medium">{r.sectorId}</span> <span className="text-muted-foreground">{r.sectorName}</span></TableCell>
+                <TableCell className="num px-(--spacing-cell-x) text-right">{n2(point.rsRatio)}</TableCell>
+                <TableCell className="num px-(--spacing-cell-x) text-right">{n2(point.rsMomentum)}</TableCell>
+                <TableCell className="px-(--spacing-cell-x)"><QuadrantBadge quadrant={point.quadrant} /></TableCell>
+                <TableCell className={`num px-(--spacing-cell-x) text-right ${vector && vector.dy >= 0 ? "text-positive" : "text-negative"}`}>{vector ? `${vector.dy >= 0 ? "+" : ""}${n2(vector.dy)}` : "—"}</TableCell>
+                <TableCell className="px-(--spacing-cell-x) text-right"><Button variant="ghost" size="sm" aria-pressed={!hidden.has(r.sectorId)} onClick={() => onToggleHidden(r.sectorId)}>{hidden.has(r.sectorId) ? t("show") : t("hide")}</Button></TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </section>
   );
@@ -306,7 +308,7 @@ function Playback({ timeline, activeIndex, activeDate, playing, onStep, onToggle
       <Button variant="outline" size="icon" aria-label={t("prev")} disabled={activeIndex <= 0} onClick={() => onStep(Math.max(0, activeIndex - 1))}><SkipBack /></Button>
       <Button variant="outline" size="icon" aria-label={playing ? t("pause") : t("play")} onClick={onToggle}>{playing ? <Pause /> : <Play />}</Button>
       <Button variant="outline" size="icon" aria-label={t("next")} disabled={atEnd} onClick={() => onStep(Math.min(timeline.length - 1, activeIndex + 1))}><SkipForward /></Button>
-      <input type="range" min={0} max={timeline.length - 1} value={activeIndex} aria-label={t("timeline")} onChange={(e) => onStep(Number(e.target.value))} className="h-1 min-w-32 flex-1 accent-[var(--primary)]" />
+      <Slider min={0} max={timeline.length - 1} step={1} value={[activeIndex]} aria-label={t("timeline")} onValueChange={([next]) => onStep(next)} className="min-w-32 flex-1" data-testid="rotation-timeline" />
       <span className="num text-xs text-muted-foreground">{activeDate ? formatDate(activeDate, locale) : ""}</span>
       {!atEnd && <Button variant="ghost" size="sm" onClick={onLive}>{t("live")}</Button>}
     </div>
@@ -331,22 +333,22 @@ function Insufficient({ result, required, interval }: { result: RotationResult |
       </div>
       {coverage.length > 0 && (
         <div className="overflow-x-auto rounded-lg border border-border">
-          <table className="w-full text-data">
-            <thead><tr className="text-left text-xs text-muted-foreground">
-              <th className="px-cell-x py-cell-y font-medium">{t("sector")}</th>
-              <th className="px-cell-x py-cell-y text-right font-medium">{t("alignedObs")}</th>
-              <th className="px-cell-x py-cell-y text-right font-medium">{t("validPoints")}</th>
-            </tr></thead>
-            <tbody>
+          <Table>
+            <TableHeader><TableRow interactive={false}>
+              <TableHead className="h-auto px-(--spacing-cell-x) py-cell-y text-xs font-medium whitespace-normal text-muted-foreground">{t("sector")}</TableHead>
+              <TableHead numeric className="h-auto px-(--spacing-cell-x) py-cell-y text-xs font-medium whitespace-normal text-muted-foreground">{t("alignedObs")}</TableHead>
+              <TableHead numeric className="h-auto px-(--spacing-cell-x) py-cell-y text-xs font-medium whitespace-normal text-muted-foreground">{t("validPoints")}</TableHead>
+            </TableRow></TableHeader>
+            <TableBody>
               {coverage.map((c) => (
-                <tr key={c.sectorId} className="h-row border-t border-border">
-                  <td className="px-cell-x py-cell-y"><span className="ticker">{c.sectorId}</span> <span className="text-muted-foreground">{SECTOR_NAMES[c.sectorId] ?? ""}</span></td>
-                  <td className="num px-cell-x py-cell-y text-right">{c.aligned}</td>
-                  <td className="num px-cell-x py-cell-y text-right">{c.points}</td>
-                </tr>
+                <TableRow key={c.sectorId} className="h-row">
+                  <TableCell className="px-(--spacing-cell-x)"><span className="ticker">{c.sectorId}</span> <span className="text-muted-foreground">{SECTOR_NAMES[c.sectorId] ?? ""}</span></TableCell>
+                  <TableCell className="num px-(--spacing-cell-x) text-right">{c.aligned}</TableCell>
+                  <TableCell className="num px-(--spacing-cell-x) text-right">{c.points}</TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
       {missing.length > 0 && (

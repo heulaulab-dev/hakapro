@@ -1,6 +1,6 @@
 "use client";
 
-import { UserRoundSearch } from "lucide-react";
+import { UserRoundSearch } from "@/components/kit/icons";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { InsidersTable } from "@/components/data/insiders-table";

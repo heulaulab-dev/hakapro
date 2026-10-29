@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { FreshnessBadge } from "@/components/feedback/freshness-badge";
 import { Providers } from "@/components/providers";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { LiveStories } from "./live-stories";
 import { Link } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
@@ -68,22 +69,22 @@ export default async function PrimitivesPage({ params }: PageProps<"/[locale]/de
                 ))}
               </div>
               <h3 className="mb-2 text-sm font-medium">{t("dev.formatting")}</h3>
-              <table className="w-full text-data">
-                <thead>
-                  <tr className="text-left text-xs text-muted-foreground">
-                    <th className="px-cell-x py-cell-y font-medium">{t("dev.sampleInput")}</th>
-                    <th className="px-cell-x py-cell-y text-right font-medium">{t("dev.sampleOutput")}</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <Table>
+                <TableHeader>
+                  <TableRow interactive={false}>
+                    <TableHead className="h-auto px-(--spacing-cell-x) py-cell-y text-xs font-medium whitespace-normal text-muted-foreground">{t("dev.sampleInput")}</TableHead>
+                    <TableHead numeric className="h-auto px-(--spacing-cell-x) py-cell-y text-xs font-medium whitespace-normal text-muted-foreground">{t("dev.sampleOutput")}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {formatting.map(([input, output]) => (
-                    <tr key={input} className="h-row border-t border-border">
-                      <td className="px-cell-x py-cell-y font-mono text-xs text-muted-foreground">{input}</td>
-                      <td className="ticker px-cell-x py-cell-y text-right">{output}</td>
-                    </tr>
+                    <TableRow key={input} className="h-row">
+                      <TableCell className="px-(--spacing-cell-x) font-mono text-xs text-muted-foreground">{input}</TableCell>
+                      <TableCell numeric className="px-(--spacing-cell-x)">{output}</TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </section>
           )),
         )}

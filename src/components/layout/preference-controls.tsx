@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Languages, Moon, Rows3, Rows4, Sun } from "lucide-react";
+import { Check, Languages, Moon, Rows3, Rows4, Sun } from "@/components/kit/icons";
 import { useLocale, useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";

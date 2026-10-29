@@ -208,3 +208,14 @@ const QUANTITY_FORMAT: Record<QuantityUnit, ValueFormat> = { shares: "shares", l
 export function formatQuantity(value: number | null | undefined, unit: QuantityUnit, locale: Locale): string {
   return formatValue(value, QUANTITY_FORMAT[unit], locale);
 }
+
+const BYTE_UNITS = ["B", "KB", "MB", "GB"] as const;
+
+/** File size in binary steps: 1536 → "1,5 KB" (id) / "1.5 KB" (en). Whole bytes below 1 KB. */
+export function formatBytes(value: number | null | undefined, locale: Locale): string {
+  if (!isNumber(value) || value < 0) return EMPTY;
+  let size = value;
+  let unit = 0;
+  while (size >= 1024 && unit < BYTE_UNITS.length - 1) { size /= 1024; unit += 1; }
+  return `${formatNumber(size, locale, { decimals: unit === 0 ? 0 : 1 })} ${BYTE_UNITS[unit]}`;
+}
