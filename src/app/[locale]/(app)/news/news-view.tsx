@@ -13,6 +13,7 @@ import { Tag } from "@/components/kit/tag";
 import { Link } from "@/i18n/navigation";
 import { useActionsCalendar, useAnnouncements, useNews } from "@/lib/api/hooks";
 import type { ActionCalendarItem } from "@/lib/api/market";
+import { BI_RDG_2026, BI_RDG_2026_PUBLISHED, BI_RDG_2026_SOURCE } from "@/lib/calendar/bi-meetings";
 import { countdown, dayKey, formatWeekday, groupByDay, isThisWeek, monogram, outletHost, relativeAge, relativeDay, todayWib, weekDays } from "@/lib/feed";
 import { freshnessMeta } from "@/lib/freshness";
 import { formatDate, formatIdr, formatShortDate, type Locale } from "@/lib/format";
@@ -261,6 +262,36 @@ function ActionsCalendar() {
   );
 }
 
+/** Officially published BI meeting dates, displayed with their source date so future schedules are never implied. */
+function MacroCalendar() {
+  const t = useTranslations("news");
+  const locale = useLocale() as Locale;
+  const today = todayWib();
+  const upcoming = BI_RDG_2026.filter((event) => event.end >= today);
+  const past = BI_RDG_2026.filter((event) => event.end < today).reverse();
+  const renderEvents = (events: typeof BI_RDG_2026[number][]) => events.map((event) => (
+    <li key={event.start} className="flex flex-wrap items-center justify-between gap-3 border-b border-border py-3 last:border-0">
+      <span className="text-sm font-medium">{t("biMeeting")}</span>
+      <time className="num text-sm" dateTime={event.start}>{formatDate(event.start, locale)} – {formatDate(event.end, locale)}</time>
+    </li>
+  ));
+  return <section className="flex flex-col gap-4" data-testid="macro-calendar">
+    <SectionHeader title={t("macroCalendar")} description={t("biCalendarHint")} />
+    <div className="rounded-xl border border-border bg-secondary/40 p-4 text-sm">
+      <p>{t("biPublished", { date: formatDate(BI_RDG_2026_PUBLISHED, locale) })}</p>
+      <a href={BI_RDG_2026_SOURCE} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1 text-link hover:underline">{t("biSource")}<ExternalLink aria-hidden className="size-3" /></a>
+    </div>
+    <div>
+      <h3 className="text-sm font-semibold">{t("upcoming")}</h3>
+      {upcoming.length ? <ul>{renderEvents([...upcoming])}</ul> : <p className="py-3 text-sm text-muted-foreground">{t("noUpcomingBi")}</p>}
+    </div>
+    {past.length > 0 && <div>
+      <h3 className="text-sm font-semibold">{t("earlier")}</h3>
+      <ul>{renderEvents(past)}</ul>
+    </div>}
+  </section>;
+}
+
 function TabLabel({ text, count }: { text: string; count?: number }) {
   return <span className="inline-flex items-center gap-1.5">{text}{count !== undefined && count > 0 && <span className="num rounded-full bg-secondary px-1.5 py-0.5 text-[11px] leading-none text-muted-foreground">{count}</span>}</span>;
 }
@@ -276,6 +307,7 @@ export function NewsView() {
       <UrlTabs label={t("title")} tabs={[
         { value: "news", label: <TabLabel text={t("news")} count={news.data?.data.length} />, content: <NewsList /> },
         { value: "calendar", label: <TabLabel text={t("calendar")} count={calendar.data?.data.length} />, content: <ActionsCalendar /> },
+        { value: "macro", label: <TabLabel text={t("macroCalendar")} />, content: <MacroCalendar /> },
         { value: "disclosures", label: <TabLabel text={t("announcements")} />, content: <AnnouncementList /> },
       ]} />
     </div>
