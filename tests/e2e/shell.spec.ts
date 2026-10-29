@@ -16,10 +16,39 @@ test.describe("desktop", () => {
     await page.goto("/id/dashboard");
     const sidebar = page.getByTestId("app-sidebar");
     await expect(sidebar).toBeVisible();
-    for (const label of ["Beranda", "Screener", "Strategi", "Penggerak Pasar", "Perubahan Kepemilikan", "Daftar Pantau", "Berita & Kalender"]) {
+    for (const label of ["Beranda", "Screener", "Strategi", "Penggerak Pasar", "Perubahan Kepemilikan", "Screener 1%", "Daftar Pantau", "Berita & Kalender"]) {
       await expect(sidebar.getByRole("link", { name: label })).toBeVisible();
     }
     await expect(page.getByTestId("mobile-nav")).toBeHidden();
+  });
+
+  test("1% Screener is an independent page, separate from Ownership Changes", async ({ page }) => {
+    await page.goto("/id/discover/ownership");
+    await expect(page.getByTestId("one-percent-screener")).toHaveCount(0);
+    await page.getByTestId("nav-onePercent").click();
+    await expect(page).toHaveURL(/\/id\/discover\/one-percent$/);
+    await expect(page.getByRole("heading", { level: 1, name: "Screener 1%" })).toBeVisible();
+    await expect(page.getByTestId("nav-onePercent")).toHaveAttribute("aria-current", "page");
+    await expect(page.getByTestId("nav-ownership")).not.toHaveAttribute("aria-current", "page");
+  });
+
+  test("1% Screener displays dated KSEI rows and searches investor names", async ({ page }) => {
+    await page.route("**/api/ownership/screener", (route) => route.fulfill({ json: {
+      data: { month: "2026-09", snapshotDate: "2026-09-30", issuers: 961, investors: 5144, holdings: 7154,
+        localForeign: { local: 5353, foreign: 1592, unknown: 209 }, classifications: [], rows: [
+          { symbol: "BBCA", issuerName: "BANK CENTRAL ASIA Tbk", holderName: "PT DWIMURIA INVESTAMA ANDALAN", holderKind: "organisation", investorType: "CORPORATE", localForeign: "L", shares: "67729950000", percent: "54.940000" },
+          { symbol: "BBCA", issuerName: "BANK CENTRAL ASIA Tbk", holderName: "ANTHONI SALIM", holderKind: "unknown", investorType: "INDIVIDUAL", localForeign: "L", shares: "1416306835", percent: "1.150000" },
+        ] },
+      freshness: "HISTORICAL", asOf: "2026-09-30", source: "test-intercept",
+    } }));
+    await page.goto("/en/discover/one-percent");
+    const screener = page.getByTestId("one-percent-screener");
+    await expect(screener.getByText("ANTHONI SALIM")).toBeVisible();
+    await expect(screener).toContainText("54.94%");
+    await expect(screener).toContainText("7154");
+    await expect(screener).toContainText("2026-09-30");
+    await screener.getByRole("textbox").fill("ANTHONI SALIM");
+    await expect(screener.locator("tbody tr")).toHaveCount(1);
   });
 
   test("sidebar navigation marks the active page", async ({ page }) => {
@@ -123,11 +152,15 @@ test.describe("mobile", () => {
     await page.keyboard.press("Escape");
     await page.getByTestId("mobile-more").click();
     const sheet = page.getByRole("dialog");
-    for (const label of ["Screener", "Strategies", "Movers", "Ownership Changes", "News & Calendar", "Alerts"]) {
-      await expect(sheet.getByRole("link", { name: label })).toBeVisible();
+    for (const label of ["Screener", "Strategies", "Movers", "Ownership Changes", "1% Screener", "News & Calendar", "Alerts"]) {
+      await expect(sheet.getByRole("link", { name: label, exact: true })).toBeVisible();
     }
     await expect(sheet.getByTestId("theme-toggle")).toBeVisible();
-    await sheet.getByRole("link", { name: "Movers" }).click();
+    await sheet.getByRole("link", { name: "1% Screener", exact: true }).click();
+    await expect(page).toHaveURL(/\/en\/discover\/one-percent$/);
+    await page.getByTestId("mobile-more").click();
+    const reopened = page.getByRole("dialog");
+    await reopened.getByRole("link", { name: "Movers" }).click();
     await expect(page).toHaveURL(/\/en\/discover\/movers$/);
   });
 });

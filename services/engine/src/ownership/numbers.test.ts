@@ -38,6 +38,11 @@ describe("parsePercent", () => {
     expect(parsePercent("54.94000000000001")).toBe("54.94");
   });
 
+  it("rounds official KSEI percentages to the database's six-decimal scale", () => {
+    expect(parsePercent("36.10840509074754")).toBe("36.108405");
+    expect(parsePercent("99.9999999")).toBe("100");
+  });
+
   it.each([
     ["41,10", "41.1"],
     ["41.10", "41.1"],
@@ -62,7 +67,6 @@ describe("parsePercent", () => {
     ["101", /above 100/],
     ["1.000,00", /above 100/],
     ["1,2,3", /unreadable/],
-    ["1,1234567", /more than 6 decimals/],
     ["-1,5", /negative/],
     ["n/a", /unreadable/],
   ])("rejects %s", (raw, message) => expect(() => parsePercent(raw)).toThrow(message));
