@@ -1,13 +1,32 @@
 // Builds the ownership /v1 payloads (E6) from stored snapshot sets and changes. The HTTP layer validates them with the
 // shared schemas (src/server/schemas/ownership.ts). Monthly position data is HISTORICAL, dated by its position date.
 import type { z } from "zod";
-import type { ownershipChangesSchema, ownershipUploadSchema, stockOwnershipSchema } from "@/server/schemas/ownership";
+import type { ownershipChangesSchema, ownershipScreenerSchema, ownershipUploadSchema, stockOwnershipSchema } from "@/server/schemas/ownership";
 import { previousMonth } from "../ownership/numbers";
 import type { OwnershipStore, SetHeader, UploadRecord } from "../ownership/store";
 import type { Served } from "./market";
 
 type StockOwnership = z.input<typeof stockOwnershipSchema>;
 type OwnershipChanges = z.input<typeof ownershipChangesSchema>;
+type OwnershipScreener = z.input<typeof ownershipScreenerSchema>;
+
+/** Aggregates only rows published in the latest KSEI ≥1% register. */
+export async function serveOwnershipScreener(store: OwnershipStore): Promise<Served<OwnershipScreener> | null> {
+  const month = await store.latestMonth();
+  if (!month) return null;
+  const sets = await store.setsWithRowsInMonth(month);
+  const classifications = new Map<string, number>();
+  let local = 0, foreign = 0, unknown = 0;
+  const holders = new Set<string>();
+  const rows = sets.flatMap((set) => set.rows.map((row) => {
+    holders.add(row.holderKey);
+    if (row.localForeign === "L") local += 1; else if (row.localForeign === "F") foreign += 1; else unknown += 1;
+    if (row.investorType) classifications.set(row.investorType, (classifications.get(row.investorType) ?? 0) + 1);
+    return { symbol: set.symbol, issuerName: set.issuerName, holderName: row.holderName, holderKind: row.holderKind, investorType: row.investorType, localForeign: row.localForeign, shares: row.shares, percent: row.percent };
+  }));
+  const snapshotDate = sets.map((set) => set.snapshotDate).sort().at(-1)!;
+  return { data: { month, snapshotDate, issuers: sets.length, investors: holders.size, holdings: rows.length, localForeign: { local, foreign, unknown }, classifications: [...classifications].map(([name, holdings]) => ({ name, holdings })).sort((a, b) => b.holdings - a.holdings), rows }, dataAsOf: snapshotDate, freshness: "HISTORICAL" };
+}
 
 export function emptyStockOwnership(symbol: string): StockOwnership {
   return { symbol, issuerName: null, month: null, snapshotDate: null, thresholdPercent: null, issuedShares: null, source: null, holders: [], crossHoldings: [], network: null, comparison: null, freeFloat: null };

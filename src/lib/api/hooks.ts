@@ -72,6 +72,7 @@ export const useActionsCalendar = (range: { from?: string; to?: string } = {}) =
 export const useOwnership = (symbol: string) => useQuery({ queryKey: queryKeys.ownership(symbol), queryFn: ({ signal }) => engineApi.ownership(symbol, signal) });
 export const useOwnershipChanges = (query: { month?: string; symbol?: string } = {}) =>
   useQuery({ queryKey: queryKeys.ownershipChanges(query.month, query.symbol), queryFn: ({ signal }) => engineApi.ownershipChanges(query, signal) });
+export const useOwnershipScreener = () => useQuery({ queryKey: queryKeys.ownershipScreener(), queryFn: ({ signal }) => engineApi.ownershipScreener(signal) });
 /** Market-wide insider feed; keeps the previous list on screen while the action filter changes. */
 export const useRecentInsiders = (query: RecentInsidersQuery = {}) =>
   useQuery({ queryKey: queryKeys.recentInsiders(query.days, query.action ?? null, query.limit), queryFn: ({ signal }) => engineApi.recentInsiders(query, signal), placeholderData: (previous) => previous });
