@@ -522,6 +522,7 @@
       "flow": "Broker Summary and Foreign Flow",
       "running": "Today's executed trades, tick by tick",
       "financials": "Income statement, balance sheet, cash flow",
+      "dividends": "Dividend history, yields and patterns",
       "ownership": "Shareholder structure",
       "insiders": "Director, commissioner and major-holder transactions",
       "history": "Daily price table",

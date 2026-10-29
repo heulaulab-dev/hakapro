@@ -14,7 +14,7 @@ const ROUTES = [
   "/id/discover/heatmap", "/id/discover/groups", "/id/discover/radar", "/id/discover/stealth", "/id/discover/ownership",
   "/id/methodology", "/id/watchlist", "/id/alerts", "/id/news", "/id/discover/movers",
   "/id/stock/BBCA", "/id/stock/BBCA/chart", "/id/stock/BBCA/flow", "/id/stock/BBCA/analysis", "/id/stock/BBCA/financials",
-  "/id/stock/BBCA/ownership", "/id/stock/BBCA/insiders", "/id/stock/BBCA/history", "/id/research/BBCA", "/id/zzz-not-found",
+  "/id/stock/BBCA/dividends", "/id/stock/BBCA/ownership", "/id/stock/BBCA/insiders", "/id/stock/BBCA/history", "/id/research/BBCA", "/id/zzz-not-found",
 ];
 
 /** The app scrolls inside <main> (body is overflow-hidden), so the document check alone would never fail. */
