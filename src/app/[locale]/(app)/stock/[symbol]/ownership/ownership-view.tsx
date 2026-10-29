@@ -13,7 +13,8 @@ import { freshnessMeta, sourceLabel } from "@/lib/freshness";
 import { formatDate, formatNumber, type Locale } from "@/lib/format";
 import { Dialog, DialogBody, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-type NetworkSelection = { holderName: string; holderKind: string; shares: string | null; percent: string | null; localForeign: string | null; symbol: string; issuerName: string | null; snapshotDate: string | null };
+type CrossHolding = { ownerSymbol: string; ownerName: string; heldSymbol: string; heldName: string; shares: string | null; percent: string | null; reciprocalShares: string | null; reciprocalPercent: string | null; snapshotDate: string; sourceReference: string; reciprocalSourceReference: string };
+type NetworkSelection = { holderName: string; holderKind: string; shares: string | null; percent: string | null; localForeign: string | null; symbol: string; issuerName: string | null; snapshotDate: string | null; crossHoldings: CrossHolding[] };
 
 /** Reads only the verified IDX company-detail keys (Nama, Jabatan, Persentase, Kategori); anything else is ignored. */
 function field(record: Record<string, unknown>, ...keys: string[]): string | null {
@@ -37,7 +38,7 @@ export function StockOwnershipView({ symbol }: { symbol: string }) {
   const profileUnsupported = profile.error instanceof ApiError && profile.error.code === "UNSUPPORTED";
   const selectProfileHolder = (record: Record<string, unknown>) => setSelectedHolder({
     holderName: field(record, "Nama", "name") ?? "—", holderKind: "disclosed holder", shares: null,
-    percent: field(record, "Persentase", "percentage"), localForeign: null, symbol: symbol.toUpperCase(), issuerName: null, snapshotDate: null,
+    percent: field(record, "Persentase", "percentage"), localForeign: null, symbol: symbol.toUpperCase(), issuerName: null, snapshotDate: null, crossHoldings: [],
   });
   const people = (title: string, records: Array<Record<string, unknown>>, kind: "holder" | "person") => (
     <Panel title={title}>
@@ -70,7 +71,7 @@ export function StockOwnershipView({ symbol }: { symbol: string }) {
                 <ul className="flex flex-col divide-y divide-border rounded-xl border border-border px-4 text-sm">
                   {envelope.data.holders.map((holder) => (
                     <li key={holder.holderKey}>
-                      <button type="button" onClick={() => setSelectedHolder({ ...holder, symbol: envelope.data.symbol, issuerName: envelope.data.issuerName, snapshotDate: envelope.data.snapshotDate })} className="flex w-full items-center justify-between gap-3 py-2 text-left transition-colors hover:bg-(--overlay-soft)" data-testid={`ownership-holder-${holder.holderKey}`}>
+                      <button type="button" onClick={() => setSelectedHolder({ ...holder, symbol: envelope.data.symbol, issuerName: envelope.data.issuerName, snapshotDate: envelope.data.snapshotDate, crossHoldings: envelope.data.crossHoldings })} className="flex w-full items-center justify-between gap-3 py-2 text-left transition-colors hover:bg-(--overlay-soft)" data-testid={`ownership-holder-${holder.holderKey}`}>
                       <span className="flex min-w-0 flex-col">
                         <span className="truncate">{holder.holderName}</span>
                         {holder.localForeign && <span className="text-[11px] text-muted-foreground">{holder.localForeign}</span>}
@@ -162,8 +163,9 @@ function InvestorNetworkDialog({ holder, onClose }: { holder: NetworkSelection |
                 <text x="200" y="190" fill="#c7c7c7" textAnchor="middle" fontSize="13">{holder.holderName.slice(0, 24)}{holder.holderName.length > 24 ? "…" : ""}</text>
                 <text x="520" y="190" fill="#c7c7c7" textAnchor="middle" fontSize="13">{holder.symbol} {percentage}</text>
               </svg>
-              <p className="absolute bottom-3 left-0 right-0 text-center text-[11px] text-[#9b9b9b]">{t("networkLimited")}</p>
+              {holder.crossHoldings.length === 0 ? <p className="absolute bottom-3 left-0 right-0 text-center text-[11px] text-[#9b9b9b]">{t("networkLimited")}</p> : <p className="absolute bottom-3 left-0 right-0 text-center text-[11px] text-[#a7f3d0]">{t("networkCrossHoldingAvailable", { count: holder.crossHoldings.length })}</p>}
             </div>
+            {holder.crossHoldings.length > 0 && <div className="mt-4 overflow-hidden rounded-lg border border-[#3a3a3a]" data-testid="investor-network-cross-holdings"><div className="bg-[#2c2c2c] px-3 py-2 text-xs font-semibold">{t("networkCrossHoldings")}</div><ul className="divide-y divide-[#3a3a3a] text-sm">{holder.crossHoldings.map((edge) => <li key={`${edge.ownerSymbol}-${edge.heldSymbol}`} className="flex items-center justify-between gap-3 px-3 py-2"><span>{edge.ownerSymbol} ↔ {edge.heldSymbol}</span><span className="num text-xs">{edge.percent === null ? "—" : `${Number(edge.percent).toFixed(2)}%`} / {edge.reciprocalPercent === null ? "—" : `${Number(edge.reciprocalPercent).toFixed(2)}%`}</span></li>)}</ul></div>}
           </section>
         </DialogBody>
       </DialogContent>

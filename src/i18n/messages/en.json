@@ -873,7 +873,9 @@
     "networkPercentage": "Percentage",
     "networkGraph": "Investor Network",
     "networkGraphAria": "Investor to issuer relationship",
-    "networkLimited": "Only verified holdings in this snapshot are shown. Cross-holdings are unavailable in the current dataset."
+    "networkLimited": "Only verified holdings in this snapshot are shown. Cross-holdings are unavailable in the current dataset.",
+    "networkCrossHoldings": "Verified cross-holdings",
+    "networkCrossHoldingAvailable": "{count} verified cross-holding edge(s)"
   },
   "errors": {
     "title": "Something went wrong",
