@@ -656,7 +656,8 @@
     "capBarHint": "Batang relatif terhadap kapitalisasi terbesar di halaman ini.",
     "sectorsTitle": "Sektor hari ini",
     "sectorsMore": "Buka peta pasar",
-    "sectorStocks": "{count} saham"
+    "sectorStocks": "{count} saham",
+    "capDateLatest": "Sesi terakhir"
   },
   "heatmap": {
     "title": "Peta Pasar",
@@ -1882,5 +1883,17 @@
       "crossedUp": "Kekuatan relatif {sector} melewati rata-rata benchmark (RS-Ratio ≥ 100).",
       "crossedDown": "Kekuatan relatif {sector} turun di bawah rata-rata benchmark (RS-Ratio < 100)."
     }
+  },
+  "datePicker": {
+    "placeholder": "Pilih tanggal",
+    "placeholderMonth": "Pilih bulan",
+    "clear": "Hapus tanggal",
+    "previousYear": "Tahun sebelumnya",
+    "nextYear": "Tahun berikutnya"
+  },
+  "fileDropzone": {
+    "choose": "Pilih berkas",
+    "orDrop": "atau tarik ke sini",
+    "remove": "Hapus berkas"
   }
 }

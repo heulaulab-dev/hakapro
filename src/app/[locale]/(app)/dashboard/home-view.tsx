@@ -1,6 +1,6 @@
 "use client";
 
-import { Bookmark, ChevronRight, LogIn } from "lucide-react";
+import { Bookmark, ChevronRight, LogIn } from "@/components/kit/icons";
 import { useLocale, useTranslations } from "next-intl";
 import { CriteriaList } from "@/components/data/screener-table";
 import { StockRow } from "@/components/data/stock-row";

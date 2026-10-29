@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ExternalLink, Upload } from "lucide-react";
+import { ExternalLink, Upload } from "@/components/kit/icons";
 import { useLocale, useTranslations } from "next-intl";
 import { useState, type FormEvent } from "react";
 import { z } from "zod";
@@ -9,7 +9,10 @@ import { EmptyState } from "@/components/feedback/empty-state";
 import { Panel } from "@/components/layout/panel";
 import { SectionHeader } from "@/components/layout/section-header";
 import { Button } from "@/components/ui/button";
+import { toIsoDate } from "@/components/ui/date-picker";
+import { FileDropzone } from "@/components/ui/file-dropzone";
 import { Input } from "@/components/ui/input";
+import { MonthPicker } from "@/components/ui/month-picker";
 import { Label } from "@/components/ui/label";
 import { Link } from "@/i18n/navigation";
 import { formatDate, type Locale } from "@/lib/format";
@@ -91,7 +94,7 @@ export function OwnershipUploadView() {
       <form onSubmit={submit} className="flex max-w-xl flex-col gap-4" data-testid="ownership-upload-form">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="upload-month">{t("month")}</Label>
-          <Input id="upload-month" type="month" required value={month} max={new Date().toISOString().slice(0, 7)} onChange={(event) => setMonth(event.target.value)} className="h-9 w-48" />
+          <MonthPicker id="upload-month" value={month} max={toIsoDate(new Date()).slice(0, 7)} onChange={setMonth} className="w-48" data-testid="ownership-upload-month" />
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="upload-reference">{t("reference")}</Label>
@@ -99,8 +102,7 @@ export function OwnershipUploadView() {
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="upload-file">{t("file")}</Label>
-          <Input id="upload-file" type="file" required accept=".pdf,.csv,.xlsx,application/pdf,text/csv" onChange={(event) => setFile(event.target.files?.[0] ?? null)} className="h-9" data-testid="ownership-upload-file" />
-          <span className="caption-style text-subtle">{t("fileHint")}</span>
+          <FileDropzone id="upload-file" required accept=".pdf,.csv,.xlsx,application/pdf,text/csv" file={file} onFileChange={setFile} hint={t("fileHint")} data-testid="ownership-upload-file" />
         </div>
         <div className="flex items-center gap-3">
           <Button type="submit" disabled={!file || upload.isPending} data-testid="ownership-upload-submit"><Upload className="size-4" />{upload.isPending ? t("uploading") : t("upload")}</Button>

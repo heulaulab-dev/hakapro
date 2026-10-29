@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, X } from "lucide-react";
+import { Search, X } from "@/components/kit/icons";
 import { parseAsString, useQueryState } from "nuqs";
 import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";

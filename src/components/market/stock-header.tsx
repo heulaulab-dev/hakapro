@@ -1,6 +1,7 @@
 import { useLocale, useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import { FreshnessBadge } from "@/components/feedback/freshness-badge";
+import { TickerLogo } from "@/components/market/ticker-logo";
 import type { FreshnessMeta } from "@/lib/freshness";
 import { formatIdr, formatVolume, type Locale } from "@/lib/format";
 import type { HeaderStats } from "@/lib/stock-header";
@@ -28,9 +29,12 @@ export function StockHeader({ symbol, name, price, change, changePercent, meta, 
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-start justify-between gap-3">
-        <div className="flex min-w-0 flex-col">
+        <div className="flex min-w-0 items-center gap-3">
+          <TickerLogo symbol={symbol} size="lg" className="shadow-(--shadow-raised)" />
+          <div className="flex min-w-0 flex-col">
           <span data-testid="stock-header-symbol" className="ticker text-[20px] leading-tight font-semibold tracking-[-0.01em]">{symbol}</span>
           {name && <span className="caption-style truncate pt-1 text-soft">{name}</span>}
+          </div>
         </div>
         {actions && <div className="flex shrink-0 items-center gap-1">{actions}</div>}
       </div>

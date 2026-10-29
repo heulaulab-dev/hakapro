@@ -67,7 +67,10 @@ test("controls reach 40px touch targets and inputs avoid the iOS zoom (16px)", a
     .filter((element) => { const box = element.getBoundingClientRect(); return box.height < 39.5 || box.width < 39.5; })
     .map((element) => (element.getAttribute("aria-label") ?? element.textContent ?? element.tagName).trim().slice(0, 20)));
   expect(small).toEqual([]);
-  const fonts = await page.evaluate(() => [...document.querySelectorAll<HTMLElement>("main input, main select")].map((element) => parseFloat(getComputedStyle(element).fontSize)));
+  // History's date fields are DatePicker buttons now (no text input to zoom into); check a page with a real text field.
+  await page.goto("/id/discover/heatmap");
+  await page.waitForLoadState("networkidle");
+  const fonts = await page.evaluate(() => [...document.querySelectorAll<HTMLElement>("main input:not([type=file]):not(.sr-only), main select")].map((element) => parseFloat(getComputedStyle(element).fontSize)));
   expect(fonts.length).toBeGreaterThan(0);
   expect(Math.min(...fonts)).toBeGreaterThanOrEqual(16);
 });

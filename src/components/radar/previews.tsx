@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, Landmark, Radar as RadarIcon } from "lucide-react";
+import { AlertTriangle, Landmark, Radar as RadarIcon } from "@/components/kit/icons";
 import { useLocale, useTranslations } from "next-intl";
 import { StockRow } from "@/components/data/stock-row";
 import { DataState } from "@/components/feedback/data-state";

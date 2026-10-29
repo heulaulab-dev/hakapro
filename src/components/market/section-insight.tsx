@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, Database } from "lucide-react";
+import { AlertTriangle, Database } from "@/components/kit/icons";
 import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import { EmptyState } from "@/components/feedback/empty-state";

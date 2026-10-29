@@ -6,6 +6,7 @@ import { DataState } from "@/components/feedback/data-state";
 import { StatusBadge } from "@/components/feedback/status-badge";
 import { Panel } from "@/components/layout/panel";
 import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { stockHref } from "@/components/layout/nav-config";
 import { Link } from "@/i18n/navigation";
 import { useAnalysisCompare } from "@/lib/api/hooks";
@@ -74,22 +75,22 @@ function CompareTable({ items }: { items: Item[] }) {
     <div className="flex flex-col gap-2">
       {failed.length > 0 && <p role="status" className="text-xs text-warning" data-testid="compare-partial">{t("compare.partial", { list: failed.map((item) => `${item.symbol} (${item.status === "error" ? item.error : ""})`).join(", ") })}</p>}
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[32rem] text-data" data-testid="compare-table">
-          <thead>
-            <tr className="text-left text-xs text-muted-foreground">
-              <th className="px-cell-x py-cell-y font-medium" />
-              {items.map((item) => <th key={item.symbol} className="px-cell-x py-cell-y font-medium"><Link href={stockHref(item.symbol, "analysis")} className="ticker text-foreground hover:underline">{item.symbol}</Link></th>)}
-            </tr>
-          </thead>
-          <tbody>
+        <Table className="min-w-[32rem]" data-testid="compare-table">
+          <TableHeader>
+            <TableRow interactive={false}>
+              <TableHead className="h-auto px-(--spacing-cell-x) py-cell-y text-xs font-medium whitespace-normal text-muted-foreground" />
+              {items.map((item) => <TableHead key={item.symbol} className="h-auto px-(--spacing-cell-x) py-cell-y text-xs font-medium whitespace-normal text-muted-foreground"><Link href={stockHref(item.symbol, "analysis")} className="ticker text-foreground hover:underline">{item.symbol}</Link></TableHead>)}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {rows.map((row) => (
-              <tr key={row.key} className="h-row border-t border-border">
-                <th scope="row" className="px-cell-x py-cell-y text-left text-xs font-normal text-muted-foreground">{row.label}</th>
-                {items.map((item) => { const data = ok(item); return <td key={item.symbol} className="px-cell-x py-cell-y">{data ? row.cell(data) : <span className="text-muted-foreground">—</span>}</td>; })}
-              </tr>
+              <TableRow key={row.key} className="h-row">
+                <TableHead scope="row" className="h-auto px-(--spacing-cell-x) py-cell-y text-xs whitespace-normal text-muted-foreground">{row.label}</TableHead>
+                {items.map((item) => { const data = ok(item); return <TableCell key={item.symbol} className="px-(--spacing-cell-x)">{data ? row.cell(data) : <span className="text-muted-foreground">—</span>}</TableCell>; })}
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </div>
   );

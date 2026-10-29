@@ -1,12 +1,13 @@
 import {
   ArrowRight, BookOpenCheck, CandlestickChart, Compass, Eye, FileSpreadsheet, Gauge, Languages, Lock, Scale, Search,
-  UsersRound, Waypoints, type LucideIcon,
-} from "lucide-react";
+  UsersRound, Waypoints, type Icon as IconComponent,
+} from "@/components/kit/icons";
 import { getTranslations } from "next-intl/server";
 import type { ReactNode } from "react";
 import { Logo } from "@/components/brand/logo";
 import { FreshnessBadge } from "@/components/feedback/freshness-badge";
 import { LocaleSwitch, ThemeToggle } from "@/components/layout/preference-controls";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import type { Freshness } from "@/lib/freshness";
@@ -14,7 +15,7 @@ import type { Theme } from "@/lib/preferences";
 import type { Viewer } from "@/server/viewer";
 import { ProductPreview } from "./product-preview";
 
-const FEATURES: Array<{ key: string; icon: LucideIcon }> = [
+const FEATURES: Array<{ key: string; icon: IconComponent }> = [
   { key: "flow", icon: Waypoints },
   { key: "financials", icon: FileSpreadsheet },
   { key: "insiders", icon: UsersRound },
@@ -22,14 +23,14 @@ const FEATURES: Array<{ key: string; icon: LucideIcon }> = [
   { key: "history", icon: CandlestickChart },
   { key: "discover", icon: Compass },
 ];
-const PRINCIPLES: Array<{ key: string; icon: LucideIcon }> = [
+const PRINCIPLES: Array<{ key: string; icon: IconComponent }> = [
   { key: "observed", icon: Eye },
   { key: "neutral", icon: Scale },
   { key: "privacy", icon: Lock },
   { key: "local", icon: Languages },
 ];
 const STATES: Freshness[] = ["DELAYED", "EOD", "HISTORICAL", "STALE", "UNAVAILABLE"];
-const STEP_ICONS: LucideIcon[] = [Search, BookOpenCheck, Eye];
+const STEP_ICONS: IconComponent[] = [Search, BookOpenCheck, Eye];
 
 function Section({ id, eyebrow, title, intro, children, className }: { id: string; eyebrow: string; title: string; intro?: string; children: ReactNode; className?: string }) {
   return (
@@ -181,17 +182,14 @@ export async function LandingPage({ viewer, theme }: { viewer: Viewer; theme: Th
         </Section>
 
         <Section id="faq" eyebrow={t("faq.eyebrow")} title={t("faq.title")}>
-          <div className="divide-y divide-border rounded-xl border border-border" data-testid="landing-faq">
+          <Accordion type="multiple" className="rounded-xl border border-border bg-card/40 px-5 shadow-(--shadow-raised)" data-testid="landing-faq">
             {faq.map((item) => (
-              <details key={item.q} className="group px-5 py-4 [&_summary::-webkit-details-marker]:hidden">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-base font-medium">
-                  {item.q}
-                  <ArrowRight className="size-4 shrink-0 text-subtle transition-transform group-open:rotate-90" />
-                </summary>
-                <p className="pt-3 text-sm leading-relaxed text-soft">{item.a}</p>
-              </details>
+              <AccordionItem key={item.q} value={item.q}>
+                <AccordionTrigger className="text-base">{item.q}</AccordionTrigger>
+                <AccordionContent>{item.a}</AccordionContent>
+              </AccordionItem>
             ))}
-          </div>
+          </Accordion>
         </Section>
 
         {/* Final call to action */}
