@@ -8,7 +8,7 @@ import { Link, usePathname } from "@/i18n/navigation";
 import type { Density, Theme } from "@/lib/preferences";
 import { useUiStore } from "@/lib/stores/ui";
 import { cn } from "@/lib/utils";
-import { isActive, MODULE_GROUPS, SECONDARY, type NavItem } from "./nav-config";
+import { isActive, MODULE_GROUPS, NAV, SECONDARY, type NavItem } from "./nav-config";
 import { DensityToggle, LocaleSwitch, ThemeToggle } from "./preference-controls";
 
 const tab = "caption-style relative flex flex-1 flex-col items-center justify-center gap-1 text-subtle transition-colors duration-150 ease-power3-out before:absolute before:top-0 before:h-0.5 before:w-8 before:rounded-full before:bg-transparent aria-[current=page]:text-foreground aria-[current=page]:before:bg-foreground";
@@ -22,6 +22,7 @@ export function MobileNav({ theme, density }: { theme: Theme; density: Density }
   const [moreOpen, setMoreOpen] = useState(false);
   // The More sheet holds everything that is not Home / Watchlist, so it lights up for those pages.
   const moreActive = !isActive(pathname, "/dashboard") && !isActive(pathname, "/watchlist") && !pathname.startsWith("/stock");
+  const standaloneModules = NAV.filter((item) => !item.children && item.key !== "home");
 
   const moduleLink = (item: NavItem) => (
     <Link
@@ -71,6 +72,7 @@ export function MobileNav({ theme, density }: { theme: Theme; density: Density }
                 <div className="grid grid-cols-2 gap-2">{group.children!.map(moduleLink)}</div>
               </section>
             ))}
+            {standaloneModules.length > 0 && <section className="grid grid-cols-2 gap-2 border-t border-border pt-4">{standaloneModules.map(moduleLink)}</section>}
             <section className="grid grid-cols-2 gap-2 border-t border-border pt-4">{SECONDARY.map(moduleLink)}</section>
             <section className="flex items-center gap-1 border-t border-border pt-3">
               <span className="caption-style mr-auto text-subtle">{t("header.display")}</span>
