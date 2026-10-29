@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { GeistMono } from "geist/font/mono";
 import { GeistSans } from "geist/font/sans";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import localFont from "next/font/local";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
@@ -16,7 +16,7 @@ import { isIndexable, resolveSiteOrigin } from "@/server/config/auth";
 import "../globals.css";
 
 // Brand typeface (logo guidelines §06): headings and brand surfaces only. Body and data stay on Geist.
-const brandFont = Plus_Jakarta_Sans({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], display: "swap", variable: "--font-plus-jakarta-sans" });
+const brandFont = localFont({ src: "./fonts/PlusJakartaSans[wght].ttf", weight: "200 800", display: "swap", variable: "--font-plus-jakarta-sans" });
 
 const CLIENT_NAMESPACES = ["ownershipUpload", "morningBrief", "app", "freshness", "locale", "theme", "density", "nav", "stockTabs", "header", "palette", "account", "dataState", "table", "chart", "metrics", "criteria", "strategy", "insiders", "broker", "filters", "drawer", "dev", "disclaimer", "home", "strategies", "overview", "auth", "watchlist", "flow", "financials", "dividends", "screener", "movers", "heatmap", "news", "ownershipChanges", "stockChart", "stockInsiders", "insiderHolders", "insiderFeed", "stockHistory", "stockOwnership", "errors", "alerts", "analysis", "lastPrice", "research", "groups", "radar", "stealth", "methodology", "copilot", "runningTrade", "macro", "actionCenter", "sectorRotation", "datePicker", "fileDropzone", "intelligence", "comparison", "portfolio", "dailyFeed"] as const;
 
