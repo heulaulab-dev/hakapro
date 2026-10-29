@@ -239,6 +239,8 @@ export type BrokerDirectory = z.infer<typeof brokerDirectorySchema>;
 export const actionsCalendarSchema = z.array(z.object({
   symbol: symbolSchema, date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), type: z.string(), sourceCategory: z.string().nullable().optional(), description: z.string().nullable(),
   amount: num, ratio: z.string().nullable(), shares: num.optional(), sharesAfter: num.optional(), documentUrl: z.string().nullable(),
+  cumDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(), recordDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+  paymentDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(), noticeId: z.string().nullable().optional(), status: z.string().nullable().optional(),
 }));
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
