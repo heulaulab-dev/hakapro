@@ -4,12 +4,14 @@
  */
 import type { NewsItem, AnnouncementItem, ScreenRequest, Radar, StealthOwnership as StealthOwnershipData, Macro, IndicesHistory, MarketBrokerSummary, BrokerDirectory, IssuerRace } from "@/server/schemas/idx-bei";
 import type { InsiderRow } from "@/server/services/arjum-normalize";
+import type { BreadthHistory as BreadthHistoryData } from "@/server/schemas/market-intelligence";
 export type {
   BrokerAccumulation, BrokerFlow, BrokerSummary, DoneDetails, FinancialStatements, History, Insiders, LastPrice, MarketCap, SearchResult, Seasonality,
 } from "@/server/services/arjum-normalize";
 export type { StockAnalysis } from "@/server/services/analysis-parse";
 export type { StrategyScreen } from "@/server/services/why-matched";
 export type { NewsItem, AnnouncementItem, ScreenRequest, Macro, IndicesHistory, MarketBrokerSummary, BrokerDirectory, IssuerRace };
+export type BreadthHistory = BreadthHistoryData;
 
 export type Quote = {
   symbol: string;

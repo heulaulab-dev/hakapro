@@ -6,6 +6,7 @@ import {
   accumulationApi, analysisApi, engineApi, financialsApi, marketApi, overviewApi, priceApi, quotesApi, screenerApi, stockApi,
   type BrokerSummaryQuery, type FinancialsQuery, type HistoryQuery, type MarketCapQuery, type RecentInsidersQuery, type ScreenCondition,
   type GroupWindow,
+  type BreadthWindow,
 } from "./market";
 import { shouldRetry } from "@/lib/query/client";
 import { fetchResearchBrief, ResearchUnavailableError } from "./research";
@@ -81,6 +82,7 @@ export const useRecentInsiders = (query: RecentInsidersQuery = {}) =>
 export const useCatalysts = (symbol: string) => useQuery({ queryKey: queryKeys.catalysts(symbol), queryFn: ({ signal }) => engineApi.catalysts(symbol, signal) });
 export const useDividendPatterns = (symbol: string) => useQuery({ queryKey: queryKeys.dividendPatterns(symbol), queryFn: ({ signal }) => engineApi.dividendPatterns(symbol, signal) });
 export const useBreadth = () => useQuery({ queryKey: queryKeys.breadth(), queryFn: ({ signal }) => engineApi.breadth(signal) });
+export const useBreadthHistory = (window: BreadthWindow) => useQuery({ queryKey: queryKeys.breadthHistory(window), queryFn: ({ signal }) => engineApi.breadthHistory(window, signal), staleTime: 300_000, placeholderData: (previous) => previous });
 export const useCorporateActions =(symbol: string) => useQuery({ queryKey: queryKeys.actions(symbol), queryFn: ({ signal }) => stockApi.actions(symbol, signal) });
 /**
  * Newest-first insider disclosures, one provider page per user "load older" action (no background crawling).
