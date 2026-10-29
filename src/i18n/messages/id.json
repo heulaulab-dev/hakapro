@@ -124,7 +124,23 @@
     "rotation": "Rotasi Sektor",
     "intelligence": "Intelijen Pasar",
     "compare": "Bandingkan Saham",
-    "portfolio": "Portofolio"
+    "portfolio": "Portofolio",
+    "feed": "Aktivitas Harian"
+  },
+  "dailyFeed": {
+    "title": "Aktivitas Harian",
+    "intro": "Aktivitas pasar IDX yang teramati pada sesi perdagangan tersimpan terbaru. Sinyal berbasis aturan ini untuk riset, bukan rekomendasi.",
+    "asOf": "Sesi perdagangan: {date}",
+    "coverage": "Data tersedia untuk {stocks} dari {listed} saham tercatat; sumber sinyal mengembalikan {returned} saham.",
+    "method": "Aturan {version}.",
+    "radarLink": "Lihat aturan dan input yang belum tersedia",
+    "filterLabel": "Jenis aktivitas",
+    "filters": { "all": "Semua", "volume": "Volume & ukuran transaksi", "price": "Harga", "flow": "Arus asing" },
+    "shown": "{count} saham",
+    "observations": "Sinyal teramati",
+    "counterEvidence": "Bukti berlawanan",
+    "empty": "Tidak ada saham yang cocok dengan filter aktivitas pada sesi tersimpan.",
+    "noSession": "Belum ada sesi perdagangan tersimpan."
   },
   "intelligence": {
     "title": "Intelijen pasar",
