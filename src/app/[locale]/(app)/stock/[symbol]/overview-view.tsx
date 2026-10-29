@@ -10,10 +10,11 @@ import { SectionHeader } from "@/components/layout/section-header";
 import { STOCK_TABS, stockHref } from "@/components/layout/nav-config";
 import { ChartCard } from "@/components/market/chart-card";
 import { MetricCard } from "@/components/market/metric-card";
+import { Panel } from "@/components/layout/panel";
 import { SectionInsight } from "@/components/market/section-insight";
 import { OVERVIEW_HISTORY } from "@/components/market/stock-header-live";
 import { Link } from "@/i18n/navigation";
-import { useHistory, useMarketCap, useStockOverview } from "@/lib/api/hooks";
+import { useCatalysts, useHistory, useMarketCap, useStockOverview } from "@/lib/api/hooks";
 import { sliceByRange } from "@/lib/charts/range";
 import { freshnessMeta } from "@/lib/freshness";
 import { formatDate, formatIdr, formatPercent, formatVolume, type Locale } from "@/lib/format";
@@ -24,6 +25,7 @@ export function OverviewView({ symbol }: { symbol: string }) {
   const locale = useLocale() as Locale;
   const history = useHistory(symbol, OVERVIEW_HISTORY);
   const overview = useStockOverview(symbol);
+  const catalysts = useCatalysts(symbol);
   const valuation = useMarketCap({ symbols: [symbol] });
   const [range, setRange] = useChartRange();
   const idr = (value: number | null) => formatIdr(value, locale);
@@ -61,6 +63,12 @@ export function OverviewView({ symbol }: { symbol: string }) {
             </>
           );
         }}
+      </DataState>
+
+      <DataState query={catalysts} compact>
+        {(envelope) => <Panel title={t("overview.catalystsTitle")} description={t("overview.catalystsDescription")} testId="stock-catalysts">
+          {envelope.data.events.length === 0 ? <p className="caption-style text-subtle">{t("overview.catalystsEmpty")}</p> : <ul className="flex flex-col divide-y divide-border">{envelope.data.events.slice(0, 6).map((event, index) => <li key={`${event.kind}-${event.occurredAt}-${index}`} className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0"><span className="text-sm font-medium">{event.headline}</span><span className="caption-style text-subtle">{event.detail ?? event.source} · {event.occurredAt.slice(0, 10)}</span></li>)}</ul>}
+        </Panel>}
       </DataState>
 
       <DataState query={valuation} compact isEmpty={(envelope) => !envelope.data.rows.some((item) => item.symbol === symbol.toUpperCase())}>

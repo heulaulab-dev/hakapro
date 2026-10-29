@@ -8,6 +8,7 @@ import {
   heatmapSchema, indicesHistorySchema, insidersRecentSchema, macroSchema, marketOverviewSchema, newsItemSchema, sectorsSchema, screenRequestSchema, screenResultSchema, marketBrokerSummarySchema,
   securitySchema, signalsSchema, stockSchema, groupWindowSchema, groupsSchema, radarSchema, stealthOwnershipSchema, profileSchema,
 } from "@/server/schemas/idx-bei";
+import { breadthSchema, catalystsSchema } from "@/server/schemas/market-intelligence";
 import { dateSchema, symbolSchema } from "@/server/schemas/inputs";
 import { ownershipChangesSchema, ownershipMonthSchema, stockOwnershipSchema } from "@/server/schemas/ownership";
 import { strategyBoardSchema } from "@/lib/strategies/contract";
@@ -34,6 +35,8 @@ import {
 } from "../serve/insiders";
 import type { LogoService } from "../serve/logos";
 import { emptyStockOwnership, serveOwnershipChanges, serveStockOwnership } from "../serve/ownership";
+import { serveCatalysts } from "../serve/catalysts";
+import { serveBreadth } from "../serve/breadth";
 import { emptyRadar, emptyStealth, serveRadar, serveStealth } from "../serve/radar";
 import type { MarketStore } from "../serve/store";
 import { parseIdxIndexSummary } from "../sources/idx-primary";
@@ -69,6 +72,7 @@ export type AppDeps = {
   insiders?: { store: InsiderStore; revisitDays: number };
   /** Ticker logos (ENGINE_TICKER_LOGOS_ENABLED). Absent → /v1/logos/{s} answers 404 DISABLED. */
   logos?: LogoService | null;
+  intelligence?: { catalysts: boolean; breadth: boolean; ownershipNetwork: boolean };
   /** The curated conglomerate groups behind /v1/groups (tests pass their own). */
   groups?: GroupCatalog;
   /** Authenticated collector import; persists validated IDX rows through the existing index_daily upsert. */
@@ -218,6 +222,13 @@ export function createApp(deps: AppDeps): (request: Request) => Promise<Response
     if (path === "/v1/integrations/idx-bei") {
       if (!get) return error(405, "METHOD_NOT_ALLOWED", "Use GET");
       return json({ data: deps.idxBeiInventory ? await deps.idxBeiInventory() : { status: "DISABLED", source: "idx-bei-api", checkedAt: null, data: null } });
+    }
+
+    if (path === "/v1/breadth") {
+      if (!get) return error(405, "METHOD_NOT_ALLOWED", "Use GET");
+      if (!deps.intelligence?.breadth) return json(envelope(breadthSchema, { snapshotDate: null, source: "none", freshness: "UNAVAILABLE", advancers: 0, decliners: 0, unchanged: 0, participation: null, regime: "UNAVAILABLE", sectors: [] }, unavailableMeta(at)));
+      const served = deps.market ? await serveBreadth(deps.market, at) : null;
+      return json(envelope(breadthSchema, served?.data ?? { snapshotDate: null, source: "none", freshness: "UNAVAILABLE", advancers: 0, decliners: 0, unchanged: 0, participation: null, regime: "UNAVAILABLE", sectors: [] }, served ? servedMeta(served, at) : unavailableMeta(at)));
     }
 
     // The screener over the newest session (E5); the contract's empty form until a session is stored.
@@ -400,12 +411,21 @@ export function createApp(deps: AppDeps): (request: Request) => Promise<Response
       return new Response(method === "HEAD" ? null : found.svg, { status: 200, headers: LOGO_HEADERS });
     }
 
+    const catalyst = path.match(/^\/v1\/stocks\/([^/]+)\/catalysts$/);
+    if (catalyst) {
+      if (!get) return error(405, "METHOD_NOT_ALLOWED", "Use GET");
+      const symbol = symbolSchema.safeParse(decodeURIComponent(catalyst[1]));
+      if (!symbol.success) return error(400, "BAD_REQUEST", "Invalid symbol");
+      if (!deps.intelligence?.catalysts) return json(envelope(catalystsSchema, { symbol: symbol.data, events: [], available: false }, unavailableMeta(at)));
+      const served = deps.market ? await serveCatalysts(deps.market, symbol.data, at) : null;
+      return json(envelope(catalystsSchema, served?.data ?? { symbol: symbol.data, events: [], available: false }, served ? servedMeta(served, at) : unavailableMeta(at)));
+    }
     const stock = path.match(/^\/v1\/stocks\/([^/]+)(?:\/(fundamentals|actions|profile|ownership))?$/);
     if (stock) {
       const symbol = symbolSchema.safeParse(decodeURIComponent(stock[1]));
       if (!symbol.success) return error(400, "BAD_REQUEST", "Invalid symbol");
       if (stock[2] === "ownership") {
-        const served = deps.ownership ? await serveStockOwnership(deps.ownership.service.store, symbol.data, { freeFloatEnabled: deps.ownership.freeFloatEnabled }) : null;
+        const served = deps.ownership ? await serveStockOwnership(deps.ownership.service.store, symbol.data, { freeFloatEnabled: deps.ownership.freeFloatEnabled, ownershipNetworkEnabled: deps.intelligence?.ownershipNetwork }) : null;
         return respond(stockOwnershipSchema, served, emptyStockOwnership(symbol.data));
       }
       if (stock[2] === "fundamentals") return respond(fundamentalsSchema, market ? await serveFundamentals(market, symbol.data) : null, []);

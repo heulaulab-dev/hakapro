@@ -10,7 +10,7 @@ type StockOwnership = z.input<typeof stockOwnershipSchema>;
 type OwnershipChanges = z.input<typeof ownershipChangesSchema>;
 
 export function emptyStockOwnership(symbol: string): StockOwnership {
-  return { symbol, issuerName: null, month: null, snapshotDate: null, thresholdPercent: null, issuedShares: null, source: null, holders: [], crossHoldings: [], comparison: null, freeFloat: null };
+  return { symbol, issuerName: null, month: null, snapshotDate: null, thresholdPercent: null, issuedShares: null, source: null, holders: [], crossHoldings: [], network: null, comparison: null, freeFloat: null };
 }
 
 // Conservative exact matching against the issuer names in this same KSEI snapshot. Legal-form punctuation is
@@ -53,14 +53,41 @@ export async function crossHoldingsFor(store: OwnershipStore, symbol: string, mo
   return edges.sort((a, b) => a.ownerSymbol.localeCompare(b.ownerSymbol) || a.heldSymbol.localeCompare(b.heldSymbol));
 }
 
+export async function ownershipNetworkFor(store: OwnershipStore, month: string): Promise<NonNullable<StockOwnership["network"]>> {
+  const headers = await store.setsInMonth(month);
+  const issuers = new Map<string, SetHeader>();
+  const nodes = new Map<string, { id: string; label: string; kind: "issuer" | "holder" }>();
+  const ambiguous = new Set<string>();
+  for (const header of headers) {
+    const set = await store.getSet(header.symbol, month); if (!set) continue;
+    nodes.set(`issuer:${set.symbol}`, { id: `issuer:${set.symbol}`, label: set.issuerName ?? set.symbol, kind: "issuer" });
+    const key = issuerKey(set.issuerName);
+    if (!key) continue;
+    if (issuers.has(key)) { ambiguous.add(key); issuers.delete(key); } else if (!ambiguous.has(key)) issuers.set(key, set);
+  }
+  const edges: NonNullable<StockOwnership["network"]>["edges"] = [];
+  for (const header of headers) {
+    const set = await store.getSet(header.symbol, month); if (!set) continue;
+    for (const row of set.rows) {
+      if (row.holderKind !== "organisation") continue;
+      const held = issuers.get(issuerKey(row.holderName));
+      if (!held || held.symbol === set.symbol) continue;
+      nodes.set(`holder:${row.holderKey}`, { id: `holder:${row.holderKey}`, label: row.holderName, kind: "holder" });
+      edges.push({ from: `holder:${row.holderKey}`, to: `issuer:${set.symbol}`, percent: row.percent, shares: row.shares, month, sourceReference: row.sourceReference, confidence: "exact" });
+    }
+  }
+  return { nodes: [...nodes.values()], edges, ambiguous: ambiguous.size };
+}
+
 const comparisonOf = (set: SetHeader) =>
   (set.comparison as StockOwnership["comparison"]) ?? { status: "NO_PREVIOUS" as const, fromMonth: null, fromDate: null, toDate: set.snapshotDate, counts: null, issuedShares: null, detail: null };
 
 /** The symbol's newest stored month. The draft free-float estimate is included only when `freeFloatEnabled`. */
-export async function serveStockOwnership(store: OwnershipStore, symbol: string, options: { freeFloatEnabled: boolean }): Promise<Served<StockOwnership> | null> {
+export async function serveStockOwnership(store: OwnershipStore, symbol: string, options: { freeFloatEnabled: boolean; ownershipNetworkEnabled?: boolean }): Promise<Served<StockOwnership> | null> {
   const set = await store.latestSet(symbol);
   if (!set) return null;
   const crossHoldings = await crossHoldingsFor(store, symbol, set.month);
+  const network = options.ownershipNetworkEnabled ? await ownershipNetworkFor(store, set.month) : null;
   return {
     data: {
       symbol: set.symbol, issuerName: set.issuerName, month: set.month, snapshotDate: set.snapshotDate,
@@ -70,7 +97,7 @@ export async function serveStockOwnership(store: OwnershipStore, symbol: string,
         holderKey: row.holderKey, holderName: row.holderName, holderKind: row.holderKind, shares: row.shares, percent: row.percent,
         investorType: row.investorType, localForeign: row.localForeign, reference: row.sourceReference,
       })),
-      crossHoldings,
+      crossHoldings, network,
       comparison: comparisonOf(set),
       freeFloat: options.freeFloatEnabled && set.freeFloat ? (set.freeFloat as StockOwnership["freeFloat"]) : null,
     },

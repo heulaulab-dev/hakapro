@@ -4,7 +4,7 @@ import type {
   ActionCalendarItem, AnnouncementItem, BrokerAccumulation, BrokerFlow, BrokerSummary, CompanyProfile, CorporateAction, DoneDetails,
   FinancialStatements, ForeignFlow, FundamentalPeriod, Heatmap, History, Insiders, LastPrice, MarketCap, MarketOverview, NewsItem, ScreenRequest,
   ScreenResult, OwnershipChanges, RecentInsiders, SearchResult, Seasonality, SectorPerformance, Security, StockAnalysis, StockOwnership,
-  StockSnapshot, StrategyScreen, GroupsView, GroupWindow, RadarSnapshot, StealthOwnership, Macro, IndicesHistory, MarketBrokerSummary, BrokerDirectory, TickerLogo,
+  StockSnapshot, StrategyScreen, GroupsView, GroupWindow, RadarSnapshot, StealthOwnership, Macro, IndicesHistory, MarketBrokerSummary, BrokerDirectory, TickerLogo, CatalystFeed, BreadthSnapshot,
 } from "./types";
 
 export type HistoryQuery = { limit?: number; frame?: "daily" | "weekly" | "monthly"; startDate?: string; endDate?: string };
@@ -97,6 +97,8 @@ export interface MarketDataSource {
    * Binary, not a freshness envelope: a logo carries no data date.
    */
   logo(symbol: string, signal?: AbortSignal): Promise<TickerLogo | null>;
+  catalysts(symbol: string, signal?: AbortSignal): R<CatalystFeed>;
+  breadth(signal?: AbortSignal): R<BreadthSnapshot>;
 }
 
 export type Capability = Exclude<keyof MarketDataSource, "id">;
@@ -144,4 +146,6 @@ export abstract class BaseMarketDataSource implements MarketDataSource {
   async radar(..._args: unknown[]): R<RadarSnapshot> { return this.fail("radar"); }
   async stealthOwnership(..._args: unknown[]): R<StealthOwnership> { return this.fail("stealthOwnership"); }
   async logo(..._args: unknown[]): Promise<TickerLogo | null> { return this.fail("logo"); }
+  async catalysts(..._args: unknown[]): R<CatalystFeed> { return this.fail("catalysts"); }
+  async breadth(..._args: unknown[]): R<BreadthSnapshot> { return this.fail("breadth"); }
 }

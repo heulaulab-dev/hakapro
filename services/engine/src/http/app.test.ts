@@ -3,6 +3,7 @@ import {
   actionsCalendarSchema, actionsSchema, announcementItemSchema, fundamentalsSchema, heatmapSchema, idxBeiEnvelope, macroSchema, marketOverviewSchema, newsItemSchema,
   screenResultSchema, securitySchema, signalsSchema, stockSchema, profileSchema,
 } from "@/server/schemas/idx-bei";
+import { breadthSchema, catalystsSchema } from "@/server/schemas/market-intelligence";
 import { tempDir } from "../../test/support";
 import { MemoryCursorStore, MemoryRunRecorder, MemorySourceStateStore } from "../fetch/stores";
 import { MemoryMarketStore, type NewsRecord } from "../serve/store";
@@ -66,6 +67,8 @@ describe("engine HTTP app", () => {
       ["/v1/actions", actionsCalendarSchema],
       ["/v1/heatmap", heatmapSchema],
       ["/v1/heatmap?limit=30", heatmapSchema],
+      ["/v1/breadth", breadthSchema],
+      ["/v1/stocks/BBCA/catalysts", catalystsSchema],
     ];
     for (const [path, schema] of cases) {
       const response = await call(path);

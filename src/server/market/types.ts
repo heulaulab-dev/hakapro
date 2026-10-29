@@ -128,3 +128,5 @@ export type RadarSnapshot = Radar;
 export type StealthOwnership = StealthOwnershipData;
 /** A ticker logo, already sanitized (Data Engine `/v1/logos/{s}`, re-checked by the app before serving). */
 export type TickerLogo = { svg: string };
+export type CatalystFeed = { symbol: string; events: Array<{ kind: "NEWS" | "ACTION" | "OWNERSHIP" | "FUNDAMENTAL" | "FLOW" | "PROFILE"; headline: string; detail: string | null; occurredAt: string; source: string; asOf: string | null; freshness: string; confidence: "high" | "medium" | "low" }>; available: boolean };
+export type BreadthSnapshot = { snapshotDate: string | null; source: string; freshness: string; advancers: number; decliners: number; unchanged: number; participation: number | null; regime: "RISK_ON" | "RISK_OFF" | "MIXED" | "UNAVAILABLE"; sectors: Array<{ sector: string; changePercent: number | null; advancers: number; decliners: number }> };

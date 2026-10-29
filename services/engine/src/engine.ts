@@ -204,6 +204,7 @@ export async function createEngine(config: EngineConfig, options: EngineOptions 
     logos,
     ownership: { service: ownership, maxUploadBytes: config.ownership.maxUploadBytes, freeFloatEnabled: config.ownership.freeFloatEnabled },
     strategies: { enabled: config.strategyScans.enabled, store: new DbStrategyStore(db) },
+    intelligence: { catalysts: config.intelligence.catalysts, breadth: config.intelligence.breadth, ownershipNetwork: config.intelligence.ownershipNetwork },
     // Served whatever the budget: stored reads stay visible (with their shrinking coverage) after the feed is turned off.
     insiders: { store: new DbInsiderStore(db), revisitDays: config.arjum?.insiderRevisitDays ?? DEFAULT_INSIDER_REVISIT_DAYS },
     eodSessions: async () => (await recentEodSessions(db)).map((row) => ({

@@ -5,6 +5,7 @@ import { z } from "zod";
 import { OWNERSHIP_CHANGE_FLAGS, OWNERSHIP_CHANGE_KINDS } from "@/lib/ownership/changes";
 import { OWNERSHIP_HOLDER_KINDS } from "@/lib/ownership/snapshot";
 import { symbolSchema } from "./inputs";
+import { ownershipNetworkSchema } from "./market-intelligence";
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 export const ownershipMonthSchema = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/);
@@ -94,6 +95,7 @@ export const stockOwnershipSchema = z.object({
   holders: z.array(ownershipHolderLineSchema),
   /** Verified listed-company-to-listed-company edges inferred only when a KSEI holder matches an issuer name. */
   crossHoldings: z.array(ownershipCrossHoldingSchema),
+  network: ownershipNetworkSchema.nullable(),
   comparison: ownershipComparisonSchema.nullable(),
   freeFloat: freeFloatDraftSchema.nullable(),
 });
