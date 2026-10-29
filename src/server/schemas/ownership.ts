@@ -36,6 +36,20 @@ export const ownershipHolderLineSchema = z.object({
   reference: z.string(),
 });
 
+export const ownershipCrossHoldingSchema = z.object({
+  ownerSymbol: symbolSchema,
+  ownerName: z.string(),
+  heldSymbol: symbolSchema,
+  heldName: z.string(),
+  shares,
+  percent,
+  reciprocalShares: shares,
+  reciprocalPercent: percent,
+  snapshotDate: isoDate,
+  sourceReference: z.string(),
+  reciprocalSourceReference: z.string(),
+});
+
 export const OWNERSHIP_COMPARISON_STATUSES = ["COMPARED", "NO_PREVIOUS", "NOT_ADJACENT", "REFUSED"] as const;
 export const ownershipComparisonSchema = z.object({
   /** COMPARED with the previous month; NO_PREVIOUS (first month stored); NOT_ADJACENT (a month is missing, not compared). */
@@ -78,6 +92,8 @@ export const stockOwnershipSchema = z.object({
   issuedShares: shares,
   source: ownershipSourceRefSchema.nullable(),
   holders: z.array(ownershipHolderLineSchema),
+  /** Verified listed-company-to-listed-company edges inferred only when a KSEI holder matches an issuer name. */
+  crossHoldings: z.array(ownershipCrossHoldingSchema),
   comparison: ownershipComparisonSchema.nullable(),
   freeFloat: freeFloatDraftSchema.nullable(),
 });
