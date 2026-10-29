@@ -7,6 +7,7 @@ import {
   actionsCalendarSchema, actionsSchema, announcementItemSchema, brokerDirectorySchema, fundamentalsSchema, HEATMAP_DEFAULT_LIMIT, HEATMAP_LIMITS, heatmapLimitSchema,
   heatmapSchema, indicesHistorySchema, issuerRaceSchema, issuerRaceWindowSchema, insidersRecentSchema, macroSchema, marketOverviewSchema, newsItemSchema, sectorsSchema, screenRequestSchema, screenResultSchema, marketBrokerSummarySchema,
   securitySchema, signalsSchema, stockSchema, groupWindowSchema, groupsSchema, radarSchema, stealthOwnershipSchema, profileSchema,
+  stockSectorRotationIntervalSchema, stockSectorRotationSchema,
 } from "@/server/schemas/idx-bei";
 import { breadthHistorySchema, breadthHistoryWindowSchema, breadthSchema, catalystsSchema } from "@/server/schemas/market-intelligence";
 import { dividendPatternsSchema } from "@/server/schemas/dividend-patterns";
@@ -28,6 +29,7 @@ import {
 import { serveFundamentals, serveScreener } from "../serve/fundamentals";
 import { serveGroups } from "../serve/groups";
 import { serveIssuerRace } from "../serve/issuer-race";
+import { serveStockSectorRotation } from "../serve/stock-sector-rotation";
 import type { GroupCatalog } from "../groups/catalog";
 import { GROUP_CATALOG } from "../groups/groups";
 import { previousMonth as previousMonthOf } from "../ownership/numbers";
@@ -287,6 +289,16 @@ export function createApp(deps: AppDeps): (request: Request) => Promise<Response
       return respond(issuerRaceSchema, market ? await serveIssuerRace(market, window.data, sector, at) : null, {
         window: window.data, sector, sectors: [], from: null, to: null, sessions: 0, frameStep: 1,
         universe: { active: 0, withBaseline: 0, truncated: false }, frames: [],
+      });
+    }
+    if (path === "/v1/sector-rotation/stocks") {
+      const interval = stockSectorRotationIntervalSchema.safeParse(param(url, "interval") ?? "weekly");
+      const sector = (param(url, "sector") ?? "").trim().slice(0, 80);
+      if (!interval.success || !sector) return error(400, "BAD_REQUEST", "sector is required and interval must be daily or weekly");
+      return respond(stockSectorRotationSchema, market ? await serveStockSectorRotation(market, sector, interval.data, at) : null, {
+        sector, sectors: [], interval: interval.data, from: null, to: null, sessions: 0,
+        universe: { activeMembers: 0, eligibleIssuers: 0, returnedIssuers: 0, truncated: false },
+        minPeerConstituents: 0, requiredObservations: interval.data === "daily" ? 34 : 20, stocks: [],
       });
     }
     if (path === "/v1/brokers/market-summary") {

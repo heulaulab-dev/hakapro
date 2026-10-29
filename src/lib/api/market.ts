@@ -8,8 +8,9 @@ import { strategyBoardSchema } from "@/lib/strategies/contract";
 import { fetchEnvelope } from "./envelope";
 import { breadthHistorySchema, breadthHistoryWindowSchema, breadthSchema, catalystsSchema } from "@/server/schemas/market-intelligence";
 import { dividendPatternsSchema } from "@/server/schemas/dividend-patterns";
-import { marketBrokerSummarySchema } from "@/server/schemas/idx-bei";
+import { marketBrokerSummarySchema, stockSectorRotationSchema } from "@/server/schemas/idx-bei";
 export { marketBrokerSummarySchema };
+export { stockSectorRotationSchema };
 export { dividendPatternsSchema } from "@/server/schemas/dividend-patterns";
 export { breadthHistorySchema, breadthSchema, catalystsSchema } from "@/server/schemas/market-intelligence";
 export type BreadthWindow = z.infer<typeof breadthHistoryWindowSchema>;
@@ -374,6 +375,7 @@ export const issuerRaceSchema = z.object({
   frames: z.array(z.object({ date: z.string(), priced: n, leaders: z.array(z.object({ symbol: z.string(), name: z.string(), sector: z.string().nullable(), close: n, returnPercent: n })) })),
 });
 export type IssuerRace = z.infer<typeof issuerRaceSchema>;
+export type StockSectorRotation = z.infer<typeof stockSectorRotationSchema>;
 export type IndexSeries = IndicesHistory["series"][number];
 export type IndexCoverageReport = NonNullable<IndicesHistory["coverage"]>[number];
 
@@ -387,6 +389,8 @@ export const engineApi = {
     fetchEnvelope(`/api/indices/history${qs({ codes: query.codes?.join(","), from: query.from, to: query.to })}`, indicesHistorySchema, { signal }),
   issuerRace: (query: { window?: IssuerRace["window"]; sector?: string } = {}, signal?: AbortSignal) =>
     fetchEnvelope(`/api/issuer-race${qs({ window: query.window, sector: query.sector })}`, issuerRaceSchema, { signal }),
+  stockSectorRotation: (query: { sector: string; interval?: StockSectorRotation["interval"] }, signal?: AbortSignal) =>
+    fetchEnvelope(`/api/sector-rotation/stocks${qs(query)}`, stockSectorRotationSchema, { signal }),
   stealthOwnership: (signal?: AbortSignal) => fetchEnvelope("/api/ownership/stealth", stealthOwnershipSchema, { signal }),
   sectors: (signal?: AbortSignal) => fetchEnvelope("/api/sectors", z.array(sectorPerformanceSchema), { signal }),
   heatmap: (limit: number, signal?: AbortSignal) => fetchEnvelope(`/api/heatmap${qs({ limit })}`, heatmapSchema, { signal }),
