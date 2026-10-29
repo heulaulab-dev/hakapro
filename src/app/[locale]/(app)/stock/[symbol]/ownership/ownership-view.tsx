@@ -165,6 +165,7 @@ function InvestorNetworkDialog({ holder, onClose }: { holder: NetworkSelection |
               </svg>
               {holder.crossHoldings.length === 0 ? <p className="absolute bottom-3 left-0 right-0 text-center text-[11px] text-[#9b9b9b]">{t("networkLimited")}</p> : <p className="absolute bottom-3 left-0 right-0 text-center text-[11px] text-[#a7f3d0]">{t("networkCrossHoldingAvailable", { count: holder.crossHoldings.length })}</p>}
             </div>
+            <p className="mt-3 text-xs text-[#a6a6a6]" data-testid="investor-network-source-note">{t("networkSourceNote")}</p>
             {holder.crossHoldings.length > 0 && <div className="mt-4 overflow-hidden rounded-lg border border-[#3a3a3a]" data-testid="investor-network-cross-holdings"><div className="bg-[#2c2c2c] px-3 py-2 text-xs font-semibold">{t("networkCrossHoldings")}</div><ul className="divide-y divide-[#3a3a3a] text-sm">{holder.crossHoldings.map((edge) => <li key={`${edge.ownerSymbol}-${edge.heldSymbol}`} className="flex items-center justify-between gap-3 px-3 py-2"><span>{edge.ownerSymbol} ↔ {edge.heldSymbol}</span><span className="num text-xs">{edge.percent === null ? "—" : `${Number(edge.percent).toFixed(2)}%`} / {edge.reciprocalPercent === null ? "—" : `${Number(edge.reciprocalPercent).toFixed(2)}%`}</span></li>)}</ul></div>}
           </section>
         </DialogBody>

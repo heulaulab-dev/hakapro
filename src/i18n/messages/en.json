@@ -1005,7 +1005,8 @@
     "networkGraphAria": "Investor to issuer relationship",
     "networkLimited": "Only verified holdings in this snapshot are shown. Cross-holdings are unavailable in the current dataset.",
     "networkCrossHoldings": "Verified cross-holdings",
-    "networkCrossHoldingAvailable": "{count} verified cross-holding edge(s)"
+    "networkCrossHoldingAvailable": "{count} verified cross-holding edge(s)",
+    "networkSourceNote": "KSEI monthly disclosures show holders of at least 1%. Reciprocal links require both issuers in the same dated snapshot; missing links do not prove there is no ownership relationship. IDX issuer-profile disclosures are a separate dataset."
   },
   "errors": {
     "title": "Something went wrong",
