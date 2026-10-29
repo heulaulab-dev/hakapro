@@ -154,6 +154,8 @@ test.describe("slice 5: Movers, News & Calendar, Ownership Changes", () => {
     ], freshness: "HISTORICAL", asOf: day(0), source: "test-intercept" } }));
     await page.goto("/en/news?tab=calendar");
     const calendar = page.getByTestId("actions-calendar");
+    await expect(calendar.getByRole("link", { name: "KSEI cash-dividend schedule" })).toHaveAttribute("href", "https://web.ksei.co.id/publications/corporate-action-schedules/cash-dividend");
+    await expect(calendar).toContainText("not a confirmed upcoming schedule");
     await expect(calendar.getByTestId("day-header")).toHaveCount(2);
     await expect(calendar.getByTestId("week-strip")).toBeVisible();
     await expect(calendar.getByText("in 3 days")).toHaveCount(2);
