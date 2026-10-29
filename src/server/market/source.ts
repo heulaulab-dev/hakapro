@@ -5,7 +5,7 @@ import type {
   ActionCalendarItem, AnnouncementItem, BrokerAccumulation, BrokerFlow, BrokerSummary, CompanyProfile, CorporateAction, DoneDetails,
   FinancialStatements, ForeignFlow, FundamentalPeriod, Heatmap, History, Insiders, LastPrice, MarketCap, MarketOverview, NewsItem, ScreenRequest,
   ScreenResult, OwnershipChanges, OwnershipScreener, RecentInsiders, SearchResult, Seasonality, SectorPerformance, Security, StockAnalysis, StockOwnership,
-  StockSnapshot, StrategyScreen, GroupsView, GroupWindow, RadarSnapshot, StealthOwnership, Macro, IndicesHistory, MarketBrokerSummary, BrokerDirectory, TickerLogo, CatalystFeed, BreadthSnapshot, BreadthHistory, IssuerRace,
+  StockSnapshot, StrategyScreen, GroupsView, GroupWindow, RadarSnapshot, StealthOwnership, Macro, IndicesHistory, MarketBrokerSummary, BrokerDirectory, TickerLogo, CatalystFeed, BreadthSnapshot, BreadthHistory, IssuerRace, StockSectorRotation,
 } from "./types";
 
 export type HistoryQuery = { limit?: number; frame?: "daily" | "weekly" | "monthly"; startDate?: string; endDate?: string };
@@ -21,6 +21,7 @@ export type ActionsCalendarQuery = { from?: string; to?: string };
 /** The session window; 1D when omitted. */
 export type GroupsQuery = { window?: GroupWindow };
 export type IssuerRaceQuery = { window?: "1M" | "3M" | "6M" | "1Y"; sector?: string };
+export type StockSectorRotationQuery = { sector: string; interval?: "daily" | "weekly" };
 /** Without month, the newest month the provider has. */
 export type OwnershipChangesQuery = { month?: string; symbol?: string };
 /** How many of the most-traded stocks to cover (30, 50 or 100; the provider's default is 100). */
@@ -88,6 +89,8 @@ export interface MarketDataSource {
   groups(query: GroupsQuery): R<GroupsView>;
   /** Issuer performance race from stored EOD closes, ranked against an exact shared baseline session. */
   issuerRace(query: IssuerRaceQuery, signal?: AbortSignal): R<IssuerRace>;
+  /** Issuer RRG versus its leave-one-out synthetic sector peer basket from stored EOD closes. */
+  stockSectorRotation(query: StockSectorRotationQuery, signal?: AbortSignal): R<StockSectorRotation>;
   actionsCalendar(query: ActionsCalendarQuery): R<ActionCalendarItem[]>;
   /** The newest KSEI ≥1% list the owner uploaded for a symbol (empty form when none). */
   ownership(symbol: string): R<StockOwnership>;
@@ -149,6 +152,7 @@ export abstract class BaseMarketDataSource implements MarketDataSource {
   async heatmap(..._args: unknown[]): R<Heatmap> { return this.fail("heatmap"); }
   async groups(..._args: unknown[]): R<GroupsView> { return this.fail("groups"); }
   async issuerRace(..._args: unknown[]): R<IssuerRace> { return this.fail("issuerRace"); }
+  async stockSectorRotation(..._args: unknown[]): R<StockSectorRotation> { return this.fail("stockSectorRotation"); }
   async actionsCalendar(..._args: unknown[]): R<ActionCalendarItem[]> { return this.fail("actionsCalendar"); }
   async ownership(..._args: unknown[]): R<StockOwnership> { return this.fail("ownership"); }
   async ownershipChanges(..._args: unknown[]): R<OwnershipChanges> { return this.fail("ownershipChanges"); }

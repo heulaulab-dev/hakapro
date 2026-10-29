@@ -57,6 +57,22 @@ describe("IdxBeiSource", () => {
     await expect(source.breadthHistory("bad" as "6M")).rejects.toBeInstanceOf(ZodError);
   });
 
+  test("stock-sector rotation validates options and calls the bounded Engine route", async () => {
+    const fetcher = vi.fn(async (url: string | URL | Request) => {
+      expect(String(url)).toBe("http://market.test/v1/sector-rotation/stocks?sector=Energy&interval=daily");
+      return Response.json({ data: {
+        sector: "Energy", sectors: [{ name: "Energy", members: 4 }], interval: "daily", from: "2026-07-01", to: "2026-10-01", sessions: 60,
+        universe: { activeMembers: 4, eligibleIssuers: 4, returnedIssuers: 4, truncated: false }, minPeerConstituents: 2, requiredObservations: 34,
+        stocks: [{ symbol: "BBCA", name: "Bank", peers: 3, basketCoveragePercent: 100, alignedObservations: 60, latest: null, points: [] }],
+      }, meta });
+    });
+    const source = new IdxBeiSource("http://market.test", () => wib("2026-09-18T10:30:00"), fetcher as unknown as typeof fetch);
+    const result = await source.stockSectorRotation({ sector: "Energy", interval: "daily" });
+    expect(result.data.sector).toBe("Energy");
+    expect(result.data.stocks[0]?.alignedObservations).toBe(60);
+    await expect(source.stockSectorRotation({ sector: "Energy", interval: "hourly" as "daily" })).rejects.toBeInstanceOf(ZodError);
+  });
+
   test("schema drift is MALFORMED_PROVIDER_RESPONSE", async () => {
     const fetcher = async () => Response.json({ data: { indices: "nope" }, meta });
     await expect(new IdxBeiSource("http://market.test", undefined, fetcher as unknown as typeof fetch).marketOverview()).rejects.toMatchObject({ code: "MALFORMED_PROVIDER_RESPONSE" });

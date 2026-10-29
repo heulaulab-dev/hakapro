@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   actionsCalendarSchema, actionsSchema, announcementItemSchema, fundamentalsSchema, heatmapSchema, idxBeiEnvelope, issuerRaceSchema, macroSchema, marketOverviewSchema, newsItemSchema,
-  screenResultSchema, securitySchema, signalsSchema, stockSchema, profileSchema,
+  screenResultSchema, securitySchema, signalsSchema, stockSchema, profileSchema, stockSectorRotationSchema,
 } from "@/server/schemas/idx-bei";
 import { breadthHistorySchema, breadthSchema, catalystsSchema } from "@/server/schemas/market-intelligence";
 import { tempDir } from "../../test/support";
@@ -104,6 +104,25 @@ describe("engine HTTP app", () => {
     expect(body.data.universe).toMatchObject({ active: 2, withBaseline: 2 });
     expect(body.data.frames.at(-1)?.leaders.map((leader) => leader.symbol)).toEqual(["AAA", "BBB"]);
     expect((await call("/v1/issuer-race?window=day&sector=Finance")).status).toBe(400);
+  });
+
+  it("serves stock-to-sector rotation from persisted closes and validates its query", async () => {
+    const securities = ["AAA", "BBB", "CCC", "DDD"].map((symbol) => ({ symbol, name: `${symbol} Inc`, sector: "Energy", subsector: null, board: null, sharesOutstanding: null, freeFloatPct: null, asOf: new Date(), active: true }));
+    const daily = Array.from({ length: 60 }, (_, index) => {
+      const date = new Date(Date.UTC(2026, 0, index + 1)).toISOString().slice(0, 10);
+      return securities.map(({ symbol }, symbolIndex) => ({
+        symbol, date, close: 100 + index * (symbolIndex + 1) + Math.sin(index / (symbolIndex + 2)) * 3,
+        open: null, high: null, low: null, previousClose: null, volume: null, value: 1_000_000, frequency: null, foreignBuy: null, foreignSell: null,
+      }));
+    }).flat();
+    const { call } = app({ market: new MemoryMarketStore({ securities, daily }) });
+    const response = await call("/v1/sector-rotation/stocks?sector=Energy&interval=daily");
+    expect(response.status).toBe(200);
+    const body = idxBeiEnvelope(stockSectorRotationSchema).parse(await response.json());
+    expect(body.data.universe).toMatchObject({ activeMembers: 4, eligibleIssuers: 4, returnedIssuers: 4 });
+    expect(body.data.stocks.every((stock) => stock.points.length <= 12)).toBe(true);
+    expect((await call("/v1/sector-rotation/stocks?sector=Energy&interval=hourly")).status).toBe(400);
+    expect((await call("/v1/sector-rotation/stocks?window=1Y")).status).toBe(400);
   });
 
   it("serves breadth history behind the existing breadth flag and validates its window", async () => {

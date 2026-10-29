@@ -29,6 +29,7 @@ export const queryKeys = {
   macro: () => ["market", "macro"] as const,
   indicesHistory: (codes?: string[]) => ["market", "indices-history", codes?.join(",") ?? "all"] as const,
   issuerRace: (window: string, sector: string) => ["market", "issuer-race", window, sector] as const,
+  stockSectorRotation: (sector: string, interval: string) => ["market", "stock-sector-rotation", sector, interval] as const,
   heatmap: (limit: number) => ["market", "heatmap", limit] as const,
   groups: (window: string) => ["market", "groups", window] as const,
   radar: () => ["market", "radar"] as const,
