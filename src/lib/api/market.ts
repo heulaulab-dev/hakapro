@@ -288,7 +288,11 @@ export const ownershipChangeSchema = z.object({
   sharesBefore: z.string().nullable(), sharesAfter: z.string().nullable(), shareDelta: z.string().nullable(),
   percentBefore: z.string().nullable(), percentAfter: z.string().nullable(), ppDelta: z.string().nullable(), toDate: z.string(),
 });
-export const ownershipChangesSchema = z.object({ month: z.string(), previousMonth: z.string(), changes: z.array(ownershipChangeSchema) });
+export const ownershipChangesSchema = z.object({
+  month: z.string(), previousMonth: z.string(),
+  comparisons: z.array(z.object({ symbol: z.string(), status: z.string(), fromMonth: z.string().nullable(), fromDate: z.string().nullable(), toDate: z.string(), counts: z.record(z.string(), z.number()).nullable(), issuedShares: z.object({ before: z.string(), after: z.string(), delta: z.string() }).nullable(), detail: z.string().nullable() })).default([]),
+  changes: z.array(ownershipChangeSchema),
+});
 export type OwnershipChange = z.infer<typeof ownershipChangeSchema>;
 /** Market-wide insider feed (Data Engine rotation): the per-stock row plus symbol and value, and the crawl's coverage. */
 export const recentInsiderSchema = insiderRowSchema.extend({ symbol: z.string(), valueIdr: nn });

@@ -946,6 +946,7 @@
     "kseiMonths": "{month} vs {previous}",
     "kseiNone": "No KSEI ≥1% shareholder list has been uploaded yet. Market-wide changes appear once an admin uploads the monthly list.",
     "kseiNoChanges": "No holding changed this month.",
+    "kseiSnapshotOnly": "Latest list: {count} issuers. No prior month is available to calculate changes yet.",
     "kind": {
       "NEW": "New",
       "INCREASE": "Increased",
