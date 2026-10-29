@@ -192,6 +192,40 @@ describe("ownership routes", () => {
     expect(stock.data.network?.edges.every((edge) => edge.confidence === "exact")).toBe(true);
   });
 
+  it("serves the month-selectable network, reports stored months, and never bridges a missing month", async () => {
+    const { upload, call, store } = app({ ownershipNetworkEnabled: true });
+    await upload(committed("synthetic-1pct-2026-02.pdf"), "asOf=2026-02&source=SYNTHETIC%20Feb");
+
+    const february = await store.getSet("TEST1", "2026-02");
+    expect(february).not.toBeNull();
+    const { id: _id, rowCount: _rowCount, comparison: _comparison, freeFloat: _freeFloat, rows, ...header } = february!;
+    await store.replaceSets([{ ...header, uploadId: "upload-april", month: "2026-04", snapshotDate: "2026-04-30", rows }]);
+
+    const response = await call("/v1/ownership/network");
+    expect(response.status).toBe(200);
+    const latest = await response.json() as { data: { month: string | null; months: string[]; comparison: { status: string; fromMonth: string | null } }; meta: { freshness: string; dataAsOf: string | null } };
+    expect(latest.data).toMatchObject({ month: "2026-04", months: ["2026-04", "2026-02"], comparison: { status: "NOT_ADJACENT", fromMonth: null } });
+    expect(latest.meta).toMatchObject({ freshness: "HISTORICAL", dataAsOf: "2026-04-30" });
+
+    const selected = await call("/v1/ownership/network?month=2026-02");
+    expect(selected.status).toBe(200);
+    expect(await selected.json()).toMatchObject({ data: { month: "2026-02", months: ["2026-04", "2026-02"] } });
+    expect((await call("/v1/ownership/network?month=2026-2")).status).toBe(400);
+    expect((await call("/v1/ownership/network?month=2026-01")).status).toBe(200);
+    expect(await (await call("/v1/ownership/network?month=2026-01")).json()).toMatchObject({ data: { month: null, comparison: { status: "UNAVAILABLE" } }, meta: { freshness: "UNAVAILABLE", dataAsOf: null } });
+  });
+
+  it("returns an unavailable empty form before the first snapshot and when the network flag is off", async () => {
+    const { call } = app({ ownershipNetworkEnabled: true });
+    expect(await (await call("/v1/ownership/network")).json()).toMatchObject({
+      data: { month: null, months: [], network: { nodes: [], edges: [], ambiguous: 0 }, comparison: { status: "UNAVAILABLE" } },
+      meta: { freshness: "UNAVAILABLE", dataAsOf: null },
+    });
+
+    const disabled = app({ ownershipNetworkEnabled: false });
+    expect(await (await disabled.call("/v1/ownership/network")).json()).toMatchObject({ data: { availability: "DISABLED" }, meta: { freshness: "UNAVAILABLE" } });
+  });
+
   it("answers with empty forms when nothing is stored, and validates parameters", async () => {
     const { call } = app();
     const empty = idxBeiEnvelope(stockOwnershipSchema).parse(await (await call("/v1/stocks/TEST9/ownership")).json());

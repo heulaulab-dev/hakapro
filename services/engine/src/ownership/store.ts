@@ -80,6 +80,8 @@ export interface OwnershipStore {
   setsInMonth(month: string, symbol?: string): Promise<SetHeader[]>;
   /** Newest month with any stored set, or null before the first upload. */
   latestMonth(): Promise<string | null>;
+  /** Distinct months with stored issuer sets, newest first. */
+  months(): Promise<string[]>;
   /** Changes into `month` (ordered by symbol, then holder key). */
   changes(month: string, symbol?: string): Promise<ChangeRecord[]>;
   /** The stated investor type of each holder line in these sets (KSEI codes such as CP; null when not stated). */
@@ -172,6 +174,7 @@ export class MemoryOwnershipStore implements OwnershipStore {
   async latestMonth() {
     return this.sets.map((set) => set.month).sort().at(-1) ?? null;
   }
+  async months() { return [...new Set(this.sets.map((set) => set.month))].sort((a, b) => b.localeCompare(a)); }
   async setsInMonth(month: string, symbol?: string) {
     return this.sets.filter((set) => set.month === month && (!symbol || set.symbol === symbol)).sort((a, b) => a.symbol.localeCompare(b.symbol))
       .map(({ rows: _rows, ...header }) => header);

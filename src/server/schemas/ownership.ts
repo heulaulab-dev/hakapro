@@ -13,6 +13,38 @@ const shares = z.string().regex(/^\d{1,24}$/).nullable();
 const signedShares = z.string().regex(/^-?\d{1,25}$/).nullable();
 const percent = z.string().regex(/^\d{1,3}\.\d{6}$/).nullable();
 const pp = z.string().regex(/^-?\d{1,3}\.\d{6}$/).nullable();
+const ownershipReplayHoldingSchema = z.object({
+  symbol: symbolSchema, issuerName: z.string().nullable(), holderName: z.string(), holderKind: z.enum(OWNERSHIP_HOLDER_KINDS),
+  investorType: z.string().nullable(), localForeign: z.string().nullable(), shares, percent, reference: z.string(),
+});
+
+const ownershipReplayIssuerSchema = z.object({
+  symbol: symbolSchema, issuerName: z.string().nullable(), snapshotDate: isoDate, dataset: z.string(), reference: z.string(),
+  retrievedAt: z.string(), rowCount: z.number().int().nonnegative(), thresholdPercent: percent,
+});
+
+const ownershipReplayChangeCountsSchema = z.object(Object.fromEntries(OWNERSHIP_CHANGE_KINDS.map((kind) => [kind, z.number().int().nonnegative()])) as Record<(typeof OWNERSHIP_CHANGE_KINDS)[number], z.ZodNumber>);
+
+/** One stored KSEI ≥1% month and its exact-match corporate-holder graph; records remain personal/internal. */
+export const ownershipNetworkReplaySchema = z.object({
+  availability: z.enum(["ENABLED", "DISABLED"]),
+  months: z.array(ownershipMonthSchema),
+  month: ownershipMonthSchema.nullable(),
+  snapshotDate: isoDate.nullable(),
+  issuers: z.number().int().nonnegative(),
+  holdings: z.number().int().nonnegative(),
+  issuerRecords: z.array(ownershipReplayIssuerSchema),
+  rows: z.array(ownershipReplayHoldingSchema),
+  network: ownershipNetworkSchema,
+  comparison: z.object({
+    status: z.enum(["COMPARED", "NO_PREVIOUS", "NOT_ADJACENT", "REFUSED", "UNAVAILABLE"]),
+    fromMonth: ownershipMonthSchema.nullable(),
+    comparedIssuers: z.number().int().nonnegative(),
+    statusCounts: z.object({ COMPARED: z.number().int().nonnegative(), NO_PREVIOUS: z.number().int().nonnegative(), NOT_ADJACENT: z.number().int().nonnegative(), REFUSED: z.number().int().nonnegative() }),
+    counts: ownershipReplayChangeCountsSchema,
+  }),
+});
+export type OwnershipNetworkReplay = z.infer<typeof ownershipNetworkReplaySchema>;
 
 /** Where a snapshot came from: the dataset, the owner's label for the file, and when HAKAPRO read it. */
 export const ownershipSourceRefSchema = z.object({

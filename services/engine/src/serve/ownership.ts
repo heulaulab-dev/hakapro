@@ -1,9 +1,10 @@
 // Builds the ownership /v1 payloads (E6) from stored snapshot sets and changes. The HTTP layer validates them with the
 // shared schemas (src/server/schemas/ownership.ts). Monthly position data is HISTORICAL, dated by its position date.
 import type { z } from "zod";
-import type { ownershipChangesSchema, ownershipScreenerSchema, ownershipUploadSchema, stockOwnershipSchema } from "@/server/schemas/ownership";
+import type { OwnershipNetworkReplay, ownershipChangesSchema, ownershipScreenerSchema, ownershipUploadSchema, stockOwnershipSchema } from "@/server/schemas/ownership";
+import { OWNERSHIP_CHANGE_KINDS, type OwnershipChangeKind } from "@/lib/ownership/changes";
 import { previousMonth } from "../ownership/numbers";
-import type { OwnershipStore, SetHeader, UploadRecord } from "../ownership/store";
+import type { OwnershipStore, SetHeader, StoredSet, UploadRecord } from "../ownership/store";
 import type { Served } from "./market";
 
 type StockOwnership = z.input<typeof stockOwnershipSchema>;
@@ -79,8 +80,7 @@ export async function crossHoldingsFor(store: OwnershipStore, symbol: string, mo
   return edges.sort((a, b) => a.ownerSymbol.localeCompare(b.ownerSymbol) || a.heldSymbol.localeCompare(b.heldSymbol));
 }
 
-export async function ownershipNetworkFor(store: OwnershipStore, month: string): Promise<NonNullable<StockOwnership["network"]>> {
-  const sets = await store.setsWithRowsInMonth(month);
+function ownershipNetworkFromSets(sets: StoredSet[]): NonNullable<StockOwnership["network"]> {
   const issuers = new Map<string, SetHeader>();
   const nodes = new Map<string, { id: string; label: string; kind: "issuer" | "holder" }>();
   const ambiguous = new Set<string>();
@@ -97,10 +97,88 @@ export async function ownershipNetworkFor(store: OwnershipStore, month: string):
       const held = issuers.get(issuerKey(row.holderName));
       if (!held || held.symbol === set.symbol) continue;
       nodes.set(`holder:${row.holderKey}`, { id: `holder:${row.holderKey}`, label: row.holderName, kind: "holder" });
-      edges.push({ from: `holder:${row.holderKey}`, to: `issuer:${set.symbol}`, percent: row.percent, shares: row.shares, month, sourceReference: row.sourceReference, confidence: "exact" });
+      edges.push({ from: `holder:${row.holderKey}`, to: `issuer:${set.symbol}`, percent: row.percent, shares: row.shares, month: set.month, sourceReference: row.sourceReference, confidence: "exact" });
     }
   }
   return { nodes: [...nodes.values()], edges, ambiguous: ambiguous.size };
+}
+
+export async function ownershipNetworkFor(store: OwnershipStore, month: string): Promise<NonNullable<StockOwnership["network"]>> {
+  return ownershipNetworkFromSets(await store.setsWithRowsInMonth(month));
+}
+
+const replayChangeKinds = OWNERSHIP_CHANGE_KINDS as readonly OwnershipChangeKind[];
+const replayStatuses = ["COMPARED", "NO_PREVIOUS", "NOT_ADJACENT", "REFUSED"] as const;
+type ReplayStatus = (typeof replayStatuses)[number];
+
+function emptyReplayCounts(): Record<OwnershipChangeKind, number> {
+  return Object.fromEntries(replayChangeKinds.map((kind) => [kind, 0])) as Record<OwnershipChangeKind, number>;
+}
+
+function replayStatusCounts(): Record<ReplayStatus, number> {
+  return { COMPARED: 0, NO_PREVIOUS: 0, NOT_ADJACENT: 0, REFUSED: 0 };
+}
+
+/** One month of uploaded KSEI records. Month changes are included only for calendar-adjacent sets. */
+function emptyNetworkReplay(months: string[]): OwnershipNetworkReplay {
+  return {
+    availability: "ENABLED", months, month: null, snapshotDate: null, issuers: 0, holdings: 0,
+    issuerRecords: [], rows: [], network: { nodes: [], edges: [], ambiguous: 0 },
+    comparison: { status: "UNAVAILABLE", fromMonth: null, comparedIssuers: 0, statusCounts: replayStatusCounts(), counts: emptyReplayCounts() },
+  };
+}
+
+export async function serveOwnershipNetwork(store: OwnershipStore, requestedMonth?: string): Promise<Served<OwnershipNetworkReplay>> {
+  const months = await store.months();
+  const month = requestedMonth ?? months[0] ?? null;
+  if (!month || !months.includes(month)) return { data: emptyNetworkReplay(months), dataAsOf: null, freshness: "UNAVAILABLE" };
+
+  const sets = await store.setsWithRowsInMonth(month);
+  if (!sets.length) return { data: emptyNetworkReplay(months), dataAsOf: null, freshness: "UNAVAILABLE" };
+  const snapshotDate = sets.map((set) => set.snapshotDate).sort().at(-1)!;
+  const priorAvailableMonth = months.find((candidate) => candidate < month) ?? null;
+  const previousCalendarMonth = previousMonth(month);
+  const isAdjacent = priorAvailableMonth === previousCalendarMonth;
+  const comparison: OwnershipNetworkReplay["comparison"] = {
+    status: "UNAVAILABLE", fromMonth: null, comparedIssuers: 0, statusCounts: replayStatusCounts(), counts: emptyReplayCounts(),
+  };
+  comparison.status = isAdjacent ? "COMPARED" : priorAvailableMonth ? "NOT_ADJACENT" : "NO_PREVIOUS";
+  comparison.fromMonth = isAdjacent ? previousCalendarMonth : null;
+
+  const comparedSetIds = new Set<string>();
+  for (const set of sets) {
+    const storedComparison = set.comparison as { status?: string; fromMonth?: string | null } | null;
+    let status: ReplayStatus = isAdjacent ? "REFUSED" : priorAvailableMonth ? "NOT_ADJACENT" : "NO_PREVIOUS";
+    if (storedComparison?.status && replayStatuses.includes(storedComparison.status as ReplayStatus)) status = storedComparison.status as ReplayStatus;
+    if (isAdjacent && status === "COMPARED" && storedComparison?.fromMonth === previousCalendarMonth) {
+      comparedSetIds.add(set.id);
+      comparison.comparedIssuers += 1;
+    } else if (isAdjacent && status === "COMPARED") {
+      status = "REFUSED";
+    }
+    comparison.statusCounts[status] += 1;
+  }
+  if (isAdjacent && comparison.comparedIssuers === 0) comparison.status = "REFUSED";
+
+  if (comparedSetIds.size) {
+    for (const change of await store.changes(month)) {
+      if (!comparedSetIds.has(change.toSetId)) continue;
+      comparison.counts[change.kind] += 1;
+    }
+  }
+
+  const issuerRecords = sets.map((set) => ({
+    symbol: set.symbol, issuerName: set.issuerName, snapshotDate: set.snapshotDate, dataset: set.dataset,
+    reference: set.sourceReference, retrievedAt: set.retrievedAt.toISOString(), rowCount: set.rowCount, thresholdPercent: set.thresholdPercent,
+  }));
+  const rows = sets.flatMap((set) => set.rows.map((row) => ({
+    symbol: set.symbol, issuerName: set.issuerName, holderName: row.holderName, holderKind: row.holderKind,
+    investorType: row.investorType, localForeign: row.localForeign, shares: row.shares, percent: row.percent, reference: row.sourceReference,
+  })));
+  return {
+    data: { availability: "ENABLED", months, month, snapshotDate, issuers: sets.length, holdings: rows.length, issuerRecords, rows, network: ownershipNetworkFromSets(sets), comparison },
+    dataAsOf: snapshotDate, freshness: "HISTORICAL",
+  };
 }
 
 const comparisonOf = (set: SetHeader) =>
