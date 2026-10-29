@@ -57,6 +57,21 @@
     "source": "Source: {source}",
     "ariaLabel": "Data freshness: {state}"
   },
+  "morningBrief": {
+    "title": "Morning brief",
+    "dailyFeed": "Daily feed",
+    "description": "Your market snapshot for {date}. Each item shows its own data date.",
+    "marketTitle": "Last market session",
+    "marketAsOf": "Session {date}",
+    "dateUnknown": "Market data date unavailable",
+    "noMarket": "Index data unavailable",
+    "breadth": "{up} up · {down} down · {flat} unchanged",
+    "newsTitle": "Recent headlines",
+    "noRecentNews": "No dated headlines from the past three days.",
+    "agendaTitle": "Next seven days",
+    "noAgenda": "No corporate actions in this window.",
+    "seeAll": "See all"
+  },
   "home": {
     "title": "Home",
     "placeholder": "The market overview will appear here.",

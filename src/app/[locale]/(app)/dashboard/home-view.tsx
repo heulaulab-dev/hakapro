@@ -20,9 +20,10 @@ import { QuoteList } from "@/components/data/quote-list";
 import { freshnessMeta } from "@/lib/freshness";
 import { formatDate, formatIdr, formatValue, type Locale } from "@/lib/format";
 import { candidatesFor } from "@/lib/strategies/contract";
+import { MorningBrief } from "@/components/market/morning-brief";
 
 /** Home answers "what matters now" — each block shows its own freshness or why it can't. */
-export function HomeView({ viewer }: { viewer: ViewerSummary }) {
+export function HomeView({ viewer, today }: { viewer: ViewerSummary; today: string }) {
   const t = useTranslations();
   const locale = useLocale() as Locale;
   const strategies = useStrategies();
@@ -33,6 +34,7 @@ export function HomeView({ viewer }: { viewer: ViewerSummary }) {
   return (
     <div className="flex flex-col gap-section p-4 md:p-6" data-testid="home">
       <SectionHeader as="h1" title={t("home.title")} description={t("home.subtitle")} />
+      <MorningBrief today={today} />
 
       <div className="contents lg:grid lg:grid-cols-2 lg:gap-4">
         <div className="max-lg:order-5 lg:contents">
