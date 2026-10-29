@@ -51,6 +51,28 @@ test.describe("slice 3: Financials tab", () => {
   });
 });
 
+test.describe("slice 3b: Dividend patterns tab", () => {
+  test("renders source-backed history, yield, and estimates with liquidity coverage", async ({ page }) => {
+    await page.route("**/api/stocks/BBCA/dividend-patterns", (route) => route.fulfill({ json: {
+      data: {
+        symbol: "BBCA", asOf: "2026-10-28", close: 8100, priceHistoryFrom: "2021-10-28", averageValue20: 3_000_000_000, liquidityEligible: true,
+        history: [{ exDate: "2026-05-20", amount: 250, cumDate: "2026-05-19", cumClose: 8200, exClose: 8000, runUpPercent: 2.5, exDropPercentOfDividend: 80, recoverySessions: 8, heldThroughExPercent: 0.61, observedSessionsAfterEx: 100 },
+          { exDate: "2025-11-20", amount: 200, cumDate: "2025-11-19", cumClose: 7900, exClose: 7750, runUpPercent: 1.2, exDropPercentOfDividend: 75, recoverySessions: 10, heldThroughExPercent: 0.63, observedSessionsAfterEx: 200 }],
+        projections: [{ exDate: "2026-11-19", amount: 200, basedOnExDate: "2025-11-20" }],
+        yield: { trailing: 0.055, ahead: 0.055, selected: 0.055 },
+        medians: { runUpPercent: 1.85, exDropPercentOfDividend: 77.5, recoverySessions: 9, heldThroughExPercent: 0.62 },
+        recoveredWithin15Rate: 1, patterns: { lowTrapRisk: true, capture: true, runUp: false, highYield: false },
+      }, freshness: "EOD", asOf: "2026-10-28", source: "yahoo-chart",
+    } }));
+    await page.goto("/en/stock/BBCA/dividends");
+    const view = page.getByTestId("dividends-view");
+    await expect(view).toContainText("5.5%");
+    await expect(view).toContainText("Capture pattern");
+    await expect(view).toContainText("EST");
+    await expect(view).toContainText("May 20, 2026");
+  });
+});
+
 test.describe("slice 4: Screener", () => {
   test("builder writes conditions to the URL; fixture mode states the source can't screen", async ({ page }) => {
     await page.goto("/en/discover/screener");

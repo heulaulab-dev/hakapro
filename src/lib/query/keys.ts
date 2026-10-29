@@ -2,6 +2,7 @@
 export const queryKeys = {
   search: (q: string) => ["market", "search", q.trim().toUpperCase()] as const,
   history: (symbol: string, frame = "daily", limit = 0, startDate = "", endDate = "") => ["market", "history", symbol.toUpperCase(), frame, limit, startDate, endDate] as const,
+  comparisonHistory: (symbol: string, range: string) => ["market", "comparison-history", symbol.toUpperCase(), range] as const,
   brokerSummary: (symbol: string, query: object = {}) => ["market", "broker-summary", symbol.toUpperCase(), JSON.stringify(query)] as const,
   strategies: () => ["market", "strategies"] as const,
   insiders: (symbol: string) => ["market", "insiders", symbol.toUpperCase()] as const,
@@ -11,6 +12,7 @@ export const queryKeys = {
   news: (perPage = 8) => ["market", "news", perPage] as const,
   announcements: (keywords: string) => ["market", "announcements", keywords] as const,
   watchlist: (userId: string) => ["user", "watchlist", userId] as const,
+  portfolio: (userId: string) => ["user", "portfolio", userId] as const,
   quotes: (symbols: string[]) => ["market", "quotes", [...symbols].sort().join(",")] as const,
   brokerAccumulation: (symbol: string, startDate = "", top = 0, brokers = "") => ["market", "broker-accumulation", symbol.toUpperCase(), startDate, top, brokers] as const,
   financials: (symbol: string, reportType: string, period: string, limit = 12, year: string | null = null) => ["market", "financials", symbol.toUpperCase(), reportType, period, limit, year] as const,
@@ -34,6 +36,7 @@ export const queryKeys = {
   ownershipChanges: (month?: string, symbol?: string) => ["market", "ownership-changes", month ?? null, symbol?.toUpperCase() ?? null] as const,
   recentInsiders: (days = 0, action: string | null = null, limit = 0) => ["market", "insiders-recent", days, action, limit] as const,
   catalysts: (symbol: string) => ["market", "catalysts", symbol.toUpperCase()] as const,
+  dividendPatterns: (symbol: string) => ["market", "dividend-patterns", symbol.toUpperCase()] as const,
   breadth: () => ["market", "breadth"] as const,
   insidersPage:(symbol: string, page: number, limit: number, action: string | null) => ["market", "insiders", symbol.toUpperCase(), page, limit, action] as const,
   insiderDisclosures: (symbol: string, limit: number) => ["market", "insiders", symbol.toUpperCase(), "disclosures", limit] as const,

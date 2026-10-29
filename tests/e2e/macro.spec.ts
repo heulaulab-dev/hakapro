@@ -9,3 +9,15 @@ test("desktop: Rates & Commodities page renders", async ({ page }, testInfo) => 
   await expect(page.getByTestId("macro-view").getByTestId("data-state-code")).toHaveText("UNSUPPORTED");
   await expect(page.getByTestId("research-disclaimer")).toBeVisible();
 });
+
+test("official BI meeting dates are visible with their source and publication date", async ({ page }) => {
+  await page.goto("/id/news?tab=macro");
+  const calendar = page.getByTestId("macro-calendar");
+  await expect(calendar).toBeVisible();
+  await expect(calendar.getByText("15 Des 2026", { exact: false })).toBeVisible();
+  await expect(calendar.getByText("22 Des 2025", { exact: false })).toBeVisible();
+  await expect(calendar.getByRole("link", { name: /jadwal resmi BI/i })).toHaveAttribute("href", /bi\.go\.id/);
+  await expect(calendar).toContainText("Keputusan kebijakan Federal Reserve");
+  await expect(calendar).toContainText("Inflasi Indonesia (perkiraan)");
+  await expect(calendar.getByRole("link", { name: /Kalender Federal Reserve/i })).toHaveAttribute("href", /federalreserve\.gov/);
+});

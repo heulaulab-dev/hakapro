@@ -152,7 +152,7 @@ export class DbMarketStore implements MarketStore {
 
   async actionsBetween(from: string, to: string): Promise<ActionCalendarRecord[]> {
     const rows = await this.db.select({
-      symbol: t.corporateActions.symbol, exDate: t.corporateActions.exDate, type: t.corporateActions.type, sourceCategory: t.corporateActions.sourceCategory, description: t.corporateActions.description,
+      symbol: t.corporateActions.symbol, exDate: t.corporateActions.exDate, type: t.corporateActions.type, source: t.corporateActions.source, sourceCategory: t.corporateActions.sourceCategory, description: t.corporateActions.description,
       amount: t.corporateActions.amount, ratio: t.corporateActions.ratio, shares: t.corporateActions.shares, sharesAfter: t.corporateActions.sharesAfter, asOf: t.corporateActions.asOf,
     }).from(t.corporateActions).where(and(gte(t.corporateActions.exDate, from), lte(t.corporateActions.exDate, to)))
       .orderBy(asc(t.corporateActions.exDate), asc(t.corporateActions.symbol), asc(t.corporateActions.type));

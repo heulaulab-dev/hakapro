@@ -21,6 +21,7 @@ import {
 } from "./source";
 import type { Candle, Quote, TickerLogo } from "./types";
 import { breadthSchema, catalystsSchema } from "@/server/schemas/market-intelligence";
+import { dividendPatternsSchema } from "@/server/schemas/dividend-patterns";
 import type { Clock } from "./arjum-source";
 
 const pct = (fraction: number | null | undefined) => (typeof fraction === "number" ? fraction * 100 : null);
@@ -116,6 +117,11 @@ export class IdxBeiSource extends BaseMarketDataSource {
   async corporateActions(symbol: string) {
     const { data, meta } = await this.get(`/v1/stocks/${encodeURIComponent(symbolSchema.parse(symbol))}/actions`, actionsSchema);
     return this.wrap(data, "HISTORICAL", meta.dataAsOf);
+  }
+
+  async dividendPatterns(symbol: string) {
+    const { data, meta } = await this.get(`/v1/stocks/${encodeURIComponent(symbolSchema.parse(symbol))}/dividend-patterns`, dividendPatternsSchema, TTL_MS.market);
+    return this.snapshot(data, meta.dataAsOf);
   }
 
   async profile(symbol: string) {
