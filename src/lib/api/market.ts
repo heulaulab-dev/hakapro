@@ -8,6 +8,8 @@ import { strategyBoardSchema } from "@/lib/strategies/contract";
 import { fetchEnvelope } from "./envelope";
 import { breadthHistorySchema, breadthHistoryWindowSchema, breadthSchema, catalystsSchema } from "@/server/schemas/market-intelligence";
 import { dividendPatternsSchema } from "@/server/schemas/dividend-patterns";
+import { marketBrokerSummarySchema } from "@/server/schemas/idx-bei";
+export { marketBrokerSummarySchema };
 export { dividendPatternsSchema } from "@/server/schemas/dividend-patterns";
 export { breadthHistorySchema, breadthSchema, catalystsSchema } from "@/server/schemas/market-intelligence";
 export type BreadthWindow = z.infer<typeof breadthHistoryWindowSchema>;
@@ -58,6 +60,8 @@ export const marketCapRowSchema = z.object({ symbol: z.string(), name: z.string(
 export const marketCapSchema = z.object({ date: z.string(), total: n, page: n, perPage: n, totalPages: n, rows: z.array(marketCapRowSchema), notFound: z.array(z.string()) });
 export type MarketCapRow = z.infer<typeof marketCapRowSchema>;
 export type MarketCapQuery = { page?: number; perPage?: number; date?: string; symbols?: string[] };
+export type MarketBrokerSummaryQuery = { from?: string; to?: string; limit?: number };
+export type MarketBrokerSummary = z.infer<typeof marketBrokerSummarySchema>;
 
 const sym = (symbol: string) => encodeURIComponent(symbol.toUpperCase());
 
@@ -82,6 +86,8 @@ export const marketApi = {
   insiders: (symbol: string, signal?: AbortSignal) => fetchEnvelope(`/api/insiders/${sym(symbol)}`, insidersSchema, { signal }),
   marketCap: (query: MarketCapQuery = {}, signal?: AbortSignal) =>
     fetchEnvelope(`/api/market-cap${qs({ page: query.page, per_page: query.perPage, date: query.date, symbols: query.symbols?.join(",") })}`, marketCapSchema, { signal }),
+  marketBrokerSummary: (query: MarketBrokerSummaryQuery = {}, signal?: AbortSignal) =>
+    fetchEnvelope(`/api/brokers/market-summary${qs({ from: query.from, to: query.to, limit: query.limit })}`, marketBrokerSummarySchema, { signal }),
 };
 
 // --- Stock overview (/api/overview/[code]) -------------------------------------------------

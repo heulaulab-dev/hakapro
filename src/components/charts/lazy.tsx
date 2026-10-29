@@ -17,4 +17,5 @@ export const DivergingBarChart = dynamic(() => import("./diverging-bar-chart").t
 export const DivergingColumnChart = dynamic(() => import("./diverging-column-chart").then((module) => module.DivergingColumnChart), { ssr: false, loading: chartSkeleton(220) });
 export const MultiLineChart = dynamic(() => import("./multi-line-chart").then((module) => module.MultiLineChart), { ssr: false, loading: chartSkeleton(260) });
 export const BreadthHistoryCharts = dynamic(() => import("@/app/[locale]/(app)/discover/intelligence/breadth-history-charts").then((module) => module.BreadthHistoryCharts), { ssr: false, loading: chartSkeleton(240) });
+export const BrokerActivityCharts = dynamic(() => import("@/app/[locale]/(app)/discover/broker-activity/broker-activity-charts").then((module) => module.BrokerActivityCharts), { ssr: false, loading: chartSkeleton(280) });
 export const SeasonalityHeatmap = dynamic(() => import("./seasonality-heatmap").then((module) => module.SeasonalityHeatmap), { ssr: false, loading: chartSkeleton(200) });
