@@ -103,6 +103,28 @@ export class DbOwnershipStore implements OwnershipStore {
     return this.withRows(row);
   }
 
+  async setsWithRowsInMonth(month: string) {
+    const headers = await this.db.select().from(t.ownershipSnapshotSets)
+      .where(eq(t.ownershipSnapshotSets.month, month)).orderBy(asc(t.ownershipSnapshotSets.symbol));
+    if (!headers.length) return [];
+    const rows = await this.db.select({
+      setId: t.ownershipSnapshotRows.setId, lineNo: t.ownershipSnapshotRows.lineNo,
+      holderKey: t.ownershipSnapshotRows.holderKey, holderName: t.ownershipSnapshotRows.holderName,
+      holderKind: t.ownershipSnapshotRows.holderKind, shares: t.ownershipSnapshotRows.shares, percent: t.ownershipSnapshotRows.percent,
+      investorType: t.ownershipSnapshotRows.investorType, localForeign: t.ownershipSnapshotRows.localForeign,
+      sourceReference: t.ownershipSnapshotRows.sourceReference,
+    }).from(t.ownershipSnapshotRows).where(inArray(t.ownershipSnapshotRows.setId, headers.map((header) => header.id)))
+      .orderBy(asc(t.ownershipSnapshotRows.setId), asc(t.ownershipSnapshotRows.lineNo));
+    const bySet = new Map<string, StoredRow[]>();
+    for (const row of rows) {
+      const { setId, ...stored } = row;
+      const group = bySet.get(setId) ?? [];
+      group.push(stored as StoredRow);
+      bySet.set(setId, group);
+    }
+    return headers.map((header) => ({ ...toHeader(header), rows: bySet.get(header.id) ?? [] }));
+  }
+
   async previousSet(symbol: string, month: string) {
     const [row] = await this.db.select().from(t.ownershipSnapshotSets)
       .where(and(eq(t.ownershipSnapshotSets.symbol, symbol), lt(t.ownershipSnapshotSets.month, month)))

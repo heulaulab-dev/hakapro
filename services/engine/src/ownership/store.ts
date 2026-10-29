@@ -68,6 +68,8 @@ export interface OwnershipStore {
   /** Deletes this upload's sets except those for `keep` symbols (a re-parse that no longer finds them); returns what went. */
   removeSetsOfUpload(uploadId: string, keep: string[]): Promise<Array<{ symbol: string; month: string }>>;
   getSet(symbol: string, month: string): Promise<StoredSet | null>;
+  /** All issuer sets and disclosed holder rows for one monthly KSEI snapshot in a bounded number of DB queries. */
+  setsWithRowsInMonth(month: string): Promise<StoredSet[]>;
   /** The symbol's newest set before `month`. */
   previousSet(symbol: string, month: string): Promise<StoredSet | null>;
   /** The symbol's oldest set after `month` (header only). */
@@ -148,6 +150,7 @@ export class MemoryOwnershipStore implements OwnershipStore {
     return removed;
   }
   async getSet(symbol: string, month: string) { return this.sets.find((set) => set.symbol === symbol && set.month === month) ?? null; }
+  async setsWithRowsInMonth(month: string) { return this.sets.filter((set) => set.month === month).sort((a, b) => a.symbol.localeCompare(b.symbol)); }
   async previousSet(symbol: string, month: string) {
     return this.sets.filter((set) => set.symbol === symbol && set.month < month).sort((a, b) => b.month.localeCompare(a.month))[0] ?? null;
   }
