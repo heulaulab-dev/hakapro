@@ -2074,6 +2074,8 @@
     "window": "History",
     "replayTitle": "Session replay",
     "replayDescription": "Move through stored sessions to see which stocks led while the wider market advanced or declined.",
+    "issuerSector": "Issuer sector",
+    "allSectors": "All sectors",
     "sector": "Sector index",
     "selectedSession": "Selected session: {date}",
     "coverage": "{priced} of {baseline} baseline names priced · {active} active names",
