@@ -4,7 +4,7 @@ import Script from "next/script";
 import { useRef } from "react";
 
 type TrakteerOverlay = {
-  init: (text: string, color: string, url: string, icon: string, size: number, position: "floating-right") => number;
+  init: (text: string, color: string, url: string, icon: string, size: number, position: "floating-left") => number;
   draw: (id: number) => void;
 };
 
@@ -26,47 +26,31 @@ export function TrakteerTipOverlay() {
     const overlay = window.trbtnOverlay;
     if (!overlay || initialized.current) return;
 
-    const id = overlay.init("Trakteer Kopi", "#be1e2d", MODAL_URL, ICON_URL, 40, "floating-right");
+    const id = overlay.init("Trakteer Kopi", "#be1e2d", MODAL_URL, ICON_URL, 40, "floating-left");
     overlay.draw(id);
 
-    // Trakteer injects a stylesheet with fixed offsets. Keep its button clearly above
-    // the Action Center by measuring the actual control instead of guessing its size
-    // (which changes with responsive layout, font loading, and alert count).
-    let observedActionCenter: HTMLElement | null = null;
-    let resizeObserver: ResizeObserver | null = null;
+    // Trakteer injects its own fixed-position CSS. Anchor it to the opposite side
+    // from the Action Center so changes to alert count or render timing cannot stack them.
+    const container = document.getElementById(`trbtn-overlay-container-${id}`);
     const placeOverlay = () => {
-      const container = document.getElementById(`trbtn-overlay-container-${id}`);
       if (!container) return;
-
       const mobile = window.matchMedia("(max-width: 767px)").matches;
-      const actionCenter = document.querySelector<HTMLElement>('[data-testid="action-center-button"]');
-      const actionRect = actionCenter?.getBoundingClientRect();
-      if (actionCenter !== observedActionCenter) {
-        if (observedActionCenter) resizeObserver?.unobserve(observedActionCenter);
-        observedActionCenter = actionCenter;
-        if (actionCenter) resizeObserver?.observe(actionCenter);
-      }
-      const right = actionRect
-        ? Math.max(16, window.innerWidth - actionRect.right)
-        : 16;
-      const bottom = actionRect
-        ? Math.max(16, window.innerHeight - actionRect.top + 16)
-        : mobile ? 128 : 72;
-
+      const left = mobile
+        ? "max(1rem, env(safe-area-inset-left, 0px))"
+        : window.matchMedia("(min-width: 1280px)").matches
+          ? "max(calc(var(--sidebar-width) + 1rem), env(safe-area-inset-left, 0px))"
+          : "max(5rem, env(safe-area-inset-left, 0px))";
       container.style.setProperty("position", "fixed", "important");
-      container.style.setProperty("bottom", `${bottom}px`, "important");
-      container.style.setProperty("right", `${right}px`, "important");
-      resizeObserver?.observe(container);
+      container.style.setProperty(
+        "bottom",
+        mobile ? "calc(8rem + env(safe-area-inset-bottom, 0px))" : "4.5rem",
+        "important",
+      );
+      container.style.setProperty("left", left, "important");
+      container.style.setProperty("right", "auto", "important");
     };
-    if (typeof ResizeObserver !== "undefined") {
-      resizeObserver = new ResizeObserver(() => placeOverlay());
-    }
     placeOverlay();
     window.addEventListener("resize", placeOverlay, { passive: true });
-    // The Action Center appears only after its radar request finishes. Reposition
-    // when it enters/leaves the page so the two floating controls never collide.
-    const observer = new MutationObserver(placeOverlay);
-    observer.observe(document.body, { childList: true, subtree: true });
     initialized.current = true;
   }
 
