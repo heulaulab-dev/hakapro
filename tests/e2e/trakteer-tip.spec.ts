@@ -40,13 +40,13 @@ test("loads the Trakteer tip overlay once with the configured HakaPro details", 
   const placement = page.locator(".trbtn-overlay-container");
   await expect(placement).toHaveClass(/floating-left/);
   await expect(placement).toHaveCSS("position", "fixed");
+  const expectedLeft = testInfo.project.name === "mobile" ? "16px" : testInfo.project.name === "tablet" ? "80px" : "270px";
   if (testInfo.project.name === "mobile") {
     await expect(placement).toHaveCSS("bottom", "128px");
-    await expect(placement).toHaveCSS("left", "16px");
   } else {
     await expect(placement).toHaveCSS("bottom", "72px");
-    await expect(placement).toHaveCSS("left", "16px");
   }
+  await expect(placement).toHaveCSS("left", expectedLeft);
   const tipBox = await placement.boundingBox();
   const alertBox = await page.getByTestId("action-center-button").boundingBox();
   expect(tipBox).not.toBeNull();
