@@ -30,7 +30,8 @@ export function TrakteerTipOverlay() {
     overlay.draw(id);
 
     // Trakteer injects a later stylesheet with !important on its bottom/right offsets.
-    // Apply our safe placement inline after draw so the Action Center cannot cover it.
+    // Apply our safe placement inline after draw so neither the Action Center nor its
+    // fixed alert badge can cover the button at the lower-right edge.
     const placeOverlay = () => {
       const container = document.getElementById(`trbtn-overlay-container-${id}`);
       if (!container) return;
@@ -44,7 +45,7 @@ export function TrakteerTipOverlay() {
       );
       container.style.setProperty(
         "right",
-        mobile ? "max(1rem, env(safe-area-inset-right, 0px))" : "20px",
+        mobile ? "max(9rem, calc(9rem + env(safe-area-inset-right, 0px)))" : "9rem",
         "important",
       );
     };

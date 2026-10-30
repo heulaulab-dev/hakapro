@@ -9,7 +9,7 @@ import { fetchEnvelope } from "./envelope";
 import { breadthHistorySchema, breadthHistoryWindowSchema, breadthSchema, catalystsSchema } from "@/server/schemas/market-intelligence";
 import { dividendPatternsSchema } from "@/server/schemas/dividend-patterns";
 import { ownershipNetworkReplaySchema } from "@/server/schemas/ownership";
-import { marketBrokerSummarySchema, stockSectorRotationSchema } from "@/server/schemas/idx-bei";
+import { foreignFlowPulseSchema, marketBrokerSummarySchema, stockSectorRotationSchema } from "@/server/schemas/idx-bei";
 export { marketBrokerSummarySchema };
 export { stockSectorRotationSchema };
 export { dividendPatternsSchema } from "@/server/schemas/dividend-patterns";
@@ -387,6 +387,7 @@ export const engineApi = {
   catalysts: (symbol: string, signal?: AbortSignal) => fetchEnvelope(`/api/stocks/${encodeURIComponent(symbol.toUpperCase())}/catalysts`, catalystsSchema, { signal }),
   breadth: (signal?: AbortSignal) => fetchEnvelope("/api/breadth", breadthSchema, { signal }),
   breadthHistory: (window: BreadthWindow, signal?: AbortSignal) => fetchEnvelope(`/api/breadth/history?window=${window}`, breadthHistorySchema, { signal }),
+  foreignFlowPulse: (signal?: AbortSignal) => fetchEnvelope("/api/foreign-flow/pulse", foreignFlowPulseSchema, { signal }),
   radar: (signal?: AbortSignal) => fetchEnvelope("/api/radar", radarSchema, { signal }),
   indicesHistory: (query: { codes?: string[]; from?: string; to?: string } = {}, signal?: AbortSignal) =>
     fetchEnvelope(`/api/indices/history${qs({ codes: query.codes?.join(","), from: query.from, to: query.to })}`, indicesHistorySchema, { signal }),

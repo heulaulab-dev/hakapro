@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   actionsCalendarSchema, actionsSchema, announcementItemSchema, fundamentalsSchema, heatmapSchema, idxBeiEnvelope, issuerRaceSchema, macroSchema, marketOverviewSchema, newsItemSchema,
-  screenResultSchema, securitySchema, signalsSchema, stockSchema, profileSchema, stockSectorRotationSchema,
+  screenResultSchema, securitySchema, signalsSchema, stockSchema, profileSchema, stockSectorRotationSchema, foreignFlowPulseSchema,
 } from "@/server/schemas/idx-bei";
 import { breadthHistorySchema, breadthSchema, catalystsSchema } from "@/server/schemas/market-intelligence";
 import { tempDir } from "../../test/support";
@@ -266,7 +266,7 @@ describe("engine HTTP app with stored data", () => {
   it("serves every data route through the shared schemas with EOD freshness", async () => {
     const cases: Array<[string, Parameters<typeof idxBeiEnvelope>[0]]> = [
       ["/v1/market", marketOverviewSchema], ["/v1/securities?q=bb", securitySchema.array()], ["/v1/stocks/BBCA?limit=1", stockSchema],
-      ["/v1/stocks/bbca/actions", actionsSchema], ["/v1/signals", signalsSchema],
+      ["/v1/stocks/bbca/actions", actionsSchema], ["/v1/signals", signalsSchema], ["/v1/foreign-flow/pulse", foreignFlowPulseSchema],
     ];
     for (const [path, schema] of cases) {
       const response = await call(path);
@@ -279,6 +279,8 @@ describe("engine HTTP app with stored data", () => {
     expect(stock.quote).toMatchObject({ close: 5225, foreignBuy: 310 });
     const signals = signalsSchema.parse(((await (await call("/v1/signals")).json()) as { data: unknown }).data);
     expect(signals.foreignFlow[0]).toMatchObject({ symbol: "BBCA", signal: "distribute", sessions: 2 });
+    const pulse = foreignFlowPulseSchema.parse(((await (await call("/v1/foreign-flow/pulse")).json()) as { data: unknown }).data);
+    expect(pulse).toMatchObject({ date: "2026-10-16", coverage: { priced: 1, observed: 1, ratio: 1 }, totals: { netBuyers: 0, netSellers: 1, unchanged: 0, netShares: -110, netValueIdrEstimate: -574750 } });
   });
 
   it("keeps typed misses: unknown symbol, bad limit, profile, empty search", async () => {

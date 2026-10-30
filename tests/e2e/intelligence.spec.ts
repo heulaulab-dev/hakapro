@@ -37,3 +37,36 @@ test("market breadth history renders sourced charts and latest sample coverage",
   await expect(panel.getByTestId("breadth-methodology")).toContainText("prediksi");
   await expect(panel).toContainText("4 saham dengan 20 harga penutupan");
 });
+
+test("foreign flow pulse labels estimates, observed coverage, and the latest stored session", async ({ page }) => {
+  await page.route("**/api/foreign-flow/pulse", (route) => route.fulfill({ json: {
+    data: {
+      date: "2026-08-26",
+      coverage: { priced: 3, observed: 2, ratio: 2 / 3 },
+      totals: { netBuyers: 1, netSellers: 1, unchanged: 0, netShares: 1_000, netValueIdrEstimate: 1_250_000 },
+      sectors: [
+        { sector: "Finance", priced: 2, observed: 2, netShares: 1_500, netValueIdrEstimate: 2_000_000 },
+        { sector: "Energy", priced: 1, observed: 0, netShares: 0, netValueIdrEstimate: 0 },
+      ],
+      history: [
+        { date: "2026-08-24", priced: 3, observed: 2 },
+        { date: "2026-08-25", priced: 3, observed: 3 },
+        { date: "2026-08-26", priced: 3, observed: 2 },
+      ],
+    }, freshness: "STALE", asOf: "2026-08-26", source: "idx-bei",
+  } }));
+
+  await page.goto("/id/discover/intelligence");
+  const panel = page.getByTestId("foreign-flow-pulse-panel");
+
+  await expect(panel).toBeVisible();
+  await expect(panel.locator('[data-freshness="STALE"]')).toBeVisible();
+  await expect(panel.getByTestId("foreign-flow-pulse-net-shares")).toContainText("+1 rb lembar");
+  await expect(panel.getByTestId("foreign-flow-pulse-net-value")).toContainText("Rp1,25 jt");
+  await expect(panel.getByTestId("foreign-flow-pulse-coverage")).toContainText("2 dari 3");
+  await expect(panel.getByTestId("foreign-flow-pulse-sector-Finance")).toContainText("Finance");
+  await expect(panel.getByTestId("foreign-flow-pulse-session")).toContainText("26 Agu 2026");
+  await expect(panel.getByTestId("foreign-flow-pulse-history")).toContainText("24 Agu 2026");
+  await expect(panel.getByTestId("foreign-flow-pulse-methodology")).toContainText("Estimasi nilai bersih");
+  await expect(panel).not.toContainText(/buy signal|sell signal|rekomendasi beli|rekomendasi jual/i);
+});
