@@ -28,7 +28,7 @@ test("loads the Trakteer tip overlay once with the configured HakaPro details", 
           container.appendChild(button);
           script.parentNode.insertBefore(container, script);
           var style = document.createElement("style");
-          style.textContent = ".trbtn-overlay-container.floating-right { position: fixed !important; bottom: 20px !important; right: 20px !important; }";
+          style.textContent = ".trbtn-overlay-container.floating-left { position: fixed !important; bottom: 20px !important; left: 20px !important; }";
           document.head.appendChild(style);
         }
       };`,
@@ -38,21 +38,38 @@ test("loads the Trakteer tip overlay once with the configured HakaPro details", 
   await page.goto("/en/dashboard");
   await expect(page.getByRole("button", { name: "Trakteer Kopi" })).toBeVisible();
   const placement = page.locator(".trbtn-overlay-container");
-  await expect(placement).toHaveClass(/floating-right/);
+  await expect(placement).toHaveClass(/floating-left/);
   await expect(placement).toHaveCSS("position", "fixed");
   if (testInfo.project.name === "mobile") {
-    await expect(placement).toHaveCSS("bottom", "136px");
-    await expect(placement).toHaveCSS("right", "16px");
+    await expect(placement).toHaveCSS("bottom", "128px");
+    await expect(placement).toHaveCSS("left", "16px");
   } else {
-    await expect(placement).toHaveCSS("bottom", "80px");
-    await expect(placement).toHaveCSS("right", "16px");
+    await expect(placement).toHaveCSS("bottom", "72px");
+    await expect(placement).toHaveCSS("left", "16px");
   }
   const tipBox = await placement.boundingBox();
   const alertBox = await page.getByTestId("action-center-button").boundingBox();
   expect(tipBox).not.toBeNull();
   expect(alertBox).not.toBeNull();
-  expect(tipBox!.y + tipBox!.height, JSON.stringify({ tipBox, alertBox })).toBeLessThanOrEqual(alertBox!.y - 16);
-  expect(Math.abs((tipBox!.x + tipBox!.width) - (alertBox!.x + alertBox!.width)), JSON.stringify({ tipBox, alertBox })).toBeLessThanOrEqual(1);
+  const overlaps = tipBox!.x < alertBox!.x + alertBox!.width
+    && tipBox!.x + tipBox!.width > alertBox!.x
+    && tipBox!.y < alertBox!.y + alertBox!.height
+    && tipBox!.y + tipBox!.height > alertBox!.y;
+  expect(overlaps, JSON.stringify({ tipBox, alertBox })).toBe(false);
+
+  const originalViewport = page.viewportSize();
+  await page.setViewportSize({ width: 320, height: 720 });
+  await expect(placement).toHaveCSS("bottom", "128px");
+  const narrowTipBox = await placement.boundingBox();
+  const narrowAlertBox = await page.getByTestId("action-center-button").boundingBox();
+  expect(narrowTipBox).not.toBeNull();
+  expect(narrowAlertBox).not.toBeNull();
+  const narrowOverlap = narrowTipBox!.x < narrowAlertBox!.x + narrowAlertBox!.width
+    && narrowTipBox!.x + narrowTipBox!.width > narrowAlertBox!.x
+    && narrowTipBox!.y < narrowAlertBox!.y + narrowAlertBox!.height
+    && narrowTipBox!.y + narrowTipBox!.height > narrowAlertBox!.y;
+  expect(narrowOverlap, JSON.stringify({ narrowTipBox, narrowAlertBox })).toBe(false);
+  if (originalViewport) await page.setViewportSize(originalViewport);
   const initArgs = await page.evaluate(() => (window as Window & { __trakteerArgs?: unknown[] }).__trakteerArgs);
   expect(initArgs).toEqual([
     "Trakteer Kopi",
@@ -60,7 +77,7 @@ test("loads the Trakteer tip overlay once with the configured HakaPro details", 
     "https://trakteer.id/v1/heulaulab/tip/embed/modal",
     "https://edge-cdn.trakteer.id/images/embed/trbtn-icon.png?v=14-05-2025",
     40,
-    "floating-right",
+    "floating-left",
   ]);
 
   if (testInfo.project.name === "mobile") {
