@@ -154,6 +154,16 @@ export const foreignSignalSchema = z.object({
 });
 export const signalsSchema = z.object({ tradingDate: z.string(), foreignFlow: z.array(foreignSignalSchema) });
 
+/** Market-wide foreign flow for the newest observed session. IDR values are close-based estimates. */
+export const foreignFlowPulseSchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  coverage: z.object({ priced: count, observed: count, ratio: z.number().min(0).max(1) }),
+  totals: z.object({ netBuyers: count, netSellers: count, unchanged: count, netShares: z.number(), netValueIdrEstimate: z.number() }),
+  sectors: z.array(z.object({ sector: z.string(), priced: count, observed: count, netShares: z.number(), netValueIdrEstimate: z.number() })),
+  history: z.array(z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), priced: count, observed: count })),
+});
+export type ForeignFlowPulse = z.infer<typeof foreignFlowPulseSchema>;
+
 /**
  * The Data Engine (E5) also sends, per period: each metric's unit (`IDR`, `USD`, `IDR/share`, `shares`), the filing
  * currency and the source (optional; app.py sent none). periodType is `ANNUAL` or `QUARTERLY` from the engine.

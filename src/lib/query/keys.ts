@@ -44,6 +44,7 @@ export const queryKeys = {
   dividendPatterns: (symbol: string) => ["market", "dividend-patterns", symbol.toUpperCase()] as const,
   breadth: () => ["market", "breadth"] as const,
   breadthHistory: (window: string) => ["market", "breadth-history", window] as const,
+  foreignFlowPulse: () => ["market", "foreign-flow-pulse"] as const,
   insidersPage:(symbol: string, page: number, limit: number, action: string | null) => ["market", "insiders", symbol.toUpperCase(), page, limit, action] as const,
   insiderDisclosures: (symbol: string, limit: number) => ["market", "insiders", symbol.toUpperCase(), "disclosures", limit] as const,
   research: (code: string) => ["market", "research", code.toUpperCase()] as const,
