@@ -7,7 +7,15 @@ test("loads the Trakteer tip overlay once with the configured HakaPro details", 
     await route.fulfill({
       contentType: "application/javascript",
       body: `window.trbtnOverlay = {
-        init: function () { window.__trakteerArgs = Array.from(arguments); return 0; },
+        init: function () {
+          window.__trakteerArgs = Array.from(arguments);
+          var actionCenter = document.createElement("button");
+          actionCenter.setAttribute("data-testid", "action-center-button");
+          actionCenter.textContent = "49 alerts";
+          actionCenter.style.cssText = "position:fixed;right:16px;bottom:" + (window.innerWidth < 768 ? "80px" : "24px") + ";width:110px;height:40px;z-index:40";
+          document.body.appendChild(actionCenter);
+          return 0;
+        },
         draw: function () {
           var script = document.querySelector("script.troverlay");
           if (!script || !script.parentNode) return;
@@ -32,12 +40,17 @@ test("loads the Trakteer tip overlay once with the configured HakaPro details", 
   await expect(placement).toHaveClass(/floating-right/);
   await expect(placement).toHaveCSS("position", "fixed");
   if (testInfo.project.name === "mobile") {
-    await expect(placement).toHaveCSS("bottom", "72px");
+    await expect(placement).toHaveCSS("bottom", "128px");
     await expect(placement).toHaveCSS("right", "16px");
   } else {
-    await expect(placement).toHaveCSS("bottom", "20px");
+    await expect(placement).toHaveCSS("bottom", "72px");
     await expect(placement).toHaveCSS("right", "20px");
   }
+  const tipBox = await placement.boundingBox();
+  const alertBox = await page.getByTestId("action-center-button").boundingBox();
+  expect(tipBox).not.toBeNull();
+  expect(alertBox).not.toBeNull();
+  expect(tipBox!.y + tipBox!.height, JSON.stringify({ tipBox, alertBox })).toBeLessThanOrEqual(alertBox!.y - 8);
   const initArgs = await page.evaluate(() => (window as Window & { __trakteerArgs?: unknown[] }).__trakteerArgs);
   expect(initArgs).toEqual([
     "Trakteer Kopi",
