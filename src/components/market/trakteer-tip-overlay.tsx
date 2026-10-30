@@ -4,7 +4,7 @@ import Script from "next/script";
 import { useRef } from "react";
 
 type TrakteerOverlay = {
-  init: (text: string, color: string, url: string, icon: string, size: number, position: "inline") => number;
+  init: (text: string, color: string, url: string, icon: string, size: number, position: "floating-right") => number;
   draw: (id: number) => void;
 };
 
@@ -26,7 +26,7 @@ export function TrakteerTipOverlay() {
     const overlay = window.trbtnOverlay;
     if (!overlay || initialized.current) return;
 
-    const id = overlay.init("Trakteer Kopi", "#be1e2d", MODAL_URL, ICON_URL, 40, "inline");
+    const id = overlay.init("Trakteer Kopi", "#be1e2d", MODAL_URL, ICON_URL, 40, "floating-right");
     overlay.draw(id);
     initialized.current = true;
   }
