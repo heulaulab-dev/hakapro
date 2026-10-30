@@ -24,7 +24,8 @@ type Window = (typeof WINDOWS)[number];
 export function MarketReplayView() {
   const t = useTranslations("marketReplay");
   const [window, setWindow] = useState<Window>("1M");
-  const raceQuery = useIssuerRace(window, "all");
+  const [raceSector, setRaceSector] = useState("all");
+  const raceQuery = useIssuerRace(window, raceSector);
   const breadthQuery = useBreadthHistory(window);
   const indicesQuery = useIndicesHistory({ from: raceQuery.data?.data.from ?? undefined, to: raceQuery.data?.data.to ?? undefined });
   const locale = useLocale() as Locale;
@@ -45,9 +46,9 @@ export function MarketReplayView() {
         {(race) => <DataState query={breadthQuery} compact>
           {(breadth) => race.data.from && race.data.to
             ? <DataState query={indicesQuery} compact>
-              {(indices) => <Workspace key={window} race={race.data} breadth={breadth.data} indices={indices.data} />}
+              {(indices) => <Workspace key={`${window}-${raceSector}`} race={race.data} breadth={breadth.data} indices={indices.data} raceSector={raceSector} onRaceSector={setRaceSector} />}
             </DataState>
-            : <Workspace key={window} race={race.data} breadth={breadth.data} indices={{ series: [] }} />
+            : <Workspace key={`${window}-${raceSector}`} race={race.data} breadth={breadth.data} indices={{ series: [] }} raceSector={raceSector} onRaceSector={setRaceSector} />
           }
         </DataState>}
       </DataState>
@@ -56,7 +57,7 @@ export function MarketReplayView() {
   );
 }
 
-function Workspace({ race, breadth, indices }: { race: IssuerRace; breadth: BreadthHistory; indices: { series: IndexSeries[] } }) {
+function Workspace({ race, breadth, indices, raceSector, onRaceSector }: { race: IssuerRace; breadth: BreadthHistory; indices: { series: IndexSeries[] }; raceSector: string; onRaceSector: (sector: string) => void }) {
   const t = useTranslations("marketReplay");
   const locale = useLocale() as Locale;
   const [activeIndex, setActiveIndex] = useState(Math.max(0, race.frames.length - 1));
@@ -97,12 +98,23 @@ function Workspace({ race, breadth, indices }: { race: IssuerRace; breadth: Brea
   return (
     <section className="flex flex-col gap-3 rounded-xl border border-border bg-card p-3 md:p-4" data-testid="market-replay">
       <SectionHeader as="h2" title={t("replayTitle")} description={t("replayDescription")} actions={
-        <label className="flex flex-col gap-1 text-xs text-muted-foreground">{t("sector")}
-          <Select value={sectorCode} onValueChange={setSectorCode}>
-            <SelectTrigger className="h-8 min-w-44 text-sm" data-testid="market-replay-sector"><SelectValue /></SelectTrigger>
-            <SelectContent>{sectors.map((series) => <SelectItem key={series.code} value={series.code}>{series.name ?? series.code}</SelectItem>)}</SelectContent>
-          </Select>
-        </label>
+        <div className="flex flex-wrap items-end gap-2">
+          <label className="flex flex-col gap-1 text-xs text-muted-foreground">{t("issuerSector")}
+            <Select value={raceSector} onValueChange={onRaceSector}>
+              <SelectTrigger className="h-8 min-w-40 text-sm" data-testid="market-replay-issuer-sector"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("allSectors")}</SelectItem>
+                {race.sectors.map((name) => <SelectItem key={name} value={name}>{name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </label>
+          <label className="flex flex-col gap-1 text-xs text-muted-foreground">{t("sector")}
+            <Select value={sectorCode} onValueChange={setSectorCode}>
+              <SelectTrigger className="h-8 min-w-40 text-sm" data-testid="market-replay-sector"><SelectValue /></SelectTrigger>
+              <SelectContent>{sectors.map((series) => <SelectItem key={series.code} value={series.code}>{series.name ?? series.code}</SelectItem>)}</SelectContent>
+            </Select>
+          </label>
+        </div>
       } />
 
       {frame ? <>
