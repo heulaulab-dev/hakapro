@@ -8,6 +8,7 @@ import { strategyBoardSchema } from "@/lib/strategies/contract";
 import { fetchEnvelope } from "./envelope";
 import { breadthHistorySchema, breadthHistoryWindowSchema, breadthSchema, catalystsSchema } from "@/server/schemas/market-intelligence";
 import { dividendPatternsSchema } from "@/server/schemas/dividend-patterns";
+import { ownershipNetworkReplaySchema } from "@/server/schemas/ownership";
 import { marketBrokerSummarySchema, stockSectorRotationSchema } from "@/server/schemas/idx-bei";
 export { marketBrokerSummarySchema };
 export { stockSectorRotationSchema };
@@ -304,6 +305,8 @@ export const ownershipChangesSchema = z.object({
 export const ownershipScreenerSchema = z.object({ month: z.string(), snapshotDate: z.string(), issuers: n, investors: n, holdings: n,
   localForeign: z.object({ local: n, foreign: n, unknown: n }), classifications: z.array(z.object({ name: z.string(), holdings: n })),
   rows: z.array(z.object({ symbol: z.string(), issuerName: z.string().nullable(), holderName: z.string(), holderKind: z.string(), investorType: z.string().nullable(), localForeign: z.string().nullable(), shares: z.string().nullable(), percent: z.string().nullable() })) });
+export const ownershipNetworkReplayClientSchema = ownershipNetworkReplaySchema;
+export type OwnershipNetworkReplay = z.infer<typeof ownershipNetworkReplayClientSchema>;
 export type OwnershipChange = z.infer<typeof ownershipChangeSchema>;
 /** Market-wide insider feed (Data Engine rotation): the per-stock row plus symbol and value, and the crawl's coverage. */
 export const recentInsiderSchema = insiderRowSchema.extend({ symbol: z.string(), valueIdr: nn });
@@ -400,6 +403,7 @@ export const engineApi = {
   ownership: (symbol: string, signal?: AbortSignal) => fetchEnvelope(`/api/stocks/${encodeURIComponent(symbol.toUpperCase())}/ownership`, stockOwnershipSchema, { signal }),
   ownershipChanges: (query: { month?: string; symbol?: string } = {}, signal?: AbortSignal) => fetchEnvelope(`/api/ownership/changes${qs(query)}`, ownershipChangesSchema, { signal }),
   ownershipScreener: (signal?: AbortSignal) => fetchEnvelope("/api/ownership/screener", ownershipScreenerSchema, { signal }),
+  ownershipNetwork: (query: { month?: string } = {}, signal?: AbortSignal) => fetchEnvelope(`/api/ownership/network${qs(query)}`, ownershipNetworkReplayClientSchema, { signal }),
   recentInsiders: (query: RecentInsidersQuery = {}, signal?: AbortSignal) => fetchEnvelope(`/api/insiders/recent${qs(query)}`, recentInsidersSchema, { signal }),
 };
 

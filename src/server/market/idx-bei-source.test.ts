@@ -73,6 +73,24 @@ describe("IdxBeiSource", () => {
     await expect(source.stockSectorRotation({ sector: "Energy", interval: "hourly" as "daily" })).rejects.toBeInstanceOf(ZodError);
   });
 
+  test("ownership network defaults to latest and validates selected snapshot month", async () => {
+    const fetcher = vi.fn(async (url: string | URL | Request) => {
+      expect(["http://market.test/v1/ownership/network", "http://market.test/v1/ownership/network?month=2026-08"]).toContain(String(url));
+      return Response.json({ data: {
+        availability: "ENABLED", months: ["2026-08", "2026-07"], month: "2026-08", snapshotDate: "2026-08-31", issuers: 0, holdings: 0,
+        issuerRecords: [], rows: [], network: { nodes: [], edges: [], ambiguous: 0 },
+        comparison: { status: "COMPARED", fromMonth: "2026-07", comparedIssuers: 0, statusCounts: { COMPARED: 0, NO_PREVIOUS: 0, NOT_ADJACENT: 0, REFUSED: 0 }, counts: { NEW: 0, INCREASE: 0, DECREASE: 0, EXIT: 0, UNCHANGED: 0, BELOW_THRESHOLD: 0, AMBIGUOUS: 0 } },
+      }, meta });
+    });
+    const source = new IdxBeiSource("http://market.test", () => wib("2026-09-18T10:30:00"), fetcher as unknown as typeof fetch);
+    expect((await source.ownershipNetwork({})).data.month).toBe("2026-08");
+    const result = await source.ownershipNetwork({ month: "2026-08" });
+    expect(result.data.month).toBe("2026-08");
+    expect(result.freshness).toBe("HISTORICAL");
+    expect(fetcher.mock.calls.map(([url]) => String(url))).toEqual(["http://market.test/v1/ownership/network", "http://market.test/v1/ownership/network?month=2026-08"]);
+    await expect(source.ownershipNetwork({ month: "2026-8" })).rejects.toBeInstanceOf(ZodError);
+  });
+
   test("schema drift is MALFORMED_PROVIDER_RESPONSE", async () => {
     const fetcher = async () => Response.json({ data: { indices: "nope" }, meta });
     await expect(new IdxBeiSource("http://market.test", undefined, fetcher as unknown as typeof fetch).marketOverview()).rejects.toMatchObject({ code: "MALFORMED_PROVIDER_RESPONSE" });
