@@ -62,10 +62,10 @@
 - Add shared `OwnershipNetworkReplay` schema/type and `marketApi.ownershipNetwork({month?})`.
 - Preserve the app's authenticated, no-store market-route semantics.
 
-- [ ] Add route/source contract checks for default and selected month.
-- [ ] Implement parser, typed query hook and deterministic query key including selected month.
-- [ ] Run focused app tests and typecheck.
-- [ ] Commit as `feat(ownership): expose investor network replay API`.
+- [x] Add route/source contract checks for default and selected month.
+- [x] Implement parser, typed query hook and deterministic query key including selected month.
+- [x] Run focused app tests and typecheck.
+- [x] Commit as `feat(ownership): expose investor network replay API`.
 
 ### Task 3: Standalone discovery UI
 
@@ -78,12 +78,12 @@
 - Modify: `src/i18n/messages/id.json`
 - Modify: `src/app/[locale]/layout.tsx` only if a client translation namespace is needed.
 
-- [ ] Add a sidebar leaf outside the Whale/Ownership group and include it in mobile All Modules through the existing standalone-item rendering.
-- [ ] Render month selection from available snapshots, exact as-of/coverage stats, and adjacent comparison status/counts.
-- [ ] Render a bounded accessible SVG for exact corporate-holder edges and a searchable complete rows table; retain empty, stale, ambiguous and missing-comparison states.
-- [ ] Use localized month/date/numeric formatting and source-reference detail; add no external navigation to untrusted URLs.
-- [ ] Run focused component/E2E checks, app typecheck, lint on changed files, and production build check.
-- [ ] Commit as `feat(ownership): add investor network replay module`.
+- [x] Add a sidebar leaf outside the Whale/Ownership group and include it in mobile All Modules through the existing standalone-item rendering.
+- [x] Render month selection from available snapshots, exact as-of/coverage stats, and adjacent comparison status/counts.
+- [x] Render a bounded accessible SVG for exact corporate-holder edges and a searchable complete rows table; retain empty, stale, ambiguous and missing-comparison states.
+- [x] Use localized month/date/numeric formatting and source-reference detail; add no external navigation to untrusted URLs.
+- [x] Run focused component/E2E checks, app typecheck, lint on changed files, and production build check.
+- [x] Commit as `feat(ownership): add investor network replay module`.
 
 ### Task 4: Promote and verify
 

@@ -144,7 +144,8 @@
     "intelligence": "Market Intelligence",
     "compare": "Compare Stocks",
     "portfolio": "Portfolio",
-    "feed": "Daily Feed"
+    "feed": "Daily Feed",
+    "investorNetwork": "Investor Network"
   },
   "dailyFeed": {
     "title": "Daily Feed",
@@ -2195,5 +2196,17 @@
     "choose": "Choose a file",
     "orDrop": "or drag it here",
     "remove": "Remove file"
+  },
+  "ownershipNetworkReplay": {
+    "title": "Investor Network Replay",
+    "description": "Explore monthly KSEI ≥1% ownership snapshots and exact issuer-to-issuer matches.",
+    "monthLabel": "Snapshot month", "snapshot": "KSEI position date: {date}",
+    "personal": "Personal research dataset · KSEI disclosures include holders at or above 1%.",
+    "issuers": "Issuers", "positions": "Holder positions", "matched": "Exact network links", "ambiguous": "Ambiguous names",
+    "networkTitle": "Issuer network", "networkHint": "Showing {count} of {total} exact-match relationships.", "noEdges": "No exact issuer-name links in this snapshot.",
+    "exactMatch": "Links use exact issuer-name matches only. {ambiguous} ambiguous name matches were excluded.",
+    "comparisonTitle": "Month-over-month comparison", "compared": "Compared with {month}", "gap": "Previous calendar month is missing; changes are not bridged across the gap.", "noPrevious": "No earlier snapshot is available.", "notCompared": "No valid adjacent-month comparison is available.", "comparedIssuers": "Issuers compared: {count}",
+    "positionsTitle": "All disclosed positions", "rowsShown": "Showing {count} of {total} rows", "search": "Search issuer or holder", "issuer": "Issuer", "holder": "Holder", "classification": "Classification", "shares": "Shares", "percent": "Ownership", "source": "Source reference",
+    "disclaimer": "Historical snapshot, not current ownership. Monthly uploads may be incomplete; KSEI’s ≥1% threshold does not mean smaller holdings are zero. For personal research only.", "disabled": "The investor network replay is currently disabled.", "empty": "No KSEI ownership snapshots have been uploaded yet."
   }
 }
