@@ -577,15 +577,15 @@
   }
 }
 
-/* Keep Trakteer above the fixed Action Center; on mobile, also clear its 40px target, the 56px tab bar and safe area. */
-.trbtn-overlay-container.floating-right {
+/* Keep the Trakteer CTA opposite the fixed Action Center and above the mobile tab bar. */
+.trbtn-overlay-container.floating-left {
   bottom: 4.5rem !important;
-  right: max(1rem, env(safe-area-inset-right, 0px)) !important;
+  left: max(1rem, env(safe-area-inset-left, 0px)) !important;
+  right: auto !important;
 }
 
 @media (max-width: 767px) {
-  .trbtn-overlay-container.floating-right {
+  .trbtn-overlay-container.floating-left {
     bottom: calc(8rem + env(safe-area-inset-bottom, 0px)) !important;
-    right: max(1rem, env(safe-area-inset-right, 0px)) !important;
   }
 }
