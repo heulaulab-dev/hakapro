@@ -5,7 +5,7 @@ import {
 
 export type NavKey =
   | "home" | "discover" | "screener" | "strategies" | "movers" | "heatmap" | "groups" | "radar" | "ownership" | "onePercent" | "stealth" | "brokerActivity" | "stockRotation"
-  | "macro" | "rotation" | "marketReplay" | "intelligence" | "compare" | "feed" | "watchlist" | "portfolio" | "news" | "alerts" | "methodology" | "about"
+  | "macro" | "rotation" | "marketReplay" | "intelligence" | "compare" | "feed" | "watchlist" | "portfolio" | "news" | "alerts" | "methodology" | "about" | "investorNetwork"
   // Module groups (BDMFlow-style terminal menu).
   | "pulse" | "bandar" | "scalp" | "whale" | "investor";
 export type NavItem = { key: NavKey; href: string; icon: Icon; children?: NavItem[] };
@@ -28,6 +28,7 @@ const PAGES = {
   screener: { key: "screener", href: "/discover/screener", icon: SlidersHorizontal },
   ownership: { key: "ownership", href: "/discover/ownership", icon: Landmark },
   onePercent: { key: "onePercent", href: "/discover/one-percent", icon: Percent },
+  investorNetwork: { key: "investorNetwork", href: "/discover/investor-network", icon: Network },
   brokerActivity: { key: "brokerActivity", href: "/discover/broker-activity", icon: ChartColumn },
   stockRotation: { key: "stockRotation", href: "/discover/stock-rotation", icon: LineChart },
   stealth: { key: "stealth", href: "/discover/stealth", icon: Building2 },
@@ -48,6 +49,7 @@ export const NAV: NavItem[] = [
   { key: "scalp", href: PAGES.screener.href, icon: Zap, children: [PAGES.screener] },
   { key: "whale", href: PAGES.ownership.href, icon: Waves, children: [PAGES.ownership, PAGES.stealth] },
   PAGES.onePercent,
+  PAGES.investorNetwork,
   PAGES.brokerActivity,
   PAGES.stockRotation,
   { key: "investor", href: PAGES.watchlist.href, icon: Briefcase, children: [PAGES.watchlist, PAGES.portfolio, PAGES.alerts] },

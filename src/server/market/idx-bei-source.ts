@@ -11,14 +11,14 @@ import {
 } from "@/server/schemas/idx-bei";
 import { symbolSchema } from "@/server/schemas/inputs";
 import { MAX_LOGO_BYTES, sanitizeSvg } from "@/server/schemas/ticker-logo";
-import { ownershipChangesSchema, ownershipMonthSchema, ownershipScreenerSchema, stockOwnershipSchema } from "@/server/schemas/ownership";
+import { ownershipChangesSchema, ownershipMonthSchema, ownershipNetworkReplaySchema, ownershipScreenerSchema, stockOwnershipSchema } from "@/server/schemas/ownership";
 import { PROVIDER_USER_AGENT } from "@/server/config/provider-identity";
 import { logWarn } from "@/server/log";
 import { ProviderBackoff } from "@/server/providers/backoff";
 import { MarketDataError, unsupported } from "./errors";
 import {
   BaseMarketDataSource, type ActionsCalendarQuery, type HeatmapQuery, type OwnershipChangesQuery, type PageQuery, type RecentInsidersQuery, type IssuerRaceQuery, type StockSectorRotationQuery,
-  type GroupsQuery, type BreadthWindow,
+  type GroupsQuery, type BreadthWindow, type OwnershipNetworkQuery,
 } from "./source";
 import type { Candle, Quote, TickerLogo } from "./types";
 import { breadthHistorySchema, breadthHistoryWindowSchema, breadthSchema, catalystsSchema } from "@/server/schemas/market-intelligence";
@@ -357,6 +357,13 @@ export class IdxBeiSource extends BaseMarketDataSource {
   async ownershipScreener() {
     const { data, meta } = await this.get("/v1/ownership/screener", ownershipScreenerSchema, TTL_MS.securities);
     return this.wrap(data, "HISTORICAL", meta.dataAsOf);
+  }
+
+  /** Data Engine `/v1/ownership/network`: month-selectable KSEI point-in-time network replay. */
+  async ownershipNetwork(query: OwnershipNetworkQuery) {
+    const month = query.month ? ownershipMonthSchema.parse(query.month) : undefined;
+    const { data, meta } = await this.get(`/v1/ownership/network${month ? `?month=${encodeURIComponent(month)}` : ""}`, ownershipNetworkReplaySchema);
+    return this.wrap(data, data.availability === "ENABLED" ? "HISTORICAL" : "UNAVAILABLE", meta.dataAsOf);
   }
 
   /**
