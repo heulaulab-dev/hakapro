@@ -20,6 +20,7 @@ test("loads the Trakteer tip overlay once with the configured HakaPro details", 
           var script = document.querySelector("script.troverlay");
           if (!script || !script.parentNode) return;
           var container = document.createElement("div");
+          container.id = "trbtn-overlay-container-0";
           container.className = "trbtn-overlay-container " + window.__trakteerArgs[5];
           var button = document.createElement("button");
           button.setAttribute("aria-label", "Trakteer Kopi");
@@ -27,7 +28,7 @@ test("loads the Trakteer tip overlay once with the configured HakaPro details", 
           container.appendChild(button);
           script.parentNode.insertBefore(container, script);
           var style = document.createElement("style");
-          style.textContent = ".trbtn-overlay-container.floating-right { position: fixed; bottom: 20px; right: 20px; }";
+          style.textContent = ".trbtn-overlay-container.floating-right { position: fixed !important; bottom: 20px !important; right: 20px !important; }";
           document.head.appendChild(style);
         }
       };`,
