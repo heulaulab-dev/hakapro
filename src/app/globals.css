@@ -576,3 +576,11 @@
     min-height: 40px;
   }
 }
+
+/* Keep Trakteer's fixed action clear of the 56px mobile tab bar and the device safe area. */
+@media (max-width: 767px) {
+  .trbtn-overlay-container.floating-right {
+    bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px)) !important;
+    right: max(1rem, env(safe-area-inset-right, 0px)) !important;
+  }
+}
