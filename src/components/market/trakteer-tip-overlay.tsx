@@ -35,13 +35,18 @@ export function TrakteerTipOverlay() {
     const placeOverlay = () => {
       if (!container) return;
       const mobile = window.matchMedia("(max-width: 767px)").matches;
+      const left = mobile
+        ? "max(1rem, env(safe-area-inset-left, 0px))"
+        : window.matchMedia("(min-width: 1280px)").matches
+          ? "max(calc(var(--sidebar-width) + 1rem), env(safe-area-inset-left, 0px))"
+          : "max(5rem, env(safe-area-inset-left, 0px))";
       container.style.setProperty("position", "fixed", "important");
       container.style.setProperty(
         "bottom",
         mobile ? "calc(8rem + env(safe-area-inset-bottom, 0px))" : "4.5rem",
         "important",
       );
-      container.style.setProperty("left", "max(1rem, env(safe-area-inset-left, 0px))", "important");
+      container.style.setProperty("left", left, "important");
       container.style.setProperty("right", "auto", "important");
     };
     placeOverlay();
