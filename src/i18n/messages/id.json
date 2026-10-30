@@ -2074,6 +2074,8 @@
     "window": "Riwayat",
     "replayTitle": "Putar ulang sesi",
     "replayDescription": "Telusuri sesi tersimpan untuk melihat saham yang memimpin saat pasar secara luas naik atau turun.",
+    "issuerSector": "Sektor emiten",
+    "allSectors": "Semua sektor",
     "sector": "Indeks sektor",
     "selectedSession": "Sesi terpilih: {date}",
     "coverage": "{priced} dari {baseline} saham acuan memiliki harga · {active} saham aktif",

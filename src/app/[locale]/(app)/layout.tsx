@@ -7,6 +7,7 @@ import { MobileNav } from "@/components/layout/mobile-nav";
 import { ActionCenter } from "@/components/market/action-center";
 import { MarketTicker } from "@/components/market/market-ticker";
 import { Providers } from "@/components/providers";
+import { TrakteerTipOverlay } from "@/components/market/trakteer-tip-overlay";
 import { DENSITY_COOKIE, parseDensity, parseTheme, THEME_COOKIE } from "@/lib/preferences";
 import { getTranslations } from "next-intl/server";
 import { isAiEnabled } from "@/server/config/ai";
@@ -36,6 +37,7 @@ export default async function AppShellLayout({ children }: LayoutProps<"/[locale
       </div>
       <ActionCenter />
       <CommandPalette viewer={viewer} />
+      <TrakteerTipOverlay />
     </Providers>
   );
 }

@@ -12,11 +12,12 @@ export function securityHeaders(env: Env): Array<{ key: string; value: string }>
   const csp = [
     "default-src 'self'",
     // Dev needs eval for React refresh; production does not.
-    `script-src 'self' 'unsafe-inline'${production ? "" : " 'unsafe-eval'"}`,
-    "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob:",
-    "font-src 'self' data:",
+    `script-src 'self' 'unsafe-inline' https://edge-cdn.trakteer.id${production ? "" : " 'unsafe-eval'"}`,
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "img-src 'self' data: blob: https://edge-cdn.trakteer.id",
+    "font-src 'self' data: https://fonts.gstatic.com",
     `connect-src 'self'${production ? "" : " ws: http://localhost:*"}`,
+    "frame-src https://trakteer.id",
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",
