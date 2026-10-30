@@ -28,6 +28,28 @@ export function TrakteerTipOverlay() {
 
     const id = overlay.init("Trakteer Kopi", "#be1e2d", MODAL_URL, ICON_URL, 40, "floating-right");
     overlay.draw(id);
+
+    // Trakteer injects a later stylesheet with !important on its bottom/right offsets.
+    // Apply our safe placement inline after draw so the Action Center cannot cover it.
+    const placeOverlay = () => {
+      const container = document.getElementById(`trbtn-overlay-container-${id}`);
+      if (!container) return;
+
+      const mobile = window.matchMedia("(max-width: 767px)").matches;
+      container.style.setProperty("position", "fixed", "important");
+      container.style.setProperty(
+        "bottom",
+        mobile ? "calc(8rem + env(safe-area-inset-bottom, 0px))" : "4.5rem",
+        "important",
+      );
+      container.style.setProperty(
+        "right",
+        mobile ? "max(1rem, env(safe-area-inset-right, 0px))" : "20px",
+        "important",
+      );
+    };
+    placeOverlay();
+    window.addEventListener("resize", placeOverlay, { passive: true });
     initialized.current = true;
   }
 
