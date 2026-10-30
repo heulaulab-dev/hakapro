@@ -5,7 +5,7 @@ import type {
   ActionCalendarItem, AnnouncementItem, BrokerAccumulation, BrokerFlow, BrokerSummary, CompanyProfile, CorporateAction, DoneDetails,
   FinancialStatements, ForeignFlow, FundamentalPeriod, Heatmap, History, Insiders, LastPrice, MarketCap, MarketOverview, NewsItem, ScreenRequest,
   ScreenResult, OwnershipChanges, OwnershipScreener, OwnershipNetworkReplay, RecentInsiders, SearchResult, Seasonality, SectorPerformance, Security, StockAnalysis, StockOwnership,
-  StockSnapshot, StrategyScreen, GroupsView, GroupWindow, RadarSnapshot, StealthOwnership, Macro, IndicesHistory, MarketBrokerSummary, BrokerDirectory, TickerLogo, CatalystFeed, BreadthSnapshot, BreadthHistory, IssuerRace, StockSectorRotation,
+  StockSnapshot, StrategyScreen, GroupsView, GroupWindow, RadarSnapshot, StealthOwnership, Macro, IndicesHistory, MarketBrokerSummary, BrokerDirectory, TickerLogo, CatalystFeed, BreadthSnapshot, BreadthHistory, IssuerRace, StockSectorRotation, ForeignFlowPulse,
 } from "./types";
 
 export type HistoryQuery = { limit?: number; frame?: "daily" | "weekly" | "monthly"; startDate?: string; endDate?: string };
@@ -71,6 +71,8 @@ export interface MarketDataSource {
   profile(symbol: string): R<CompanyProfile>;
   securities(q: string): R<Security[]>;
   foreignFlow(): R<ForeignFlow>;
+  /** Latest session foreign participation by sector; IDR net value is an estimate at the EOD close. */
+  foreignFlowPulse(): R<ForeignFlowPulse>;
   screen(request: ScreenRequest): R<ScreenResult>;
   news(query: PageQuery): R<NewsItem[]>;
   announcements(query: PageQuery & { keywords?: string }): R<AnnouncementItem[]>;
@@ -144,6 +146,7 @@ export abstract class BaseMarketDataSource implements MarketDataSource {
   async profile(..._args: unknown[]): R<CompanyProfile> { return this.fail("profile"); }
   async securities(..._args: unknown[]): R<Security[]> { return this.fail("securities"); }
   async foreignFlow(..._args: unknown[]): R<ForeignFlow> { return this.fail("foreignFlow"); }
+  async foreignFlowPulse(..._args: unknown[]): R<ForeignFlowPulse> { return this.fail("foreignFlowPulse"); }
   async screen(..._args: unknown[]): R<ScreenResult> { return this.fail("screen"); }
   async news(..._args: unknown[]): R<NewsItem[]> { return this.fail("news"); }
   async announcements(..._args: unknown[]): R<AnnouncementItem[]> { return this.fail("announcements"); }

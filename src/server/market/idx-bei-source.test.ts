@@ -57,6 +57,24 @@ describe("IdxBeiSource", () => {
     await expect(source.breadthHistory("bad" as "6M")).rejects.toBeInstanceOf(ZodError);
   });
 
+  test("foreign-flow pulse reads the bounded Engine pulse contract and preserves freshness", async () => {
+    const fetcher = vi.fn(async (url: string | URL | Request) => {
+      expect(String(url)).toBe("http://market.test/v1/foreign-flow/pulse");
+      return Response.json({ data: {
+        date: "2026-10-16", coverage: { priced: 10, observed: 8, ratio: 0.8 },
+        totals: { netBuyers: 5, netSellers: 2, unchanged: 1, netShares: 900, netValueIdrEstimate: 1_200_000 },
+        sectors: [{ sector: "Finance", priced: 4, observed: 3, netShares: 400, netValueIdrEstimate: 600_000 }],
+        history: [{ date: "2026-10-16", priced: 10, observed: 8 }],
+      }, meta: { ...meta, dataAsOf: "2026-10-16" } });
+    });
+    const source = new IdxBeiSource("http://market.test", () => wib("2026-10-18T10:30:00"), fetcher as unknown as typeof fetch);
+    const result = await source.foreignFlowPulse();
+    expect(result.data.coverage).toMatchObject({ priced: 10, observed: 8 });
+    expect(result.data.totals.netValueIdrEstimate).toBe(1_200_000);
+    expect(result.freshness).toBe("EOD");
+    expect(result.asOf).toBe("2026-10-16");
+  });
+
   test("stock-sector rotation validates options and calls the bounded Engine route", async () => {
     const fetcher = vi.fn(async (url: string | URL | Request) => {
       expect(String(url)).toBe("http://market.test/v1/sector-rotation/stocks?sector=Energy&interval=daily");

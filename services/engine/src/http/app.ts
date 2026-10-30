@@ -6,7 +6,7 @@ import { z } from "zod";
 import {
   actionsCalendarSchema, actionsSchema, announcementItemSchema, brokerDirectorySchema, fundamentalsSchema, HEATMAP_DEFAULT_LIMIT, HEATMAP_LIMITS, heatmapLimitSchema,
   heatmapSchema, indicesHistorySchema, issuerRaceSchema, issuerRaceWindowSchema, insidersRecentSchema, macroSchema, marketOverviewSchema, newsItemSchema, sectorsSchema, screenRequestSchema, screenResultSchema, marketBrokerSummarySchema,
-  securitySchema, signalsSchema, stockSchema, groupWindowSchema, groupsSchema, radarSchema, stealthOwnershipSchema, profileSchema,
+  securitySchema, signalsSchema, stockSchema, groupWindowSchema, groupsSchema, radarSchema, stealthOwnershipSchema, profileSchema, foreignFlowPulseSchema,
   stockSectorRotationIntervalSchema, stockSectorRotationSchema,
 } from "@/server/schemas/idx-bei";
 import { breadthHistorySchema, breadthHistoryWindowSchema, breadthSchema, catalystsSchema } from "@/server/schemas/market-intelligence";
@@ -42,6 +42,7 @@ import { emptyStockOwnership, serveOwnershipChanges, serveOwnershipNetwork, serv
 import { serveCatalysts } from "../serve/catalysts";
 import { serveDividendPatterns } from "../serve/dividend-patterns";
 import { serveBreadth, serveBreadthHistory } from "../serve/breadth";
+import { serveForeignFlowPulse } from "../serve/foreign-flow-pulse";
 import { emptyRadar, emptyStealth, serveRadar, serveStealth } from "../serve/radar";
 import type { MarketStore } from "../serve/store";
 import { parseIdxIndexSummary } from "../sources/idx-primary";
@@ -360,6 +361,11 @@ export function createApp(deps: AppDeps): (request: Request) => Promise<Response
       // No trading date can be vouched for without foreign data; the schema has no empty form, so this is a typed miss.
       if (!served) return error(404, "NO_DATA", "No signals available yet");
       return json(envelope(signalsSchema, served.data, servedMeta(served, at)));
+    }
+    if (path === "/v1/foreign-flow/pulse") {
+      const served = market ? await serveForeignFlowPulse(market, at) : null;
+      if (!served) return error(404, "NO_DATA", "No foreign-flow sessions are available yet");
+      return json(envelope(foreignFlowPulseSchema, served.data, servedMeta(served, at)));
     }
 
     if (path === "/v1/groups") {
