@@ -59,6 +59,36 @@ test("desktop: replay controls keep issuer, breadth, and sector values on the se
   await expect(replay.getByTestId("market-replay-breadth-missing")).toBeVisible();
 });
 
+test("desktop: issuer-sector filter requests and shows only that sector's race", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "desktop", "desktop sector filter flow");
+  await page.route("**/api/issuer-race**", (route) => {
+    const url = new URL(route.request().url());
+    const sector = url.searchParams.get("sector") ?? "all";
+    const allLeaders = [
+      { symbol: "BBCA", name: "Bank Central Asia", sector: "Finance", close: 8000, returnPercent: 3.6 },
+      { symbol: "ADRO", name: "Alamtri Resources", sector: "Energy", close: 2100, returnPercent: 2.4 },
+    ];
+    return route.fulfill({ json: {
+      data: {
+        window: "1M", sector, sectors: ["Energy", "Finance"], from: "2026-10-27", to: "2026-10-29", sessions: 2, frameStep: 1,
+        universe: { active: sector === "all" ? 10 : 5, withBaseline: sector === "all" ? 8 : 4, truncated: false },
+        frames: [
+          { date: "2026-10-28", priced: sector === "all" ? 2 : 1, leaders: sector === "all" ? allLeaders : sector === "Energy" ? allLeaders.slice(1) : allLeaders.slice(0, 1) },
+          { date: "2026-10-29", priced: sector === "all" ? 2 : 1, leaders: sector === "all" ? allLeaders : sector === "Energy" ? allLeaders.slice(1) : allLeaders.slice(0, 1) },
+        ],
+      }, freshness: "EOD", asOf: "2026-10-29", source: "idx-bei",
+    } });
+  });
+
+  await page.goto("/en/discover/market-replay");
+  const replay = page.getByTestId("market-replay");
+  await expect(replay.getByTestId("market-replay-leader").filter({ hasText: "ADRO" })).toBeVisible();
+  await replay.getByTestId("market-replay-issuer-sector").click();
+  await page.getByRole("option", { name: "Finance" }).click();
+  await expect(replay.getByTestId("market-replay-leader").filter({ hasText: "BBCA" })).toBeVisible();
+  await expect(replay.getByTestId("market-replay-leader").filter({ hasText: "ADRO" })).toHaveCount(0);
+});
+
 test("mobile: reduced motion keeps manual replay navigation and hides autoplay", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "mobile", "mobile reduced-motion flow");
   await page.emulateMedia({ reducedMotion: "reduce" });
