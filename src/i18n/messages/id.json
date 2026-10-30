@@ -144,7 +144,8 @@
     "intelligence": "Intelijen Pasar",
     "compare": "Bandingkan Saham",
     "portfolio": "Portofolio",
-    "feed": "Aktivitas Harian"
+    "feed": "Aktivitas Harian",
+    "investorNetwork": "Jaringan Investor"
   },
   "dailyFeed": {
     "title": "Aktivitas Harian",
@@ -2195,5 +2196,22 @@
     "choose": "Pilih berkas",
     "orDrop": "atau tarik ke sini",
     "remove": "Hapus berkas"
+  },
+  "ownershipNetworkReplay": {
+    "title": "Jaringan Investor",
+    "description": "Jelajahi snapshot kepemilikan KSEI ≥1% per bulan dan kecocokan emiten secara persis.",
+    "monthLabel": "Bulan snapshot", "snapshot": "Tanggal posisi KSEI terbaru: {date}",
+    "mixedDates": "Tanggal snapshot emiten berbeda: {from}–{to}; tanggal tiap emiten ditampilkan di bawah.",
+    "personal": "Dataset riset pribadi · Keterbukaan KSEI hanya mencakup pemegang saham minimal 1%.",
+    "issuers": "Emiten", "positions": "Posisi pemegang", "matched": "Relasi jaringan persis", "ambiguous": "Nama ambigu",
+    "networkTitle": "Jaringan emiten", "networkHint": "Menampilkan {count} dari {total} relasi dengan kecocokan persis.", "noEdges": "Tidak ada relasi nama emiten yang cocok persis pada snapshot ini.",
+    "exactMatch": "Relasi hanya memakai kecocokan nama emiten persis. {ambiguous} nama ambigu dikecualikan.",
+    "statusCOMPARED": "Dibandingkan: {count}", "statusNO_PREVIOUS": "Tanpa bulan sebelumnya: {count}", "statusNOT_ADJACENT": "Ada jeda bulan: {count}", "statusREFUSED": "Tidak dapat dibandingkan: {count}",
+    "noComparisonCounts": "{count} emiten tidak memiliki perbandingan yang valid.",
+    "newlyDisclosed": "Baru terungkap ≥1%", "increased": "Bertambah", "decreased": "Berkurang", "reportedExit": "Keluar menurut laporan", "unchanged": "Tidak berubah", "belowThreshold": "Di bawah ambang (posisi tidak diketahui)", "ambiguousChange": "Perubahan ambigu",
+    "comparisonTitle": "Perbandingan bulanan", "compared": "Dibandingkan dengan {month}", "gap": "Snapshot bulan kalender sebelumnya tidak tersedia; perubahan tidak dijembatani.", "noPrevious": "Snapshot sebelumnya tidak tersedia.", "notCompared": "Perbandingan bulan berurutan yang valid tidak tersedia.", "comparedIssuers": "Emiten dibandingkan: {count}",
+    "positionsTitle": "Semua posisi yang diungkapkan", "rowsShown": "Menampilkan {from}–{to} dari {total} baris", "asOf": "Tanggal posisi", "graphDetails": "Telusuri relasi graf dan tanggal sumber",
+    "sortBy": "Urutkan berdasarkan", "sortHolder": "Nama pemegang", "sortIssuer": "Emiten", "sortPercent": "Persentase kepemilikan", "sortAscending": "Urut menurun", "sortDescending": "Urut menaik", "ascending": "Menaik", "descending": "Menurun", "previousPage": "Halaman sebelumnya", "nextPage": "Halaman berikutnya", "pageOf": "Halaman {page} dari {pages}", "search": "Cari emiten atau pemegang", "issuer": "Emiten", "holder": "Pemegang", "classification": "Klasifikasi", "shares": "Saham", "percent": "Kepemilikan", "source": "Referensi sumber",
+    "disclaimer": "Snapshot historis, bukan kepemilikan terkini. Unggahan bulanan mungkin tidak lengkap; ambang KSEI ≥1% tidak berarti kepemilikan yang lebih kecil bernilai nol. Untuk riset pribadi.", "disabled": "Replay jaringan investor sedang dinonaktifkan.", "empty": "Belum ada snapshot kepemilikan KSEI yang diunggah."
   }
 }

@@ -12,7 +12,7 @@ import {
 import { breadthHistorySchema, breadthHistoryWindowSchema, breadthSchema, catalystsSchema } from "@/server/schemas/market-intelligence";
 import { dividendPatternsSchema } from "@/server/schemas/dividend-patterns";
 import { dateSchema, symbolSchema } from "@/server/schemas/inputs";
-import { ownershipChangesSchema, ownershipMonthSchema, ownershipScreenerSchema, stockOwnershipSchema } from "@/server/schemas/ownership";
+import { ownershipChangesSchema, ownershipMonthSchema, ownershipNetworkReplaySchema, ownershipScreenerSchema, stockOwnershipSchema } from "@/server/schemas/ownership";
 import { strategyBoardSchema } from "@/lib/strategies/contract";
 import type { SourceHealth } from "../db/repos";
 import type { PauseGuard } from "../schedule/pause";
@@ -38,7 +38,7 @@ import {
   INSIDERS_MAX_LIMIT, serveRecentInsiders, type InsiderStore,
 } from "../serve/insiders";
 import type { LogoService } from "../serve/logos";
-import { emptyStockOwnership, serveOwnershipChanges, serveOwnershipScreener, serveStockOwnership } from "../serve/ownership";
+import { emptyStockOwnership, serveOwnershipChanges, serveOwnershipNetwork, serveOwnershipScreener, serveStockOwnership } from "../serve/ownership";
 import { serveCatalysts } from "../serve/catalysts";
 import { serveDividendPatterns } from "../serve/dividend-patterns";
 import { serveBreadth, serveBreadthHistory } from "../serve/breadth";
@@ -418,6 +418,24 @@ export function createApp(deps: AppDeps): (request: Request) => Promise<Response
     if (path === "/v1/ownership/screener") {
       const served = deps.ownership ? await serveOwnershipScreener(deps.ownership.service.store) : null;
       return respond(ownershipScreenerSchema, served, { month: at.toISOString().slice(0, 7), snapshotDate: at.toISOString().slice(0, 10), issuers: 0, investors: 0, holdings: 0, localForeign: { local: 0, foreign: 0, unknown: 0 }, classifications: [], rows: [] });
+    }
+
+    if (path === "/v1/ownership/network") {
+      if (!get) return error(405, "METHOD_NOT_ALLOWED", "Use GET");
+      const monthParam = param(url, "month");
+      const month = monthParam === undefined ? undefined : ownershipMonthSchema.safeParse(monthParam);
+      if (monthParam !== undefined && !month?.success) return error(400, "BAD_REQUEST", "month must be YYYY-MM");
+      const enabled = deps.intelligence?.ownershipNetwork ?? false;
+      const empty: z.input<typeof ownershipNetworkReplaySchema> = {
+        availability: enabled ? "ENABLED" as const : "DISABLED" as const, months: [], month: null, snapshotDate: null, issuers: 0, holdings: 0,
+        issuerRecords: [], rows: [], network: { nodes: [], edges: [], ambiguous: 0 },
+        comparison: { status: "UNAVAILABLE" as const, fromMonth: null, comparedIssuers: 0,
+          statusCounts: { COMPARED: 0, NO_PREVIOUS: 0, NOT_ADJACENT: 0, REFUSED: 0 },
+          counts: { NEW: 0, INCREASE: 0, DECREASE: 0, EXIT: 0, UNCHANGED: 0, BELOW_THRESHOLD: 0, AMBIGUOUS: 0 } },
+      };
+      const store = enabled ? deps.ownership?.service.store : undefined;
+      const served = store ? await serveOwnershipNetwork(store, month?.success ? month.data : undefined) : null;
+      return respond(ownershipNetworkReplaySchema, served, empty);
     }
 
     if (path === "/v1/ownership/changes") {

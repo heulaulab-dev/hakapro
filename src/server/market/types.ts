@@ -109,7 +109,7 @@ export type GroupsView = {
 /** One market-wide corporate action by ex-date (Data Engine calendar). */
 export type ActionCalendarItem = { symbol: string; date: string; type: string; sourceCategory?: string | null; description: string | null; amount: number | null; ratio: string | null; shares?: number | null; sharesAfter?: number | null; documentUrl: string | null;
   cumDate?: string | null; recordDate?: string | null; paymentDate?: string | null; noticeId?: string | null; status?: string | null };
-export type { OwnershipChanges, OwnershipScreener, StockOwnership } from "@/server/schemas/ownership";
+export type { OwnershipChanges, OwnershipScreener, OwnershipNetworkReplay, StockOwnership } from "@/server/schemas/ownership";
 /** One insider transaction in the market-wide feed: the per-stock row plus its symbol and |shares| × price (IDR). */
 export type RecentInsiderTransaction = InsiderRow & { symbol: string; valueIdr: number | null };
 /**

@@ -4,7 +4,7 @@ import { unsupported } from "./errors";
 import type {
   ActionCalendarItem, AnnouncementItem, BrokerAccumulation, BrokerFlow, BrokerSummary, CompanyProfile, CorporateAction, DoneDetails,
   FinancialStatements, ForeignFlow, FundamentalPeriod, Heatmap, History, Insiders, LastPrice, MarketCap, MarketOverview, NewsItem, ScreenRequest,
-  ScreenResult, OwnershipChanges, OwnershipScreener, RecentInsiders, SearchResult, Seasonality, SectorPerformance, Security, StockAnalysis, StockOwnership,
+  ScreenResult, OwnershipChanges, OwnershipScreener, OwnershipNetworkReplay, RecentInsiders, SearchResult, Seasonality, SectorPerformance, Security, StockAnalysis, StockOwnership,
   StockSnapshot, StrategyScreen, GroupsView, GroupWindow, RadarSnapshot, StealthOwnership, Macro, IndicesHistory, MarketBrokerSummary, BrokerDirectory, TickerLogo, CatalystFeed, BreadthSnapshot, BreadthHistory, IssuerRace, StockSectorRotation,
 } from "./types";
 
@@ -24,6 +24,7 @@ export type IssuerRaceQuery = { window?: "1M" | "3M" | "6M" | "1Y"; sector?: str
 export type StockSectorRotationQuery = { sector: string; interval?: "daily" | "weekly" };
 /** Without month, the newest month the provider has. */
 export type OwnershipChangesQuery = { month?: string; symbol?: string };
+export type OwnershipNetworkQuery = { month?: string };
 /** How many of the most-traded stocks to cover (30, 50 or 100; the provider's default is 100). */
 export type HeatmapQuery = { limit?: 30 | 50 | 100 };
 export type InsidersQuery = { page?: number; limit?: number; actionType?: "buy" | "sell" | "cross" };
@@ -96,6 +97,8 @@ export interface MarketDataSource {
   ownership(symbol: string): R<StockOwnership>;
   ownershipChanges(query: OwnershipChangesQuery): R<OwnershipChanges>;
   ownershipScreener(): R<OwnershipScreener>;
+  /** Point-in-time replay of uploaded KSEI ≥1% snapshots, with adjacent-month-only comparisons. */
+  ownershipNetwork(query: OwnershipNetworkQuery): R<OwnershipNetworkReplay>;
   /** Market-wide insider transactions from a rotating crawl, with how much of the market it covers (empty form before the first read). */
   recentInsiders(query: RecentInsidersQuery): R<RecentInsiders>;
   /** Documented signals per stock of the newest session, with counter-evidence and data status; never a score. */
@@ -157,6 +160,7 @@ export abstract class BaseMarketDataSource implements MarketDataSource {
   async ownership(..._args: unknown[]): R<StockOwnership> { return this.fail("ownership"); }
   async ownershipChanges(..._args: unknown[]): R<OwnershipChanges> { return this.fail("ownershipChanges"); }
   async ownershipScreener(..._args: unknown[]): R<OwnershipScreener> { return this.fail("ownershipScreener"); }
+  async ownershipNetwork(..._args: unknown[]): R<OwnershipNetworkReplay> { return this.fail("ownershipNetwork"); }
   async recentInsiders(..._args: unknown[]): R<RecentInsiders> { return this.fail("recentInsiders"); }
   async radar(..._args: unknown[]): R<RadarSnapshot> { return this.fail("radar"); }
   async stealthOwnership(..._args: unknown[]): R<StealthOwnership> { return this.fail("stealthOwnership"); }
