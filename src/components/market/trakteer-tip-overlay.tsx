@@ -29,9 +29,11 @@ export function TrakteerTipOverlay() {
     const id = overlay.init("Trakteer Kopi", "#be1e2d", MODAL_URL, ICON_URL, 40, "floating-right");
     overlay.draw(id);
 
-    // Trakteer injects a stylesheet with fixed offsets. Keep its button stacked above
+    // Trakteer injects a stylesheet with fixed offsets. Keep its button clearly above
     // the Action Center by measuring the actual control instead of guessing its size
-    // (which changes with responsive layout and alert count).
+    // (which changes with responsive layout, font loading, and alert count).
+    let observedActionCenter: HTMLElement | null = null;
+    let resizeObserver: ResizeObserver | null = null;
     const placeOverlay = () => {
       const container = document.getElementById(`trbtn-overlay-container-${id}`);
       if (!container) return;
@@ -39,17 +41,26 @@ export function TrakteerTipOverlay() {
       const mobile = window.matchMedia("(max-width: 767px)").matches;
       const actionCenter = document.querySelector<HTMLElement>('[data-testid="action-center-button"]');
       const actionRect = actionCenter?.getBoundingClientRect();
+      if (actionCenter !== observedActionCenter) {
+        if (observedActionCenter) resizeObserver?.unobserve(observedActionCenter);
+        observedActionCenter = actionCenter;
+        if (actionCenter) resizeObserver?.observe(actionCenter);
+      }
       const right = actionRect
         ? Math.max(16, window.innerWidth - actionRect.right)
         : 16;
       const bottom = actionRect
-        ? Math.max(16, window.innerHeight - actionRect.top + 8)
+        ? Math.max(16, window.innerHeight - actionRect.top + 16)
         : mobile ? 128 : 72;
 
       container.style.setProperty("position", "fixed", "important");
       container.style.setProperty("bottom", `${bottom}px`, "important");
       container.style.setProperty("right", `${right}px`, "important");
+      resizeObserver?.observe(container);
     };
+    if (typeof ResizeObserver !== "undefined") {
+      resizeObserver = new ResizeObserver(() => placeOverlay());
+    }
     placeOverlay();
     window.addEventListener("resize", placeOverlay, { passive: true });
     // The Action Center appears only after its radar request finishes. Reposition
