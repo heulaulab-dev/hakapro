@@ -88,6 +88,7 @@ export const useCatalysts = (symbol: string) => useQuery({ queryKey: queryKeys.c
 export const useDividendPatterns = (symbol: string) => useQuery({ queryKey: queryKeys.dividendPatterns(symbol), queryFn: ({ signal }) => engineApi.dividendPatterns(symbol, signal) });
 export const useBreadth = () => useQuery({ queryKey: queryKeys.breadth(), queryFn: ({ signal }) => engineApi.breadth(signal) });
 export const useBreadthHistory = (window: BreadthWindow) => useQuery({ queryKey: queryKeys.breadthHistory(window), queryFn: ({ signal }) => engineApi.breadthHistory(window, signal), staleTime: 300_000, placeholderData: (previous) => previous });
+export const useForeignFlowPulse = () => useQuery({ queryKey: queryKeys.foreignFlowPulse(), queryFn: ({ signal }) => engineApi.foreignFlowPulse(signal), staleTime: 300_000 });
 export const useCorporateActions =(symbol: string) => useQuery({ queryKey: queryKeys.actions(symbol), queryFn: ({ signal }) => stockApi.actions(symbol, signal) });
 /**
  * Newest-first insider disclosures, one provider page per user "load older" action (no background crawling).

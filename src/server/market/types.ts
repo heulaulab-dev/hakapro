@@ -2,7 +2,7 @@
  * Domain types shared by every MarketDataSource. Units are explicit in field names or docs:
  * shares vs lots, IDR, and percent units (1.25 = 1.25%), never fractions.
  */
-import type { NewsItem, AnnouncementItem, ScreenRequest, Radar, StealthOwnership as StealthOwnershipData, Macro, IndicesHistory, MarketBrokerSummary, BrokerDirectory, IssuerRace, StockSectorRotation } from "@/server/schemas/idx-bei";
+import type { NewsItem, AnnouncementItem, ScreenRequest, Radar, StealthOwnership as StealthOwnershipData, Macro, IndicesHistory, MarketBrokerSummary, BrokerDirectory, IssuerRace, StockSectorRotation, ForeignFlowPulse } from "@/server/schemas/idx-bei";
 import type { InsiderRow } from "@/server/services/arjum-normalize";
 import type { BreadthHistory as BreadthHistoryData } from "@/server/schemas/market-intelligence";
 export type {
@@ -10,7 +10,7 @@ export type {
 } from "@/server/services/arjum-normalize";
 export type { StockAnalysis } from "@/server/services/analysis-parse";
 export type { StrategyScreen } from "@/server/services/why-matched";
-export type { NewsItem, AnnouncementItem, ScreenRequest, Macro, IndicesHistory, MarketBrokerSummary, BrokerDirectory, IssuerRace, StockSectorRotation };
+export type { NewsItem, AnnouncementItem, ScreenRequest, Macro, IndicesHistory, MarketBrokerSummary, BrokerDirectory, IssuerRace, StockSectorRotation, ForeignFlowPulse };
 export type BreadthHistory = BreadthHistoryData;
 
 export type Quote = {

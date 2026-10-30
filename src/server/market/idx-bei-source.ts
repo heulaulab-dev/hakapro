@@ -6,7 +6,7 @@ import {
   actionsCalendarSchema, actionsSchema, announcementItemSchema, brokerDirectorySchema, fundamentalsSchema, HEATMAP_DEFAULT_LIMIT, heatmapLimitSchema, heatmapSchema, marketBrokerSummarySchema,
   idxBeiEnvelope, indicesHistorySchema, issuerRaceSchema, issuerRaceWindowSchema, insidersRecentSchema, macroSchema, marketOverviewSchema, newsItemSchema, groupsSchema, groupWindowSchema, profileSchema,
   stockSectorRotationSchema, stockSectorRotationIntervalSchema,
-  screenRequestSchema, screenResultSchema, sectorsSchema, securitySchema, signalsSchema, stockSchema, type ScreenRequest, radarSchema,
+  screenRequestSchema, screenResultSchema, sectorsSchema, securitySchema, signalsSchema, stockSchema, type ScreenRequest, radarSchema, foreignFlowPulseSchema,
   stealthOwnershipSchema,
 } from "@/server/schemas/idx-bei";
 import { symbolSchema } from "@/server/schemas/inputs";
@@ -20,7 +20,7 @@ import {
   BaseMarketDataSource, type ActionsCalendarQuery, type HeatmapQuery, type OwnershipChangesQuery, type PageQuery, type RecentInsidersQuery, type IssuerRaceQuery, type StockSectorRotationQuery,
   type GroupsQuery, type BreadthWindow, type OwnershipNetworkQuery,
 } from "./source";
-import type { Candle, Quote, TickerLogo } from "./types";
+import type { Candle, Quote, TickerLogo, ForeignFlowPulse } from "./types";
 import { breadthHistorySchema, breadthHistoryWindowSchema, breadthSchema, catalystsSchema } from "@/server/schemas/market-intelligence";
 import { dividendPatternsSchema } from "@/server/schemas/dividend-patterns";
 import type { Clock } from "./arjum-source";
@@ -152,6 +152,11 @@ export class IdxBeiSource extends BaseMarketDataSource {
         direction: row.signal === "accumulate" ? "net_buy" as const : "net_sell" as const,
       })),
     }, meta.dataAsOf);
+  }
+
+  async foreignFlowPulse() {
+    const { data, meta } = await this.get("/v1/foreign-flow/pulse", foreignFlowPulseSchema, TTL_MS.market);
+    return this.snapshot(data as ForeignFlowPulse, meta.dataAsOf);
   }
 
   async screen(request: ScreenRequest) {
