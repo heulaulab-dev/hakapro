@@ -580,11 +580,12 @@
 /* Keep Trakteer above the fixed Action Center; on mobile, also clear its 40px target, the 56px tab bar and safe area. */
 .trbtn-overlay-container.floating-right {
   bottom: 4.5rem !important;
+  right: 9rem !important;
 }
 
 @media (max-width: 767px) {
   .trbtn-overlay-container.floating-right {
     bottom: calc(8rem + env(safe-area-inset-bottom, 0px)) !important;
-    right: max(1rem, env(safe-area-inset-right, 0px)) !important;
+    right: max(9rem, calc(9rem + env(safe-area-inset-right, 0px))) !important;
   }
 }
