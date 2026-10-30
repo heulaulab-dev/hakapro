@@ -29,29 +29,33 @@ export function TrakteerTipOverlay() {
     const id = overlay.init("Trakteer Kopi", "#be1e2d", MODAL_URL, ICON_URL, 40, "floating-right");
     overlay.draw(id);
 
-    // Trakteer injects a later stylesheet with !important on its bottom/right offsets.
-    // Apply our safe placement inline after draw so neither the Action Center nor its
-    // fixed alert badge can cover the button at the lower-right edge. Stack it above
-    // the badge and align their right edges so both controls share one anchor.
+    // Trakteer injects a stylesheet with fixed offsets. Keep its button stacked above
+    // the Action Center by measuring the actual control instead of guessing its size
+    // (which changes with responsive layout and alert count).
     const placeOverlay = () => {
       const container = document.getElementById(`trbtn-overlay-container-${id}`);
       if (!container) return;
 
       const mobile = window.matchMedia("(max-width: 767px)").matches;
+      const actionCenter = document.querySelector<HTMLElement>('[data-testid="action-center-button"]');
+      const actionRect = actionCenter?.getBoundingClientRect();
+      const right = actionRect
+        ? Math.max(16, window.innerWidth - actionRect.right)
+        : 16;
+      const bottom = actionRect
+        ? Math.max(16, window.innerHeight - actionRect.top + 8)
+        : mobile ? 128 : 72;
+
       container.style.setProperty("position", "fixed", "important");
-      container.style.setProperty(
-        "bottom",
-        mobile ? "calc(8rem + env(safe-area-inset-bottom, 0px))" : "4.5rem",
-        "important",
-      );
-      container.style.setProperty(
-        "right",
-        "max(1rem, env(safe-area-inset-right, 0px))",
-        "important",
-      );
+      container.style.setProperty("bottom", `${bottom}px`, "important");
+      container.style.setProperty("right", `${right}px`, "important");
     };
     placeOverlay();
     window.addEventListener("resize", placeOverlay, { passive: true });
+    // The Action Center appears only after its radar request finishes. Reposition
+    // when it enters/leaves the page so the two floating controls never collide.
+    const observer = new MutationObserver(placeOverlay);
+    observer.observe(document.body, { childList: true, subtree: true });
     initialized.current = true;
   }
 
