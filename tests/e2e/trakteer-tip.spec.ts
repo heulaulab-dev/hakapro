@@ -42,17 +42,17 @@ test("loads the Trakteer tip overlay once with the configured HakaPro details", 
   await expect(placement).toHaveCSS("position", "fixed");
   if (testInfo.project.name === "mobile") {
     await expect(placement).toHaveCSS("bottom", "128px");
-    await expect(placement).toHaveCSS("right", "144px");
+    await expect(placement).toHaveCSS("right", "16px");
   } else {
     await expect(placement).toHaveCSS("bottom", "72px");
-    await expect(placement).toHaveCSS("right", "144px");
+    await expect(placement).toHaveCSS("right", "16px");
   }
   const tipBox = await placement.boundingBox();
   const alertBox = await page.getByTestId("action-center-button").boundingBox();
   expect(tipBox).not.toBeNull();
   expect(alertBox).not.toBeNull();
   expect(tipBox!.y + tipBox!.height, JSON.stringify({ tipBox, alertBox })).toBeLessThanOrEqual(alertBox!.y - 8);
-  expect(tipBox!.x + tipBox!.width, JSON.stringify({ tipBox, alertBox })).toBeLessThanOrEqual(alertBox!.x - 8);
+  expect(Math.abs((tipBox!.x + tipBox!.width) - (alertBox!.x + alertBox!.width)), JSON.stringify({ tipBox, alertBox })).toBeLessThanOrEqual(1);
   const initArgs = await page.evaluate(() => (window as Window & { __trakteerArgs?: unknown[] }).__trakteerArgs);
   expect(initArgs).toEqual([
     "Trakteer Kopi",
